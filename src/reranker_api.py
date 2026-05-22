@@ -102,6 +102,7 @@ class SiliconFlowReranker:
     return_documents: bool = False,
     max_chunks_per_doc: Optional[int] = None,
     overlap_tokens: Optional[int] = None,
+    max_documents_per_request: Optional[int] = None,
     min_interval_seconds: Optional[float] = None,
     max_retries: Optional[int] = None,
     retry_delay_seconds: Optional[float] = None,
@@ -127,6 +128,14 @@ class SiliconFlowReranker:
     self.return_documents = bool(return_documents)
     self.max_chunks_per_doc = max_chunks_per_doc
     self.overlap_tokens = overlap_tokens
+    self.max_documents_per_request = max(
+      int(
+        max_documents_per_request
+        if max_documents_per_request is not None
+        else _env_int("RERANK_MAX_DOCUMENTS_PER_REQUEST", 64)
+      ),
+      1,
+    )
     self.min_interval_seconds = max(
       float(
         min_interval_seconds

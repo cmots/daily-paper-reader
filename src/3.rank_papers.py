@@ -447,15 +447,17 @@ def iter_batches(
   docs_with_idx: List[Tuple[int, str]],
   query_tokens: int,
   encoder,
+  max_docs_per_batch: Optional[int] = None,
 ) -> List[Tuple[List[int], List[str]]]:
   batches: List[Tuple[List[int], List[str]]] = []
+  batch_limit = max(int(max_docs_per_batch or BATCH_SIZE), 1)
   pos = 0
   while pos < len(docs_with_idx):
     total_tokens = query_tokens
     batch_docs: List[str] = []
     batch_indices: List[int] = []
 
-    while pos < len(docs_with_idx) and len(batch_docs) < BATCH_SIZE:
+    while pos < len(docs_with_idx) and len(batch_docs) < batch_limit:
       orig_idx, doc = docs_with_idx[pos]
       doc_tokens = estimate_tokens(doc, encoder)
       if total_tokens + doc_tokens > TOKEN_SAFETY and batch_docs:
@@ -470,6 +472,18 @@ def iter_batches(
       continue
     batches.append((batch_indices, batch_docs))
   return batches
+
+
+def resolve_effective_rerank_batch_size(reranker: Any) -> int:
+  batch_size = BATCH_SIZE
+  max_documents = getattr(reranker, "max_documents_per_request", None)
+  if max_documents is None:
+    return batch_size
+  try:
+    remote_limit = max(int(max_documents), 1)
+  except (TypeError, ValueError):
+    return batch_size
+  return min(batch_size, remote_limit)
 
 
 def rrf_merge(scores: Dict[int, float], rank_idx: int, orig_idx: int) -> None:
@@ -534,12 +548,13 @@ def process_file(
     save_json(data, output_path)
     return
   encoder = build_token_encoder()
+  effective_batch_size = resolve_effective_rerank_batch_size(reranker)
   group_start(f"Step 3 - rerank {os.path.basename(input_path)}")
   log(
     f"[INFO] 开始 rerank：queries={len(queries)}（仅 intent/语义查询），papers={len(papers_list)}，"
     f"global_pool={len(global_candidate_ids)}（lane_top_k={lane_top_k}, "
     f"guaranteed_per_lane={guaranteed_per_lane}, global_top={global_rrf_top}），"
-    f"batch_size={BATCH_SIZE}，"
+    f"batch_size={effective_batch_size}，"
     f"max_chars={MAX_CHARS_PER_DOC}，token_safety={TOKEN_SAFETY}"
   )
 
@@ -555,7 +570,12 @@ def process_file(
     random.shuffle(docs_with_idx)
 
     query_tokens = estimate_tokens(q_text, encoder)
-    batches = iter_batches(docs_with_idx, query_tokens, encoder)
+    batches = iter_batches(
+      docs_with_idx,
+      query_tokens,
+      encoder,
+      max_docs_per_batch=effective_batch_size,
+    )
     log(
       f"[INFO] Query {q_idx}/{len(queries)} tag={q.get('tag') or ''} | candidates={len(top_ids)} "
       f"| batches={len(batches)} | query_tokens≈{query_tokens}"
