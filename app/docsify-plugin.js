@@ -3937,6 +3937,20 @@ window.$docsify = {
         });
       };
 
+      const buildEmbeddablePdfUrl = (url) => {
+        const raw = String(url || '').trim();
+        if (!raw) return '';
+        try {
+          const parsed = new URL(raw, window.location.href);
+          if (/openreview\.net$/i.test(parsed.hostname)) {
+            return `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(parsed.href)}`;
+          }
+          return parsed.href;
+        } catch (_err) {
+          return raw;
+        }
+      };
+
       const ensurePdfPreviewPanel = () => {
         let panel = document.getElementById('dpr-pdf-preview-panel');
         if (panel) return panel;
@@ -3969,8 +3983,9 @@ window.$docsify = {
             const panel = ensurePdfPreviewPanel();
             const frame = panel.querySelector('.dpr-pdf-preview-frame');
             const openLink = panel.querySelector('.dpr-pdf-preview-open-link');
-            if (frame && frame.getAttribute('src') !== url) {
-              frame.setAttribute('src', url);
+            const previewUrl = buildEmbeddablePdfUrl(url);
+            if (frame && frame.getAttribute('src') !== previewUrl) {
+              frame.setAttribute('src', previewUrl);
             }
             if (openLink) {
               openLink.setAttribute('href', url);
