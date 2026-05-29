@@ -1,0 +1,1193 @@
+Title: Scaling Laws for Pre-training Agents and World Models
+
+URL Source: https://openreview.net/pdf?id=HHwGfLOKxq
+
+Number of Pages: 21
+
+Markdown Content:
+# Scaling Laws for Pre-training Agents and World Models 
+
+Tim Pearce * 1 Tabish Rashid * 1 David Bignell 1 Raluca Georgescu 1 Sam Devlin 1 Katja Hofmann 1
+
+Abstract 
+
+The performance of embodied agents has been shown to improve by increasing model parame-ters, dataset size, and compute. This has been demonstrated in domains from robotics to video games, when generative learning objectives on offline datasets (pre-training) are used to model an agent’s behavior (imitation learning) or their environment (world modeling). This paper char-acterizes the role of scale in these tasks more precisely. Going beyond the simple intuition that ‘bigger is better’, we show that the same types of power laws found in language modeling also arise in world modeling and imitation learning (e.g. be-tween loss and optimal model size). However, the coefficients of these laws are heavily influenced by the tokenizer, task & architecture – this has important implications on the optimal sizing of models and data. 
+
+1. Introduction 
+
+Much progress in AI in the early 2020’s has been driven by increasing model size, dataset size, and training com-pute. Whilst conceptually simple, the importance of this practice has led to an emerging subfield studying the sci-ence of scaling . This field answers questions such as how to estimate the benefit of increased compute investment, or how to optimally trade-off model and dataset size. The role of scale in pre-training is so far best understood in large language models (LLMs). Following the observation that the empirical relationship between loss and key scal-ing quantities can be accurately described by power laws (Kaplan et al., 2020), works studied the precise trade-off between model and dataset size (Hoffmann et al., 2022), as well as considering inference compute (Sardana & Frankle, 2023), repeated epochs (Muennighoff et al., 2024), parame-ter counting (Pearce & Song, 2024) etc. (Section 2.1).      
+
+> *Equal contribution 1Microsoft Research (SD now at Meta). Correspondence to: Tim Pearce <.>.
+> Proceedings of the 42 nd International Conference on Machine Learning , Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s).
+
+In comparison, less is understood about scaling in embod-ied AI . Recent high-impact works show increasing model and dataset size can lead to ever more capable agents for two pre-training objectives; behavior cloning (BC) (Reed et al., 2022; Baker et al., 2022; Brohan et al., 2023) and world modeling (WM) (Hafner et al., 2020; Hu et al., 2023; Yang et al., 2023; Bruce et al., 2024). Such works typically demonstrate the benefit of scale through ablations over a few model sizes, shown in terms of downstream agent perfor-mance, confirming the intuition that ‘bigger is better’ (Sartor & Thompson (2024) provide an aggregated analysis). How-ever, this leaves a large gap to the precise understanding of scale in LLMs, where for a given increase in compute, mod-els can be sized optimally, and their performance accurately predicted. This paper helps close this gap. Similar to the study of scale in LLMs, we focus on the effect of scaling on a generative pre-training loss (rather than on downstream agent perfor-mance, or reward- or representation-centric objectives), in the infinite data regime, on a fixed offline dataset. Under this setting, we train families of transformers on next-token prediction tasks using architectures popular in both world modeling and BC tasks. This leads to several contributions, summarized in Figure 1. • For the first time, we show scaling laws similar to those in LLMs can be observed in world modeling with tokenized observations and actions (Section 4.1, Figure 1a). • The optimal trade-off between model and dataset size in world modeling is influenced by the tokenizer’s compres-sion rate (number of tokens per observation) (Section 4.1, Figure 1a & b). • Scaling laws for BC with tokenized observations are harder to observe under modest compute budgets. The optimal trade-off favors smaller models and more data (Section 4.2, Figure 1c). • Scaling laws similar to those in LLMs can once again be observed in BC with one continuous encoding per observation (Section 4.2, Figure 1d). • Our findings can be understood through small-scale lan-guage modeling experiments (Section 5). 1Scaling Laws for Pre-training Agents and World Models 
+
+(a) WM-Token-256 10 17 10 18 10 19 10 20 
+
+FLOPs 
+
+3 × 10 0
+
+4 × 10 0
+
+5 × 10 0   
+
+> Loss
+> 15M params
+> 27M params
+> 52M params
+> 110M params
+> 206M params
+> Efficient frontier
+> L0.1 C0.07
+
+Noptimal ∝ C0.49 
+
+Doptimal ∝ C0.51 
+
+(b) WM-Token-540 10 17 10 19 
+
+FLOPs 
+
+3 × 10 0
+
+4 × 10 0
+
+5 × 10 0   
+
+> Loss
+> 4M params
+> 11M params
+> 27M params
+> 52M params
+> 110M params
+> 206M params
+> Efficient frontier
+> L0.1 C0.05
+
+Noptimal ∝ C0.62 
+
+Doptimal ∝ C0.38 
+
+(c) BC-Token-540 10 16 10 17 10 18 10 19 
+
+FLOPs 
+
+4 × 10 1
+
+4.2 × 10 1
+
+4.4 × 10 1
+
+4.6 × 10 1
+
+4.8 × 10 1   
+
+> Loss
+> 2M params
+> 4M params
+> 11M params
+> 27M params
+> Efficient frontier
+> L0.1 C0.03
+
+Noptimal ∝ C0.32 
+
+Doptimal ∝ C0.68 
+
+(d) BC-CNN 10 15 10 16 10 17 10 18 10 19 
+
+FLOPs 
+
+3.5 × 10 0
+
+3.6 × 10 0
+
+3.7 × 10 0
+
+3.8 × 10 0
+
+3.9 × 10 0
+
+4 × 10 0   
+
+> Loss
+> 3M params
+> 10M params
+> 26M params
+> 51M params
+> 108M params
+> Efficient frontier
+> L3.56 C0.31
+
+Noptimal ∝ C0.66 
+
+Doptimal ∝ C0.34 
+
+Figure 1. This paper observes that scaling laws, as originally found in LLMs, also emerge in the tasks of world modeling and BC, when studying the pre-training loss on large datasets of human behavior. (a, b) For world modeling, the power law coefficient determining optimal model size is affected by the compression rate of the tokenizer. (c) In BC with tokenized image observations (BC-Token), small models need a large FLOPs budget to saturate, making these scaling laws less clear cut. (d) Moving to a single continuous embedding per observation remedies this (BC-CNN), producing prototypical scaling laws and a more balanced optimal model size coefficient. Note BC-Token & BC-CNN losses are not directly comparable. 
+
+Organization. Section 2.1 provides detailed related work, contrasting the current understanding of scaling in embodied AI with other domains, and justifying pre-training loss as a proxy for online reward. Section 3 introduces details for our main experiments, including the architectures & datasets considered, and details of scaling laws analyses. Section 4 presents our main results in world modeling and BC. Section 5 presents insights behind our main results, including a set of tiny-scale language experiments mimicking aspects of our main experiments. Section 6 discusses our findings and notes limitations. 
+
+2. Background 
+
+This section introduces related work, and outlines arguments and evidence supporting using pre-training loss to study scaling in embodied AI. 
+
+2.1. Related Work Scaling laws origin. The term scaling laws is used through-out the engineering and physical sciences to denote power law relationships between two quantities, e.g. duration of a volcanic eruption and the probability of it continuing (Can-nav `o & Nunnari, 2016). The name derives from the scale-invariant 1 property of power laws. While early work sug-gested that power laws could be good empirical descriptors of pre-training loss in deep learning (Hestness et al., 2017; Rosenfeld et al., 2019), Kaplan et al. (2020) provided a comprehensive study of power laws in transformer LLMs, and popularized the usage of scaling laws in this context. 
+
+Scaling laws in LLMs. As the real-world value of LLMs was understood, scaling in LLMs became a high-priority research topic. Hoffmann et al. (2022) conducted a pre-
+
+> 1
+
+For two variables x & y, the power law y = ax b is invariant to scaling x by a constant c.Formally: a(cx )b = cbax b =⇒ cby = cbax b =⇒ y = ax b.
+
+2Scaling Laws for Pre-training Agents and World Models 
+
+cise analysis into the trade-off of model and dataset size, finding they should be increased in equal proportions. This conflicted with the suggestion that model size should be pri-oritized (Kaplan et al., 2020) – an incorrect conclusion that Pearce & Song (2024) showed largely arose from counting only non-embedding parameters. Many other aspects of LLM scaling analyses are beginning to be refined. Su et al. (2024) revisited the methodology for finding scaling coefficients. H ¨agele et al. (2024) found that multiple independent cosine schedules could be reproduced more efficiently through a constant learning rate with mul-tiple short decays, or stochastic weight averaging. Pearce & Song (2024) & Porian et al. (2024) found that well-tuned constant learning rates were sufficient to recover certain coefficients. Bi et al. (2024) study the effect of various hy-perparameters on scaling. Muennighoff et al. (2024) looked at repeated epochs, finding up to four epochs produce negli-gible departures from the infinite data regime. Sardana & Frankle (2023) factored in inference compute to the defini-tion of compute-optimal. Isik et al. (2024) study the link between pre-training loss and downstream performance. A further line of research aims to explain why power laws are such a good descriptor of empirical deep learning (Hutter, 2021; Maloney et al., 2022; Bahri et al., 2024). 
+
+Scaling laws in image and video generation. Scaling laws have also been observed in auto-regressive modeling of video and images (Henighan et al., 2020; Tian et al., 2024). Henighan et al. (2020) found the optimal trade off between model and dataset size to match their reported LLM coef-ficient ( Noptimal ∝ C0.7) and was not affected by tokenizer. Our experiments offer different findings in the domain of world modeling – using updated methodologies to measure this trade-off, we find it is affected by the tokenizer. 
+
+Scaling in embodied AI. Compared to LLMs, an under-standing of scale in embodied settings is less advanced. Early successes in competitive games showed that reinforce-ment learning (RL) at scale could surpass human perfor-mance (Silver et al., 2017; Berner et al., 2019). In self-play RL, power laws were observed between certain quantities by (Neumann & Gros, 2022). Meanwhile, Hilton et al. (2023) noted that reward signals do not generally follow power laws, and defined a transformation of reward (intrinsic per-formance) that create self-consistent scaling laws. Inspired by the effectiveness of scaling in LLMs, embodied AI research has recently begun to explore the effective-ness of generative pre-training objectives on offline datasets, when executed at scale. This includes behavior cloning objectives in video games (Baker et al., 2022; Raad et al., 2024), robotics (Brohan et al., 2022; 2023; Padalkar et al., 2023; Bousmalis et al., 2023), or multiple domains (Reed et al., 2022), as well as world modeling objectives (Hu et al., 2023; Yang et al., 2023; Bruce et al., 2024). In these studies, the benefit of scale is generally shown through increasing model size on a specific downstream task of interest (e.g. measured by completion rate) – an aggregated survey is provided by (Sartor & Thompson, 2024). Tuyls et al. (2023) offer a valuable initial investigation into scaling laws for BC. They fit power laws to both BC pre-training loss and online return, when scaling width of single-layer LSTM models on datasets generated by fixed high-reward policies. We extend this line of investigation by studying transformer models trained on datasets of human behavior, discovering effects of architecture choices on scal-ing coefficients. In addition we study scaling laws in world models for the first time. 
+
+2.2. Pre-training Loss as a Proxy for Performance 
+
+A major difference between scaling research in LLMs and embodied AI is that LLM research uses pre-training loss as the main variable of interest, while embodied AI has focused on downstream online task performance . This handicaps em-bodied AI scaling research – measuring online performance for a single model checkpoint in complex environments like robotics or modern video games is expensive in time and hardware, requiring multiple repeated runs to allow statis-tically significant comparisons. Furthermore, models may first require a period of fine-tuning before evaluation. By contrast, pre-training loss is available for free at any point of a model’s training. We believe embodied AI’s focus stems from reports that validation loss is only weakly correlated with online per-formance (Hussenot et al., 2021; Li et al., 2024). However, such observations have been made with fixed-sized training datasets and held out validation sets, where effects of over-fitting may be slightly beneficial. In contrast, scaling law studies are conducted in an infinite data regime , where dat-apoints are not trained on more than once, making train and test losses equivalent, and overfitting effects not applicable. To evidence that pre-training loss can be a good proxy for online return in the infinite data regime, we conducted a meta-analysis of Tuyls et al. (2023), who were able to roll out a large number of checkpoints for two reasons. 1) They used simple lightweight environments (Atari & NetHack). 2) Their demonstration policy was high-skill, removing any need for fine-tuning. Figure 2 plots online environment return vs. pre-training loss for several environments (com-puted by tabulating pairs of points from Figure 6 & 10 in Tuyls et al. (2023)). The correlation coefficient for all envi-ronments is stronger than -0.94. Figure 3 shares evidence from our experiments that pre-training loss is well corre-lated with the video-generation quality of world models – providing correlation coefficients around 0.8. Further details in Appendix D. 3Scaling Laws for Pre-training Agents and World Models 
+
+NetHack Bank Heist Breakout Space Invaders 10 0    
+
+> Pre-training loss
+> 10 1
+> 10 2
+> 10 3
+> Online return
+> Correlation, R=-0.97
+> 4.0
+> 4.5
+> 5.0
+> 5.5
+> 6.0
+> 6.5
+> 7.0
+> 7.5
+> 8.0
+> log10(model size) 10 110 0
+> Pre-training loss
+> 10 2
+> Online return
+> Correlation, R=-0.96
+> 3.5
+> 4.0
+> 4.5
+> 5.0
+> 5.5
+> 6.0
+> 6.5
+> log 10 (model size) 10 110 0
+> Pre-training loss
+> 10 1
+> 2 × 10 1
+> 3 × 10 1
+> 4 × 10 1
+> Online return
+> Correlation, R=-0.94
+> 3.5
+> 4.0
+> 4.5
+> 5.0
+> 5.5
+> log 10 (model size) 10 0
+> Pre-training loss
+> 10 3
+> 3 × 10 2
+> 4 × 10 2
+> 6 × 10 2
+> Online return
+> Correlation, R=-0.98
+> 3.0
+> 3.5
+> 4.0
+> 4.5
+> 5.0
+> 5.5
+> 6.0
+> log 10 (model size)
+
+Figure 2. Our meta-analysis of Tuyls et al. (2023) evidences that pre-training loss is strongly correlated with reward in BC tasks when in the infinite data regime. 
+
+More intuitively, improving a next-token prediction loss in BC and WM requires models to ‘know more’ about behav-iors and the environment, creating more useful pre-trained checkpoints for specialization to downstream tasks. In BC, better predicting the next action in a dataset of human be-havior requires understanding the objectives humans are trying to complete, alternative social behaviors they might choose to perform, as well as making in-context inferences about the skill level and mental state of individuals. In WM, decreasing next-token prediction loss might follow a cur-riculum, first requiring a model to capture basic shapes and colors, then textures and physics, followed by rare object interactions, and finally even complex stochastic elements in the environment such as other intelligent agents. 
+
+3. Methodology 
+
+This section provides details for our main experiments. We describe the pre-training tasks, architectures, and datasets considered. We also detail the methodology used in the scaling law analyses. 
+
+3.1. Tasks 
+
+We consider trajectories constructed as sequences of alter-nating observations ot and actions at for timestep t ∈ N. In this work, observations are always images, ot ∈ R3×w×h
+
+and any continuous actions are discretized during prepro-cessing leaving, at ∈ { 0, 1}da .2.25 2.50 2.75 3.00 3.25 3.50 3.75 4.00 
+
+> Loss
+> 10 1
+> 10 2
+> 10 3
+> FVD
+> Size: 15M
+> Size: 27M
+> Size: 52M
+> Size: 110M
+> Size: 206M
+> Size: 894M
+
+Correlation, R = 0 .83 
+
+Figure 3. Our experiments suggest pre-training loss is a good proxy for generation quality of the world model, here FVD. 
+
+Given this data format, we consider two tasks. World model-ing (WM) (Ha & Schmidhuber, 2018) predicts future obser-vations from previous observations and actions. This allows an agent to explicitly understand how its environment works, which can be used for planning, or dyna-style RL (Sutton, 2018). Behavior cloning (BC) predicts the future actions that the dataset’s demonstrators take (Bakker et al., 1996). This creates a policy that can be directly used to act in the environment, either as-is or following further fine-tuning. Concretely, these two tasks require modeling the following quantities, World modeling: P (ot+1 |ot . . . ot−k, at . . . at−k), (1) Behavior cloning: P (at|ot . . . ot−k, at−1 . . . at−k−1).
+
+(2) This work focuses on generative pre-training aiming to model this full conditional probability distribution. We leave a study of scaling laws for alternative objectives, e.g., explic-itly targeting representation learning (Nair et al., 2022) or reward-centric models (Hafner et al., 2020), to future work. 
+
+3.2. Architectures 
+
+All experiments revolve around GPT-2 style causal trans-formers (Radford et al., 2019) as the core of the model. However we consider two different methods for inputting image observations, summarized in Figure 4. Section 3.4 details how we measure the model size of each. 
+
+Tokenized architecture. Our first architecture tokenizes each image observation into multiple discrete tokens. This is done with a frozen VQGAN encoder Enc θ (ot) → zt,where zt ∈ { 1, 2, ..., V o}dz , for vocabulary size Vo and la-tent dimension dz . Discretized actions are mapped to a non-overlapping vocabulary. Following tokenization, train-ing sequences take the form, 
+
+[z1 
+
+> t
+
+, ..., z dz 
+
+> t
+
+, a 1 
+
+> t
+
+, ..., a da 
+
+> t
+
+, z 1
+
+> t+1
+
+, ...z dz
+
+> t+1
+
+, a 1
+
+> t+1
+
+, ... ], (3) where each item of the sequence is an integer within our vocabulary. A transformer is then trained to maximize the 4Scaling Laws for Pre-training Agents and World Models BC -Token WM -Token  BC -CNN  
+
+> …
+> VQGAN
+> Encoder
+> Transformer
+> …
+> Transformer
+> VQGAN
+> Encoder
+> …
+> CNN
+> Encoder
+> Transformer
+> Figure 4. The World Modelling (WM) and Behavior Cloning (BC) tasks & architecture combinations considered in this work. The fire symbol signifies trainable components, the ice symbol signifies frozen pre-trained components.
+
+likelihood of either the latent image tokens (world model-ing), or action tokens (BC). This tokenized architecture is widely used both in world modeling (Micheli et al., 2022) and BC tasks (Bousmalis et al., 2023). Gato (Reed et al., 2022) used a similar design but with continuous patches rather than discrete tokens. Our implementation tests both a ‘small’ (28M parameters, dz =256 ) and ‘large’ (150M parameters, dz = 540 ) VQGAN – further details in Appendix A. 
+
+CNN architecture. Our second architecture differs in two ways. 1) Each image observation is input into the trans-former as a single continuous embedding, extracted from a small trainable convolutional neural network (CNN). 2) Action dimensions are predicted independently (rather than in series), assuming P (at| . . . ) ≈ Qda 
+
+> i=1
+
+P (ait| . . . ). One transformer forward pass produces an action prediction. This produces an architecture similar to (Baker et al., 2022) (VPT additionally used a transformer-XL and a refined hier-archical action space). Our implementation uses an Impala-style (Espeholt et al., 2018) CNN with 0.6M parameters for embedding image observations. 
+
+3.3. Datasets 
+
+This paper focuses on the effect of scaling on the pre-training loss over an offline dataset. To study this cleanly, datasets must meet two criteria. 1. Dataset size. Repeated training on the same data alters the effect of scaling – datasets should be large enough that training is done in the infinite data regime. 2. Dataset diversity. The behavior and environment must contain enough richness and variety that pre-training loss does not saturate across model sizes tested. Many existing benchmark datasets fail to fulfill these criteria – either due to limited size, or because behavior is generated from a fixed policy, or the environment is too simple. Our work primarily focuses on a dataset of human behavior collected in a video game Bleeding Edge . This is a fast-paced 4 vs 4 multiplayer game, with a range of characters, abilities and maps. Game play is highly complex due to cooperative and competitive dynamics. Success requires good high-level strategies (e.g. choosing which map regions to fight for), as well as fine-grained reactive control during combat. Figure 11 shows example dataset sequences. Supported by the game’s developer Ninja Theory , we com-piled a dataset of over 7 years of anonymized game play, containing both image observations and controller actions. We refer to this as the 7 map dataset . We also use a subset of this for some experiments, of around one year from a single map, which we name the Sky Garden dataset . Appendix A.3 provides further details. As a secondary dataset we use RT-1 (Brohan et al., 2022), comprising 14 days of humans operating a robotic arm on a range of manipulation tasks such as ‘pick banana from white bowl’. Using this smaller dataset allows us both to verify that conclusions on the large-scale video games dataset hold in a real-world robotics domain, and also allows us to run several small scale ablations in WM. Appendix C provides further details about the dataset and tokenizers used. 
+
+3.4. Scaling Analysis Methodology 
+
+We study the relationship between several quantities. • Model size N , the total number of trainable param-eters (ignoring VQGAN parameters for WM-Token & BC-Token, but including the fixed-size CNN for BC-CNN). Embedding parameters are included in the count following (Pearce & Song, 2024). • Dataset size D, the total number of inputs the trans-former sees during training. For WM-Token and BC-Token this is dz + da per observation & action pair, for BC-CNN this is one per observation & action pair. • Compute C, the number of floating point operations (FLOPs) used during training. The common approxi-mation of C = 6 N D (Kaplan et al., 2020) is used. • Loss L, the standard classification cross-entropy loss (all targets are discretized). Note training loss is an 5Scaling Laws for Pre-training Agents and World Models 
+
+accurate proxy for test loss when in the infinite data regime (Appendix A.3.1 analyzes further). More specifically, we are interested in ‘compute-optimal’ versions of each quantity. For loss, this is defined as the minimal loss possible for a given FLOPs budget, 
+
+Loptimal (C) = min  
+
+> s.t. C=6 N D
+
+L(N, D ), (4) where L(N, D ) is the empirical loss achieved with an N
+
+parameter model trained on D tokens. We further define optimal model and dataset sizes as the configuration that produce this minimal loss given a FLOPs budget, 
+
+Noptimal (C), D optimal (C) = argmin   
+
+> N,D s.t. C=6 N D
+
+L(N, D ). (5) 
+
+Scaling analysis. Scaling law analyses fit power law rela-tionships predicting these compute-optimal quantities. For predicting optimal model and dataset size, we use, 
+
+ˆNoptimal (C) = a0Ca ˆDoptimal (C) = b0Cb, (6) with fitted constants a0, a, b 0, b .2 We consider two methods to fit these relationships, introduced by (Hoffmann et al., 2022). Their Method 1, which we term Frontier fit , classi-fies efficient models as those falling on the efficient frontier 
+
+(see Figure 1). Coefficients can then be estimated straight-forwardly through a line of best fit on a plot of FLOPs vs parameters or data for these efficient models. Frontier fit is our preferred method when available – it avoids making any assumptions about the training curves, directly fitting the best models observed. However, it re-quires training models past the point where they are the optimal configuration (seen on a loss-FLOPs plot as over-lapping curves). In some of our experiments (BC-Token and Section 5.1), this was not possible. In these situations, we resort to Method 3 of (Hoffmann et al., 2022), which we term Parametric fit . This fits the coefficients α, β, N c, D c, E to a parametric loss form, 
+
+ˆL(N, D ) = Nc
+
+N α + Dc
+
+Dβ + E, (7) to the empirical training curves. In our implementation, we use SciPy’s curve_fit function. We find a =
+
+β/ (α + β), b = α/ (α + β). This makes a very strong assumption about the training curves, but allows coefficients to be estimated at a smaller compute budget. For loss prediction we use the form recommended by Pearce & Song (2024), 
+
+ˆLoptimal (N, D ) = c0C−c + E. (8) 
+
+> 2
+
+Note that by subscribing to C = 6 N D we find a = 1 − b;
+
+N ∝ Ca =⇒ C/D ∝ Ca =⇒ D ∝ C1−a. Hence, at times we only describe relationships in terms of N ∝ Ca, with 
+
+N ∝ D1−a implied. 
+
+Table 1. Summary of fitted scaling coefficients for our main experi-ments. Note that we favor the Frontier fit when available, and only use the Parametric fit for BC-Token-540 (see Section 3.4).                              
+
+> Frontier fit Parametric fit Experiment Noptimal ∝CaDoptimal ∝CbNoptimal ∝CaDoptimal ∝Cb
+> WM-Token-256 0.49 0.51 0.52 0.48 WM-Token-540 0.62 0.37 0.78 0.22 BC-Token-540 N/A N/A 0.32 0.68 BC-CNN 0.66 0.34 0.47 0.53
+
+We again use the curve_fit function, fitted to models along the efficient frontier. During fitting, we set bounds on the variables: c0 ∈ [0 , ∞], c ∈ [−1, 1] , E ∈ [0 .1, ∞].
+
+Training details. While early scaling studies conducted sweeps over multiple cosine decays of differing lengths (Kaplan et al., 2020; Hoffmann et al., 2022), follow up work found this redundant (Pearce & Song, 2024; H ¨agele et al., 2024; Porian et al., 2024). We follow the approach of using a constant learning rate per model, so each requires only one training run. We aim to train models until they have passed their compute efficient FLOPs budget. We only modify the parameters of the transformer, following the configurations documented in Appendix A. 
+
+4. Scaling Analysis in Embodied AI 
+
+This section presents our main results. We begin by con-sidering the scaling laws for the task of world modelling in Section 4.1 with two different tokenizers (turning image observations into 256 and 540 tokens for the small and large 
+
+variants respectively). Section 4.2 then considers the task of BC both with tokenized and CNN architectures. Finally, Section 4.3 tests the extrapolation capability of these scaling laws for the task of world modeling. 
+
+4.1. Scaling Analysis in World Modeling 
+
+Figures 5 & 6 present our results for the task of world modeling, with the scaling law coefficients summarized in Table 1. For WM-Token-256 we find that the optimal coefficients for model and dataset size are both ≈ 0.5, e.g. one should increase both model and dataset size in the same proportions. This matches the scaling laws observed in LLMs (Hoffmann et al., 2022). Increasing the number of tokens per image to 540 for WM-Token-540 changes the optimal trade-off between model and dataset size, skewing towards model size; Noptimal = 0 .62 , Doptimal = 0 .37 . We discuss this further in Section 5.3. Appendix Figure 15 visualizes the power law fits for the RT-1 robotics dataset, confirming that this predictable scaling behavior is not specific to human behavior in video games, and also emerges on real-world robotics tasks with high-skill human operators. 6Scaling Laws for Pre-training Agents and World Models 10 17 10 18 10 19 10 20       
+
+> FLOPs
+> 3 × 10 0
+> 4 × 10 0
+> 6 × 10 0
+> Loss
+> 15M params
+> 27M params
+> 52M params
+> 110M params
+> 206M params
+> Parametric fit 10 17 10 18 10 19 10 20
+> FLOPs
+> 10 8
+> 10 9
+> Optimal parameters
+> Best model given FLOPs
+> Power law, a=0.49 10 17 10 18 10 19 10 20
+> FLOPs
+> 10 9
+> 10 10
+> 10 11
+> Optimal tokens
+> Best model given FLOPs
+> Power law, b=0.51
+
+Figure 5. WM-Token scaling with dz =256 tokens per image observation. Left shows the parametric fit . Middle & right show the frontier fit estimating optimal model & dataset size respectively. 10 16 10 17 10 18 10 19       
+
+> FLOPs
+> 4 × 10 0
+> 5 × 10 0
+> 6 × 10 0
+> Loss
+> 4M params
+> 11M params
+> 27M params
+> 52M params
+> 110M params
+> 206M params
+> Parametric fit 10 17 10 18 10 19 10 20
+> FLOPs
+> 10 7
+> 10 8
+> 10 9
+> Optimal parameters
+> Best model given FLOPs
+> Power law, a=0.62 10 17 10 18 10 19 10 20
+> FLOPs
+> 10 9
+> 10 10
+> Optimal tokens
+> Best model given FLOPs
+> Power law, b=0.37
+
+Figure 6. WM-Token scaling with dz =540 tokens per image observation. Layout as in Figure 5. Compared to the results for WM-Token-256, the power law coefficient for Noptimal increases from 0.49 to 0.62 .
+
+4.2. Scaling Analysis in Behavior Cloning 
+
+We present our results on the scaling law coefficients for BC-Token in Figure 7. Despite sharing an architecture with WM-Token-540 we now observe the opposite dependence on model and dataset sizes. The coefficients skew heavily towards dataset size; Noptimal = 0 .32 , Doptimal = 0 .68 (com-pared to Noptimal = 0 .62 , Doptimal = 0 .37 – explained in Section 5.1). Furthermore, under the same compute budget the compute-optimal model sizes are significantly smaller. For a compute budget of 10 18 and 10 19 FLOPs we find that model sizes of 2M and 11 M are compute-optimal for BC-Token-540 compared to 27 M and 110 M for WM-Token-540. In our experiments, we observe the losses for the BC-Token models take much longer to plateau leading to less overlap between model sizes. Hence, the frontier fit is not suitable for accurately estimating the scaling law coefficients, and we rely on the parametric fit for these results. Appendix E investigated whether smaller models would allow estimation via frontier fit, but this was unsuccessful. To better understand the change in the scaling law coeffi-cients, we now consider the BC-CNN architecture for the task of BC in Figure 8. For this architecture, we observe that the coefficients now skew towards model size (similarly to those in (Tuyls et al., 2023)), with Noptimal = 0 .66 , and 
+
+Doptimal = 0 .34 . Section 5.2 provides more intuition on the differences between the WM-Token and BC-Token setups that lead to this change. Further to studying the differences in scaling law coeffi-cients between tasks and architectures, we also study the accuracy of extrapolation. 
+
+4.3. Extrapolation in World Modeling 
+
+To test the extrapolation accuracy of our derived scaling laws, we train a 894 M parameter WM-Token-256 model with an order of magnitude more compute than used for the scaling law analyses. Figure 9 presents both the learning curve as well as the extrapolated lines derived from the Fron-tier fit method. We take the point with the loss value clos-est to our extrapolated loss curve ( ∼ 1.58 × 10 21 FLOPS), and mark it on the Frontier fit extrapolations. We observe very good agreement between that point and our compute-optimal predictions for both model and dataset size, demon-strating the accuracy of our derived scaling laws. The gap between our prediction and the actual training run suggests we could further optimize the hyperparameters (learning rate and batch size in particular) for the 894 M parameter model, which was not extensively tuned due to compute requirements. 
+
+5. Further Analysis 
+
+Section 4 made several observations about the effect of scale in the pre-training of embodied agents. This section aims to understand these results further, and provide intuition for why they occur. Specifically we target three questions. • Q1: Why does BC-Token produce training curves that do not plateau, while WM-Token does, given an identi-cal architecture and dataset? (Section 5.1) • Q2: Why does moving from BC-Token to BC-CNN resolve this issue? (Section 5.2) • Q3: Why does increasing the tokens per image obser-vation (256 to 540) lead to an increase in the optimal model size coefficient (0.49 to 0.62)? (Section 5.3) 7Scaling Laws for Pre-training Agents and World Models 10 16 10 17 10 18 10 19 
+
+FLOPs 
+
+4 × 10 1
+
+5 × 10 1
+
+> Loss
+> 2M params
+> 4M params
+> 11M params
+> 27M params
+> Parametric fit
+
+10 18 10 19 
+
+FLOPs 
+
+10 7
+
+> Optimal parameters
+> Best model given FLOPs
+
+10 18 10 19 
+
+FLOPs 
+
+10 11 
+
+10 12 
+
+> Optimal tokens
+> Best model given FLOPs
+
+Figure 7. BC-Token scaling with dz = 540 tokens per image observation. Layout as in Figure 5. Models above 2M parameters do not saturate over the FLOPs range considered and coefficients can not be inferred using the frontier fit method. 10 15 10 16 10 17 10 18 
+
+FLOPs 
+
+3.6 × 10 0
+
+3.8 × 10 0
+
+4 × 10 0
+
+4.2 × 10 0
+
+> Loss
+> 3M params
+> 10M params
+> 26M params
+> 51M params
+> 108M params
+> Parametric fit
+
+10 16 10 17 10 18 10 19 
+
+FLOPs 
+
+10 7
+
+10 8
+
+> Optimal parameters
+> Best model given FLOPs
+> Power law, a=0.66
+
+10 16 10 17 10 18 10 19 
+
+FLOPs 
+
+10 9
+
+> Optimal tokens
+> Best model given FLOPs
+> Power law, b=0.33
+
+Figure 8. BC-CNN scaling. Layout as in Figure 5. Compared to the results for BC-Token the model sizes considered compute-optimal are considerably larger. The power law coefficient for Noptimal also increases from 0.32 to 0.66 skewing towards scaling model size as opposed to dataset size when scaling up compute. 10 18 10 20 
+
+FLOPs 
+
+3 × 10 0
+
+4 × 10 0   
+
+> Loss
+> 15M params
+> 27M params
+> 52M params
+> 110M params
+> 206M params
+> 894M params
+> Efficient frontier
+> L0.1 C0.07
+
+10 17 10 18 10 19 10 20 10 21 
+
+FLOPs 
+
+10 7
+
+10 8
+
+10 9
+
+> Optimal parameters
+> Best model given FLOPs
+> Power law, a=0.49
+> 894M
+
+10 17 10 18 10 19 10 20 10 21 
+
+FLOPs 
+
+10 9
+
+10 10 
+
+10 11 
+
+> Optimal tokens
+> Best model given FLOPs
+> Power law, b=0.51
+> 894M
+
+Figure 9. Testing the extrapolation capability of our derived scaling law for WM-Token-256 by training an 894 M parameter model with an order of magnitude more compute than was used for the scaling law analyses. We observe good agreement between our predicted optimal loss/model size/number of training tokens (dotted lines) and our actual training run marked by ‘x’. 
+
+Dense loss Sparse loss Sparse loss, super-classed 
+
+Noptimal ∝ C0.63 , Doptimal ∝ C0.37 Noptimal ∝ C0.50 , Doptimal ∝ C0.50 Noptimal ∝ C0.15 , Doptimal ∝ C85 10 13 10 15 
+
+FLOPs 
+
+2 × 10 0
+
+3 × 10 0
+
+> Loss
+> 3.81k params
+> 8.75k params
+> 0.06M params
+> 0.11M params
+> 0.28M params
+> 1.08M params
+> 4.23M params
+> 16.75M params
+> Parametric fit
+
+10 13 10 15 
+
+FLOPs 
+
+2 × 10 0
+
+3 × 10 0
+
+> Loss
+> 3.81k params
+> 8.75k params
+> 0.06M params
+> 0.11M params
+> 0.28M params
+> 1.08M params
+> 4.23M params
+> 16.75M params
+> Parametric fit
+
+10 13 10 15 
+
+FLOPs 
+
+4 × 10 1
+
+5 × 10 1
+
+6 × 10 1
+
+7 × 10 1
+
+> Loss
+> 3.81k params
+> 8.75k params
+> 0.06M params
+> 0.11M params
+> 0.28M params
+> 1.08M params
+> 4.23M params
+> 16.75M params
+> Parametric fit
+
+Figure 10. Training curves and parametric fit for character modeling experiments. The standard dense LLM loss has been modified to reflect properties of BC – a sparse loss (one of 16 tokens), and then additionally super-classing the targets into two classes. 
+
+5.1. Q1: BC-Token vs. WM-Token 
+
+The lack of saturation of BC-Token models compared to WM-Token models can be attributed to two factors. The first is a sparser loss. A single observation-action pair is discretized into dz +da total tokens. With the large VQGAN tokenizer, world modeling receives supervision for dz /(dz +
+
+da) = 540 /556 ≈ 97% tokens, while BC is supervised for 
+
+da/(dz + da) = 16 /556 ≈ 3% of tokens. The second factor is the granularity of the targets. The large tokenizer creates a world modeling vocabulary size of 4096. Each vocabulary item roughly corresponds to a specific color and texture for an image patch. Many vocabulary items may only be used to model specific map regions or special abilities. Hence, the world modeling loss is very granular. On the other hand, a player can take the same action in multiple different situations – continue straight could be used to escape an enemy, chase an enemy, or navigate to a checkpoint. Hence, the supervision for BC is more vague and abstracted. We can think of this as a 
+
+super-classed label. To demonstrate the effect of these two factors on optimal model size coefficients, we run a set of tiny-scale experi-8Scaling Laws for Pre-training Agents and World Models 
+
+ments in language modeling. Transformers are trained on next-character prediction, on a dataset of Shakespeare text 3
+
+using a single character for each token. Model sizes are var-ied from 4k parameters to 17M parameters. Context length is fixed at 16 characters/tokens. Figure 10 (left) shows training curves over all 16 tokens, followed by a sparse loss where supervision is only provided from the final token (middle), and then additionally under a super-classed setting (right). This super-classes the final target – rather than using all 128 ASCII characters, they are randomly shuffled into one of two macro classes. These modifications are intended to mirror the effect of moving from WM-Token to BC-Token. We compute op-timal model size coefficients using the parametric fit as most models are not trained long enough for the frontier fit method. Indeed, we see that the coefficient drops from 0.63 to 0.15 with both the sparse and super-classed loss. This matches the magnitude of decrease seen in Table 1 from 0.66 (BC-CNN frontier fit) to 0.32 (BC-Token-540 paramet-ric fit), indicating that the proposed mechanisms explain our findings. 
+
+5.2. Q2: BC-Token vs. BC-CNN 
+
+Despite the same non-granular loss signal, why does switch-ing architecture from BC-Token to BC-CNN makes the loss of similar model sizes plateau under a much smaller compute budget? Consider each architecture using a transformer with 1M parameters. Observe from Figure 4 that BC-Token receives 
+
+dz + da = 556 inputs for every action ˆat it predicts, while BC-CNN receives just one input for every action predicted. Hence, BC-Token uses around 556 times more compute in its action prediction ( 556 × 2 × 1M ≈ 1 × 10 9 FLOPs) than BC-CNN ( 1 × 2 × 1M ≈ 2 × 10 6 FLOPs). This means that even with the same number of parameters, BC-Token can learn a far more expressive function than BC-CNN. Hence, BC-Token requires far more tokens to match this expressivity, and training curves for a given model size plateau much later. 
+
+5.3. Q3: WM-Token-256 vs. WM-Token-540 
+
+Finally, we seek to understand why the optimal model size coefficient increases when moving from the 256 to the 540 token VQGAN. As the number of tokens per image obser-vation are increased, the compression rate of the tokenized representation decreases. We would expect that each individ-ual token becomes easier to predict in this less compressed representation. This would mean a less expressive function is needed (smaller model size), but also a smaller number  
+
+> 3Shakespeare character dataset from: https://github. com/karpathy/nanoGPT
+
+of examples would need to be seen (smaller dataset size). It is less clear what ratios these ingredients decrease in, and hence what effect a lower compression rate has on the optimal model size coefficient. Using the small scale RT-1 dataset, we conduct a more thorough investigation of the effect of tokens-per-image observation on scaling coefficients. First we train a range of image tokenizers with zo ∈ [16 , 36 , 64 , 100 , 256] , vi-sualized in Appendix Figure 14. For each VQVAE, we then train a range of WM-Token model sizes N ∈
+
+[0 .08 M, 0.2M, 0.28 M, 0.54 M, 0.99 M ], and measure scal-ing coefficients using the frontier fit method, repeating three times. Figure 16 plots all coefficient vs. tokens-per-image – we observe that the optimal parameter scaling coefficient in-creases with decreasing compression. To investigate whether compression affects the optimal model size coefficient outside of embodied domains, we ran a small scale experiment in language modeling using two text representations; 1) ASCII character-level tokeniza-tion. (low compression) 2) GPT-2 tokenizer (high compres-sion). We used the BookCorpus dataset (Zhu et al., 2015), and trained models past their compute-optimal point, so the 
+
+Frontier fit method could be used for coefficient estimation. Appendix B shows results. Under the character-level tok-enizer (low compression), we find Noptimal ∝ C0.66 . For the GPT-2 tokenizer (high compression), we find Noptimal ∝
+
+C0.44 . Hence, in language the more compressed representa-tion also leads to a lower optimal model size coefficient. 
+
+6. Discussion & Conclusion 
+
+This paper establishes a deeper understanding of scaling laws for world modeling and behavior cloning, two tasks that underpin embodied AI applications in domains such as video games and robotics. Focusing on generative pre-training of such models, we show that it is possible to re-cover scaling laws similar to those established for LLMs. Establishing this link is key to making efficient use of avail-able resources in training compute-optimal models. In world modeling, we show models can be smoothly scaled following best practices and insights from the LLM liter-ature. We further establish that scaling coefficients are affected by the tokenizer’s compression rate. In BC, the choice of architecture greatly impacts scaling coefficients. For architectures with tokenized image observations, dataset size should be increased much more rapidly than model size. Meanwhile, for BC-CNN architectures, model size should be increased faster than dataset size. 9Scaling Laws for Pre-training Agents and World Models 
+
+Impact statement 
+
+Limitations. While we show that scaling laws emerge in the infinite data regime for generative pre-training ob-jectives in certain embodied datasets, future work could investigate scaling laws on alternative objectives and further datatsets. We have provided early evidence that this pre-training loss strongly correlates with online performance, but future work could seek further evidence, particularly in real-world robotic experiments. Our observation that scaling laws arise in embodied AI suggests great potential in the direct scaling up of existing techniques. In consequence, it suggests a shift in focus towards data collection – how much data need be collected and with what strategies? Finally, we note our analysis has not factored in additional real-world constraints such as inference time. 
+
+Ethics. Data was provided via a partnership with the Bleed-ing Edge game developer Ninja Theory , who collected a large corpus of human gameplay data. Data collection was covered by an End User License Agreement (EULA) and our use of the data was governed by a data sharing agree-ment with the game studio, and approved with an IRB. This data was recorded between September 2020 and October 2022. To minimize risk to human subjects, personally iden-tifiable information was removed from the data. 
+
+References 
+
+Bahri, Y., Dyer, E., Kaplan, J., Lee, J., and Sharma, U. Ex-plaining neural scaling laws. Proceedings of the National Academy of Sciences , 121(27):e2311878121, 2024. Baker, B., Akkaya, I., Zhokov, P., Huizinga, J., Tang, J., Ecoffet, A., Houghton, B., Sampedro, R., and Clune, J. Video pretraining (vpt): Learning to act by watching unlabeled online videos. Advances in Neural Information Processing Systems , 35:24639–24654, 2022. Bakker, P., Kuniyoshi, Y., et al. Robot see, robot do: An overview of robot imitation. In AISB96 Workshop on Learning in Robots and Animals , volume 5, pp. 3–11, 1996. Berner, C., Brockman, G., Chan, B., Cheung, V., Debiak, P., Dennison, C., Farhi, D., Fischer, Q., Hashme, S., Hesse, C., et al. Dota 2 with large scale deep reinforcement learning. arXiv preprint arXiv:1912.06680 , 2019. Bi, X., Chen, D., Chen, G., Chen, S., Dai, D., Deng, C., Ding, H., Dong, K., Du, Q., Fu, Z., et al. Deepseek llm: Scaling open-source language models with longtermism. 
+
+arXiv preprint arXiv:2401.02954 , 2024. Bousmalis, K., Vezzani, G., Rao, D., Devin, C., Lee, A. X., Bauza, M., Davchev, T., Zhou, Y., Gupta, A., Raju, A., et al. Robocat: A self-improving foundation agent for robotic manipulation. arXiv preprint arXiv:2306.11706 ,2023. Brohan, A., Brown, N., Carbajal, J., Chebotar, Y., Dabis, J., Finn, C., Gopalakrishnan, K., Hausman, K., Herzog, A., Hsu, J., et al. Rt-1: Robotics transformer for real-world control at scale. arXiv preprint arXiv:2212.06817 , 2022. Brohan, A., Brown, N., Carbajal, J., Chebotar, Y., Chen, X., Choromanski, K., Ding, T., Driess, D., Dubey, A., Finn, C., et al. Rt-2: Vision-language-action models transfer web knowledge to robotic control. arXiv preprint arXiv:2307.15818 , 2023. Bruce, J., Dennis, M. D., Edwards, A., Parker-Holder, J., Shi, Y., Hughes, E., Lai, M., Mavalankar, A., Steiger-wald, R., Apps, C., et al. Genie: Generative interactive environments. In Forty-first International Conference on Machine Learning , 2024. Cannav `o, F. and Nunnari, G. On a possible unified scaling law for volcanic eruption durations. Scientific reports , 6 (1):22289, 2016. Espeholt, L., Soyer, H., Munos, R., Simonyan, K., Mnih, V., Ward, T., Doron, Y., Firoiu, V., Harley, T., Dunning, I., et al. Impala: Scalable distributed deep-rl with im-portance weighted actor-learner architectures. In Interna-tional conference on machine learning , pp. 1407–1416. PMLR, 2018. Esser, P., Rombach, R., and Ommer, B. Taming transformers for high-resolution image synthesis. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 12873–12883, 2021. Falcon, W. and The PyTorch Lightning team. PyTorch Light-ning, March 2019. URL https://github.com/ Lightning-AI/lightning .Ha, D. and Schmidhuber, J. World models. arXiv preprint arXiv:1803.10122 , 2018. Hafner, D., Lillicrap, T., Norouzi, M., and Ba, J. Mas-tering atari with discrete world models. arXiv preprint arXiv:2010.02193 , 2020. H ¨agele, A., Bakouch, E., Kosson, A., Allal, L. B., Von Werra, L., and Jaggi, M. Scaling laws and compute-optimal training beyond fixed training durations. arXiv preprint arXiv:2405.18392 , 2024. Henighan, T., Kaplan, J., Katz, M., Chen, M., Hesse, C., Jackson, J., Jun, H., Brown, T. B., Dhariwal, P., Gray, S., et al. Scaling laws for autoregressive generative modeling. 
+
+arXiv preprint arXiv:2010.14701 , 2020. 10 Scaling Laws for Pre-training Agents and World Models 
+
+Hestness, J., Narang, S., Ardalani, N., Diamos, G., Jun, H., Kianinejad, H., Patwary, M. M. A., Yang, Y., and Zhou, Y. Deep learning scaling is predictable, empirically. arXiv preprint arXiv:1712.00409 , 2017. Hilton, J., Tang, J., and Schulman, J. Scaling laws for single-agent reinforcement learning. arXiv preprint arXiv:2301.13442 , 2023. Hoffmann, J., Borgeaud, S., Mensch, A., Buchatskaya, E., Cai, T., Rutherford, E., Casas, D. d. L., Hendricks, L. A., Welbl, J., Clark, A., et al. Training compute-optimal large language models. arXiv preprint arXiv:2203.15556 ,2022. Hu, A., Russell, L., Yeo, H., Murez, Z., Fedoseev, G., Kendall, A., Shotton, J., and Corrado, G. Gaia-1: A generative world model for autonomous driving. arXiv preprint arXiv:2309.17080 , 2023. Hussenot, L., Andrychowicz, M., Vincent, D., Dadashi, R., Raichuk, A., Ramos, S., Momchev, N., Girgin, S., Marinier, R., Stafiniak, L., et al. Hyperparameter selec-tion for imitation learning. In International Conference on Machine Learning , pp. 4511–4522. PMLR, 2021. Hutter, M. Learning curve theory. arXiv preprint arXiv:2102.04074 , 2021. Isik, B., Ponomareva, N., Hazimeh, H., Paparas, D., Vas-silvitskii, S., and Koyejo, S. Scaling laws for down-stream task performance of large language models. arXiv preprint arXiv:2402.04177 , 2024. Kaplan, J., McCandlish, S., Henighan, T., Brown, T. B., Chess, B., Child, R., Gray, S., Radford, A., Wu, J., and Amodei, D. Scaling laws for neural language models. 
+
+arXiv preprint arXiv:2001.08361 , 2020. Karpathy, A. NanoGPT . https://github.com/ karpathy/nanoGPT , 2022. Li, X., Hsu, K., Gu, J., Pertsch, K., Mees, O., Walke, H. R., Fu, C., Lunawat, I., Sieh, I., Kirmani, S., et al. Evaluat-ing real-world robot manipulation policies in simulation. 
+
+arXiv preprint arXiv:2405.05941 , 2024. Liu, Z., Mao, H., Wu, C.-Y., Feichtenhofer, C., Dar-rell, T., and Xie, S. A ConvNet for the 2020s, March 2022. URL http://arxiv.org/abs/ 2201.03545 . arXiv:2201.03545 [cs]. Maloney, A., Roberts, D. A., and Sully, J. A solvable model of neural scaling laws. arXiv preprint arXiv:2210.16859 ,2022. Micheli, V., Alonso, E., and Fleuret, F. Transform-ers are sample-efficient world models. arXiv preprint arXiv:2209.00588 , 2022. Muennighoff, N., Rush, A., Barak, B., Le Scao, T., Tazi, N., Piktus, A., Pyysalo, S., Wolf, T., and Raffel, C. A. Scaling data-constrained language models. Advances in Neural Information Processing Systems , 36, 2024. Nair, S., Rajeswaran, A., Kumar, V., Finn, C., and Gupta, A. R3m: A universal visual representation for robot manipulation. arXiv preprint arXiv:2203.12601 , 2022. Neumann, O. and Gros, C. Scaling laws for a multi-agent reinforcement learning model. arXiv preprint arXiv:2210.00849 , 2022. Padalkar, A., Pooley, A., Jain, A., Bewley, A., Herzog, A., Irpan, A., Khazatsky, A., Rai, A., Singh, A., Brohan, A., et al. Open x-embodiment: Robotic learning datasets and rt-x models. arXiv preprint arXiv:2310.08864 , 2023. Pearce, T. and Song, J. Reconciling kaplan and chinchilla scaling laws. TMLR , 2024. Porian, T., Wortsman, M., Jitsev, J., Schmidt, L., and Carmon, Y. Resolving discrepancies in compute-optimal scaling of language models. arXiv preprint arXiv:2406.19146 , 2024. Raad, M. A., Ahuja, A., Barros, C., Besse, F., Bolt, A., Bolton, A., Brownfield, B., Buttimore, G., Cant, M., Chakera, S., et al. Scaling instructable agents across many simulated worlds. arXiv preprint arXiv:2404.10179 ,2024. Radford, A., Wu, J., Child, R., Luan, D., Amodei, D., Sutskever, I., et al. Language models are unsupervised multitask learners. OpenAI blog , 2019. Reed, S., Zolna, K., Parisotto, E., Colmenarejo, S. G., Novikov, A., Barth-Maron, G., Gimenez, M., Sulsky, Y., Kay, J., Springenberg, J. T., et al. A generalist agent. 
+
+arXiv preprint arXiv:2205.06175 , 2022. Rosenfeld, J. S., Rosenfeld, A., Belinkov, Y., and Shavit, N. A constructive prediction of the generalization error across scales. arXiv preprint arXiv:1909.12673 , 2019. Sardana, N. and Frankle, J. Beyond chinchilla-optimal: Accounting for inference in language model scaling laws. 
+
+arXiv preprint arXiv:2401.00448 , 2023. Sartor, S. and Thompson, N. Neural scaling laws for em-bodied ai. arXiv preprint arXiv:2405.14005 , 2024. Silver, D., Schrittwieser, J., Simonyan, K., Antonoglou, I., Huang, A., Guez, A., Hubert, T., Baker, L., Lai, M., Bolton, A., et al. Mastering the game of go without human knowledge. nature , 550(7676):354–359, 2017. 11 Scaling Laws for Pre-training Agents and World Models 
+
+Su, H., Tian, Z., Shen, X., and Cai, X. Unraveling the mystery of scaling laws: Part i. arXiv preprint arXiv:2403.06563 , 2024. Sutton, R. S. Reinforcement learning: An introduction. ABradford Book , 2018. Tian, K., Jiang, Y., Yuan, Z., Peng, B., and Wang, L. Visual autoregressive modeling: Scalable image generation via next-scale prediction. arXiv preprint arXiv:2404.02905 ,2024. Tuyls, J., Madeka, D., Torkkola, K., Foster, D., Narasimhan, K. R., and Kakade, S. M. Scaling laws for imitation learning in single-agent games. arXiv preprint , 2023. Yang, M., Du, Y., Ghasemipour, K., Tompson, J., Schuur-mans, D., and Abbeel, P. Learning interactive real-world simulators. arXiv preprint arXiv:2310.06114 , 2023. Yu, J., Li, X., Koh, J. Y., Zhang, H., Pang, R., Qin, J., Ku, A., Xu, Y., Baldridge, J., and Wu, Y. Vector-quantized image modeling with improved vqgan. ICLR , 2022. Zhu, Y., Kiros, R., Zemel, R., Salakhutdinov, R., Urta-sun, R., Torralba, A., and Fidler, S. Aligning books and movies: Towards story-like visual explanations by watch-ing movies and reading books. In The IEEE International Conference on Computer Vision (ICCV) , December 2015. 12 Scaling Laws for Pre-training Agents and World Models 
+
+The appendix is organized as follows. • Appendix A contains details on the training of the model configurations, hyperparameters, and a description of the datasets used. • Appendix B contains results from Section 5.3. • Appendix C contains further details on training world models on robotics. • Appendix D contains further results demonstrating the link between pre-training loss and performance. 
+
+A. Scaling Experiments Further Details 
+
+This section provides experimental details for all experiments on the primary Bleeding Edge dataset. 
+
+A.1. Hyperparameters 
+
+We trained two VQGANs from scratch with reconstruction losses. • BE-Small. Based on (Esser et al., 2021), uses dz = 256 , Vo = 4096 , h = w = 128 , with 28M parameters, and a CNN design. It was trained on a single SkyGarden Bleeding Edge map. • BE-Large. Based on (Yu et al., 2022), uses dz = 540 , Vo = 4096 , h = 180 , w = 300 , with 150M parameters, and a vision transformer design. It was trained on all seven Bleeding Edge maps. We selected the numbers of tokens per image based on qualitative assessment of reconstructions. We found that 256 tokens per image was the minimum that still allowed a reconstruction to capture the majority of salient gameplay details. However certain details still were lacking, such as an enemy player’s health bars – hence we also considered a 540 token version that provided a higher quality reconstruction. BC-CNN details. We use h = w = 128 . The 0.6M paramter CNN is similar to that used by (Baker et al., 2022), however it uses ConvNext blocks (Liu et al., 2022). The CNN produces an embedding of size 1024 which is then put through a linear layer to obtain a vector matching the transformer’s embedding dimension. Transformer configurations are given in Table 2. We describe the parameters for the WM-Token architecture. Note that MLP layers are four times the width of embed dim. Model configurations roughly followed the model configurations used in Table A9 of (Hoffmann et al., 2022), where residual stream dimension, number of layers, and number of heads were roughly increased proportionally.    
+
+> Table 2. Transformer configurations. Here Nis listed for the tokenized architectures. Parameter count varies slightly for BC-CNN due to inclusion of the embedding CNN and differing numbers of embedding parameters sizes.
+
+N Layers Num heads Embed dim 
+
+2M 3 3 180 4M 4 4 240 11M 6 6 360 15M 4 4 512 27M 8 8 512 52M 10 10 640 110M 15 12 768 206M 16 16 1024 894M 23 14 1792 13 Scaling Laws for Pre-training Agents and World Models 
+
+A.2. Training Details 
+
+All transformers are trained with a variant of nanoGPT (Karpathy, 2022) using PyTorch Lightning (Falcon & The PyTorch Lightning team, 2019). This section lists key hyperparameters. Note that it was important to find optimization settings that produced the lowest possible loss for a given model size. In general larger models require smaller learning rates. Our approach first optimized the smallest model through a grid sweep, we would then sequentially run a sweep over the next largest model, starting at the smaller model’s optimized learning rate. Table 3-6 provide final settings.    
+
+> Table 3. Hyperparameters for WM-Token with dz=256 tokens per image observation.
+
+N Seq len Context length Tokens per update Learning rate 
+
+15M 10 2,720 522,240 0.0007 27M 10 2,720 522,240 0.0007 52M 10 2,720 522,240 0.0007 110M 10 2,720 522,240 0.0007 206M 10 2,720 522,240 0.00057 894M 10 2,720 2M 0.00028    
+
+> Table 4. Hyperparameters for WM-Token with dz=540 tokens per image observation.
+
+N Seq len Context length Tokens per update Learning rate 
+
+4M 10 5,560 533,760 0.005 11M 10 5,560 533,760 0.001 27M 10 5,560 533,760 0.001 52M 10 5,560 533,760 0.001 110M 10 5,560 533,760 0.0005 206M 10 5,560 533,760 0.0005    
+
+> Table 5. Hyperparameters for BC-Token with dz=540 tokens per image observation.
+
+N Seq len Context length Tokens per update Learning rate 
+
+2M 10 5,560 533,760 0.0005 4M 10 5,560 533,760 0.0005 11M 10 5,560 533,760 0.0001 27M 10 5,560 533,760 0.0001  
+
+> Table 6. Hyperparameters for BC-CNN.
+
+N Seq len Context length Items per update Learning rate 
+
+2M 10 10 2560 0.0003 3M 10 10 2560 0.0003 10M 10 10 2560 0.0003 26M 10 10 2560 0.0003 51M 10 10 2560 0.0003 14 Scaling Laws for Pre-training Agents and World Models    
+
+> Figure 11. Example trajectories from a dataset of 8.6 years of human gameplay in the video game Bleeding Edge across 7 maps.
+
+A.3. Dataset Details 
+
+Image observations were stored in MP4 format at 60fps, alongside binary files containing the associated controller actions. A time code extracted from the game was stored for each frame, to ensure actions and frames remained in sync at training time. The 7 Maps dataset comprised 60,986 matches, yielding 530,713 individual player trajectories (each around 9 minutes), totaling 27.89 TiB on disk. This amounted to around 8.6 years of gameplay. After downsampling to 10Hz (the frequency models are trained on), this equated to 1.63B frames. This was then divided into training / validation / test sets by dividing the matches with an 80:10:10 split. Our filtered Sky Garden dataset used the same 80:10:10 split and 10Hz downsampling, but focused on just one map, yielding 71,940 individual player trajectories, or 355.5M frames (around 1.12 years of game play). For discretizing the controller actions, while the buttons are natively discrete, we discretize the x and y values of the left and right joysticks into eleven buckets. A.3.1. I NFINITE DATA REGIME ALLOWED FLOP S
+
+We wish to study scaling in the infinite data regime, where training loss is not significantly effected by models repeatedly training on the same datapoints which can lead to overfitting effects. This section calculates the number of training tokens allowed for each model family trained in this work. Viewing Figure 1 alongside these numbers confirms that models remain in the infinite data regime for all our experiments. 
+
+WM-Token-540, BC-Token-540. We trained on the 7 maps dataset, with 1.63B observation-action pairs. Models used the tokenized architecture with the large VQGAN, so each observation-action pair creates 540 + 16 = 556 transformer inputs, for a total of 1.63B ×556 = 906 B training tokens. (Muennighoff et al., 2024) observe that tokens may be reused up to four times with negligible departure from the infinite data regime. This produces 3.6T tokens. For a 200M parameter model the compute allowed by the infinite data regime is C = 6 N D = 6 × 200 M × 3.6T = 4 .3 × 10 21 FLOPs. 
+
+WM-Token-256. This is trained on the Sky Garden dataset, with 355M observation-action pairs. Each pair is split into 
+
+256 + 16 = 272 tokens, for 97B training tokens, or 97B ×4 = 386 B effective tokens. For a 200M parameter model the compute allowed by the ‘infinite data regime’ is C = 6 N D = 6 × 200 M × 386 B = 4 .6 × 10 20 FLOPs. 15 Scaling Laws for Pre-training Agents and World Models 
+
+BC-CNN. Trained on 7 maps dataset, but now with one token per observation-action pair, this creates a possible 1.63 B × 4 = 6.52 B effective tokens. A 50M parameter model uses C = 6 N D = 6 × 50 M × 6.52 B = 2 .0 × 10 18 FLOPs. 
+
+B. Further Analysis Details 
+
+Experimental results supporting Section 5.3. 10 12 10 13 10 14 10 15 
+
+FLOPs 
+
+2 × 10 0
+
+3 × 10 0
+
+> Loss
+> 8.64k params
+> 0.05M params
+> 0.1M params
+> 0.27M params
+> 0.63M params
+> Parametric fit
+
+10 12 10 13 10 14 10 15 
+
+FLOPs 
+
+10 4
+
+10 5
+
+> Optimal parameters
+> Best model given FLOPs
+> Power law, a=0.66
+
+10 12 10 13 10 14 10 15 
+
+FLOPs 
+
+10 3
+
+> Optimal tokens
+> Best model given FLOPs
+> Power law, b=0.34
+
+Figure 12. Relating to Section 5.3, character-level (low compression). Utilising the frontier fit (middle and right) we derive the power law coefficient for Noptimal as 0.66 and Doptimal as 0.34 .10 14 10 15 10 16 
+
+FLOPs 
+
+4 × 10 0
+
+5 × 10 0
+
+6 × 10 0
+
+> Loss
+> 0.81M params
+> 1.66M params
+> 2.11M params
+> 3.28M params
+> 4.64M params
+> Parametric fit
+
+10 14 10 15 
+
+FLOPs 
+
+10 6
+
+6 × 10 5
+
+2 × 10 6
+
+3 × 10 6
+
+4 × 10 6
+
+> Optimal parameters
+> Best model given FLOPs
+> Power law, a=0.44
+
+10 14 10 15 
+
+FLOPs 
+
+10 3
+
+> Optimal tokens
+> Best model given FLOPs
+> Power law, b=0.56
+
+Figure 13. Relating to Section 5.3, GPT-2 tokenizer (high compression). Utilising the frontier fit (middle and right) we derive the power law coefficient for Noptimal as 0.44 and Doptimal as 0.56 , an increase from 0.66 in Figure 12 found when utilising a lower compression character-level tokenizer. 
+
+16 Scaling Laws for Pre-training Agents and World Models 
+
+C. World Modeling for Robotics Experimental Details 
+
+This section provides experimental details for WM experiments on the secondary RT-1 dataset. 
+
+C.1. Dataset 
+
+We resized the RT-1 dataset to 128x128 pixels per image. For action labels, we take the 3D world_vector coordinates, combined with the 1D gripper_closedness_action vector, to make an action vector with four dimensions. All are in the range -1 to 1, and these are discretized into 500 evenly spaced buckets. 
+
+C.2. VQVAEs 
+
+We trained a set of five VQVAEs using the implementation from https://github.com/nadavbh12/VQ-VAE . We set zo ∈ [16 , 36 , 64 , 100 , 256] and Vo = 4096 , training each VQVAE for 40,000 updates on batches of 128. Reconstructions are visualized in Figure 14.         
+
+> Figure 14. VQVAE reconstructions on the RT-1 dataset for differing numbers of tokens per observation, zo∈[16 ,36 ,64 ,100 ,256] .
+
+C.3. Transformer training details 
+
+Table 7 provides training details for the model sizes tested. Figure 15 shows one example set of training curves per VQVAE.  
+
+> Table 7. Hyperparameters for WM-Token in RT-1 experiments.
+
+N Seq len Context length Tokens per update Learning rate 
+
+0.08M 2 2(zo + 4) 34,000 0.01 0.2M 2 2(zo + 4) 34,000 0.005 0.28M 2 2(zo + 4) 34,000 0.004 0.54M 2 2(zo + 4) 34,000 0.0027 0.99M 2 2(zo + 4) 34,000 0.002 17 Scaling Laws for Pre-training Agents and World Models 
+
+zo = 16 , Noptimal ∝ C0.56 , Noptimal ∝ D0.44 10 13 10 14 10 15 
+
+FLOPs 
+
+2 × 10 0
+
+3 × 10 0
+
+4 × 10 0
+
+> Loss
+
+0.08M params 
+
+0.2M params 
+
+0.28M params 
+
+0.54M params 
+
+0.99M params 
+
+Efficient frontier 
+
+Parametric fit 10 13 10 14 
+
+FLOPs 
+
+10 5
+
+10 6
+
+> Optimal parameters
+
+Best model given FLOPs 
+
+Power law, a=0.56 10 13 10 14 
+
+FLOPs 
+
+10 3
+
+> Optimal tokens
+
+Best model given FLOPs 
+
+Power law, b=0.44 
+
+zo = 36 , Noptimal ∝ C0.60 , Noptimal ∝ D0.40 10 13 10 14 10 15 
+
+FLOPs 
+
+2 × 10 0
+
+3 × 10 0
+
+4 × 10 0
+
+> Loss
+
+0.08M params 
+
+0.2M params 
+
+0.28M params 
+
+0.54M params 
+
+0.99M params 
+
+Efficient frontier 
+
+Parametric fit 10 13 10 14 
+
+FLOPs 
+
+10 5
+
+10 6
+
+> Optimal parameters
+
+Best model given FLOPs 
+
+Power law, a=0.60 10 13 10 14 
+
+FLOPs 
+
+10 3
+
+> Optimal tokens
+
+Best model given FLOPs 
+
+Power law, b=0.40 
+
+zo = 64 , Noptimal ∝ C0.61 , Noptimal ∝ D0.39 10 13 10 14 10 15 
+
+FLOPs 
+
+2 × 10 0
+
+3 × 10 0
+
+4 × 10 0
+
+> Loss
+
+0.08M params 
+
+0.2M params 
+
+0.28M params 
+
+0.54M params 
+
+0.99M params 
+
+Efficient frontier 
+
+Parametric fit 10 13 10 14 
+
+FLOPs 
+
+10 5
+
+10 6
+
+> Optimal parameters
+
+Best model given FLOPs 
+
+Power law, a=0.61 10 13 10 14 
+
+FLOPs 
+
+10 3
+
+> Optimal tokens
+
+Best model given FLOPs 
+
+Power law, b=0.39 
+
+zo = 100 , Noptimal ∝ C0.60 , Noptimal ∝ D0.40 10 13 10 14 10 15 
+
+FLOPs 
+
+3 × 10 0
+
+4 × 10 0
+
+> Loss
+
+0.08M params 
+
+0.2M params 
+
+0.28M params 
+
+0.54M params 
+
+0.99M params 
+
+Efficient frontier 
+
+Parametric fit 10 13 10 14 
+
+FLOPs 
+
+10 5
+
+10 6
+
+> Optimal parameters
+
+Best model given FLOPs 
+
+Power law, a=0.60 10 13 10 14 
+
+FLOPs 
+
+10 3
+
+> Optimal tokens
+
+Best model given FLOPs 
+
+Power law, b=0.40 
+
+zo = 256 , Noptimal ∝ C0.65 , Noptimal ∝ D0.34 10 13 10 14 10 15 
+
+FLOPs 
+
+3 × 10 0
+
+4 × 10 0
+
+5 × 10 0
+
+> Loss
+
+0.08M params 
+
+0.2M params 
+
+0.28M params 
+
+0.54M params 
+
+0.99M params 
+
+Efficient frontier 
+
+Parametric fit 10 13 10 14 
+
+FLOPs 
+
+10 5
+
+10 6
+
+> Optimal parameters
+
+Best model given FLOPs 
+
+Power law, a=0.65 10 13 10 14 
+
+FLOPs 
+
+10 3
+
+6 × 10 2
+
+2 × 10 3
+
+3 × 10 3
+
+> Optimal tokens
+
+Best model given FLOPs 
+
+Power law, b=0.34 
+
+Figure 15. RT-1 experiments. Note that the optimal parameter coefficient increases with the number of tokens per observation. 
+
+18 Scaling Laws for Pre-training Agents and World Models 10 2
+
+Tokens per image 
+
+0.56 
+
+0.58 
+
+0.60 
+
+0.62 
+
+0.64 
+
+> a where  N Ca
+> Efficient frontier method
+> Fit
+
+Figure 16. RT-1 experiments. Optimal parameter coefficient vs. number of tokens per observation, with three repeated runs per VQVAE. Correlation, R = 0 .61 .
+
+19 Scaling Laws for Pre-training Agents and World Models 
+
+D. Pre-training Loss vs. World Modeling Metrics 
+
+This section presents evidence for pre-training loss correlating with WM performance. We use metrics commonly used to assess the quality of the world models (Yang et al., 2023), originally developed in the video generation literature. Conditioned on an initial real frame and a sequence of real actions, we compare the observations generated by a world model, with the real sequence of observations, measuring FVD and LPIPS. Specifically, we generate 1024 videos each of 10 seconds. We perform this for various checkpoints on each size in our WM-Token-256 set of models. This allows a plot of the checkpoint pre-training loss vs video generation metric to be assessed. Figure 17 shows results. We find correlations of 0.77, 0.83 for LPIPS and FVD respectively. Two early checkpoints from the 894M model are the only significant anomalies to trend of metrics improving with loss. This evidences the strong relationship between pre-training loss and world model quality. 2.25 2.50 2.75 3.00 3.25 3.50 3.75 4.00 
+
+> Loss
+> 10 1
+> 10 2
+> 10 3
+> FVD
+> Size: 15M
+> Size: 27M
+> Size: 52M
+> Size: 110M
+> Size: 206M
+> Size: 894M
+
+Correlation, R = 0 .83 2.25 2.50 2.75 3.00 3.25 3.50 3.75 4.00    
+
+> Loss
+> 4 × 10 1
+> 5 × 10 1
+> LPIPS
+> Size: 15M
+> Size: 27M
+> Size: 52M
+> Size: 110M
+> Size: 206M
+> Size: 894M
+
+Correlation, R = 0 .77 
+
+Figure 17. Our experiments suggest pre-training loss is a good proxy for generation quality of the world model, here FVD and LPIPS. 
+
+20 Scaling Laws for Pre-training Agents and World Models 
+
+E. Additional Small Scale BC-Token Experiment 
+
+This section presents an additional set of results for a set of BC-Token models of smaller parameter counts. The aim had been to enable coefficient estimation using the frontier fit method. However, even at smaller sizes we did not observe the overlap required for this method – presented in Figure 18. Using the parametric fit method we observed, Noptimal ∝ C0.35 ,
+
+Noptimal ∝ D0.65 , which are in line with the coefficients of larger BC-Token-540 models in Table 1. 
+
+Figure 18. Additional set of results for a set of BC-Token models of smaller parameter counts. Using parametric fit method we observed, 
+
+Noptimal ∝ C0.35 , Noptimal ∝ D0.65 .
+
+Table 8. Transformer configurations for small scale BC-Token experiments. 
+
+N Layers Num heads Embed dim 
+
+147k 1 1 25 310k 2 2 46 647k 2 2 86 1M 2 2 120 
+
+Table 9. Hyperparameters for BC-Token with dz =540 tokens per image observation. Small-scale experiment. 
+
+N Seq len Context length Tokens per update Learning rate 
+
+147k 10 5,560 500,000 0.0005 310k 10 5,560 500,000 0.0005 647k 10 5,560 500,000 0.0005 1M 10 5,560 500,000 0.0005 21

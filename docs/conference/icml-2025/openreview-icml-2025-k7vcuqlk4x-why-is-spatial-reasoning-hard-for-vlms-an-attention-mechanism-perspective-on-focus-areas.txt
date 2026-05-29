@@ -1,0 +1,2413 @@
+Title: Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas
+
+URL Source: https://openreview.net/pdf?id=k7vcuqLK4X
+
+Number of Pages: 23
+
+Markdown Content:
+## Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+Shiqi Chen 1 Tongyao Zhu 2 Ruochen Zhou 1 Jinghan Zhang 3 Siyang Gao 1 Juan Carlos Niebles 4 5 Mor Geva 6
+
+Junxian He 3 Jiajun Wu 4 Manling Li 4 7 
+
+Abstract 
+
+Large Vision Language Models (VLMs) have long struggled with spatial reasoning tasks. Sur-prisingly, even simple spatial reasoning tasks, such as recognizing “under” or “behind” relation-ships between only two objects, pose significant challenges for current VLMs. In this work, we study the spatial reasoning challenge from the lens of mechanistic interpretability , diving into the model’s internal states to examine the inter-actions between image and text tokens. By trac-ing attention distribution over the image through-out intermediate layers, we observe that success-ful spatial reasoning correlates strongly with the model’s ability to align its attention distribution with actual object locations, particularly differ-ing between familiar and unfamiliar spatial rela-tionships. Motivated by these findings, we pro-pose A DAPT VIS based on inference-time confi-dence scores to sharpen the attention on highly relevant regions when confident, while smooth-ing and broadening the attention window to con-sider a wider context when confidence is lower. This training-free decoding method shows sig-nificant improvement (e.g., up to a 50 absolute point improvement) on spatial reasoning bench-marks such as WhatsUp and VSR with negligi-ble cost. We make code and data publicly avail-able for research purposes at https://github. com/shiqichen17/AdaptVis .               
+
+> 1City University of Hong Kong 2National University of Singapore 3Hong Kong University of Science and Technol-ogy 4Stanford University 5Salesforce Research 6Tel Aviv Uni-versity 7Northwestern University. Correspondence to: Shiqi Chen <schen438-c@my.cityu.edu.hk >,Manling Li <man-ling.li@northwestern.edu >.
+> Proceedings of the 42 nd International Conference on Machine Learning , Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s).
+
+1. Introduction 
+
+Despite rapid advancements in Large Vision-Language Mod-els (VLMs), a significant deficiency persists, i.e., their strug-gle with vision-centric abilities (Gao et al., 2023; Kamath et al., 2023; Tong et al., 2024a; Chen et al., 2024a). This lim-itation is particularly notable in spatial reasoning given the simplicity of the task. Spatial reasoning involves inferring basic relationships between just two objects, such as “ left ”, “right ”, “ above ”, “ below ”, “ behind ”, or “ front ”, as shown in Figure 1. For example, given the image with a book “ behind ”the candle in Figure 1, VLMs describe the book as being “left ” of the candle. This error is not an isolated incident but a frequent, recurring pattern, highlighting a fundamental bottleneck in how VLMs process visual-centric information. Recent studies have probed the limitations of vision en-coders like CLIP (Radford et al., 2021) in VLMs’ vision processing (Tong et al., 2024b;a), yet a critical aspect re-mains underexplored: how vision and text tokens interact within the model’s internal states to construct geometric understanding. Specifically, the model must simultaneously identify objects while maintaining awareness of the broader geometric context, grasping the complex geometric relation-ships between them. This geometric understanding funda-mentally manifests in how models distribute their attention across the visual tokens. This unique challenge makes spa-tial reasoning an ideal lens for studying how VLMs inter-nally process vision-centric information. Therefore, we open up the black box of VLMs and examine their internal mechanisms through a suite of carefully de-signed spatial reasoning tasks. By looking into the attention distributions, we can systematically investigate how vision and text tokens interact to construct, or fail to construct, ac-curate spatial understanding. Our investigation begins with a key observation: despite image tokens comprising around 90% of the input sequence, they receive only about 10% of the model’s attention. This significant imbalance sug-gests that textual priors often overshadow visual evidence, explaining VLMs’ struggles with vision-centric tasks. While a straightforward solution might seem to be simply increasing attention to visual tokens, our deeper analysis re-1Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas Where is the book in 
+
+> relation to the candle?
+> Where is the cat in
+> relation to the person?
+
+VLM 
+
+> (e.g.LLaVA)
+> Smoother !
+> Look at
+> other patches!
+> Behind Unfamiliar!
+> Familiar!
+> Sharper!
+> Look
+> more closely!
+> Left
+> Confidence: 0.27
+> Above
+> Confidence: 0.38
+> Attention on image
+> Right
+> Attention on image
+
+Figure 1. The framework of A DAPT VIS . We adaptively intervene in the temperature of the attention logits of the image tokens. Top: For generations with low confidence, we smoothen the attention distribution to broaden the context window for better concentration on the correct objects. Bottom: For generations with high confidence, we trust the attention pattern and sharpen the attention distribution. 
+
+veals that the challenge lies not just in the quantity but in the geometric distribution of visual attention. By examining at-tention patterns across model layers, we observe a pattern in VLMs’ attention behavior: their initial attention distribution often reflects learned priors that may or may not align with the actual geometric distribution over the image. This led us to a key insight: rather than accepting this initial distri-bution, we can dynamically intervene based on the model’s self-belief, which is measured using its confidence score. As shown in Figure 1, when the model exhibits high confidence in its spatial reasoning (as measured by generation probabil-ity), we sharpen its attention distribution to strengthen the focus on its current beliefs. Conversely, when confidence is low, we smooth the attention distribution to encourage the exploration of alternative spatial relationships. We call this confidence-guided attention intervention A D-
+
+> PAT
+
+VIS , which proves remarkably effective while remaining computationally efficient. In experiments across diverse spa-tial reasoning benchmarks, including WhatsUp (Kamath et al., 2023) and VSR (Liu et al., 2023), our approach achieves substantial improvements of up to 50% points. These gains are observed across both synthetic datasets with clean backgrounds and real-world images with complex scenes, demonstrating the robustness of our method. Our visualization of this intervention strategy reveals its underlying mechanism: by dynamically adjusting attention patterns, we effectively guide the model’s focus to better align with actual object locations and their spatial relation-ships. This suggests that successful spatial reasoning isn’t just about having the right attention mechanism, but about having the right confidence to know when to trust or ques-tion one’s initial spatial understanding. 
+
+2. Preliminary on VLMs 
+
+We center our analysis on investigating how VLMs dis-tribute their attention over image tokens, aiming to gain deeper insights into spatial reasoning errors. 
+
+Notation Large VLMs like LLaVA (Liu et al., 2024a) con-sist of three components: a visual encoder like CLIP (Rad-ford et al., 2021), a pretrained language model, and a pro-jector to connect them. The visual encoder functions as a perception tool to “see” the image, while the image in-formation is processed through a projector to be mapped into the token space. The LLM is often based on the trans-former architecture, consisting of L layers stacked together. Each layer consists of two major components: a Multi-Head Attention (MHA) module, followed by a feed-forward network. For each layer l, given the input X ∈ Rn×d
+
+(where n is the number of tokens and d is the embedding dimension), MHA performs self-attention in each head 
+
+Nh. The output is a concatenation of all heads’ outputs: MHA (l)(X) = Concat 
+
+
+
+N (l, 1)  
+
+> h
+
+, . . . , N (l,H )
+
+> h
+
+
+
+Wo. Here 
+
+H is the number of heads; Nh is the output of head Nh:
+
+N (l,h ) 
+
+> h
+
+= Softmax (A(l,h ))V = Softmax 
+
+ QK ⊤
+
+√dh
+
++ M
+
+
+
+V ,
+
+(1) 
+
+where attention logits A(l,h ) are computed via 
+
+Q = XW qh , K = XW kh , V = XW vh , and 
+
+Wqh , Wkh , Wvh ∈ Rd×dh are learnable projection matrix of the head Nh. A causal mask Mij = 0 if i ≥ j, and −∞ 
+
+otherwise, prevents tokens from attending to future tokens. 2Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas Dataset Num of Options Num of Objects Source 4 options 6 options 1 object 2 objects Syn Real                   
+
+> Cont A ✓✓✓
+> Cont B ✓✓✓
+> VG one ✓✓✓
+> VG two ✓✓✓
+> COCO one ✓✓✓
+> COCO two ✓✓✓<image>
+> USER: Where is the
+> beer bottle in relation
+> to the armchair?
+> Answer with left, right,
+> on or under.
+> <image>
+> USER: Where is the
+> beer bottle in relation
+> to the armchair?
+> Answer with left, right,
+> on, under, front or
+> behind.
+> For Controlled and COCO
+> 4 Option
+> For VG
+> 6 option
+
+Figure 2. Left: Choice counts, object counts and data source by subset in WhatsUp (“Syn” = Synthetic, “Real” = Real). Right: Evaluation prompts we use in evaluation. 89.3% 10.7% Image A (en *on 
+
+> Text A (en *on
+
+11.7% 88.3%  Image Length 
+
+> Text Length
+
+Controlled_A Dataset 
+
+Figure 3. A striking imbalance between visual and textual atten-tion: while image tokens take approximately 90% of the sequence length, they receive only about 10% of the model’s total attention on WhatsUp. This severe disparity in attention allocation suggests that VLMs fundamentally underutilize visual information. 
+
+3. Text-Vision Attention Interactions 
+
+We hypothesize that the failure on spatial reasoning stems from issues in the text-vision interactions, specifically due to insufficient attention being allocated to the image tokens. In this section, we systematically investigate the impact of the absolute values of attention logits on the image tokens during spatial reasoning. 
+
+Experiment settings. We select a widely-used spatial rea-soning benchmark WhatsUp (Kamath et al., 2023) since it contains both synthetic data and realistic data. The synthetic data ( Controlled Image ) features clean backgrounds with two objects, as shown in the upper example of Figure 1. It comprises two subsets: Controlled A , with one large object (e.g., table) and one small object (e.g., cup), and Con-trolled B with two small objects (e.g., book and plate). We use Cont A and Cont B as abbreviations in the paper. The realistic data, as shown in the lower image of Figure 1, con-tains complex backgrounds with multiple objects, sourced from MS COCO (Lin et al., 2014) and Visual Genome (Kr-ishna et al., 2017) (referred to as COCO and VG later, both datasets include captions involving either one object or two objects, referred to as COCO one , COCO two , VG one ,and VG two , respectively). Compared with realistic im-ages, the synthetic images enables clearer observation of VLMs’s inner workings with just two objects. Each image is paired with a ground truth caption describing the spatial relationship of two objects. We reformat the original ⟨image , caption ⟩ setting into a gen-erative question-answering setting ⟨image , question , spa-tial label ⟩, enabling evaluation of generative models like VLMs and tracing of internal states. Questions are gener-ated using GPT-4 (OpenAI, 2024). Details in each subset with prompts are shown at Figure 2. This QA task asks about positions in a multiple-choice format, with possible answers like “left”, “right”, “on” and so on. For evaluation, we use LLaVA-1.5 (Liu et al., 2024a) throughout the analysis part (Section 3 and 4). For metric, we apply accuracy of exact match as the primary metric. To maintain consistency in the label space across datasets, we use a four-option setting ⟨left , right , on , under ⟩ for the Con-trolled Image and COCO subsets, and a six-option setting 
+
+⟨left , right , on , under , behind , front ⟩ for the VG as it con-tains additional spatial annotations. To better understand model performance, we analyze the 
+
+label distribution , which provides insight into the represen-tation of different spatial relationships within the dataset. In 
+
+Controlled Image , labels are uniformly distributed across categories (e.g., equal number of samples for “ left ”, “ right ”, “on ”, “ under ”). Another interesting feature of this dataset, which contributes to our choice to use it, is its contrastive setting. Controlled Image includes pairs of images with same objects in both “ left ” and “ right ” positions, and sets of same objects exhibiting “ left ”, “ right ”, “ on ”, and “ under ” re-lationships. It enables us further assess model performance using pair accuracy and set accuracy , requiring correct identification of all relationships within a pair or set, de-fined by Kamath et al. (2023). It provides a comprehensive evaluation of spatial relationships. 
+
+3.1. VLMs allocate sparse attention to the image. 
+
+We analyze how output tokens attend to image tokens by extracting the attention logits across layers, and present the following key findings: The sum of attention scores to the image tokens is significantly lower than that to all the 3Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas Accuracy     
+
+> 55
+> 61
+> 67
+> 73
+> 79
+> 1.0 1.2 1.5 2.0 70.9 70.9 71.6 73.1 56.7 58.2 59.1 60.3
+> Cont_A Cont_B
+
+Acc for adding a 8en 9on    
+
+> 20
+> 40
+> 60
+> 80
+> 100
+> Cont_A Cont_B COCO_one COCO_two 57 53.4 74 60.7 59.9 55 81.9 80.6 52.2 49.2 52.7 70 56.6 53.5 57 71.3
+> A(en *on-Max
+> A(en *on-Mean
+> Con fi dence
+> acc performance
+
+The AUROC of Image A 8en 9on and Con fi dence     
+
+> Figure 4. Accuracy of adding image attention in logit space
+> (which corresponds to the multiplication operation in probabil-ity space; the x-axis of the figure represents the multiplication coefficient). A DAPT VIS , on the other hand, utilizes multiplication in logit space.
+
+input text tokens, despite the considerably higher number of image tokens. In Figure 3, we focus on the attention scores from the first generated token and sum the attention allocated to the image tokens in average for all attention heads in all samples in WhatsUp. The results reveal that image tokens receive substantially less attention, with text tokens receiving approximately nine times more. Although the image sequence has a length of 576 , compared to the text sequence, which typically ranges from 30 to 40 tokens in our short question-answering setting, the model predominantly focuses on text when generating outputs. That is, image information is sparsely processed by the language model. 
+
+3.2. Is the answer more accurate if the model sees the image more? Not really. 
+
+Building on earlier observations, a natural question arises: since the attention scores assigned to the image are relatively low compared to those for text, could increasing attention to the image improve the factual accuracy of the model? To investigate this, we conduct an experiment by increasing the attention weights allocated to the entire image by the final answer, intervening by adding positive constants to the image attention logits across all patches , as described by Zhang et al. (2023). In Figure 4, we observe that adding a constant weight uniformly across all image tokens does not improve performance on spatial reasoning tasks. This observation motivates us to explore more intelligent ways to focus on key visual features. 
+
+4. Visual Attention Distribution 
+
+Our analysis of text-image attention imbalance has estab-lished that visual information is underutilized, yet simply increasing attention to image tokens fails to improve spa-tial reasoning. We hypothesize that the way attention is geometrically distributed across the image is the key factor. To investigate this hypothesis, we examine how attention patterns are distributed spatially by mapping the 576 image tokens in LLaVA 1.5 to their 24 × 24 corresponding image patches. This mapping enables us to trace and visualize the geometric flow of attention, showing us not just where the model looks, but how its attention aligns with actual spatial relationships in the image. 
+
+4.1. The model automatically focuses on the relevant entity when correctly answering questions. 
+
+To determine whether the model’s factual inaccuracy is linked to incorrect attention behavior, we use YOLO (Red-mon, 2016) to annotate the relevant entities in the images. We compare the overlap between these annotations with the model’s attention distribution and evaluate whether the overlap can serve as a metric to predict the correctness of the model’s answers. We transform the bounding box coor-dinates obtained from YOLO annotations into image-sized index vectors, where each element is either 0 or 1. We then normalize these index vectors along with the attention logits of the image attended by the final answer of certain layers corresponding to the image patches. We then calculate the cosine similarity of the two tensors for each sample, and analyze this metric on Cont A. As shown in Figure 6, the AUROC - a metric used to measure how well a model can distinguish between positive and negative classes.) is no-tably high in the middle layers, with results for all the layers at Figure 7. Additional results on other subsets are presented in the Appendix E.5. To investigate why the middle layers exhibit the most no-ticeable patterns, we analyze both attention scores and the overlap AUROC (Figure 7) to track information flow and assess each layer’s contribution. In the initial layers, atten-tion to the input image is the highest compared to other layers. However, the AUROC in these layers is very low, suggesting that the model primarily captures a broad, global understanding rather than focusing on local details. In con-trast, the middle layers play a more critical role in refining the model’s understanding. As shown on the right side of Figure 7, the overlap AUROC peaks in these layers, indi-cating that they are where the model begins to effectively “process” image information. Additionally, the left side of Figure 7 shows a modest peak in attention logits, further supporting our hypothesis. We further separately examine the attention patterns for cor-rectly and incorrectly answered questions. Our observations reveal that hallucinations frequently occur due to two types of attention failures: (1) insufficient attention to the correct object, and (2) misplaced attention on irrelevant objects in the image. Figure 5 illustrates these findings. More exam-ples are shown in Appendix E.5. In the two correct examples on the left, the attention scores are well-aligned with the referenced entities, with sufficient focus. On the other hand, 4Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+Figure 5. Attention visualization examples from the WhatsUp Dataset. The left two examples are answered correctly, while the right two are incorrect. For correctly answered questions, the attention scores are precisely focused on the core entities mentioned. In contrast, incorrect answers show attention scores distributed to irrelevant image regions. The visualizations use attention from the 17th layer, and the title in each image is an abbreviation of “Where is A in relation to B”. 0.8 1.0 1.2 1.4 1.6 1.8 2.0 2.2           
+
+> 0
+> 10
+> 20
+> 30
+> 40
+> AUROC = 0.948
+> Overlap_AUROC_layer17
+> label 0
+> label 1
+> 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0 2.2 2.4
+> 0
+> 10
+> 20
+> 30
+> 40
+> AUROC = 0.933
+> Overlap_AUROC_layer18
+> label 0
+> label 1
+
+Figure 6. The figure illustrates the AUROC of the overlap between YOLO annotations and the attention patterns for Cont A at the 17th and 18th layers. This high AUROC suggests that attention could be an effective metric for detecting answer correctness .more AUROC results are shown at Appendix D. 
+
+Figure 7. Left: Variance of image token attention across layers in Cont A, showing sparse attention on image, consistent with other subsets (Appendix E.4). Right: The Overlap’s AUROC value across the layer of Cont A. We can infer from the two figures that the model “sees” the image information in the early layers and “processes” this information in the intermediate layers. So for case study in our paper, we use the intermediate layers. 
+
+the two incorrect examples on the right demonstrate how the model incorrectly assigns attention, effectively “seeing” the wrong parts of the image. While these examples high-light the qualitative differences in attention patterns, they do not provide a quantitative metric that aligns with our goal–developing a method to detect the reliability of inter-nal states and enable intervention. Therefore, the primary challenge lies in devising effective strategies to adjust the attention scores intelligently, given that we have no prior information about the scores until a single inference run generates the attention map. 
+
+4.2. S CALING VIS : Temperature scaling to image attention distribution 
+
+Our observations from Section 4.1 reveal that the model often misallocates attention logits within images, leading to errors in spatial reasoning. To address this, we aim to enhance the model’s ability to focus on key visual features, improving its capacity to accurately ground spatial rela-tionships, especially in complex or ambiguous scenarios. To achieve this, we propose a straightforward yet effec-tive method that dynamically adjusts the image attention by modifying the temperature of the attention distributions. By adjusting the temperature, we can make the distribution either sharper or smoother, effectively altering the attention distribution. For instance, if the attention pattern is mostly correct but lacks precision, we want to sharpens it. Con-versely, if the attention pattern is fundamentally incorrect, we want to smooth it out, allowing us to explore alternative regions. This intervention targets the attention of the final input token (at the n-th position) to the image tokens. 
+
+A(l,h ) 
+
+> n,j
+
+=
+
+(
+
+αA(l,h ) 
+
+> n,j
+
+if j ∈ I 
+
+A(l,h ) 
+
+> n,j
+
+otherwise (2) where I represents the indices of all image tokens. In essence, we change the temperature of image attention dis-tribution by multiplying a coefficient α. From a physical perspective, multiplying by a coefficient greater than 1 en-courages the model to focus more on the original distribu-tion, while multiplying by a coefficient less than 1 makes the 5Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+distribution more dispersed. In experiments, we uniformly apply this coefficient to all H heads across all L layers to avoid the need for extensive hyperparameter search. 
+
+Experiment Setting. We select two widely-used bench-marks on evaluating the model’s ability on spatial reason-ing WhatsUp (Kamath et al., 2023) (introduced in Sec-tion 2), and VSR (Liu et al., 2023), which contains con-tains 1223 image-caption pairs with boolean labels. The original VSR is designed in ⟨image , caption ⟩ format to eval-uate encoder models without generation capabilities. To adapt it for our purposes, we utilize GPT-4o to generate questions for the VSR dataset. For evaluation, we report both accuracy and F1 scores. A small validation set is al-located for each subset to optimize the temperature based on validation performance, and the final test is conducted on the test set. For both methods, the hyperparameter α
+
+is selected from [0 .5, 0.8, 1.2, 1.5.2.0] . For baselines, we adopt DoLa (Chuang et al., 2023) as a baseline, which em-ploys the inner knowledge to calibrate the output logits by substracting the logits from intermediate layers. Addition-ally, we incorporate VCD (Leng et al., 2024), which is a contrastive decoding method to contrast the logits before and after eliminating the image. 
+
+Results. Our results for ScalingVis are presented in Ta-ble 1 and Table 2. By controlling the distribution of at-tention weights, spatial reasoning performance improves significantly, with gains of up to 37.2 absolute points. An interesting pattern emerges: a temperature below one tends to enhance performance on synthetic data in most cases (3 out of 4), while a temperature above one benefits real image datasets across all cases. Table 1 indicates that for 
+
+synthetic data , smoothing the image attention logits im-proves performance. Conversely, for real image datasets 
+
+(COCO and VG), the optimal temperature is consistently above one, demonstrating that a sharper attention distribu-tion helps the language model discern relationships more effectively. Intuitively, we believe that for familiar datasets and spatial relationships, the model requires a sharper at-tention distribution, as it is generally correct but may not be sufficiently precise. In contrast, for unfamiliar datasets and spatial relationships, a smoother attention distribution is necessary to explore a broader context. 
+
+5. Adaptively Intervening the Attention Distribution by Model Confidence 
+
+The findings from our study raise a key question: Since sharpening the distribution can sometimes improve perfor-mance while smoothing it is preferable in other cases, can we establish a metric to determine when to make these ad-justments adaptively? In other words, can we establish a metric on whether we want to strengthen the original distri-bution or break it? In this section, we explore how to assess when to trust image attention. 
+
+5.1. Self-confidence reflects whether we can trust the model’s image attention distribution. 
+
+We aim to determine whether an internal metric can indicate when the model’s attention pattern is trustworthy. Since we found that attention patterns often correlate with the cor-rectness of the model’s generation as shown in § 4.1, we reframe our goal as identifying a metric that helps assess the reliability of its outputs. Following previous findings of using generation logits as a measure of self-confidence to as-sess generation reliability (Kadavath et al., 2022; Chen et al., 2024b), we also adopt the logits of generated outputs to rep-resent the model’s self-confidence. Specifically, we adjust the coefficient for all four spatial relationships in Cont A and Cont B, as these subsets provide a uniform distribution of different spatial relationships. We then examine how confidence and accuracy change in response and present the results in Figure 8. First, when the coefficient is 1.0 (base-line), the model exhibits significantly higher confidence for “left” and “right” relationships while showing notably lower confidence for other relationship types. This suggests that the model is more familiar with “left” and “right” re-lationships and less familiar with others. Furthermore, the accuracy of predicting “left” and “right” relationships is also higher, indicating the positive correlation between the model’s self-confidence and its correctness in predicting them. Second, we observe distinct response patterns across different coefficients. Increasing the coefficient improves performance for “left” and “right” relationships, whereas decreasing it enhances performance for other relationships. This suggests that the model responds differently based on the relationship type, necessitating tailored intervention methods. These insights motivate us to propose an adaptive intervention strategy. 
+
+5.2. A DAPT VIS 
+
+Motivated by our observation that attention misallocation leads to spatial reasoning errors and that the model exhibits varying self-confidence and correctness across different spatial relationships, we propose A DAPT VIS : Confidence-aware temperature scaling, an extension of S CALING VIS :
+
+Confidence-Based Attention Intervention. 
+
+Recall from Section 5.1 that we observe two distinct pat-terns in the model’s factuality behavior: (1) synthetic data presents more unfamiliar cases than the real data, and (2) VLMs could express uncertainty through confidence scores. These insights motivate using confidence scores as a metric for adaptive intervention in the model’s internal states. Our intuition is straightforward: when confidence is low, suggest-ing that the attention pattern may be unreliable, we smooth 6Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas Model has higher con fi dence for left  / right than on  / under  / front  / behind,  indicating that the model is more familiar with certain relationships. For low-con fi dence relationships: coef fi cient <1  improves performance. For high-con fi dence relationships: coef fi cient >1  improves performance. 
+
+Figure 8. 1 : Change in accuracy with the coefficient on Cont A. 2 : Change in confidence with the coefficient on Cont A. 3 : Change in accuracy with the coefficient on Cont B. 4 : Change in confidence with the coefficient on Cont B. The baseline (greedy decode) corresponds to a coefficient of 1. 
+
+Figure 9. Attention scores on the patches before and after our intervention in the 17th layer for the images in synthetic datasets Cont A and Cont B. We employ a “ smoothing ” intervention method to expand the context length of the model’s focused area. From the figure, it is evident that the model’s focused position undergoes significant changes after our intervention. 
+
+Figure 10. Attention scores on the patches before and after our intervention in the 17th layer for the images in real datasets COCO and VG. We utilize a “ sharpening ” intervention method to enhance the original attention pattern. The highlighted areas remain largely consistent, with our method serving to reinforce the focus rather than significantly altering it. 
+
+the attention distribution. This encourages the model to explore a broader range of image regions, increasing the likelihood of focusing on the correct patches. Conversely, when confidence is high and attention is dispersed across 7Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+A(l,h ) 
+
+> n,j
+
+=
+
+(
+
+α1A(l,h ) 
+
+> n,j
+
+if j ∈ I 
+
+A(l,h ) 
+
+> n,j
+
+otherwise , if C < β (3a) A(l,h ) 
+
+> n,j
+
+=
+
+(
+
+α2A(l,h ) 
+
+> n,j
+
+if j ∈ I 
+
+A(l,h ) 
+
+> n,j
+
+otherwise , if C > β (3b) 
+
+Model Controlled A Controlled B COCO one COCO two VG one VG two Acc P Acc S Acc Acc P Acc S Acc Acc Acc Acc Acc 
+
+LLaVA-1.5 60.3 40.6 0.0 73.1 41.6 3.7 53.0 58.2 35.9 40.8 +VCD 61.5 ↑1.2 39.4 ↓1.2 0.0 73.4 ↑0.3 42.2 ↑0.6 3.7 53.3 ↑0.3 58.2 35.8 ↓0.1 42.5 ↑1.7 
+
++DoLa 61.2 ↑0.9 41.6 ↑1.0 0.0 73.4 ↑0.3 42.2 ↑0.6 3.7 53.7 ↑0.7 57.5 ↓0.7 36.2 ↑0.3 42.1 ↑1.3 
+
++S CALING VIS 64.5 ↑4.2 40.6 0.0 75.2 ↑2.1 44.6 ↑3.0 9.8 ↑6.1 53.6 ↑0.6 59.4 ↑1.2 42.7 ↑6.8 48.1 ↑7.3 
+
++A DAPT VIS 84.9 ↑24.6 61.2 ↑20.6 30.3 ↑30.3 83.8 ↑10.7 55.7 ↑14.1 18.3 ↑14.6 53.6 ↑0.6 59.9 ↑1.7 42.7 ↑6.8 48.1 ↑7.3 
+
+LLaVA-1.6 48.2 37.6 0.0 63.0 39.1 3.7 59.7 41.8 31.6 7.3 +VCD 61.8 ↑13.6 41.8 ↑4.2 10.9 ↑10.9 65.4 ↑2.4 41.6 ↑2.5 7.3 ↑3.6 60.6 ↑0.9 44.9 ↑3.1 33.8 ↑2.2 11.6 ↑4.3 
+
++DoLa 48.2 37.6 0.0 62.7 ↓0.3 39.1 3.7 59.7 41.5 ↓0.3 31.5 ↓0.1 7.3 +S CALING VIS 97.0 ↑48.8 76.4 ↑38.8 54.5 ↑54.5 73.4 ↑10.4 48.9 ↑9.8 15.9 ↑12.2 63.1 ↑3.4 47.7 ↑5.9 38.2 ↑6.6 14.6 ↑7.3 
+
++A DAPT VIS 98.2 ↑50.0 78.8 ↑41.2 57.0 ↑57.0 73.4 ↑10.4 48.9 ↑9.8 15.9 ↑12.2 63.1 ↑3.4 47.7 ↑5.9 35.2 ↑3.6 17.2 ↑9.9 
+
+Table 1. Results on Controlled A, Controlled B, COCO, and VG datasets. (Metrics in ×10 −2). Best-performing method per model and dataset are highlighted in bold. P Acc and S Acc represents Pair Acc and Set Acc. 
+
+Model VSR Exact Match F1 Score 
+
+LLaVA-1.5 62.4 51.3 +VCD 62.4 50.6 ↓0.7 
+
++DoLa 62.8 ↑0.4 53.2 ↑1.9 
+
++S CALING VIS 64.9 ↑2.5 62.5 ↑11.2 
+
++A DAPT VIS 65.0 ↑2.6 62.5 ↑11.2 
+
+LLaVA-1.6 58.8 29.4 +VCD 58.8 29.4 +DoLa 59.3 ↑0.5 31.2 ↑1.8 
+
++S CALING VIS 59.1 ↑0.3 30.6 ↑1.2 
+
++A DAPT VIS 62.7 ↑3.9 39.3 ↑9.9 
+
+Table 2. Results on the VSR dataset (Exact Match and F1) (Metrics in ×10 −2). Best-performing method per model and dataset are highlighted in bold. 
+
+the image, we sharpen the distribution to concentrate on key objects more effectively. Specifically, we apply the targeted intervention to the attention of the last input token (at the 
+
+n-th position) directed toward the image tokens as shown in Equation 3a, 3b. Overall, we use a large α > 1 when the Confidence C is large, which sharpens the attention distribu-tion, and the relevant objects are paid more attention to; we use a small α < 1 when the confidence C is small, which mitigates the model’s excessive concentration on certain image tokens and makes the overall attention distribution smoother across the image. 
+
+Evaluation Settings. We employ the same setting with SCALING VIS as shown in 4.2. For hyperparameter choice and robustness, we show in Appendix E.3. 
+
+Results Our main results are presented in Table 1 and Table 2. By controlling the distribution of attention weights, we observe a significant improvement in spatial reason-ing ability, with gains of up to 50 absolute points . In most cases, A DAPT VIS achieves the best performance, par-ticularly for synthetic datasets like Cont A and Cont B, as shown in Table 1, where it significantly outperforms the generalized method S CALING VIS . These findings suggest that model performance varies considerably with the label distribution of the dataset, and smoothing the distribution (by applying a coefficient smaller than 1) enhances perfor-mance. For real-image datasets like COCO and VG, the adaptive method performs slightly better than the gener-alized approach, indicating the model’s robustness across different label distributions. Example cases are shown in Figure 9 and Figure 10, illustrating the smooth effect and focus effect ( α < 1 and α > 1), respectively. It is important to note that the LLaVA-series models are trained on the COCO dataset, which makes them highly confident and fa-miliar with COCO and VG image types. Hence trusting the model’s self-belief and sharpening image attention improves performance. Notably, for datasets containing more unfa-miliar images, the adaptive setting proves to be significantly more effective. 
+
+6. Related Work 
+
+The first line of related work focuses on the attention pat-terns in LMs. Some studies on attention patterns in LLMs reveal biased attention across context windows, such as ineffective use of the middle context (Liu et al., 2024b) and initial token attention sinks (Xiao et al., 2023). While some approaches use fine-tuning to overcome these bi-ases (An et al., 2024), training-free methods like input-8Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+adaptive calibration (Yu et al., 2024b) and position-specific interventions (Yu et al., 2024a) offer efficient alternatives. PASTA (Zhang et al., 2023), a closely related method, em-phasizes attention on selected segments for specific heads; we extend this to VLMs without manual segment specifica-tion or multiple validation runs. Our work is also related to failure analysis in VLMs, VLMs have been shown to halluci-nate more in multi-object recognition tasks and rely on spu-rious correlations (Chen et al., 2024c), with systematic vi-sual limitations highlighted from a CLIP perspective (Tong et al., 2024b). Our work also connects to the decoding strategies for reducing hallucinations decoding strategies to mitigate hallucinations include contrastive decoding focus-ing on image regions (Leng et al., 2024), preference tuning through data augmentation (Wang et al., 2024), and meth-ods leveraging contrastive layers for enhanced knowledge extraction (Chuang et al., 2023), as well as activation-based optimal answer identification (Chen et al., 2024b). 
+
+7. Conclusion and Future Work 
+
+Our research uncovers the inner working mechanism of VLMs during spatial reasoning, which is a critical limita-tion in VLMs and constrains their practical utility when requiring geometric understanding of visual scenes. We identify critical insights through an in-depth study of atten-tion behaviors across layers: 1) VLMs allocate surprisingly insufficient attention to image tokens; 2) the location of attention on image tokens is more crucial than quantity; and 3) generation confidence serves as a reliable indicator of its familiarity with the image and the correctness of its attention pattern. Based on these findings, we propose A DAPT VIS , a novel decoding method that dynamically adjusts attention distribution, significantly improving spatial reasoning per-formance. Future research could focus on further exploring the mechanism of VLMs on complicated geometric struc-ture understanding, such as long-horizon spatial reasoning, and investigate other spatial reasoning bottlenecks. 
+
+Impact Statement 
+
+Our research into the spatial reasoning capabilities of Large Vision Language Models (VLMs) has significant implica-tions across various domains of artificial intelligence and its real-world applications. First and foremost, our find-ings highlight a critical limitation in current VLMs: while they excel at object recognition, they struggle with basic spatial relationships. This gap between recognition and spa-tial understanding has far-reaching consequences for the practical deployment of VLMs in scenarios requiring ge-ometric comprehension of visual scenes. Industries such as robotics, autonomous navigation, and assistive technolo-gies for the visually impaired are particularly affected. For instance, a robot that can identify objects but cannot un-derstand their spatial relationships may struggle with tasks like picking and placing items or navigating complex envi-ronments. Similarly, autonomous vehicles might face chal-lenges in interpreting traffic scenarios accurately, potentially compromising safety. Our development of A DAPT VIS , a novel decoding method that dynamically adjusts attention distribution based on the model’s confidence, represents a significant step forward. By enhancing VLMs’ performance on spatial reasoning tasks, A DAPT VIS could unlock new possibilities in various fields. In healthcare, improved spatial reasoning could lead to more accurate interpretation of medical imaging, poten-tially improving diagnostic accuracy. In augmented reality applications, better spatial understanding could enable more immersive and interactive experiences. For assistive tech-nologies, enhanced spatial reasoning could provide more accurate and useful descriptions of environments to visually impaired individuals, significantly improving their indepen-dence and quality of life. Looking ahead, our work opens up new avenues for research in AI and cognitive science. The exploration of mechanism interpretability in VLMs, particularly for complex geometric structures and long-horizon spatial reasoning, could provide insights into how artificial systems process and understand spatial information. This could not only advance AI capa-bilities but also contribute to our understanding of human spatial cognition. Additionally, investigating the role of training data memorization in spatial reasoning bottlenecks could lead to more efficient and effective training methods for future AI models. In conclusion, our research not only addresses a fundamen-tal limitation in current VLMs but also paves the way for more versatile and capable AI systems. As we continue to advance VLMs’ capabilities in visually-driven tasks re-quiring nuanced spatial understanding, we have the poten-tial to significantly impact various sectors of society, from healthcare and assistive technologies to urban planning and environmental monitoring. The future research ahead in this field is both exciting and challenging, requiring ongoing collaboration between researchers, ethicists, and policymak-ers to ensure that these advancements benefit society as a whole. 
+
+Acknowledgments 
+
+We thank Min Lin, Miao Xiong, Guangtao Zeng, Teng Xiao, Wei Liu, Chi Han, Chang Ma, Zhengxuan Wu, and Junlong Li for their valuable discussions and insights. 9Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+References 
+
+An, S., Ma, Z., Lin, Z., Zheng, N., and Lou, J.-G. Make your llm fully utilize the context, 2024. Antol, S., Agrawal, A., Lu, J., Mitchell, M., Batra, D., Zitnick, C. L., and Parikh, D. Vqa: Visual question answering. In Proceedings of the IEEE international conference on computer vision , pp. 2425–2433, 2015. Berglund, L., Tong, M., Kaufmann, M., Balesni, M., Stick-land, A. C., Korbak, T., and Evans, O. The reversal curse: Llms trained on” a is b” fail to learn” b is a”. arXiv preprint arXiv:2309.12288 , 2023. Chen, B., Xu, Z., Kirmani, S., Ichter, B., Sadigh, D., Guibas, L., and Xia, F. Spatialvlm: Endowing vision-language models with spatial reasoning capabilities. In Proceed-ings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 14455–14465, 2024a. Chen, S., Xiong, M., Liu, J., Wu, Z., Xiao, T., Gao, S., and He, J. In-context sharpness as alerts: An inner repre-sentation perspective for hallucination mitigation. arXiv preprint arXiv:2403.01548 , 2024b. Chen, X., Ma, Z., Zhang, X., Xu, S., Qian, S., Yang, J., Fouhey, D. F., and Chai, J. Multi-object hallucina-tion in vision-language models, 2024c. URL https: //arxiv.org/abs/2407.06192 .Chuang, Y.-S., Xie, Y., Luo, H., Kim, Y., Glass, J., and He, P. Dola: Decoding by contrasting layers improves factuality in large language models. arXiv preprint arXiv:2309.03883 , 2023. Gao, J., Pi, R., Zhang, J., Ye, J., Zhong, W., Wang, Y., Hong, L., Han, J., Xu, H., Li, Z., et al. G-llava: Solving geo-metric problem with multi-modal large language model. 
+
+arXiv preprint arXiv:2312.11370 , 2023. Hudson, D. A. and Manning, C. D. Gqa: A new dataset for real-world visual reasoning and compositional question answering. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pp. 6700– 6709, 2019. Kadavath, S., Conerly, T., Askell, A., Henighan, T., Drain, D., Perez, E., Schiefer, N., Hatfield-Dodds, Z., DasSarma, N., Tran-Johnson, E., et al. Language models (mostly) know what they know. arXiv preprint arXiv:2207.05221 ,2022. Kamath, A., Hessel, J., and Chang, K.-W. What’s “up” with vision-language models? investigating their strug-gle with spatial reasoning. In Bouamor, H., Pino, J., and Bali, K. (eds.), Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing ,pp. 9161–9175, Singapore, December 2023. Association for Computational Linguistics. doi: 10.18653/v1/2023. emnlp-main.568. URL https://aclanthology. org/2023.emnlp-main.568 .Krishna, R., Zhu, Y., Groth, O., Johnson, J., Hata, K., Kravitz, J., Chen, S., Kalantidis, Y., Li, L.-J., Shamma, D. A., et al. Visual genome: Connecting language and vision using crowdsourced dense image annotations. In-ternational journal of computer vision , 123:32–73, 2017. Leng, S., Zhang, H., Chen, G., Li, X., Lu, S., Miao, C., and Bing, L. Mitigating object hallucinations in large vision-language models through visual contrastive decoding. In 
+
+Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , pp. 13872–13882, 2024. Li, Y., Du, Y., Zhou, K., Wang, J., Zhao, W. X., and Wen, J.-R. Evaluating object hallucination in large vision-language models. In Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing ,pp. 292–305, 2023. Lin, T.-Y., Maire, M., Belongie, S., Hays, J., Perona, P., Ra-manan, D., Doll ´ar, P., and Zitnick, C. L. Microsoft coco: Common objects in context. In Computer Vision–ECCV 2014: 13th European Conference, Zurich, Switzerland, September 6-12, 2014, Proceedings, Part V 13 , pp. 740– 755. Springer, 2014. Liu, F., Emerson, G. E. T., and Collier, N. Visual spatial reasoning. Transactions of the Association for Computa-tional Linguistics , 2023. Liu, H., Li, C., Wu, Q., and Lee, Y. J. Visual instruction tun-ing. Advances in neural information processing systems ,36, 2024a. Liu, N. F., Lin, K., Hewitt, J., Paranjape, A., Bevilacqua, M., Petroni, F., and Liang, P. Lost in the middle: How language models use long contexts. Transactions of the Association for Computational Linguistics , 12:157–173, 2024b. doi: 10.1162/tacl a 00638. URL https:// aclanthology.org/2024.tacl-1.9 .OpenAI. .https://cdn.openai.com/papers/ GPTV_System_Card.pdf , 2024. [Accessed 06-08-2024]. Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al. Learning transferable visual models from natural language supervision. In International conference on machine learning , pp. 8748–8763. PMLR, 2021. Redmon, J. You only look once: Unified, real-time object detection. In Proceedings of the IEEE conference on computer vision and pattern recognition , 2016. 10 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+Singh, A., Natarajan, V., Shah, M., Jiang, Y., Chen, X., Batra, D., Parikh, D., and Rohrbach, M. Towards vqa models that can read. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition ,pp. 8317–8326, 2019. Tong, S., Brown, E., Wu, P., Woo, S., Middepogu, M., Akula, S. C., Yang, J., Yang, S., Iyer, A., Pan, X., et al. Cambrian-1: A fully open, vision-centric exploration of multimodal llms. arXiv preprint arXiv:2406.16860 ,2024a. Tong, S., Liu, Z., Zhai, Y., Ma, Y., LeCun, Y., and Xie, S. Eyes wide shut? exploring the visual shortcomings of multimodal llms. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,pp. 9568–9578, 2024b. Wang, F., Zhou, W., Huang, J. Y., Xu, N., Zhang, S., Poon, H., and Chen, M. mdpo: Conditional preference opti-mization for multimodal large language models, 2024. URL https://arxiv.org/abs/2406.11839 .Xiao, G., Tian, Y., Chen, B., Han, S., and Lewis, M. Ef-ficient streaming language models with attention sinks. 
+
+arXiv , 2023. Xiong, M., Hu, Z., Lu, X., LI, Y., Fu, J., He, J., and Hooi, B. Can llms express their uncertainty? an empirical evaluation of confidence elicitation in llms. In The Twelfth International Conference on Learning Representations ,2024. Yu, Y., Jiang, H., Luo, X., Wu, Q., Lin, C.-Y., Li, D., Yang, Y., Huang, Y., and Qiu, L. Mitigate position bias in large language models via scaling a single dimension. arXiv preprint arXiv:2406.02536 , 2024a. Yu, Z., Wang, Z., Fu, Y., Shi, H., Shaikh, K., and Lin, Y. C. Unveiling and harnessing hidden attention sinks: Enhanc-ing large language models without training through atten-tion calibration. In International Conference on Machine Learning , 2024b. Zhang, Q., Singh, C., Liu, L., Liu, X., Yu, B., Gao, J., and Zhao, T. Tell your model where to attend: Post-hoc attention steering for llms, 2023. 11 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+# Appendix 
+
+A. Limitations 
+
+Firstly, our methods, S CALING VIS and A DAPT VIS , specifi-cally address model-related spatial hallucinations and self-alignment issues but are not designed to handle errors out-side the language model’s capabilities, such as the CLIP fail-ures discussed by Tong et al. (2024b). Secondly, A DAPT VIS 
+
+relies on distribution-based confidence to adaptively set the confidence threshold β, we also observe that the optimal α
+
+and β is different across different distributions and prompts. This dependence on a validation set for tuning poses a limi-tation on its applicability. 
+
+B. Additional Results on Qwen2-VL 
+
+We further expand our intervention experiments and atten-tion analysis on Qwen2-VL, the results on spatial reasoning benchmarks and on general benchmarks are shown in Ta-ble 3 and Table 4 respectively. We intervene in the image attention distribution using our temperature-scaling method, showing consistent improvements below, particularly in challenging cases. For example, on VG two object, where the baseline performance is the lowest among all bench-marks, our method yields a significant improvement of 10+ absolute points. The gains observed on Qwen2-VL further demonstrate the generalizability of our approach. Exper-iments on more benchmarks shown in Table 4, including POPE (Li et al., 2023), GQA (Hudson & Manning, 2019), and TextVQA (Singh et al., 2019), which proves that at-tention intervention can maintain the performance on more general tasks without hurting the performance. Compared with spatial reasoning tasks, general QA tasks achieve rela-tively smaller improvement. A possible reason is that such tasks are less sensitive to the geometric structured distribu-tion of image attention. For example, given a question like “Is there a dog in this picture?”, the model only needs to detect the presence of an object, and is therefore less likely to suffer from misallocated attention across spatial regions. We also conduct an attention analysis to verify whether our observation of the sparsity of image attention compared to textual tokens still holds. The results are shown in Ta-ble 6. Here we calculate the Qwen2-VL’s attention scores below (average attention logits for single text/image tokens respectively), which matches our previous claim that image receives much less attention than the text tokens is generally valid for VLMs. And we also conduct the uncertainty ex-periments to show our uncertainty conclusion is also valid. The results are shown in Table 5. It shows that spatial rela-
+
+Benchmark Qwen2-VL +Attention Intervention 
+
+VSR 78.96 81.60 ↑2.64 
+
+Coco one obj 76.64 78.03 ↑1.39 
+
+Coco two obj 75.28 76.52 ↑1.24 
+
+VG one obj 74.89 75.11 ↑0.22 
+
+VG two obj 56.22 66.95 ↑10.73 
+
+Controlled A 98.18 98.18 ↑0.00 
+
+Controlled B 91.73 92.97 ↑1.24  
+
+> Table 3. Performance of Qwen2-VL before and after the attention intervention on spatial reasoning benchmarks.
+
+Benchmark Qwen2-VL +Attention Intervention 
+
+POPE-Overall 86.32 87.09 ↑0.77 
+
+POPE-P 86.47 87.29 ↑0.82 
+
+POPE-A 85.07 85.80 ↑0.73 
+
+POPE-R 87.46 88.22 ↑0.76 
+
+GQA 62.09 62.17 ↑0.08 
+
+TextVQA 79.18 79.26 ↑0.08  
+
+> Table 4. Performance of Qwen2-VL before and after the attention intervention on additional general benchmarks.
+
+tionships with lower confidence, such as “Left” and “Under” tend to exhibit lower accuracy when compared to those with higher confidence, like “On” and “Right”. After the intervention with AdaptVis, certain spatial relationships like “Left” show improved performance, accompanied by an in-crease in confidence. This demonstrates a pattern consistent with our observations for LLaVA, as depicted in Figure 8 in Section §4. 
+
+Benchmark Text attention Image attention 
+
+Controlled A 1.57e-02 7.59e-05 Controlled B 1.58e-02 7.69e-05 Coco one obj 1.77e-02 4.48e-04 Coco two obj 1.65e-02 3.50e-04 VG one obj 1.54e-02 4.75e-04 VG two obj 1.42e-02 4.19e-04  
+
+> Table 5. Average text-token and image-token attention scores across benchmarks.
+
+C. Related work 
+
+C.1. Attention Patterns in Language Models 
+
+Ongoing research has shown how large language models (LLMs) exhibit biased attention across different parts of the context window. Liu et al. (2024b) find that LLMs fail to effectively utilize the information in the middle of a long context window. Meanwhile, Xiao et al. (2023) reveals an 12 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas       
+
+> Figure 11. Examples of our fixed case for α= 0 .5.
+> Figure 12. Examples of our fixed case for α= 2 .0.
+
+attention sink at the initial tokens of the input. Besides fine-tuning methods to overcome such biases (An et al., 2024), some training-free methods have been proposed with the benefit of their efficiency. Yu et al. (2024b) proposes to use input-adaptive calibration to adjust the attention scores, while Yu et al. (2024a) intervenes in position-specific hidden dimensions to alleviate the lost-in-the-middle phenomenon. A closely related work to ours is PASTA (Zhang et al., 2023), which emphasizes the attention scores of specific text segments for selected attention heads. We further de-velop this motivation on vision language models. Moreover, our method does not require a manual specification of the emphasized segment or multiple validation runs to identify effective attention heads. 
+
+C.2. Failure Analysis of Vision-Language Models 
+
+Our work relates to research on hallucination detection in VLMs. Chen et al. (2024c) examine multi-object recogni-tion tasks, observing that VLMs exhibit more hallucinations when dealing with multiple objects compared to single-object scenarios. They also note a similar phenomenon to our findings: the distribution of tested object classes impacts hallucination behaviors, suggesting that VLMs may rely on shortcuts and spurious correlations. Additionally, Tong et al. (2024b) analyze VLM failures from a CLIP perspective, highlighting that the visual capabilities of recent VLMs still face systematic shortcomings, partly due to CLIP’s limita-tions in specific cases. 
+
+C.3. Decoding Strategies for Reducing Hallucinations 
+
+This work is also connected to various decoding and tun-ing strategies aimed at mitigating hallucinations in VLMs. Leng et al. (2024) introduce a contrastive decoding method that emphasizes certain image regions. Wang et al. (2024) propose a data-augmentation approach to create image-intensive datasets, followed by preference tuning on this enhanced data. Furthermore, knowledge extraction tech-niques such as the method proposed by Chuang et al. (2023) improve decoding by leveraging contrastive layers for better knowledge extraction. Similarly, Activation De-coding (Chen et al., 2024b) identifies optimal answers as those with the highest activation values within the context. 
+
+D. Case Study 
+
+We show more case we could fix in Figure 11 and Figure 12. We show more attention examples at Figure 13. 13 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+Benchmark Qwen2-VL Unc. +ScalingVis Unc. Qwen2-VL Acc +ScalingVis Acc 
+
+Left 0.4408 0.4474 70.11 74.71 On 0.5758 0.5668 100 100 Right 0.5982 0.5911 100 100 Under 0.5554 0.5418 98.82 98.82   
+
+> Table 6. Uncertainty ( Unc. ) and accuracy ( Acc ) on spatial-relation categories before and after applying ScalingVis.
+> Figure 13. Examples of image attentions. Visualization here is adopted from 14th layers’ attention scores.
+
+E. Further Analysis 
+
+E.1. Other metrics to distinguish the distributions 
+
+We further explored additional metrics to distinguish the distributions and uncover their underlying characteristics during our preliminary experiments. Specifically, we exam-ined entropy and skewness. Entropy was selected based on the hypothesis that parameter differences may stem from the familiarity of attention patterns in real images, which are generally correct, versus synthetic images, where these patterns tend to be incorrect. We posit that the model can ex-press ”familiarity” through certain metrics derived from the attention scores. For example, we hypothesize that the en-tropy of attention will be lower when the model encounters familiar cases. 
+
+E
+
+
+
+A(l,h )
+
+> n,j
+
+
+
+= −
+
+> t
+
+X
+
+> j=1
+
+˜P
+
+
+
+A(l,h )
+
+> n,j
+
+
+
+log ˜P
+
+
+
+A(l,h )
+
+> n,j
+
+
+
+(4) In Equation 4, A(l,h ) 
+
+> n,j
+
+denotes the attention scores assigned by the h-th head in the l-th layer to the j-th token in se-quence n. The summation runs over j = 1 to t, where t
+
+is the total number of tokens considered for this attention distribution. ˜P
+
+
+
+A(l,h )
+
+> n,j
+
+
+
+is the normalized probability dis-tribution of these attention scores. This entropy measures the uncertainty or spread of the attention distribution across tokens. Our experimental results in Figure 14 indicate that the at-tention distribution is heavily influenced by image features. Notably, the attention distribution is more concentrated in synthetic datasets than in real images. We attribute this to the fact that synthetic images tend to contain fewer ob-jects, resulting in a sharper attention distribution. However, this concentration does not provide a reliable metric for measuring familiarity. Another possible metric is skewness. Another possible metric is skewness, which captures the asymmetry of the attention distribution. A high skewness suggests that the attention is predominantly focused on a few positions, while a low skewness indicates a more balanced spread across multiple regions. By examining skewness, we aim to identify whether the attention is being dispropor-tionately allocated to particular image features, which could provide additional insights into how familiarity is expressed through attention patterns. We could see from Figure 14 that Synthetic datasets show a higher skewness. However, it also related with the object distribution, which is not the real factor behinds the difference. 
+
+S
+
+
+
+A(l,h )
+
+> n,j
+
+
+
+=
+
+Ptj=1 (j − μA)3 ˜Pj
+
+σ3
+
+> A
+
+(5) The summation runs over j = 1 to t, where t is the num-ber of tokens considered in the attention distribution. ˜Pj
+
+denotes the probability assigned to the j-th token in the nor-malized attention distribution. The term μA is the mean of the distribution, and σA is its standard deviation. The skew-ness is calculated as the normalized third central moment, which measures the asymmetry of the attention distribution: a positive value indicates a distribution skewed to the right, while a negative value indicates a skew to the left. 14 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 1.5 1.0 0.5 0.0 0.5 1.0 1.5         
+
+> Skewness
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> 1.2
+> Density
+> Skewness Distribution Comparison Across Datasets
+> COCO_QA_one_obj
+> COCO_QA_two_obj
+> Controlled_Images_A
+> Controlled_Images_B 0.00 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00
+> Entropy
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> Density
+> Entropy Distribution Comparison Across Datasets
+> COCO_QA_one_obj
+> COCO_QA_two_obj
+> Controlled_Images_A
+> Controlled_Images_B
+
+Figure 14. The skewness and entropy distribution comparison between different subsets. Here we use Controlled Images and COCO datasets due to all of them are in four option label space, which enables us to eliminate the influence of prompts. 
+
+Dataset Relationship Types Right Left On Under Behind Front 
+
+Controlled A 92 92 130 92 0 0Controlled B 102 102 0 0 102 102 VG one 376 392 192 198 2 0VG two 137 127 3 0 5 19 COCO one 564 576 363 744 0 0COCO two 129 150 86 75 0 0
+
+Table 7. Gold Answer Frequency by Spatial Relation in WhatsUp dataset. 
+
+E.2. Label statistics in WhatsUp 
+
+We present the golden labels’ distribution in Table 7. We can see that the label space in synthetic datasets is balanced while the real image datasets are imbalanced with more “left” and “right” and fewer other relationships. 
+
+Label Distribution and the familarity To determine whether to focus more on the image or the text, we begin by analyzing existing datasets to identify potential patterns. Our investigation starts with an examination of label dis-tributions across different subsets of the WhatsUp dataset. As shown in Figure 15, there is a clear label imbalance in the real-image datasets including COCO two and VG two, i.e., only a small portion of the samples have the relation of “ behind ” and “ front ”. This may be attributed to anno-tation bias, where left and right are easier to distinguish than other relationships. In contrast, the synthetic datasets, Cont A and Cont B, which are carefully curated, display more balanced label distributions. Additionally, we evalu-ate the model’s confidence scores across the ground-truth spatial relations by following the approach of Kadavath et al. (2022), where the probability of the generated output is used to compute confidence. Figure 15 reveals that the model is unconfident with specific spatial relationships ,such as “ on ” and “ under ” where it shows a colder color at Figure 15, while demonstrating higher confidence in recognizing more common relationships where it shows a warmer color. In Figure 8, we observe that the model performs better on confident relationships. For example, in the first figure on the left, when the coefficient is set to 1 (the baseline), the ground-truth samples labeled as “left” and 
+
+“right” exhibit significantly better performance compared to those labeled as “on” and “under” . This observation aligns with our intuition that model tends to be more confident when it performs well and less confident when it struggles. This finding is also consistent with previous work showing that models can convey their uncertainty through confidence scores (Kadavath et al., 2022; Xiong et al., 2024). Moti-vated by this, we propose using confidence as a metric to gauge the model’s familiarity with spatial relationships in images. 
+
+Statistics of LLaVA training data To categorize six different spatial relationships, we check whether specific phrases appear in the “llava v1 5 mix665k.json”, which is the training data of LLaVA and increment corresponding counters. For the left relationship, we look for phrases such as “left side,” “left of,” “to the left,” and “on the left.” Simi-larly, for the right relationship, we detect phrases like “right side,” “right of,” “to the right,” and “on the right.” The on 
+
+relationship is identified using phrases like “are on the,” “is on the,” and “located on,” ensuring they do not co-occur with “on the left” or “on the right.” To detect the under rela-tionship, we check for phrases such as “under the,” “beneath the,” or “below the.” For the front relationship, we look for phrases like “are in front of,” “is in front of,” and “locate in front of.” Finally, the behind relationship is identified by the phrase “behind the.”. The results are shown in Figure 15. 
+
+E.3. Hyperparameter choice and robustness For A DAPT VIS We use the same hyperparameters for SCALING VIS as in Section 4.2. For A DAPT VIS , we op-timize α1, α2, and β using the validation set (randomly sampled 20% from each subset) from each distribution. We also show our robustness for hyperparameters in Appendix. Notably, we find that model performance is robust across a range of these hyperparameters, generalizing effectively to 15 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas Left-right relationships are more 
+
+> prevalent in real data than other types The training data for LLaVA primarily consists
+> of real data and also contains biases Model are more con fi dent
+> with the “left” and “right”
+
+Figure 15. 1 : Label distributions across subsets capturing relationships between object pairs in WhatsUp. For real datasets like COCO and VG, a severe label imbalance is evident, with “left” and “right” being more common than other relationships. 2 show the statistics in LLaVA training data. We could see imbalance problem still holds. 3 : The model’s average confidence in different golden spatial relationships within these four-option subsets in WhatsUp. “On etc” includes “ on , above , top ”, while “Under etc” includes “ under , below ,
+
+bottom ”. The red heatmap box highlights instances where the model is confident in its generation, while the blue box indicates the opposite. We can observe that for familiar relationships , such as “left” and “right” (highlighted with two red boxes), the model shows higher confidence. 
+
+other subsets within the same distribution (as demonstrated in Table 8). We maintain consistency by using the same range of α values for both methods. For β, we adjust per dataset: for WhatsUP, we select values from [0 .3, 0.65] for LLaVA-1.6 and [0 .2, 0.55] for LLaVA-1.5 with a grid size of 0.05 (this higher range is due to LLaVA-1.6 generally exhibiting higher confidence than LLaVA-1.5); for VSR, we take the mean value of the average confidence scores corresponding to the two labels. 
+
+Out-of-Domain Test of Hyperparameters. We evalu-ated the generalizability of common hyperparameters across datasets. To this end, we applied the same set of four-option prompts to Controlled Images and COCO subsets. Results in Table 8 indicate that A DAPT VIS consistently performs well across all subsets, confirming its generalizability.                                          
+
+> Model Cont A Cont B Coco one Coco two Acc P-Acc S-Acc Acc P-Acc S-Acc Acc Acc
+> LLaVA 60.3 40.6 0.0 73.1 41.6 3.7 53.0 58.2 +Ours 60.3 41.8 ↑1.2 2.4 ↑2.4 76.5 ↑3.4 48.3 ↑6.7 13.5 ↑9.8 53.6 ↑0.6 59.4 ↑1.2
+> Best αα1= 0 .5α2= 1 .2β= 0 .3
+
+Table 8. OOD test results on WhatsUp (Metrics in ×10 −2) for LLaVA1.5. Arrows show growth over baseline. P-Acc and S-Acc are Pair and Set Accuracy. 
+
+E.4. More Attention Analysis The sparcity To determine whether our observation about the sparse attention pattern holds across benchmarks, we examine the attention patterns in other subsets of WhatsUp. Figure 16 presents the attention pattern for Cont B, while 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 
+
+> Layers
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Score
+> Image Attention Logits by Layers
+> Sum of Image's Attention
+> Sum of Text's Attention
+
+Figure 16. The variance of image token’s attention scores through the layers in Cont B benchmark. 
+
+Figure 17. Image attention on COCO and VG dataset. 
+
+Figure 17 illustrates the attention pattern for real images. Consistently, we observe that image attention remains sparse across all subsets. 
+
+AUROC Analysis of attention score and confidence we conduct a calibration experiment using two statistical ap-16 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 1.2  1.5  2.0 70.9 70.9 71.6 56.7 58.2 59.1     
+
+> Cont_A Cont_B
+> r adding a 8en 9on
+> 20
+> 40
+> 60
+> 80
+> 100
+> Cont_A Cont_B COCO_one COCO_two 57 53.4 74 60.7 59.9 55 81.9 80.6 52.2 49.2 52.7 70 56.6 53.5 57 71.3
+> A(en *on-Max
+> A(en *on-Mean
+> Con fi dence
+> acc performance
+> The AUROC of Image A 8en 9on and Con fi dence
+
+Figure 18. AUROC of attention scores in 17th layer relative to model’s confidence. 
+
+proaches. The first approach sums the attention scores as-signed to the image as a metric, while the second extracts the highest attention score among the image tokens. These metrics are then evaluated to assess their effectiveness in distinguishing between correct and incorrect generations. However, as shown in Figure 18, the AUROC score using attention (the yellow and green bar) is consistently lower than the AUROC score of the model’s self-confidence (the yellow bar), which we measure by the probability of the output tokens. Additionally, we observe that the maximum attention score provides better calibration than the average attention score, suggesting that key information aligns more closely with maximal attention values. This suggests that the assumption “ the more attention the model pays to the image, the more accurate the results ” holds only partially true. 
+
+E.5. AUROC anlysis of the overlap between YOLO and the attention scores 
+
+We present the AUROC of the overlap between YOLO an-notations and attention scores on the Controlled A dataset in Figure 19 and Figure 20. The results demonstrate that the AUROC is remarkably high in the middle-to-high layers, indicating that the attention pattern can serve as a reliable metric for detecting factual errors. However, in some cases, this relationship is not as appar-ent, as shown in Figures 21, 22, 23, and 24. In these in-stances, the AUROC remains relatively modest, which can largely be attributed to errors in YOLO’s annotations. We identified four primary error types leading to mismatches between YOLO annotations and actual object instances: Missed Detection, Misclassification, Bounding Box Error, and Ambiguous Refer. These error patterns are illustrated in Figure 25. 17 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 1.4 1.6 1.8 2.0 2.2 2.4 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+AUROC = 0.520 
+
+Overlap_AUROC_layer1 
+
+label 0 
+
+label 1 
+
+0.5 1.0 1.5 2.0 2.5 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.656 
+
+Overlap_AUROC_layer2 
+
+label 0 
+
+label 1 
+
+1.4 1.5 1.6 1.7 1.8 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.622 
+
+Overlap_AUROC_layer3 
+
+label 0 
+
+label 1 
+
+1.5 1.6 1.7 1.8 1.9 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+AUROC = 0.622 
+
+Overlap_AUROC_layer4 
+
+label 0 
+
+label 1 
+
+1.3 1.4 1.5 1.6 1.7 1.8 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+AUROC = 0.720 
+
+Overlap_AUROC_layer5 
+
+label 0 
+
+label 1 
+
+1.4 1.5 1.6 1.7 1.8 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+AUROC = 0.714 
+
+Overlap_AUROC_layer6 
+
+label 0 
+
+label 1 
+
+1.4 1.5 1.6 1.7 1.8 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+AUROC = 0.718 
+
+Overlap_AUROC_layer7 
+
+label 0 
+
+label 1 
+
+1.4 1.5 1.6 1.7 1.8 1.9 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+AUROC = 0.761 
+
+Overlap_AUROC_layer8 
+
+label 0 
+
+label 1 
+
+1.6 1.7 1.8 1.9 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+AUROC = 0.725 
+
+Overlap_AUROC_layer9 
+
+label 0 
+
+label 1 
+
+1.5 1.6 1.7 1.8 1.9 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+AUROC = 0.782 
+
+Overlap_AUROC_layer10 
+
+label 0 
+
+label 1 
+
+1.2 1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+AUROC = 0.792 
+
+Overlap_AUROC_layer11 
+
+label 0 
+
+label 1 
+
+1.6 1.8 2.0 2.2 2.4 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.646 
+
+Overlap_AUROC_layer12 
+
+label 0 
+
+label 1 
+
+1.0 1.2 1.4 1.6 1.8 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.830 
+
+Overlap_AUROC_layer13 
+
+label 0 
+
+label 1 
+
+0.5 1.0 1.5 2.0 2.5 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+AUROC = 0.881 
+
+Overlap_AUROC_layer14 
+
+label 0 
+
+label 1 
+
+0.5 1.0 1.5 2.0 2.5 3.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.929 
+
+Overlap_AUROC_layer15 
+
+label 0 
+
+label 1 
+
+0.0 0.5 1.0 1.5 2.0 2.5 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.928 
+
+Overlap_AUROC_layer16 
+
+label 0 
+
+label 1 
+
+0.8 1.0 1.2 1.5 1.8 2.0 2.3 
+
+0
+
+10 
+
+20 
+
+30 
+
+40 
+
+AUROC = 0.948 
+
+Overlap_AUROC_layer17 
+
+label 0 
+
+label 1 
+
+0.5 1.0 1.5 2.0 2.5 
+
+0
+
+10 
+
+20 
+
+30 
+
+40 
+
+AUROC = 0.933 
+
+Overlap_AUROC_layer18 
+
+label 0 
+
+label 1 
+
+0.5 1.0 1.5 2.0 2.5 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.927 
+
+Overlap_AUROC_layer19 
+
+label 0 
+
+label 1 
+
+0.8 1.0 1.2 1.5 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+40 
+
+AUROC = 0.906 
+
+Overlap_AUROC_layer20 
+
+label 0 
+
+label 1 
+
+0.5 1.0 1.5 2.0 2.5 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.926 
+
+Overlap_AUROC_layer21 
+
+label 0 
+
+label 1 
+
+0.5 1.0 1.5 2.0 2.5 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.927 
+
+Overlap_AUROC_layer22 
+
+label 0 
+
+label 1 
+
+0.5 0.8 1.0 1.2 1.5 1.8 2.0 
+
+0
+
+10 
+
+20 
+
+30 
+
+40 
+
+AUROC = 0.930 
+
+Overlap_AUROC_layer23 
+
+label 0 
+
+label 1 
+
+0.8 1.0 1.2 1.5 1.8 2.0 2.3 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.936 
+
+Overlap_AUROC_layer24 
+
+label 0 
+
+label 1 
+
+0.8 1.0 1.2 1.5 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+AUROC = 0.917 
+
+Overlap_AUROC_layer25 
+
+label 0 
+
+label 1 
+
+1.2 1.4 1.6 1.8 2.0 2.2 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.915 
+
+Overlap_AUROC_layer26 
+
+label 0 
+
+label 1 
+
+1.0 1.2 1.5 1.8 2.0 2.3 2.5 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.850 
+
+Overlap_AUROC_layer27 
+
+label 0 
+
+label 1 
+
+1.4 1.5 1.6 1.7 1.8 1.9 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.872 
+
+Overlap_AUROC_layer28 
+
+label 0 
+
+label 1 
+
+1.0 1.2 1.4 1.6 1.8 2.0 2.2 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.925 
+
+Overlap_AUROC_layer29 
+
+label 0 
+
+label 1 
+
+0.8 1.0 1.2 1.5 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.882 
+
+Overlap_AUROC_layer30 
+
+label 0 
+
+label 1 
+
+1.2 1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+AUROC = 0.856 
+
+Overlap_AUROC_layer31 
+
+label 0 
+
+label 1 
+
+1.4 1.6 1.8 2.0 2.2 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.766 
+
+Overlap_AUROC_layer32 
+
+label 0 
+
+label 1 
+
+Figure 19. AUROC of the overlap between YOLO annotations and the attention patterns on all layers in Cont A benchmark. 1.4 1.6 1.8 2.0 2.2 2.4 
+
+0.0 
+
+2.5 
+
+5.0 
+
+7.5 
+
+10.0 
+
+12.5 
+
+15.0 
+
+17.5 
+
+AUROC = 0.424 
+
+Overlap_AUROC_layer1 
+
+label 0 
+
+label 1 
+
+-1.0 0.0 1.0 2.0 3.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+AUROC = 0.718 
+
+Overlap_AUROC_layer2 
+
+label 0 
+
+label 1 
+
+1.0 1.2 1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.823 
+
+Overlap_AUROC_layer3 
+
+label 0 
+
+label 1 
+
+1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.574 
+
+Overlap_AUROC_layer4 
+
+label 0 
+
+label 1 
+
+1.0 1.2 1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+AUROC = 0.804 
+
+Overlap_AUROC_layer5 
+
+label 0 
+
+label 1 
+
+1.3 1.4 1.5 1.6 1.7 1.8 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+AUROC = 0.733 
+
+Overlap_AUROC_layer6 
+
+label 0 
+
+label 1 
+
+1.2 1.3 1.4 1.5 1.6 1.7 1.8 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.780 
+
+Overlap_AUROC_layer7 
+
+label 0 
+
+label 1 
+
+1.2 1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.808 
+
+Overlap_AUROC_layer8 
+
+label 0 
+
+label 1 
+
+1.4 1.5 1.6 1.7 1.8 1.9 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+AUROC = 0.630 
+
+Overlap_AUROC_layer9 
+
+label 0 
+
+label 1 
+
+1.2 1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.745 
+
+Overlap_AUROC_layer10 
+
+label 0 
+
+label 1 
+
+1.2 1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+35 
+
+AUROC = 0.661 
+
+Overlap_AUROC_layer11 
+
+label 0 
+
+label 1 
+
+1.4 1.6 1.8 2.0 2.2 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.387 
+
+Overlap_AUROC_layer12 
+
+label 0 
+
+label 1 
+
+1.0 1.2 1.4 1.6 1.8 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.827 
+
+Overlap_AUROC_layer13 
+
+label 0 
+
+label 1 
+
+0.5 1.0 1.5 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.786 
+
+Overlap_AUROC_layer14 
+
+label 0 
+
+label 1 
+
+0.0 0.5 1.0 1.5 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.810 
+
+Overlap_AUROC_layer15 
+
+label 0 
+
+label 1 
+
+0.0 0.5 1.0 1.5 2.0 
+
+0
+
+2
+
+4
+
+6
+
+8
+
+10 
+
+12 
+
+14 
+
+16 
+
+AUROC = 0.805 
+
+Overlap_AUROC_layer16 
+
+label 0 
+
+label 1 
+
+0.8 1.0 1.2 1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.854 
+
+Overlap_AUROC_layer17 
+
+label 0 
+
+label 1 
+
+0.5 0.8 1.0 1.2 1.5 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.804 
+
+Overlap_AUROC_layer18 
+
+label 0 
+
+label 1 
+
+0.5 0.8 1.0 1.2 1.5 1.8 
+
+0.0 
+
+2.5 
+
+5.0 
+
+7.5 
+
+10.0 
+
+12.5 
+
+15.0 
+
+17.5 
+
+20.0 
+
+AUROC = 0.777 
+
+Overlap_AUROC_layer19 
+
+label 0 
+
+label 1 
+
+0.8 1.0 1.2 1.5 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.817 
+
+Overlap_AUROC_layer20 
+
+label 0 
+
+label 1 
+
+0.5 0.8 1.0 1.2 1.5 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.837 
+
+Overlap_AUROC_layer21 
+
+label 0 
+
+label 1 
+
+0.5 0.8 1.0 1.2 1.5 1.8 2.0 
+
+0.0 
+
+2.5 
+
+5.0 
+
+7.5 
+
+10.0 
+
+12.5 
+
+15.0 
+
+17.5 
+
+20.0 
+
+AUROC = 0.817 
+
+Overlap_AUROC_layer22 
+
+label 0 
+
+label 1 
+
+0.5 0.8 1.0 1.2 1.5 1.8 2.0 
+
+0.0 
+
+2.5 
+
+5.0 
+
+7.5 
+
+10.0 
+
+12.5 
+
+15.0 
+
+17.5 
+
+20.0 
+
+AUROC = 0.831 
+
+Overlap_AUROC_layer23 
+
+label 0 
+
+label 1 
+
+0.8 1.0 1.2 1.4 1.6 1.8 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.805 
+
+Overlap_AUROC_layer24 
+
+label 0 
+
+label 1 
+
+0.5 0.8 1.0 1.2 1.5 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+AUROC = 0.824 
+
+Overlap_AUROC_layer25 
+
+label 0 
+
+label 1 
+
+1.2 1.4 1.6 1.8 2.0 
+
+0.0 
+
+2.5 
+
+5.0 
+
+7.5 
+
+10.0 
+
+12.5 
+
+15.0 
+
+17.5 
+
+20.0 
+
+AUROC = 0.795 
+
+Overlap_AUROC_layer26 
+
+label 0 
+
+label 1 
+
+1.4 1.6 1.8 2.0 2.2 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+AUROC = 0.691 
+
+Overlap_AUROC_layer27 
+
+label 0 
+
+label 1 
+
+1.4 1.5 1.6 1.7 1.8 1.9 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.680 
+
+Overlap_AUROC_layer28 
+
+label 0 
+
+label 1 
+
+1.0 1.2 1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+30 
+
+AUROC = 0.827 
+
+Overlap_AUROC_layer29 
+
+label 0 
+
+label 1 
+
+0.8 1.0 1.2 1.5 1.8 2.0 
+
+0.0 
+
+2.5 
+
+5.0 
+
+7.5 
+
+10.0 
+
+12.5 
+
+15.0 
+
+17.5 
+
+20.0 
+
+AUROC = 0.817 
+
+Overlap_AUROC_layer30 
+
+label 0 
+
+label 1 
+
+1.2 1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+25 
+
+AUROC = 0.804 
+
+Overlap_AUROC_layer31 
+
+label 0 
+
+label 1 
+
+1.2 1.4 1.6 1.8 2.0 
+
+0
+
+5
+
+10 
+
+15 
+
+20 
+
+AUROC = 0.794 
+
+Overlap_AUROC_layer32 
+
+label 0 
+
+label 1 
+
+Figure 20. AUROC of the overlap between YOLO annotations and the attention patterns on all layers in Cont B benchmark. 
+
+18 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+Figure 21. AUROC of the overlap between YOLO annotations and the attention patterns on all layers in COCO one benchmark. 
+
+Figure 22. AUROC of the overlap between YOLO annotations and the attention patterns on all layers in COCO two benchmark. 
+
+19 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+Figure 23. AUROC of the overlap between YOLO annotations and the attention patterns on all layers in VG one benchmark. 
+
+Figure 24. AUROC of the overlap between YOLO annotations and the attention patterns on all layers in VG two benchmark. 
+
+20 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas Where is the sandwich in the photo? 
+
+Fail to detect sandwich 
+
+Missed Detectio n
+
+Where is the cat in relation to the refrigerator? 
+
+Fail to detect refrigerator 
+
+Missed Detectio n
+
+Where is the man in relation to the lady? 
+
+Two ladies detected on both directions 
+
+Ambiguous Refer 
+
+Where is the phone in relation to the woman? 
+
+Phone bounding box too large 
+
+Bounding Box Error 
+
+Where is the man in the photo? 
+
+Recognize the elephant as a man 
+
+Misclassification VG_one 
+
+VG_tw oVG_tw o
+
+COC O_one COC O_tw o
+
+Figure 25. Error cases in YOLO annotation. Under each image we present the related question, the error in YOLO annotation and its type, and the source where the image and question comes from. 
+
+21 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 
+
+E.6. What changes after our intervention? How the confidence changes by using different αs? To illustrate the impact of coefficients greater or less than 1 on different relationships, Figure 8 shows accuracy and confi-dence variance for various ground-truth relationships. Re-sults indicate that for familiar relationships like “ left ” (red) and “ right ” (blue), coefficients greater than 1 boost accuracy and confidence. Conversely, for less familiar relationships like “ under ” (green) and “ on ” (yellow), coefficients less than 1 improve accuracy and confidence. 
+
+How do the absolute values of attention scores vary be-fore and after intervention? Figure 26 visualizes the at-tention logits for two-option Cont A ( α=0.5) and six-option VG ( α=2). An α of 0.5 decreases the absolute value of logits across layers, while an α of 2 increases them as lay-ers progress. This indicates that an α larger than 1 could strengthen the model’s orginal attention pattern. 
+
+E.7. Prompt Sensitivity Analysis 
+
+To assess the robustness of our method, we varied the num-ber of options in prompts for specific WhatsUp subsets. For Cont A and Cont B, we reduce the number of options to two, simplifying the task. Conversely, for COCO subsets, we increase the options to six, making it more challenging. Table 27 shows that our S CALING VIS method maintains consistent performance across all cases, demonstrating ro-bustness. 
+
+E.8. Reverse curse? 
+
+Additionally, we observe that the model exhibits a “reverse curse” phenomenon similar to that has been seen in language models (Berglund et al., 2023). When we reverse the order of the entities in Cont A (e.g., asking the model, “ Where is the armchair in relation to the beer bottle? ” instead of “ Where is the beer bottle in relation to the armchair? ”), there is a significant drop in per-formance. As shown in Figure 28, the model’s performance declines dramatically from a high score to an exceptionally low one. This reveals that the existing VLMs’s attention pat-tern and generation results could be significantly impacted by the prompt. Our methods, however, consistently improve the model’s performance. It suggests that adaptively in-tervening the attention score is a generalizable method for different prompts. 
+
+E.9. Efficiency 
+
+We evaluate inference times for different decoding methods in Table 9. ScalingVis introduces only negligible additional computation time compared to the baseline (greedy decod-ing). However, due to the need for computing the threshold,                                
+
+> Baseline ScalingVis AdaptVis
+> Time (set baseline to 1) 1.00 1.02 1.64
+> Table 9. Inference-time statistics. It shows that ScalingVis intro-duces negligible computation compared to the baseline.
+> Dataset POPE-A POPE-P POPE-R POPE-AVG GQA VQAv2
+> Baseline 81.0 86.4 88.4 85.3 56.1 74.0 ScalingVis 81.8 86.6 88.6 85.6 56.3 74.2
+> Table 10. Results on QA benchmarks. POPE-A is POPE-Adversarial. POPE-P is POPE-Popular. POPE-R is POPE-random. POPE-AVG the is average score of the three subsets.
+
+AdaptVis incurs higher computational overhead. 
+
+E.10. Results on More Benchmarks 
+
+We further evaluate our method on several Question An-swering benchmarks, including POPE (Li et al., 2023), GQA (Hudson & Manning, 2019), and VQAv2 (Antol et al., 2015). As shown in Table 10, our method consistently out-performs the baseline across all benchmarks, demonstrating its strong generalization capability in the general Question Answering setting. 
+
+F. URLs of Code and Data 
+
+We provide the code and data at https://anonymous. 4open.science/r/AdaptVis-B73C .The running arguments are configured as follows:  
+
+> dataset
+
+specifies the evaluation dataset (e.g., 
+
+> Controlled Images A
+
+); model-name selects the model (e.g., llava1.5 ); method determines the evaluation ap-proach ( scaling vis or adapt vis ). For scaling vis , 
+
+> weight1
+
+can be set to values in [0 .5, 0.8, 1.2, 1.5, 2.0] . For 
+
+> adapt vis
+
+, weight1 ranges in [0 .5, 0.8] and weight2 in 
+
+[1 .2, 1.5, 2.0] , with threshold controlling the adaptation sensitivity. The --download flag enables automatic dataset downloading. 22 Why Is Spatial Reasoning Hard for VLMs? An Attention Mechanism Perspective on Focus Areas 9.5 9.0 8.5 8.0 7.5 7.0 6.5   
+
+> Attention Logits
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> Frequency
+> ×10 3
+
+Attention logits Distribution       
+
+> Controlled_B_weight0.50
+> Controlled_B_weight1.00
+> Controlled_B_weight1.00 (fixed) 2.5 2.0 1.5 1.0 0.5
+> Attention Logits
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> Frequency
+> ×10 3
+
+Attention logits Distribution       
+
+> Controlled_B_weight0.50
+> Controlled_B_weight1.00
+> Controlled_B_weight1.00 (fixed) 86420
+> Attention Logits
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> Frequency
+> ×10 3
+
+Attention logits Distribution         
+
+> VG_QA_two_obj_weight2.00
+> VG_QA_two_obj_weight1.00
+> VG_QA_two_obj_weight1.00 (fixed) 1.5 1.0 0.5 0.0 0.5 1.0 1.5
+> Attention Logits
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> 3.5
+> Frequency
+> ×10 3
+
+Attention logits Distribution 
+
+> VG_QA_two_obj_weight2.00
+> VG_QA_two_obj_weight1.00
+> VG_QA_two_obj_weight1.00 (fixed)
+
+Figure 26. Attention logit distribution before (blue) and after (pink) intervention in the 14th layer (a randomly chosen middle layer). From left to right, the plots represent: mean and max attention values across heads for Cont A, and mean and max attention for Cont B. Red dots mark cases corrected by our intervention. We could see that α of 0.5 shifts the line left, while α of 2 shifts it right. 
+
+Model Cont A Cont B Coco one Coco two Acc P Acc S Acc Acc P Acc S Acc Acc Acc 
+
+LLaVA-1.5 76.4 43.0 4.8 74.6 41.0 1.2 30.8 42.6 +Ours 86.4 ↑10.0 61.2 ↑18.2 27.9 ↑23.1 87.8 ↑13.2 59.3 ↑18.3 22.0 ↑20.8 36.0 ↑5.2 48.6 ↑7.3 Best α 0.5 0.5 2 2
+
+Figure 27. Results on WhatsUp (Metrics in ×10 −2) when changing prompts for other option numbers. Arrows show improvement over greedy decoding. 20 
+
+40 
+
+60 
+
+80 
+
+100 
+
+Base  Reversed 38.8 86.4 35.2 76.4 
+
+Raw  Ours 
+
+Acc before and a ?er interven 9on under reverse case  Figure 28. Performance comparison before and after S CALING VIS intervention ( α = 0 .5). 
+
+23

@@ -1,0 +1,1301 @@
+Title: Trajectory World Models for Heterogeneous Environments
+
+URL Source: https://openreview.net/pdf?id=Py2KmXaRmi
+
+Number of Pages: 23
+
+Markdown Content:
+Trajectory World Models for Heterogeneous Environments 
+
+Shaofeng Yin * 1 Jialong Wu * 1 Siqiao Huang 1 Xingjian Su 1 Xu He 2 Jianye Hao 2 Mingsheng Long 1
+
+Abstract 
+
+Heterogeneity in sensors and actuators across en-vironments poses a significant challenge to build-ing large-scale pre-trained world models on top of this low-dimensional sensor information. In this work, we explore pre-training world models for heterogeneous environments by addressing key transfer barriers in both data diversity and model flexibility. We introduce UniTraj, a unified dataset comprising over one million trajectories from 80 environments, designed to scale data while pre-serving critical diversity. Additionally, we pro-pose TrajWorld, a novel architecture capable of flexibly handling varying sensor and actuator in-formation and capturing environment dynamics in-context. Pre-training TrajWorld on UniTraj yields substantial gains in transition prediction, achieves a new state-of-the-art for off-policy eval-uation, and also delivers superior online perfor-mance of model predictive control. To the best of our knowledge, this work, for the first time, demonstrates the transfer benefits of world models across heterogeneous and complex control envi-ronments. Code and data are available at https: //github.com/thuml/TrajWorld .
+
+1. Introduction 
+
+World models (Ha & Schmidhuber, 2018; LeCun, 2022) have made remarkable progress in addressing sequential decision-making problems (Hafner et al., 2020; Schrit-twieser et al., 2020; Hansen et al., 2024). Trained on trajec-tory data, these models can simulate environments and are leveraged to either evaluate complex actions (Chua et al., 2018; Ebert et al., 2018; Tian et al., 2023) or optimize poli-cies (Janner et al., 2019; Kurutach et al., 2018). However,        
+
+> *Equal contribution 1Tsinghua University. 2Huawei Noah’s Ark Lab. Shaofeng Yin <ysf22@mails.tsinghua.edu.cn >. Jialong Wu
+> <wujialong0229@gmail.com >. Correspondence to: Mingsheng Long <mingsheng@tsinghua.edu.cn >.
+> Proceedings of the 42 nd International Conference on Machine Learning , Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s).
+
+D4RL  
+
+> -91%
+> +35%
+> +9%
+> Figure 1. Aggregated transition prediction error (MAE) across 75 train-test dataset pairs, comparing MLP Ensemble (Chua et al., 2018), TDM (Schubert et al., 2023), and proposed TrajWorld, with and without pre-training on UniTraj dataset. Y-axis at log scale.
+
+existing methods often learn world models tabula rasa , rely-ing on data from a single, specific environment. This limits their ability to generalize to out-of-distribution transitions, demanding a substantial number of costly interactions with the environment. In recent years, machine learning has been revolutionized by foundation models pre-trained on large-scale, diverse data (Achiam et al., 2023; Oquab et al., 2024; Kirillov et al., 2023). General world models have also been realized through pre-training, enabled by the homogeneity present within massive and diverse datasets of specific modalities, such as text (Wang et al., 2024b; Gu et al., 2024; Chae et al., 2025; Wu et al., 2025), images (Zhou et al., 2024), and videos (Seo et al., 2022; Wu et al., 2024a; Bruce et al., 2024; Wu et al., 2024b; Agarwal et al., 2025). However, a unique challenge of world models from Internet AI is commonly overlooked or circumvented: the heterogeneity 
+
+inherent in sensor and actuator information, which means proprioceptive data, such as joint positions and velocities, as well as optional target positions, vary significantly across environments. Failing to properly address this heterogeneity can result in no transfer or even negative transfer. We argue that no modality in world models should be left behind, including essential sensor information represented as low-dimensional vectors. In this work, we take a first step 1Trajectory World Models for Heterogeneous Environments Trajectory World Model 
+
+Pre -training Fine -tuning 
+
+(11, 3)
+
+(17, 6) 
+
+(17, 6)  
+
+> <latexit sha1_base64="JptucY4w7s4Zz5nLMxtw88gz0ng=">AAACK3icfVDLSsNAFJ3UV62vqEs3g0VoQUoivpZVNy4r2gc0oUwm03boJBNmJkIJ+R83/ooLXfjArf/hpM1CW/HAhcM593LvPV7EqFSW9W4UFhaXlleKq6W19Y3NLXN7pyV5LDBpYs646HhIEkZD0lRUMdKJBEGBx0jbG11lfvueCEl5eKfGEXEDNAhpn2KktNQzLysOj4hAiosQBSTxaZBWnACpIUYsuU2rh/C/hou0Wu2ZZatmTQDniZ2TMsjR6JnPjs9xHJBQYYak7NpWpNwECUUxI2nJiSWJEB6hAelqmq2VbjL5NYUHWvFhnwtdoYIT9edEggIpx4GnO7Mj5ayXiX953Vj1z92EhlGsSIini/oxg4rDLDjoU0GwYmNNEBZU3wrxEAmElY63pEOwZ1+eJ62jmn1aO7k5LtdhHkcR7IF9UAE2OAN1cA0aoAkweABP4BW8GY/Gi/FhfE5bC0Y+swt+wfj6BtofqIw=</latexit>
+
+(dim( S), dim( A))                             
+
+> (67, 21)
+> (15, 4)(12, 2)
+> (8, 2)
+> (44, 5)
+> (8, 2)
+> (24, 6)
+> (5, 1)
+> (78, 12)
+> (24, 5)
+> (42, 9)
+> (15, 5)
+> (6, 1)
+> (6, 2)
+> (4, 1)
+> (25, 5)
+> (23, 7)
+> (9, 2)
+> (21, 2)
+> (9, 2)
+> (24, 3)
+> (17, 6)(13, 4)
+> (9, 2)
+> (19, 7)
+> (61, 14)
+
+Figure 2. Illustration of pre-training a world model from heterogeneous environments, with each environment labeled by its state and action dimensions. A Trajectory World Model, designed for flexibility in handling divergent state and action definitions, demonstrates effective positive transfer across distinct, heterogeneous, and complex control environments. 
+
+to bridge this gap by exploring the potential of pre-training a world model to extract shared knowledge from trajectories across heterogeneous environments (illustrated in Figure 2). To this end, it is essential to overcome the transfer barriers from both data and model architecture perspectives. 
+
+Scaling data. To achieve strong generalization through pre-training, access to vast and diverse data is essential (Team et al., 2021). While scaling data is straightforward, the real challenge lies in scaling data while preserving di-versity. Diversity in our work has two key aspects. First, it refers to the data sources, i.e., the environments from which the data is collected. Second, it concerns the data proper-ties, specifically the distribution of the data itself. Even within the same environment, different policies at various levels can produce significantly different data distributions. To tackle these challenges, we curate the UniTraj dataset, including over one million trajectories collected from vari-ous distributions from 80 heterogeneous environments. By scaling data while maintaining these diversities, we ensure that the model focuses on the core knowledge shared across environments, thereby enabling successful transferability. 
+
+Flexible architecture. Previous approaches often address size variations in state and action spaces by applying zero-padding to match a maximum length (Yu et al., 2020a; Hansen et al., 2024) or employing separate input and output heads for each environment (Wang et al., 2024a; D’Eramo et al., 2020). However, zero-padding imposes a dimension limit and adds training overheads, while the separate head approach requires training new heads for new environments, hindering zero-shot transfer. A truly capable model for heterogeneous environments requires a more flexible archi-tecture. To address this, we propose the Trajectory World Model (TrajWorld), a novel architecture that integrates in-terleaved variate and temporal attention mechanisms. It is enabled to naturally accommodate varying numbers of sensors and actuators through variate attention and, more importantly, to capture their relationships in-context through temporal attention. This in-context learning capability goes beyond learning specific environment dynamics and thus enhances the model’s generalizability across environments. By pre-training our flexible TrajWorld architecture on the di-verse and massive UniTraj dataset, we demonstrate, for the first time, the transfer benefits of world models across het-erogeneous and complex control environments. Fine-tuning TrajWorld on 15 datasets from three previously unseen en-vironments (Fu et al., 2020) significantly reduces transi-tion prediction errors for both in-distribution and out-of-distribution actions (as shown in Figure 1). This improved predictive accuracy also translates to our state-of-the-art performance on off-policy evaluation (OPE) tasks (Fu et al., 2021), enabling the offline evaluation and selection of a set of complex policies for best performance. Furthermore, it also manifests in superior online performance with model predictive control (MPC). The main contributions can be summarized as follows: • We investigate an under-explored world model pre-training paradigm across heterogeneous environments. • We curate UniTraj, a unified trajectory dataset, en-abling large-scale pre-training of world models. • We propose TrajWorld, a novel architecture to facilitate transfer between heterogeneous environments. • For the first time, our experiments demonstrate posi-tive world model transfer across diverse and complex environments, resulting in simultaneous and signifi-cant improvements in transition prediction, off-policy policy, and model predictive control. 2Trajectory World Models for Heterogeneous Environments                                                                                 
+
+> Table 1. Statistics for six components of the UniTraj dataset. The checkmark ( ✓) represents a dataset collected or curated by ourselves. Dataset #Env. #Episodes #Steps State dim. Action dim. Characteristic ExORL (Yarats et al., 2022) 4541,336 330,985,000 5∼78 1∼12 Exploratory RL Unplugged (Gulcehre et al., 2020) 75,841 5,841,000 5∼67 1∼21 Experience replay JAT (Gallou´ edec et al., 2024) 550,000 26,238,954 4∼23 1∼7Expert DB-1 (Wen et al., 2022) 58 290 19,320 5∼67 1∼21 Expert; Diversity TD-MPC2 (Hansen et al., 2024) 30 672,000 336,000,000 3∼24 1∼6Experience replay
+> ✓Modular RL (Huang et al., 2020) 20 37,199 19,996,902 7∼23 1∼6Experience replay
+> ✓UniTraj (Ours) 80 1,306,666 719,081,176 3∼78 1∼21 Omnifarious
+
+2. Problem Formulation 
+
+An environment is typically described by a Markov decision process (MDP) M = {S , A, P, r, μ }, specified by the state space S (of sensors), the action space A (of actuators), the transition function P : S × A → ∆( S), the reward function 
+
+r : S × A → R, and the initial state distribution μ ∈ ∆( S).Given an MDP, a trajectory of length T :
+
+τ = ( s0, a 0, r 1, s 1, · · · , a T −2, r T −1, s T −1) , (1) is recorded as interactions between the environment and an agent, according the following protocol: starting from an initial state s0 ∼ μ, at each discrete time step t = 0 , 1, . . . ,the agent performs an action at ∈ A according to its pol-icy, receives an immediate reward rt+1 = r(st, a t), and observes the next state after transition st+1 ∼ P (st, a t).A world model pθ (st+1 , r t+1 |st, a t), or more generally 
+
+pθ (st+1 , r t+1 |s1: t, a 1: t), learns its parameter θ from a dataset of recorded trajectories D = {τi} to approximate the underlying transition probability and reward function, thus serving as an alternative of the environment. 
+
+Our work. While most literature learns a world model on target environment Mt from scratch, we investi-gate an under-explored paradigm of pre-training a world model from a family of heterogeneous 1 environments 
+
+{M 1, M2, . . . , MK }. Through learning from mixed tra-jectory data {D 1, D2, . . . , DK }, we obtain a good starting-point of the model θ0, ready for either zero-shot generaliza-tion to unseen Mt or fine-tuning to obtain a world model of 
+
+Mt with strong generalization given limited data. We elab-orate on the intuition behind this paradigm in Section 4.1. 
+
+3. UniTraj Dataset 
+
+We introduce UniTraj, a large-scale unified trajectory dataset from heterogeneous environments, to support the pre-training of a trajectory world model. To ensure diversity, we merge five publicly available datasets with different charac-
+
+> 1We use the term “heterogeneous” to highlight that different environments not only feature varying transition and reward func-tions but also, more challengingly, possess distinct state and action spaces tied to unique sets of sensors and actuators.
+
+teristics. To further enhance diversity, we also by ourselves collect the training buffer of agents from a set of diverse morphologies (Huang et al., 2020). As a result, UniTraj oc-cupies a total of 1.3M trajectories (or 719M steps) from 80 distinct environments, as summarized in Table 1. A detailed list of dataset information can be found in Appendix A. Beyond its unprecedented scale, the collected UniTraj rep-resents diversity in several aspects: 
+
+Environment diversity. UniTraj encompasses a wide range of control environments. These include not only widely-used environments from the DeepMind Control Suite (DMC) (Tassa et al., 2018) and OpenAI Gym (Brock-man, 2016), but also customized embodiments and tasks proposed in Modular RL and TD-MPC2. Notably, we pur-posely exclude all trajectories from the HalfCheetah, Hop-per, and Walker2D environment of OpenAI Gym, which are held out as our downstream test environments. 
+
+Distribution diversity. The dataset contains data col-lected from various distributions, resulting from different collection methods and policies. Specifically, data from RL Unplugged, TD-MPC2, and Modular RL are gathered by recording the training agent’s replay buffer, while JAT and DB-1 data are collected through expert policies roll-outs. Additionally, ExORL data are collected by storing the transitions from running unsupervised exploration al-gorithms (Laskin et al., 2021). The policies cover a range of approaches, including a wide range of reinforcement learning algorithms (e.g., D4PG (Barth-Maron et al., 2018), PPO (Schulman et al., 2017)) and state-of-the-art model predictive control algorithms, TD-MPC2. By scaling up the dataset while preserving diversity, we empower the model with the potential to generalize across varied environments. 
+
+4. Trajectory World Models 
+
+In this section, we first explain the intuition behind the pro-posed Trajectory World Models (TrajWorld) (Section 4.1), then provide a detailed overview of the architecture imple-mentation (Section 4.2), and conclude with a discussion of the pre-training and fine-tuning paradigm (Section 4.3). 3Trajectory World Models for Heterogeneous Environments Temporal 
+
+Attention 
+
+Variate 
+
+Attention 
+
+> Projection
+> Prediction
+
+Temporal Attention Variate Attention Cross -Entropy 
+
+Loss 
+
+<latexit sha1_base64="v6dJDpJle4SDJLlURqTmIX5IzMI=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr4sQ8OIxonlAsoTZyWwyZHZ2mekVwpJP8OJBEa9+kTf/xkmyB00saCiquunuChIpDLrut1NYWV1b3yhulra2d3b3yvsHTROnmvEGi2Ws2wE1XArFGyhQ8naiOY0CyVvB6Hbqt564NiJWjzhOuB/RgRKhYBSt9IA3Xq9ccavuDGSZeDmpQI56r/zV7ccsjbhCJqkxHc9N0M+oRsEkn5S6qeEJZSM64B1LFY248bPZqRNyYpU+CWNtSyGZqb8nMhoZM44C2xlRHJpFbyr+53VSDK/9TKgkRa7YfFGYSoIxmf5N+kJzhnJsCWVa2FsJG1JNGdp0SjYEb/HlZdI8q3qX1Yv780qN5HEU4QiO4RQ8uIIa3EEdGsBgAM/wCm+OdF6cd+dj3lpw8plD+APn8wfK5Y1i</latexit> 
+
+t = 1 <latexit sha1_base64="LhbXp3uCHkPMg8o4VBNTeuY+z8w=">AAAB6HicbVBNS8NAEJ3Ur1q/qh69LBbBU0mKX8eCF48t2FpoQ9lsJ+3azSbsboQS+gu8eFDEqz/Jm//GbZuDtj4YeLw3w8y8IBFcG9f9dgpr6xubW8Xt0s7u3v5B+fCoreNUMWyxWMSqE1CNgktsGW4EdhKFNAoEPgTj25n/8IRK81jem0mCfkSHkoecUWOlZq1frrhVdw6ySrycVCBHo1/+6g1ilkYoDRNU667nJsbPqDKcCZyWeqnGhLIxHWLXUkkj1H42P3RKzqwyIGGsbElD5urviYxGWk+iwHZG1Iz0sjcT//O6qQlv/IzLJDUo2WJRmApiYjL7mgy4QmbExBLKFLe3EjaiijJjsynZELzll1dJu1b1rqqXzYtKneRxFOEETuEcPLiGOtxBA1rAAOEZXuHNeXRenHfnY9FacPKZY/gD5/MHdSeMng==</latexit> 
+
+2 <latexit sha1_base64="7aVD/pKsk/NifnUckehPLDVIAkk=">AAAB6HicbVDLSgNBEOz1GeMr6tHLYBA8hV3fx4AXjwmYByRLmJ30JmNmZ5eZWSEs+QIvHhTx6id582+cJHvQxIKGoqqb7q4gEVwb1/12VlbX1jc2C1vF7Z3dvf3SwWFTx6li2GCxiFU7oBoFl9gw3AhsJwppFAhsBaO7qd96QqV5LB/MOEE/ogPJQ86osVL9olcquxV3BrJMvJyUIUetV/rq9mOWRigNE1Trjucmxs+oMpwJnBS7qcaEshEdYMdSSSPUfjY7dEJOrdInYaxsSUNm6u+JjEZaj6PAdkbUDPWiNxX/8zqpCW/9jMskNSjZfFGYCmJiMv2a9LlCZsTYEsoUt7cSNqSKMmOzKdoQvMWXl0nzvOJdV67ql+UqyeMowDGcwBl4cANVuIcaNIABwjO8wpvz6Lw4787HvHXFyWeO4A+czx92q4yf</latexit> 
+
+3
+
+<latexit sha1_base64="e7VaaxG21wB6GbTbDAxIQvNhA7E=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAi8eI5gHJGmYns8mQ2dllplcISz7BiwdFvPpF3vwbJ8keNLGgoajqprsrSKQw6LrfTmFldW19o7hZ2tre2d0r7x80TZxqxhsslrFuB9RwKRRvoEDJ24nmNAokbwWjm6nfeuLaiFg94DjhfkQHSoSCUbTSvXn0euWKW3VnIMvEy0kFctR75a9uP2ZpxBUySY3peG6CfkY1Cib5pNRNDU8oG9EB71iqaMSNn81OnZATq/RJGGtbCslM/T2R0ciYcRTYzoji0Cx6U/E/r5NieO1nQiUpcsXmi8JUEozJ9G/SF5ozlGNLKNPC3krYkGrK0KZTsiF4iy8vk+ZZ1busXtydV2okj6MIR3AMp+DBFdTgFurQAAYDeIZXeHOk8+K8Ox/z1oKTzxzCHzifP/uEjYI=</latexit> 
+
+s1
+
+<latexit sha1_base64="/Iei1P/ptBEf1tE+Xu0MF+BmDPg=">AAAB6nicbVDLSgNBEOz1GeMr6tHLYBA8hd3g6xjw4jGieUCyhtlJbzJkdnaZmRXCkk/w4kERr36RN//GSbIHTSxoKKq66e4KEsG1cd1vZ2V1bX1js7BV3N7Z3dsvHRw2dZwqhg0Wi1i1A6pRcIkNw43AdqKQRoHAVjC6mfqtJ1Sax/LBjBP0IzqQPOSMGivd68dqr1R2K+4MZJl4OSlDjnqv9NXtxyyNUBomqNYdz02Mn1FlOBM4KXZTjQllIzrAjqWSRqj9bHbqhJxapU/CWNmShszU3xMZjbQeR4HtjKgZ6kVvKv7ndVITXvsZl0lqULL5ojAVxMRk+jfpc4XMiLEllClubyVsSBVlxqZTtCF4iy8vk2a14l1WLu7OyzWSx1GAYziBM/DgCmpwC3VoAIMBPMMrvDnCeXHenY9564qTzxzBHzifP/0IjYM=</latexit> 
+
+s2
+
+<latexit sha1_base64="Z/MFlA65tpKJtgRf6s8OmzYHo2k=">AAAB6HicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAi8cEzAOSJcxOepMxs7PLzKwQlnyBFw+KePWTvPk3TpI9aGJBQ1HVTXdXkAiujet+O4W19Y3NreJ2aWd3b/+gfHjU0nGqGDZZLGLVCahGwSU2DTcCO4lCGgUC28H4bua3n1BpHssHM0nQj+hQ8pAzaqzUUP1yxa26c5BV4uWkAjnq/fJXbxCzNEJpmKBadz03MX5GleFM4LTUSzUmlI3pELuWShqh9rP5oVNyZpUBCWNlSxoyV39PZDTSehIFtjOiZqSXvZn4n9dNTXjrZ1wmqUHJFovCVBATk9nXZMAVMiMmllCmuL2VsBFVlBmbTcmG4C2/vEpaF1XvunrVuKzUSB5HEU7gFM7BgxuowT3UoQkMEJ7hFd6cR+fFeXc+Fq0FJ585hj9wPn8A1ieM3g==</latexit> 
+
+r
+
+<latexit sha1_base64="F39cjl0MFjQUxtW8rqwCODn6VdI=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAi8eI5gHJGnons8mQ2dllZlYISz7BiwdFvPpF3vwbJ8keNLGgoajqprsrSATXxnW/ncLK6tr6RnGztLW9s7tX3j9o6jhVlDVoLGLVDlAzwSVrGG4EayeKYRQI1gpGN1O/9cSU5rF8MOOE+REOJA85RWOle3z0euWKW3VnIMvEy0kFctR75a9uP6ZpxKShArXueG5i/AyV4VSwSambapYgHeGAdSyVGDHtZ7NTJ+TEKn0SxsqWNGSm/p7IMNJ6HAW2M0Iz1IveVPzP66QmvPYzLpPUMEnni8JUEBOT6d+kzxWjRowtQaq4vZXQISqkxqZTsiF4iy8vk+ZZ1busXtydV2okj6MIR3AMp+DBFdTgFurQAAoDeIZXeHOE8+K8Ox/z1oKTzxzCHzifP+AYjXA=</latexit> 
+
+a1
+
+<latexit sha1_base64="gyFTr03WA3iEeEzn+2r6A9sEeo8=">AAAB6nicbVDLSgNBEOz1GeMr6tHLYBA8hd3g6xjw4jGieUCyht7JbDJkdnaZmRXCkk/w4kERr36RN//GSbIHTSxoKKq66e4KEsG1cd1vZ2V1bX1js7BV3N7Z3dsvHRw2dZwqyho0FrFqB6iZ4JI1DDeCtRPFMAoEawWjm6nfemJK81g+mHHC/AgHkoecorHSPT5We6WyW3FnIMvEy0kZctR7pa9uP6ZpxKShArXueG5i/AyV4VSwSbGbapYgHeGAdSyVGDHtZ7NTJ+TUKn0SxsqWNGSm/p7IMNJ6HAW2M0Iz1IveVPzP66QmvPYzLpPUMEnni8JUEBOT6d+kzxWjRowtQaq4vZXQISqkxqZTtCF4iy8vk2a14l1WLu7OyzWSx1GAYziBM/DgCmpwC3VoAIUBPMMrvDnCeXHenY9564qTzxzBHzifP+GcjXE=</latexit> 
+
+a2
+
+Discretization 
+
+<latexit sha1_base64="3j9SNpHxsGq5fCP0xW3xUY4Y62c=">AAAB7HicbVBNS8NAEJ3Ur1q/qh69LBbBU0nEr4tQ8OKxgmkLbSyb7aZdutkNuxshhP4GLx4U8eoP8ua/cdvmoK0PBh7vzTAzL0w408Z1v53Syura+kZ5s7K1vbO7V90/aGmZKkJ9IrlUnRBrypmgvmGG006iKI5DTtvh+Hbqt5+o0kyKB5MlNIjxULCIEWys5OtH7ybrV2tu3Z0BLROvIDUo0OxXv3oDSdKYCkM41rrruYkJcqwMI5xOKr1U0wSTMR7SrqUCx1QH+ezYCTqxygBFUtkSBs3U3xM5jrXO4tB2xtiM9KI3Ff/zuqmJroOciSQ1VJD5oijlyEg0/RwNmKLE8MwSTBSztyIywgoTY/Op2BC8xZeXSeus7l3WL+7Paw1UxFGGIziGU/DgChpwB03wgQCDZ3iFN0c4L8678zFvLTnFzCH8gfP5A1uNjkw=</latexit> 
+
+s1 = y
+
+<latexit sha1_base64="1xIznFUOzL2Kwp+6rUTadMxNVFI=">AAAB6HicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAi8cEzAOSJcxOepMxs7PLzKywhHyBFw+KePWTvPk3TpI9aGJBQ1HVTXdXkAiujet+O4W19Y3NreJ2aWd3b/+gfHjU0nGqGDZZLGLVCahGwSU2DTcCO4lCGgUC28H4bua3n1BpHssHkyXoR3QoecgZNVZqZP1yxa26c5BV4uWkAjnq/fJXbxCzNEJpmKBadz03Mf6EKsOZwGmpl2pMKBvTIXYtlTRC7U/mh07JmVUGJIyVLWnIXP09MaGR1lkU2M6ImpFe9mbif143NeGtP+EySQ1KtlgUpoKYmMy+JgOukBmRWUKZ4vZWwkZUUWZsNiUbgrf88ippXVS96+pV47JSI3kcRTiBUzgHD26gBvdQhyYwQHiGV3hzHp0X5935WLQWnHzmGP7A+fwB4MOM5Q==</latexit> 
+
+y
+
+<latexit sha1_base64="q5U/pmqTjopkuj5E8Ik0nGdDalg=">AAAB8HicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAiwcPEcxDkiXMTibJkNnZZaZXCEu+wosHRbz6Od78G2eTPWhiQUNR1U13VxBLYdB1v53Cyura+kZxs7S1vbO7V94/aJoo0Yw3WCQj3Q6o4VIo3kCBkrdjzWkYSN4KxjeZ33ri2ohIPeAk5n5Ih0oMBKNopccuipAbclfqlStu1Z2BLBMvJxXIUe+Vv7r9iCUhV8gkNabjuTH6KdUomOTTUjcxPKZsTIe8Y6mido+fzg6ekhOr9Mkg0rYUkpn6eyKloTGTMLCdIcWRWfQy8T+vk+Dg2k+FihPkis0XDRJJMCLZ96QvNGcoJ5ZQpoW9lbAR1ZShzSgLwVt8eZk0z6reZfXi/rxSI3kcRTiCYzgFD66gBrdQhwYwCOEZXuHN0c6L8+58zFsLTj5zCH/gfP4A2O6PsA==</latexit> 
+
+⇥L
+
+<latexit sha1_base64="e7VaaxG21wB6GbTbDAxIQvNhA7E=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAi8eI5gHJGmYns8mQ2dllplcISz7BiwdFvPpF3vwbJ8keNLGgoajqprsrSKQw6LrfTmFldW19o7hZ2tre2d0r7x80TZxqxhsslrFuB9RwKRRvoEDJ24nmNAokbwWjm6nfeuLaiFg94DjhfkQHSoSCUbTSvXn0euWKW3VnIMvEy0kFctR75a9uP2ZpxBUySY3peG6CfkY1Cib5pNRNDU8oG9EB71iqaMSNn81OnZATq/RJGGtbCslM/T2R0ciYcRTYzoji0Cx6U/E/r5NieO1nQiUpcsXmi8JUEozJ9G/SF5ozlGNLKNPC3krYkGrK0KZTsiF4iy8vk+ZZ1busXtydV2okj6MIR3AMp+DBFdTgFurQAAYDeIZXeHOk8+K8Ox/z1oKTzxzCHzifP/uEjYI=</latexit> 
+
+s1
+
+<latexit sha1_base64="/Iei1P/ptBEf1tE+Xu0MF+BmDPg=">AAAB6nicbVDLSgNBEOz1GeMr6tHLYBA8hd3g6xjw4jGieUCyhtlJbzJkdnaZmRXCkk/w4kERr36RN//GSbIHTSxoKKq66e4KEsG1cd1vZ2V1bX1js7BV3N7Z3dsvHRw2dZwqhg0Wi1i1A6pRcIkNw43AdqKQRoHAVjC6mfqtJ1Sax/LBjBP0IzqQPOSMGivd68dqr1R2K+4MZJl4OSlDjnqv9NXtxyyNUBomqNYdz02Mn1FlOBM4KXZTjQllIzrAjqWSRqj9bHbqhJxapU/CWNmShszU3xMZjbQeR4HtjKgZ6kVvKv7ndVITXvsZl0lqULL5ojAVxMRk+jfpc4XMiLEllClubyVsSBVlxqZTtCF4iy8vk2a14l1WLu7OyzWSx1GAYziBM/DgCmpwC3VoAIMBPMMrvDnCeXHenY9564qTzxzBHzifP/0IjYM=</latexit> 
+
+s2
+
+<latexit sha1_base64="Z/MFlA65tpKJtgRf6s8OmzYHo2k=">AAAB6HicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAi8cEzAOSJcxOepMxs7PLzKwQlnyBFw+KePWTvPk3TpI9aGJBQ1HVTXdXkAiujet+O4W19Y3NreJ2aWd3b/+gfHjU0nGqGDZZLGLVCahGwSU2DTcCO4lCGgUC28H4bua3n1BpHssHM0nQj+hQ8pAzaqzUUP1yxa26c5BV4uWkAjnq/fJXbxCzNEJpmKBadz03MX5GleFM4LTUSzUmlI3pELuWShqh9rP5oVNyZpUBCWNlSxoyV39PZDTSehIFtjOiZqSXvZn4n9dNTXjrZ1wmqUHJFovCVBATk9nXZMAVMiMmllCmuL2VsBFVlBmbTcmG4C2/vEpaF1XvunrVuKzUSB5HEU7gFM7BgxuowT3UoQkMEJ7hFd6cR+fFeXc+Fq0FJ585hj9wPn8A1ieM3g==</latexit> 
+
+r
+
+<latexit sha1_base64="F39cjl0MFjQUxtW8rqwCODn6VdI=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAi8eI5gHJGnons8mQ2dllZlYISz7BiwdFvPpF3vwbJ8keNLGgoajqprsrSATXxnW/ncLK6tr6RnGztLW9s7tX3j9o6jhVlDVoLGLVDlAzwSVrGG4EayeKYRQI1gpGN1O/9cSU5rF8MOOE+REOJA85RWOle3z0euWKW3VnIMvEy0kFctR75a9uP6ZpxKShArXueG5i/AyV4VSwSambapYgHeGAdSyVGDHtZ7NTJ+TEKn0SxsqWNGSm/p7IMNJ6HAW2M0Iz1IveVPzP66QmvPYzLpPUMEnni8JUEBOT6d+kzxWjRowtQaq4vZXQISqkxqZTsiF4iy8vk+ZZ1busXtydV2okj6MIR3AMp+DBFdTgFurQAAoDeIZXeHOE8+K8Ox/z1oKTzxzCHzifP+AYjXA=</latexit> 
+
+a1
+
+<latexit sha1_base64="gyFTr03WA3iEeEzn+2r6A9sEeo8=">AAAB6nicbVDLSgNBEOz1GeMr6tHLYBA8hd3g6xjw4jGieUCyht7JbDJkdnaZmRXCkk/w4kERr36RN//GSbIHTSxoKKq66e4KEsG1cd1vZ2V1bX1js7BV3N7Z3dsvHRw2dZwqyho0FrFqB6iZ4JI1DDeCtRPFMAoEawWjm6nfemJK81g+mHHC/AgHkoecorHSPT5We6WyW3FnIMvEy0kZctR7pa9uP6ZpxKShArXueG5i/AyV4VSwSbGbapYgHeGAdSyVGDHtZ7NTJ+TUKn0SxsqWNGSm/p7IMNJ6HAW2M0Iz1IveVPzP66QmvPYzLpPUMEnni8JUEBOT6d+kzxWjRowtQaq4vZXQISqkxqZTtCF4iy8vk2a14l1WLu7OyzWSx1GAYziBM/DgCmpwC3VoAIUBPMMrvDnCeXHenY9564qTzxzBHzifP+GcjXE=</latexit> 
+
+a2
+
+> <latexit  sha1_base64="3zn1HbilBJA+38r7DWMrI73ugHU=">AAAB+3icbZDJSgNBEIZr4hbjFuPRS2MQPIUZcTsGvHgRImSDZAg9PT1Jk56F7hoxDHkVLx4U8eqLePNt7CRz0MQfGj7+qqKqfy+RQqNtf1uFtfWNza3idmlnd2//oHxYaes4VYy3WCxj1fWo5lJEvIUCJe8mitPQk7zjjW9n9c4jV1rEURMnCXdDOoxEIBhFYw3Klfs+ipBr0iQ5+INy1a7Zc5FVcHKoQq7GoPzV92OWhjxCJqnWPcdO0M2oQsEkn5b6qeYJZWM65D2DETVr3Gx++5ScGscnQazMi5DM3d8TGQ21noSe6QwpjvRybWb+V+ulGNy4mYiSFHnEFouCVBKMySwI4gvFGcqJAcqUMLcSNqKKMjRxlUwIzvKXV6F9XnOuapcPF9U6yeMowjGcwBk4cA11uIMGtIDBEzzDK7xZU+vFerc+Fq0FK585gj+yPn8A+GCTqA==</latexit>
+> M ⇥ T ⇥ d
+> <latexit  sha1_base64="WwvGJJa8ThOMMGJWcgh6uCPsZEY=">AAAB/HicbZDLSsNAFIYn9VbrLdqlm8EiuCqJeFsW3LgRKrS10IYymUzaoZNJmDkRQqiv4saFIm59EHe+jdM2grb+MPDxn3M4Z34/EVyD43xZpZXVtfWN8mZla3tnd8/eP+joOFWUtWksYtX1iWaCS9YGDoJ1E8VI5At274+vp/X7B6Y0j2ULsoR5ERlKHnJKwFgDu9rCfeAR0/j2B4KBXXPqzkx4GdwCaqhQc2B/9oOYphGTQAXRuuc6CXg5UcCpYJNKP9UsIXRMhqxnUBKzxstnx0/wsXECHMbKPAl45v6eyEmkdRb5pjMiMNKLtan5X62XQnjl5VwmKTBJ54vCVGCI8TQJHHDFKIjMAKGKm1sxHRFFKJi8KiYEd/HLy9A5rbsX9fO7s1oDF3GU0SE6QifIRZeogW5QE7URRRl6Qi/o1Xq0nq03633eWrKKmSr6I+vjG1DAk9I=</latexit>
+> T ⇥ M ⇥ d
+
+<latexit sha1_base64="ugGafF0RWC+yaVI2oDKFRO4hUco=">AAAB73icbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAixchgnlAsoTZyWwyZHZ2nekVwpKf8OJBEa/+jjf/xkmyB00saCiquunuChIpDLrut1NYWV1b3yhulra2d3b3yvsHTROnmvEGi2Ws2wE1XArFGyhQ8naiOY0CyVvB6Gbqt564NiJWDzhOuB/RgRKhYBSt1O6iiLghd71yxa26M5Bl4uWkAjnqvfJXtx+zNOIKmaTGdDw3QT+jGgWTfFLqpoYnlI3ogHcsVdSu8bPZvRNyYpU+CWNtSyGZqb8nMhoZM44C2xlRHJpFbyr+53VSDK/9TKgkRa7YfFGYSoIxmT5P+kJzhnJsCWVa2FsJG1JNGdqISjYEb/HlZdI8q3qX1Yv780qN5HEU4QiO4RQ8uIIa3EIdGsBAwjO8wpvz6Lw4787HvLXg5DOH8AfO5w+jbo+d</latexit> 
+
+⇥M <latexit sha1_base64="5q732V/Q5O5Ic7Mygg2WUcSDhjg=">AAAB8HicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAi8cIeUmyhNnJbDJkZneZ6RXCkq/w4kERr36ON//GSbIHTSxoKKq66e4KEikMuu63U1hb39jcKm6Xdnb39g/Kh0ctE6ea8SaLZaw7ATVciog3UaDknURzqgLJ28H4bua3n7g2Io4aOEm4r+gwEqFgFK302EOhuCGNUr9ccavuHGSVeDmpQI56v/zVG8QsVTxCJqkxXc9N0M+oRsEkn5Z6qeEJZWM65F1LI2r3+Nn84Ck5s8qAhLG2FSGZq78nMqqMmajAdiqKI7PszcT/vG6K4a2fiShJkUdssShMJcGYzL4nA6E5QzmxhDIt7K2EjaimDG1GsxC85ZdXSeui6l1Xrx4uKzWSx1GEEziFc/DgBmpwD3VoAgMFz/AKb452Xpx352PRWnDymWP4A+fzB+UWj7g=</latexit> 
+
+⇥T<latexit sha1_base64="8CpzYeMoHLyFfa8/amP+ydOkmEg=">AAAB6nicbVBNS8NAEJ3Ur1q/qh69LBbBU0nEqseCF48V7Qe0oWy2m3bpZhN2J0IJ/QlePCji1V/kzX/jts1BWx8MPN6bYWZekEhh0HW/ncLa+sbmVnG7tLO7t39QPjxqmTjVjDdZLGPdCajhUijeRIGSdxLNaRRI3g7GtzO//cS1EbF6xEnC/YgOlQgFo2ilh6Dv9csVt+rOQVaJl5MK5Gj0y1+9QczSiCtkkhrT9dwE/YxqFEzyaamXGp5QNqZD3rVU0YgbP5ufOiVnVhmQMNa2FJK5+nsio5ExkyiwnRHFkVn2ZuJ/XjfF8MbPhEpS5IotFoWpJBiT2d9kIDRnKCeWUKaFvZWwEdWUoU2nZEPwll9eJa2LqndVrd1fVuokj6MIJ3AK5+DBNdThDhrQBAZDeIZXeHOk8+K8Ox+L1oKTzxzDHzifP+MjjXI=</latexit> 
+
+b1
+
+<latexit sha1_base64="XKJBe25lskciPveRVoWXim6TzIo=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKewGX8eAF48RzQOSJcxOZpMhs7PLTK8QlnyCFw+KePWLvPk3TpI9aGJBQ1HVTXdXkEhh0HW/ncLa+sbmVnG7tLO7t39QPjxqmTjVjDdZLGPdCajhUijeRIGSdxLNaRRI3g7GtzO//cS1EbF6xEnC/YgOlQgFo2ilh6Bf65crbtWdg6wSLycVyNHol796g5ilEVfIJDWm67kJ+hnVKJjk01IvNTyhbEyHvGupohE3fjY/dUrOrDIgYaxtKSRz9fdERiNjJlFgOyOKI7PszcT/vG6K4Y2fCZWkyBVbLApTSTAms7/JQGjOUE4soUwLeythI6opQ5tOyYbgLb+8Slq1qndVvby/qNRJHkcRTuAUzsGDa6jDHTSgCQyG8Ayv8OZI58V5dz4WrQUnnzmGP3A+fwDkp41z</latexit> 
+
+b2
+
+<latexit sha1_base64="PgJEiiFmb0PnfQOi5SfVm4YmVQI=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKez6Pga8eIxoHpAsYXYymwyZnV1meoWw5BO8eFDEq1/kzb9xkuxBEwsaiqpuuruCRAqDrvvtFFZW19Y3ipulre2d3b3y/kHTxKlmvMFiGet2QA2XQvEGCpS8nWhOo0DyVjC6nfqtJ66NiNUjjhPuR3SgRCgYRSs9BL3zXrniVt0ZyDLxclKBHPVe+avbj1kacYVMUmM6npugn1GNgkk+KXVTwxPKRnTAO5YqGnHjZ7NTJ+TEKn0SxtqWQjJTf09kNDJmHAW2M6I4NIveVPzP66QY3viZUEmKXLH5ojCVBGMy/Zv0heYM5dgSyrSwtxI2pJoytOmUbAje4svLpHlW9a6ql/cXlRrJ4yjCERzDKXhwDTW4gzo0gMEAnuEV3hzpvDjvzse8teDkM4fwB87nD+YrjXQ=</latexit> 
+
+b3
+
+<latexit sha1_base64="HATF+eO8cfF1YChfwfMrdTnXEco=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKexKfBwDXjxGNA9IljA7mU2GzM4uM71CWPIJXjwo4tUv8ubfOEn2oIkFDUVVN91dQSKFQdf9dgpr6xubW8Xt0s7u3v5B+fCoZeJUM95ksYx1J6CGS6F4EwVK3kk0p1EgeTsY38789hPXRsTqEScJ9yM6VCIUjKKVHoJ+rV+uuFV3DrJKvJxUIEejX/7qDWKWRlwhk9SYrucm6GdUo2CST0u91PCEsjEd8q6likbc+Nn81Ck5s8qAhLG2pZDM1d8TGY2MmUSB7YwojsyyNxP/87ophjd+JlSSIldssShMJcGYzP4mA6E5QzmxhDIt7K2EjaimDG06JRuCt/zyKmldVL2r6uV9rVIneRxFOIFTOAcPrqEOd9CAJjAYwjO8wpsjnRfn3flYtBacfOYY/sD5/AHnr411</latexit> 
+
+b4
+
+<latexit sha1_base64="VziUNqgvRu6mj4Ij+P4v9dp8uuw=">AAAB6nicbVBNS8NAEJ3Ur1q/qh69LBbBU0nEqseCF48V7Qe0oWy2m3bpZhN2J0IJ/QlePCji1V/kzX/jts1BWx8MPN6bYWZekEhh0HW/ncLa+sbmVnG7tLO7t39QPjxqmTjVjDdZLGPdCajhUijeRIGSdxLNaRRI3g7GtzO//cS1EbF6xEnC/YgOlQgFo2ilh6Bf65crbtWdg6wSLycVyNHol796g5ilEVfIJDWm67kJ+hnVKJjk01IvNTyhbEyHvGupohE3fjY/dUrOrDIgYaxtKSRz9fdERiNjJlFgOyOKI7PszcT/vG6K4Y2fCZWkyBVbLApTSTAms7/JQGjOUE4soUwLeythI6opQ5tOyYbgLb+8SloXVe+qWru/rNRJHkcRTuAUzsGDa6jDHTSgCQyG8Ayv8OZI58V5dz4WrQUnnzmGP3A+fwDpM412</latexit> 
+
+b5
+
+<latexit sha1_base64="T4WDLe4+WqEKSedAfMGVxl+e/W0=">AAAB6nicbVBNS8NAEJ3Ur1q/qh69LBbBU0lEq8eCF48V7Qe0oWy2m3bpZhN2J0IJ/QlePCji1V/kzX/jts1BWx8MPN6bYWZekEhh0HW/ncLa+sbmVnG7tLO7t39QPjxqmTjVjDdZLGPdCajhUijeRIGSdxLNaRRI3g7GtzO//cS1EbF6xEnC/YgOlQgFo2ilh6Bf65crbtWdg6wSLycVyNHol796g5ilEVfIJDWm67kJ+hnVKJjk01IvNTyhbEyHvGupohE3fjY/dUrOrDIgYaxtKSRz9fdERiNjJlFgOyOKI7PszcT/vG6K4Y2fCZWkyBVbLApTSTAms7/JQGjOUE4soUwLeythI6opQ5tOyYbgLb+8SloXVa9Wvbq/rNRJHkcRTuAUzsGDa6jDHTSgCQyG8Ayv8OZI58V5dz4WrQUnnzmGP3A+fwDqt413</latexit> 
+
+b6
+
+<latexit sha1_base64="ba4vo4evw6Qxcf+XKvJVCWrLWqE=">AAAB6nicbVBNS8NAEJ3Ur1q/qh69LBbBU0lErceCF48V7Qe0oWy2m3bpZhN2J0IJ/QlePCji1V/kzX/jts1BWx8MPN6bYWZekEhh0HW/ncLa+sbmVnG7tLO7t39QPjxqmTjVjDdZLGPdCajhUijeRIGSdxLNaRRI3g7GtzO//cS1EbF6xEnC/YgOlQgFo2ilh6Bf65crbtWdg6wSLycVyNHol796g5ilEVfIJDWm67kJ+hnVKJjk01IvNTyhbEyHvGupohE3fjY/dUrOrDIgYaxtKSRz9fdERiNjJlFgOyOKI7PszcT/vG6K4Y2fCZWkyBVbLApTSTAms7/JQGjOUE4soUwLeythI6opQ5tOyYbgLb+8SloXVe+6enV/WamTPI4inMApnIMHNajDHTSgCQyG8Ayv8OZI58V5dz4WrQUnnzmGP3A+fwDsO414</latexit> 
+
+b7
+
+<latexit sha1_base64="k8oCOy6tC6eIKj5szHnhDxLouYc=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKeyKjxwDXjxGNA9IljA7mU2GzM4uM71CWPIJXjwo4tUv8ubfOEn2oIkFDUVVN91dQSKFQdf9dgpr6xubW8Xt0s7u3v5B+fCoZeJUM95ksYx1J6CGS6F4EwVK3kk0p1EgeTsY38789hPXRsTqEScJ9yM6VCIUjKKVHoJ+rV+uuFV3DrJKvJxUIEejX/7qDWKWRlwhk9SYrucm6GdUo2CST0u91PCEsjEd8q6likbc+Nn81Ck5s8qAhLG2pZDM1d8TGY2MmUSB7YwojsyyNxP/87ophjU/EypJkSu2WBSmkmBMZn+TgdCcoZxYQpkW9lbCRlRThjadkg3BW355lbQuqt519er+slIneRxFOIFTOAcPbqAOd9CAJjAYwjO8wpsjnRfn3flYtBacfOYY/sD5/AHtv415</latexit> 
+
+b8
+
+<latexit sha1_base64="MAfHstveumFtwLOOlXoYspn41Ig=">AAAB8HicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAixchQl6SLGF2MpsMmZ1dZnqFsOQrvHhQxKuf482/cZLsQaMFDUVVN91dQSKFQdf9cgorq2vrG8XN0tb2zu5eef+gZeJUM95ksYx1J6CGS6F4EwVK3kk0p1EgeTsY38z89iPXRsSqgZOE+xEdKhEKRtFKDz0UETekcdcvV9yqOwf5S7ycVCBHvV/+7A1ilkZcIZPUmK7nJuhnVKNgkk9LvdTwhLIxHfKupYraPX42P3hKTqwyIGGsbSkkc/XnREYjYyZRYDsjiiOz7M3E/7xuiuG1nwmVpMgVWywKU0kwJrPvyUBozlBOLKFMC3srYSOqKUObUcmG4C2//Je0zqreZfXi/rxSI3kcRTiCYzgFD66gBrdQhyYwiOAJXuDV0c6z8+a8L1oLTj5zCL/gfHwDSrGP+w==</latexit> 
+
+⇥T M 
+
+> Feed -
+> Forward
+> Feed -
+> Forward
+
+Figure 3. Architecture of Trajectory World Models. A trajectory is first flattened into scalars, organized into two dimensions by timesteps and variates (each variate corresponds to a single dimension in the state, action, and reward), and then discretized into categorical representations. A Transformer with interleaved temporal and variate attentions processes the inputs to predict the categorical distribution for the next timestep autoregressively. Layer normalizations and residual connections are omitted for simplicity. 
+
+4.1. Intuition 
+
+To address the challenges of heterogeneity and promote knowledge transfer, we make three key observations: 
+
+Rediscovering homogeneity in scalars. While hetero-geneity often arises in differently sized vector information, there exists an inherent homogeneity at the scalar level. Each variate—a single scalar dimension in the state, ac-tion, or reward—represents a fundamental quantity with its own physical meanings of the environment, e.g., position or torque of a single joint, and can be consistently modeled, re-gardless of the shape of the whole vector information. This insight leads to our design choice: Instead of treating vector information as a whole, we break it into the scalar level for processing and prediction. 
+
+Identifying environment through historical context. 
+
+Unlike single-environment scenarios with fixed state and action definitions, in our setting, variants can represent dif-ferent quantities across environments despite the same index in the vector. While environment IDs are typically included as inputs to distinguish environments, we instead leverage the in-context learning ability of Transformers (Brown et al., 2020): history transitions can provide the context needed for the model to infer relationships between variants. This makes pre-training even more critical. By exposing the model to diverse data across environments, we encourage it to learn “how to learn environment dynamics,”—a more generalizable knowledge—rather than solely focusing on specific environments. This ability is demonstrated in Sec-tion 5.1, where our pre-trained model has satisfactory zero-shot performance. In summary, we provide historical con-text instead of environment identities, guiding the model to learn to infer dynamics through context .
+
+Inductive bias for two-dimensional representations. So far, our modeling for heterogeneous dynamics involves two dimensions: one focuses on capturing the relationships among variants, and the other models how actions drive transitions from the current state to the next. Instead of using simple one-dimensional attention over flattened se-quences, explicitly modeling these two dimensions has the potential to enhance transferability in downstream tasks, as it guides the model to learn in a more structured and sys-tematic manner. This is supported by empirical results in Section 5.2. In short, we use a two-way attention mechanism instead of one-dimensional attention on sequences. 
+
+4.2. Architecture 
+
+Building on the above intuitions, we realize a Transformer-based architecture for TrajWorld (see Figure 3). 
+
+Scalarization. To exploit the inherent homogeneity at the scalar level, we flatten a trajectory τ (Equation (1) )from the spaces S ⊂ Rm, A ⊂ Rn into a two-dimensional representation organized by timesteps and variates: 
+
+X =
+
+
+
+s(1) 0 · · · s(m)0 r0 a(1) 0 · · · a(n)0
+
+... . . . ... ... ... . . . ...
+
+s(1) 
+
+T −1 · · · s(m)
+
+T −1 rT −1 a(1) 
+
+T −1 · · · a(n)
+
+T −1
+
+ ,
+
+(2) where s(i)
+
+t denotes the i-th dimension of st. Padding is ap-plied to r0 and aT −1 as zeros. This transformation converts heterogeneous trajectories of varying lengths and dimen-sions into matrices X ∈ RT ×M , where M = m + n + 1 ,which can be flexibly processed by the attention mechanism. 
+
+Discretization and embeddings. Transformers excel in processing discrete inputs, so we further convert scalars into categorical representations. For each variate s(i) or a(i), we define B uniform bins with boundaries b0 < b 1 < · · · < b B ,where b0 and bB represent the minimum and maximum values of the variate in the training data. Scalars are then mapped to these bins using one-hot encoding or Gaussian histograms (Imani & White, 2018; Farebrother et al., 2024). The resulting discrete representation Q ∈ [0 , 1] T ×M ×B is 4Trajectory World Models for Heterogeneous Environments 
+
+linearly projected to match the Transformer’s hidden size d.Additionally, we apply three learned embeddings— timestep-embedding (TE), variate embedding (VE), and prediction embedding (PE)—to capture timestep indices, variate iden-tities, and whether a variate is a target for prediction. For-mally, for each i ∈ [T ] and j ∈ [M ]:
+
+Z0 
+
+> ij
+
+= Win Qij + TE (i) + VE (j) + PE (1[j ≤ m + 1]) . (3) 
+
+Interleaved temporal-variate attentions. The input 
+
+Z0 ∈ RT ×M ×d is processed through a series of L trans-former blocks, adapted for the two-dimensional input struc-ture. In each block l = 1 , . . . , L , we first apply temporal attention , processing each variate independently: 
+
+U l 
+
+> 1: T,j
+
+= CausalAttention (Zl−11: T,j ), ∀j ∈ [M ], (4) followed by a feedforward network (FFN): ˆU l = FFN (U l).Afterwards, variate attention is applied at each timestep: 
+
+V li, 1: M = Attention ( ˆU li, 1: M ), ∀i ∈ [T ]. (5) Since there are no causal dependencies between variates at the same timestep, no causal mask is applied during variate attention. Finally, another FFN is applied: Zl = FFN (V l).Through interleaved temporal and variate attentions, each entry in our model efficiently aggregates information from all variates across all previous timesteps. As previously discussed, this enables the model to infer environment dy-namics in-context for transition prediction. 
+
+Prediction and objective. A linear prediction head, fol-lowed by a softmax operation, produces the prediction dis-tribution P = Softmax (Wout ZL) ∈ [0 , 1] T ×M ×B . Our model is trained using a next-step prediction objective to match the categorical representation of the inputs: 
+
+L(P, Q ) = − 
+
+> T−1
+
+X
+
+> i=1
+> m+1
+
+X
+
+> j=1
+> B
+
+X
+
+> k=1
+
+Qi+1 ,j,k log Pi,j,k . (6) During inference, the next-step prediction can be obtained by sampling from or taking the expectation of the predicted categorical distribution over bin centers. 
+
+4.3. Towards a General Trajectory World Model 
+
+We pre-train a general Trajectory World Model on offline datasets from diverse environments. This same pre-trained model can then be applied to all downstream tasks for fine-tuning. Thanks to the Transformer’s flexible architecture design and in-context learning capabilities, the pre-trained knowledge becomes more transferable, benefiting a wide range of heterogeneous and complex control environments.                      
+
+> Method Prediction Error (MSE) Pendulum Walker2D Last-step Mirroring 1.3×10 −31.7×10 −2
+> TrajWorld (w/o history) 1.7×10 −52.1×10 −3
+> TrajWorld (w/ history) 2.9×10 −67.2×10 −4
+> (a) Environment parameters transfer.
+> (b) Cross-environment transfer.
+> Figure 4. Zero-shot generalization. (a) Mean squared error of zero-shot transition predictions in modified Gym Pendulum (holdout gravity) and Walker2D (holdout friction etc.). (b) TrajWorld’s zero-shot predictions for two Cart-2-Pole trajectories, which share 10 context steps but diverge due to differing subsequent actions.
+
+5. Experiments 
+
+In this section, we test the following hypotheses: • Large-scale trajectory pre-training can generalize ef-fectively and even enable zero-shot generalization, con-trary to the common belief (Section 5.1). • TrajWorld outperforms alternative architectures for transition prediction when transferring dynamics knowledge to new environments (Section 5.2). • TrajWorld leverages the general dynamics knowledge acquired from pre-training to improve performance in downstream tasks (Section 5.3). 
+
+5.1. Zero-shot Generalization 
+
+We first demonstrate that through in-context learning ability, TrajWorld exhibits favorable generalization across heteroge-neous environments, which differ not only in their transition dynamics but also in state and action spaces. 
+
+Environment parameter transfer. We pre-train a Traj-World model on data from Gym Pendulum environments with varying gravity values and evaluate its transition predic-tion error on holdout gravity values. As shown in Table 4a, TrajWorld achieves significantly lower prediction error in zero-shot settings compared to a naive baseline that simply mimics the last timestep. Moreover, the performance of TrajWorld deteriorates noticeably when historical informa-tion is excluded, highlighting the critical role of contexts for 5Trajectory World Models for Heterogeneous Environments r m-r m m-e e                                                                                   
+
+> 10 1
+> 10 0
+> Prediction Error
+> halfcheetah-random-v2
+> rm-r mm-e e
+> 10 1
+> 10 0
+> halfcheetah-medium-replay-v2
+> rm-r mm-e e
+> 10 1
+> 10 0
+> halfcheetah-medium-v2
+> rm-r mm-e e
+> 10 1
+> halfcheetah-medium-expert-v2
+> rm-r mm-e e
+> 10 1
+> halfcheetah-expert-v2
+> rm-r mm-e e
+> 10 2
+> 10 1
+> Prediction Error
+> hopper-random-v2
+> rm-r mm-e e
+> 10 2
+> 8 × 10 3
+> 9 × 10 3
+> hopper-medium-replay-v2
+> rm-r mm-e e
+> 10 2
+> 10 1
+> hopper-medium-v2
+> rm-r mm-e e
+> 10 2
+> 10 1
+> hopper-medium-expert-v2
+> rm-r mm-e e
+> 10 2
+> 10 1
+> hopper-expert-v2
+> rm-r mm-e e
+> 10 1
+> Prediction Error
+> walker2d-random-v2
+> rm-r mm-e e
+> 10 1
+> 2 × 10 2
+> 3 × 10 2
+> 4 × 10 2
+> 6 × 10 2
+> walker2d-medium-replay-v2
+> rm-r mm-e e
+> 10 1
+> walker2d-medium-v2
+> TrajWorld (w/o PT)
+> TrajWorld (w/ PT)
+> rm-r mm-e e
+> 10 2
+> 10 1
+> walker2d-medium-expert-v2
+> rm-r mm-e e
+> 10 2
+> 10 1
+> walker2d-expert-v2
+
+Figure 5. Mean absolute errors (MAE) of transition prediction for TrajWorld, with and without pre-training (PT), across different train-test dataset pairs. Each subplot corresponds to a distinct training dataset, with the test datasets shown on the x-axis (r=random, m-r=medium-replay, m=medium, m-e=medium-expert, e=expert). Error bars represent the standard deviation across three random seeds. 
+
+the model to effectively infer environment parameters. The results are consistent in a similar experiment conducted on Gym Walker2D, where friction, mass, etc., are varied. 
+
+Cross-environment transfer. We further find that Tra-jWorld, when trained on the large-scale UniTraj dataset, is also capable of zero-shot generalizing to unseen envi-ronments, Cart-2-Pole and Cart-3-Pole from DMC (Figure 4b and 13). Specifically, TrajWorld successfully infers the influence of the action value (pushing force) on the state di-mension (cart position) and accurately predicts the outcomes for different action sequences performed subsequently. 
+
+5.2. Transition Prediction 
+
+We then evaluate how different world models benefit from pre-training for transition prediction, particularly for out-of-distribution queries, when fine-tuned to more complex, standard environments. 
+
+Setup. We use datasets of three environments— HalfCheetah, Hopper, and Walker2D—from D4RL (Fu et al., 2020) as our testbed. Each environment in D4RL is provided with five datasets of different distributions from policies of varying performance levels. We train world models in each of the fifteen datasets and test prediction errors of states and rewards across all five datasets under the same environment, resulting in 75 train-test dataset pairs. 
+
+Baselines. We compare our approach against two base-lines: an ensemble of MLPs (Chua et al., 2018), widely adopted for dynamics modeling, and TDM (Schubert et al., 2023), which is similar to our model but flattens inputs and uses one-dimensional attention. Each baseline is evaluated both for training from scratch and fine-tuning pre-trained ones on the same UniTraj dataset as TrajWorld. To enable pre-training, we pad the state and action vectors with zeros to match the same dimensionality for MLP. Additionally, we compare with our model trained from scratch. 
+
+Results. Figure 1 presents the aggregated mean absolute error of 75 train-test dataset pairs for various models. Tra-jWorld outperforms all baselines, highlighting the effec-tiveness of its pre-training strategy and architecture design. Notably, MLP Ensemble with pre-training performs worse than its non-pre-trained counterpart, emphasizing the im-portance of careful model design for world modeling across heterogeneous environments. While TDM also benefits sig-nificantly from pre-training, it still lags behind TrajWorld. This is likely because TDM naively treats everything as a 1D sequence, neglecting the unique problem structures. In contrast, TrajWorld explicitly models variate relationships and temporal transitions, leveraging different facets of dy-namics knowledge from the pre-training. Moreover, TDM predicts variants sequentially, which may accumulate errors and lead to less accurate results, whereas TrajWorld predicts all variables jointly, mitigating compounding errors. In Figure 5, we further show detailed prediction error re-sults for TrajWorld compared to its non-pre-trained coun-terparts. In 12 out of 15 training datasets, fine-tuned Tra-6Trajectory World Models for Heterogeneous Environments 0.0    
+
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8 Mean Absolute Error
+> 0.4
+> 0.2
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0 Mean Rank Correlation
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5 Regret@1
+> FQE
+> DR
+> IS
+> DICE
+> VPM
+> ETM
+> MLP Ensemble (w/o PT)
+> MLP Ensemble (w/ PT)
+> TDM (w/o PT)
+> TDM (w/ PT)
+> TrajWorld (w/o PT)
+> TrajWorld (w/ PT)
+
+Figure 6. Overall off-policy evaluation (OPE) results across 15 datasets of 3 environments, averaged across three random seeds. 
+
+jWorld achieves a lower average prediction error across 5 test datasets, further validating the effectiveness of pre-training. Moreover, the transfer benefits are evident in both in-distribution and out-of-distribution scenarios, indicating that the model generalizes well even when trained and tested on transitions collected from different policies. 
+
+5.3. Off-Policy Evaluation 
+
+Off-policy evaluation (OPE) estimates the value of a tar-get policy using an offline transition dataset collected by a separate behavior policy. It is commonly used to select the most performant policy from a set of candidates when online evaluation is too costly to be practical. This task pro-vides an ideal evaluation scenario for world models, as value estimation can be acquired by rolling out the target policy within the learned world model. This is particularly advanta-geous for evaluating long-horizon predictions, where direct environment interaction is infeasible and model accuracy over extended timeframes is critical. 
+
+Setup. We adopt the DOPE benchmark (Fu et al., 2021) over various D4RL environments. The tasks in this bench-mark are particularly challenging, as the target policies are of different levels and may differ significantly from the be-havior policy. To perform well on these tasks, the world model must generalize well across all possible state-action distributions. Evaluation metrics include mean absolute error comparing estimated vs. ground-truth policy values, 
+
+rank correlation between estimated and actual policy rank-ings, and Regret@1 measuring accuracy in selecting the best policy, as detailed in Appendix B.4.3. 
+
+Baselines. In addition to the MLP Ensemble and TDM models mentioned earlier, we compare our approach against several other baselines. Notably, Energy-based Transition Models (ETM) (Chen et al., 2024) currently sets the state-of-the-art on this benchmark, outperforming prior methods by a significant margin. We also include the classical methods from the original DOPE paper (Fu et al., 2021) for a more comprehensive comparison. 
+
+Results. Figure 6 shows that TrajWorld significantly im-proves OPE compared to its non-pre-trained variant and outperforms all baselines in both average normalized ab-solute error and rank correlation. TrajWorld slightly un-derperforms on Regret@1, likely due to bounded reward prediction (see discussion in Appendix D). Consistent with Section 5.2, MLP Ensemble with pre-training suffers from negative transfer, showing a notable drop in performance compared to the non-pre-trained model. Although TDM also benefits from pre-training, it does not reach the same level of performance as TrajWorld. We attribute this to the same reason discussed in Section 5.2. 
+
+5.4. Model Predictive Control 
+
+Model predictive control (MPC) selects actions by optimiz-ing predicted future rewards over a finite horizon using a learned world model, making it well-suited for evaluating world model performance in online control settings. 
+
+Setup. We evaluate MPC performance in a practical scenario where world models trained on medium-replay datasets are used to enhance medium-level proposal policies through model predictive control. Specifically, we utilize three medium-replay datasets from D4RL and medium-level policies from DOPE. Additionally, we experiment with MPC using a random shooting planner. Implementation details are provided in Appendix B.5. 
+
+Baselines. As in the previous section, we compare our method against the MLP Ensemble and TDM baselines, evaluting both both from-scratch and fine-tuned variants. 
+
+Results. Figure 7 presents results for MPC with proposal policies. Overall, MPC using TrajWorld yields the highest-performing agents, outperforming both baseline models and its from-scratch counterpart. We find that MPC leads to significant gains in the Hopper and Walker2D environments, but has limited effects in HalfCheetah, likely due to its in-herent stability and lower risk of failure. In contrast, Hopper and Walker2D are fragile, and our world models help pre-vent unsafe actions, leading to better planning. Notably, 7Trajectory World Models for Heterogeneous Environments Aggregated Results (3 Environments)  
+
+> Figure 7. Model predictive control (MPC) results with proposal policies across three environments, averaged over three random seeds.
+
+the TDM model exhibits negative transfer in the MPC with proposal policies setting, despite showing positive transfer in transition prediction and off-policy evaluation. In the random shooting setting, the planner’s limited abil-ity to sample high-quality actions hinders its effective uti-lization of model predictions, leading to consistently poor performance across all world models. Nevertheless, Traj-World demonstrates comparatively better results under these limitations. See Appendix C.4 for detailed results. 
+
+5.5. Analysis Few-shot adaptation. TrajWorld presents pre-training benefits in few-shot scenarios. In Figure 8a, we show the prediction error across varying levels of data scarcity and compare TrajWorld with and without pre-training. These results highlight that the advantages of pre-training become increasingly pronounced as data becomes more limited. 
+
+Discretization visualization. We use t-SNE (van der Maaten & Hinton, 2008) to visualize the linear weights of our model’s prediction head for each category. The mapped weights exhibit strong continuity in Figure 8b. Since the output categories’ indices are aligned with the bins in in-creasing order, this indicates that our model has learned the ordering of bins shared by variants, despite being trained via an unordered classification objective. This suggests the model’s potential for fine interpolation between existing bins and extrapolation to unseen ranges of variant values. 
+
+Variate attention visualization. We visualize the variate attention maps of our fine-tuned model in the Walker2D en-vironment, whose states are ordered with joint positions first, followed by their velocities. As shown in Figure 8c, the at-tention map exhibits prominent diagonal patterns that focus on the corresponding joint’s position and velocity, suggest-ing the model’s understanding of each variate’s semantics. Additionally, the strong attention between neighboring vari-ate, such as physically linked joints, further confirms the model’s grasp of joint relationships. We also observe no-table attention patterns between states and actions, and these additional results are available in Appendix C.6. 
+
+Effects of pre-training scale and diversity We assess the impact of dataset scale and diversity by pre-training three TrajWorld variants on subsets of UniTraj: a 1/10 sample, a 1/100 sample, and the JAT subset (purely expert trajec-tories from five environments), followed by fine-tuning on downstream environments. For transition prediction, we adopt a challenging setup where models are fine-tuned on expert data per environment but evaluated across all data levels. Model-predictive control (MPC) results are also reported. As shown in Figure 9, all subset-pretrained mod-els outperform training from scratch, but fall short of the model trained on the full UniTraj dataset. This reveals a desirable scaling trend: larger and more diverse pre-training data consistently lead to better generalization. These find-ings highlight the value of heterogeneous pre-training on large-scale datasets. 
+
+6. Related Work 
+
+Trajectory dataset. Data-driven approaches for control like imitation learning (Florence et al., 2022; Shafiullah et al., 2022; Gallou ´edec et al., 2024) and offline reinforce-ment learning (Fu et al., 2020; Rafailov et al., 2024; Gul-cehre et al., 2020; Qin et al., 2022) have promoted the public availability of trajectory datasets. However, these datasets are rarely utilized as unified big data for foundation models, likely due to their isolated characteristics, such as differ-ences in policy levels, observation spaces, and action spaces. In fact, the largest robotics dataset, Open X-Embodiment (O’Neill et al., 2024), is typically used for imitation learning with homogeneous visual observations and end-effector ac-tions (Team et al., 2024; Kim et al., 2024). Gato (Reed et al., 2022) collects a large-scale dataset across diverse environ-ments for a generalist agent, but it is not publicly available. In contrast, we curate public heterogeneous datasets, target-ing a more capable trajectory world model. 
+
+Cross-environment architecture. Zero-padding to fit a maximum length (Yu et al., 2020a; Hansen et al., 2024; Schmied et al., 2024; Seo et al., 2022) or using separate neu-ral network heads (Wang et al., 2024a; D’Eramo et al., 2020) hinders knowledge transfer between heterogeneous environ-8Trajectory World Models for Heterogeneous Environments TrajWorld (w/ PT) 
+
+TrajWorld (w/o PT) 
+
+Hopper 
+
+Walker2d 
+
+(a) Few-shot adaptation. (b) Discretization visualization. Velocities 
+
+> Positions
+
+<latexit sha1_base64="KE7OMAku7f3OzlldlLg1Fz9hrTM=">AAAB63icbVDLSgMxFL3xWeur6tJNsAiuyoz4WhbcuKxgH9COJZNm2tAkMyQZoQz9BTcuFHHrD7nzb8y0s9DWAxcO59zLvfeEieDGet43WlldW9/YLG2Vt3d29/YrB4ctE6easiaNRaw7ITFMcMWallvBOolmRIaCtcPxbe63n5g2PFYPdpKwQJKh4hGnxOaSefRwv1L1at4MeJn4BalCgUa/8tUbxDSVTFkqiDFd30tskBFtORVsWu6lhiWEjsmQdR1VRDITZLNbp/jUKQMcxdqVsnim/p7IiDRmIkPXKYkdmUUvF//zuqmNboKMqyS1TNH5oigV2MY4fxwPuGbUiokjhGrubsV0RDSh1sVTdiH4iy8vk9Z5zb+qXd5fVOu4iKMEx3ACZ+DDNdThDhrQBAojeIZXeEMSvaB39DFvXUHFzBH8Afr8AVB4jas=</latexit> 
+
+s0
+
+<latexit sha1_base64="e7VaaxG21wB6GbTbDAxIQvNhA7E=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAi8eI5gHJGmYns8mQ2dllplcISz7BiwdFvPpF3vwbJ8keNLGgoajqprsrSKQw6LrfTmFldW19o7hZ2tre2d0r7x80TZxqxhsslrFuB9RwKRRvoEDJ24nmNAokbwWjm6nfeuLaiFg94DjhfkQHSoSCUbTSvXn0euWKW3VnIMvEy0kFctR75a9uP2ZpxBUySY3peG6CfkY1Cib5pNRNDU8oG9EB71iqaMSNn81OnZATq/RJGGtbCslM/T2R0ciYcRTYzoji0Cx6U/E/r5NieO1nQiUpcsXmi8JUEozJ9G/SF5ozlGNLKNPC3krYkGrK0KZTsiF4iy8vk+ZZ1busXtydV2okj6MIR3AMp+DBFdTgFurQAAYDeIZXeHOk8+K8Ox/z1oKTzxzCHzifP/uEjYI=</latexit> 
+
+s1 <latexit sha1_base64="/Iei1P/ptBEf1tE+Xu0MF+BmDPg=">AAAB6nicbVDLSgNBEOz1GeMr6tHLYBA8hd3g6xjw4jGieUCyhtlJbzJkdnaZmRXCkk/w4kERr36RN//GSbIHTSxoKKq66e4KEsG1cd1vZ2V1bX1js7BV3N7Z3dsvHRw2dZwqhg0Wi1i1A6pRcIkNw43AdqKQRoHAVjC6mfqtJ1Sax/LBjBP0IzqQPOSMGivd68dqr1R2K+4MZJl4OSlDjnqv9NXtxyyNUBomqNYdz02Mn1FlOBM4KXZTjQllIzrAjqWSRqj9bHbqhJxapU/CWNmShszU3xMZjbQeR4HtjKgZ6kVvKv7ndVITXvsZl0lqULL5ojAVxMRk+jfpc4XMiLEllClubyVsSBVlxqZTtCF4iy8vk2a14l1WLu7OyzWSx1GAYziBM/DgCmpwC3VoAIMBPMMrvDnCeXHenY9564qTzxzBHzifP/0IjYM=</latexit> 
+
+s2 <latexit sha1_base64="AQlNDCTH5DbcuLOYwoa7t65FvhY=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKez6Pga8eIxoHpCsYXbSmwyZnV1mZoWw5BO8eFDEq1/kzb9xkuxBowUNRVU33V1BIrg2rvvlFJaWV1bXiuuljc2t7Z3y7l5Tx6li2GCxiFU7oBoFl9gw3AhsJwppFAhsBaPrqd96RKV5LO/NOEE/ogPJQ86osdKdfjjtlStu1Z2B/CVeTiqQo94rf3b7MUsjlIYJqnXHcxPjZ1QZzgROSt1UY0LZiA6wY6mkEWo/m506IUdW6ZMwVrakITP150RGI63HUWA7I2qGetGbiv95ndSEV37GZZIalGy+KEwFMTGZ/k36XCEzYmwJZYrbWwkbUkWZsemUbAje4st/SfOk6l1Uz2/PKjWSx1GEAziEY/DgEmpwA3VoAIMBPMELvDrCeXbenPd5a8HJZ/bhF5yPb/6MjYQ=</latexit> 
+
+s3
+
+<latexit sha1_base64="HFjEsID4hFDI3Ze3yOmhEU1YcGU=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAi8eI5gHJGmYnvcmQ2dllZlYISz7BiwdFvPpF3vwbJ8keNLGgoajqprsrSATXxnW/ncLK6tr6RnGztLW9s7tX3j9o6jhVDBssFrFqB1Sj4BIbhhuB7UQhjQKBrWB0M/VbT6g0j+WDGSfoR3QgecgZNVa614/nvXLFrbozkGXi5aQCOeq98le3H7M0QmmYoFp3PDcxfkaV4UzgpNRNNSaUjegAO5ZKGqH2s9mpE3JilT4JY2VLGjJTf09kNNJ6HAW2M6JmqBe9qfif10lNeO1nXCapQcnmi8JUEBOT6d+kzxUyI8aWUKa4vZWwIVWUGZtOyYbgLb68TJpnVe+yenF3XqmRPI4iHMExnIIHV1CDW6hDAxgM4Ble4c0Rzovz7nzMWwtOPnMIf+B8/gAAH42F</latexit> 
+
+s4
+
+<latexit sha1_base64="T0DsMOqemj96aGKNor4e29FgEgM=">AAAB6nicbVBNS8NAEJ34WetX1aOXxSJ4KolY9Vjw4rGi/YA2ls120y7dbMLuRCihP8GLB0W8+ou8+W/ctjlo64OBx3szzMwLEikMuu63s7K6tr6xWdgqbu/s7u2XDg6bJk414w0Wy1i3A2q4FIo3UKDk7URzGgWSt4LRzdRvPXFtRKwecJxwP6IDJULBKFrp3jxWe6WyW3FnIMvEy0kZctR7pa9uP2ZpxBUySY3peG6CfkY1Cib5pNhNDU8oG9EB71iqaMSNn81OnZBTq/RJGGtbCslM/T2R0ciYcRTYzoji0Cx6U/E/r5NieO1nQiUpcsXmi8JUEozJ9G/SF5ozlGNLKNPC3krYkGrK0KZTtCF4iy8vk+Z5xbusVO8uyjWSx1GAYziBM/DgCmpwC3VoAIMBPMMrvDnSeXHenY9564qTzxzBHzifPwGjjYY=</latexit> 
+
+s5
+
+<latexit sha1_base64="QKYYcJ898temHiQHUOom2D2CqP0=">AAAB6nicbVBNS8NAEJ34WetX1aOXxSJ4Kolo9Vjw4rGi/YA2ls120y7dbMLuRCihP8GLB0W8+ou8+W/ctjlo64OBx3szzMwLEikMuu63s7K6tr6xWdgqbu/s7u2XDg6bJk414w0Wy1i3A2q4FIo3UKDk7URzGgWSt4LRzdRvPXFtRKwecJxwP6IDJULBKFrp3jxWe6WyW3FnIMvEy0kZctR7pa9uP2ZpxBUySY3peG6CfkY1Cib5pNhNDU8oG9EB71iqaMSNn81OnZBTq/RJGGtbCslM/T2R0ciYcRTYzoji0Cx6U/E/r5NieO1nQiUpcsXmi8JUEozJ9G/SF5ozlGNLKNPC3krYkGrK0KZTtCF4iy8vk+Z5xatWLu8uyjWSx1GAYziBM/DgCmpwC3VoAIMBPMMrvDnSeXHenY9564qTzxzBHzifPwMnjYc=</latexit> 
+
+s6
+
+<latexit sha1_base64="TlasRrFfxnuGy4BSx/cQ829ZAVQ=">AAAB6nicbVBNS8NAEJ34WetX1aOXxSJ4Komo9Vjw4rGi/YA2ls120y7dbMLuRCihP8GLB0W8+ou8+W/ctjlo64OBx3szzMwLEikMuu63s7K6tr6xWdgqbu/s7u2XDg6bJk414w0Wy1i3A2q4FIo3UKDk7URzGgWSt4LRzdRvPXFtRKwecJxwP6IDJULBKFrp3jxWe6WyW3FnIMvEy0kZctR7pa9uP2ZpxBUySY3peG6CfkY1Cib5pNhNDU8oG9EB71iqaMSNn81OnZBTq/RJGGtbCslM/T2R0ciYcRTYzoji0Cx6U/E/r5NieO1nQiUpcsXmi8JUEozJ9G/SF5ozlGNLKNPC3krYkGrK0KZTtCF4iy8vk+Z5xbuqXN5dlGskj6MAx3ACZ+BBFWpwC3VoAIMBPMMrvDnSeXHenY9564qTzxzBHzifPwSrjYg=</latexit> 
+
+s7
+
+<latexit sha1_base64="Z/MFlA65tpKJtgRf6s8OmzYHo2k=">AAAB6HicbVDLSgNBEOyNrxhfUY9eBoPgKeyKr2PAi8cEzAOSJcxOepMxs7PLzKwQlnyBFw+KePWTvPk3TpI9aGJBQ1HVTXdXkAiujet+O4W19Y3NreJ2aWd3b/+gfHjU0nGqGDZZLGLVCahGwSU2DTcCO4lCGgUC28H4bua3n1BpHssHM0nQj+hQ8pAzaqzUUP1yxa26c5BV4uWkAjnq/fJXbxCzNEJpmKBadz03MX5GleFM4LTUSzUmlI3pELuWShqh9rP5oVNyZpUBCWNlSxoyV39PZDTSehIFtjOiZqSXvZn4n9dNTXjrZ1wmqUHJFovCVBATk9nXZMAVMiMmllCmuL2VsBFVlBmbTcmG4C2/vEpaF1XvunrVuKzUSB5HEU7gFM7BgxuowT3UoQkMEJ7hFd6cR+fFeXc+Fq0FJ585hj9wPn8A1ieM3g==</latexit> 
+
+r
+
+<latexit sha1_base64="tUzKW+YIOCYXILiF+RYAac7OEyg=">AAAB7nicbVBNS8NAEJ34WetX1aOXxSJ4KoloFU8FLx4r2A9oY9lsJ+3SzSbsboQS+iO8eFDEq7/Hm//GbZuDtj4YeLw3w8y8IBFcG9f9dlZW19Y3Ngtbxe2d3b390sFhU8epYthgsYhVO6AaBZfYMNwIbCcKaRQIbAWj26nfekKleSwfzDhBP6IDyUPOqLFSiz5m3k110iuV3Yo7A1kmXk7KkKPeK311+zFLI5SGCap1x3MT42dUGc4ETordVGNC2YgOsGOppBFqP5udOyGnVumTMFa2pCEz9fdERiOtx1FgOyNqhnrRm4r/eZ3UhNd+xmWSGpRsvihMBTExmf5O+lwhM2JsCWWK21sJG1JFmbEJFW0I3uLLy6R5XvGqlcv7i3KN5HEU4BhO4Aw8uIIa3EEdGsBgBM/wCm9O4rw4787HvHXFyWeO4A+czx+bto8A</latexit> 
+
+a1:6 
+
+<latexit sha1_base64="AAFy+KuMuZopyhcga8AZrbgV6ms=">AAAB6nicbVDLSgNBEOz1GeMr6tHLYBA8hV3xkWPAi8eI5gHJGmYns8mQ2dllplcISz7BiwdFvPpF3vwbJ8keNLGgoajqprsrSKQw6Lrfzsrq2vrGZmGruL2zu7dfOjhsmjjVjDdYLGPdDqjhUijeQIGStxPNaRRI3gpGN1O/9cS1EbF6wHHC/YgOlAgFo2ile/NY7ZXKbsWdgSwTLydlyFHvlb66/ZilEVfIJDWm47kJ+hnVKJjkk2I3NTyhbEQHvGOpohE3fjY7dUJOrdInYaxtKSQz9fdERiNjxlFgOyOKQ7PoTcX/vE6KYdXPhEpS5IrNF4WpJBiT6d+kLzRnKMeWUKaFvZWwIdWUoU2naEPwFl9eJs3zindVuby7KNdIHkcBjuEEzsCDa6jBLdShAQwG8Ayv8OZI58V5dz7mrStOPnMEf+B8/gAGL42J</latexit> 
+
+s8
+
+<latexit sha1_base64="mVsOzFXnNCw6wQ/pWuRfUUMWQgU=">AAAB7XicbVDJSgNBEK2JW4xb1KOXxiB4CjPidgx48RjBLJCMoafTk7TpZejuEcKQf/DiQRGv/o83/8ZOMgdNfFDweK+KqnpRwpmxvv/tFVZW19Y3ipulre2d3b3y/kHTqFQT2iCKK92OsKGcSdqwzHLaTjTFIuK0FY1upn7riWrDlLy344SGAg8kixnB1klN85AF/qRXrvhVfwa0TIKcVCBHvVf+6vYVSQWVlnBsTCfwExtmWFtGOJ2UuqmhCSYjPKAdRyUW1ITZ7NoJOnFKH8VKu5IWzdTfExkWxoxF5DoFtkOz6E3F/7xOauPrMGMySS2VZL4oTjmyCk1fR32mKbF87AgmmrlbERlijYl1AZVcCMHiy8ukeVYNLqsXd+eVGsrjKMIRHMMpBHAFNbiFOjSAwCM8wyu8ecp78d69j3lrwctnDuEPvM8fL4WOyA==</latexit> 
+
+s10 <latexit sha1_base64="bViYprLKKq9g9yLF+kjVoZNYOiE=">AAAB7XicbVDJSgNBEK2JW4xb1KOXxiB4CjPidgx48RjBLJCMoafTk7TpZejuEcKQf/DiQRGv/o83/8ZOMgdNfFDweK+KqnpRwpmxvv/tFVZW19Y3ipulre2d3b3y/kHTqFQT2iCKK92OsKGcSdqwzHLaTjTFIuK0FY1upn7riWrDlLy344SGAg8kixnB1klN85AFwaRXrvhVfwa0TIKcVCBHvVf+6vYVSQWVlnBsTCfwExtmWFtGOJ2UuqmhCSYjPKAdRyUW1ITZ7NoJOnFKH8VKu5IWzdTfExkWxoxF5DoFtkOz6E3F/7xOauPrMGMySS2VZL4oTjmyCk1fR32mKbF87AgmmrlbERlijYl1AZVcCMHiy8ukeVYNLqsXd+eVGsrjKMIRHMMpBHAFNbiFOjSAwCM8wyu8ecp78d69j3lrwctnDuEPvM8fMQqOyQ==</latexit> 
+
+s11 
+
+<latexit sha1_base64="N5yMTZ0WCHyY4z4TwLScT74+MfY=">AAAB7XicbVDJSgNBEK1xjXGLevTSGARPYSa4HQNePEYwCyRj6On0JG16Gbp7hDDkH7x4UMSr/+PNv7GTzEETHxQ83quiql6UcGas7397K6tr6xubha3i9s7u3n7p4LBpVKoJbRDFlW5H2FDOJG1YZjltJ5piEXHaikY3U7/1RLVhSt7bcUJDgQeSxYxg66SmeciC6qRXKvsVfwa0TIKclCFHvVf66vYVSQWVlnBsTCfwExtmWFtGOJ0Uu6mhCSYjPKAdRyUW1ITZ7NoJOnVKH8VKu5IWzdTfExkWxoxF5DoFtkOz6E3F/7xOauPrMGMySS2VZL4oTjmyCk1fR32mKbF87AgmmrlbERlijYl1ARVdCMHiy8ukWa0El5WLu/NyDeVxFOAYTuAMAriCGtxCHRpA4BGe4RXePOW9eO/ex7x1xctnjuAPvM8fMo+Oyg==</latexit> 
+
+s12 
+
+<latexit sha1_base64="YjxAXj0HFxjOKwnFGtFnFS9zjBs=">AAAB7XicbVDJSgNBEK1xjXGLevTSGARPYcb9GPDiMYJZIBlDT6cnadPL0N0jhCH/4MWDIl79H2/+jZ1kDpr4oODxXhVV9aKEM2N9/9tbWl5ZXVsvbBQ3t7Z3dkt7+w2jUk1onSiudCvChnImad0yy2kr0RSLiNNmNLyZ+M0nqg1T8t6OEhoK3JcsZgRbJzXMQxacjbulsl/xp0CLJMhJGXLUuqWvTk+RVFBpCcfGtAM/sWGGtWWE03GxkxqaYDLEfdp2VGJBTZhNrx2jY6f0UKy0K2nRVP09kWFhzEhErlNgOzDz3kT8z2unNr4OMyaT1FJJZovilCOr0OR11GOaEstHjmCimbsVkQHWmFgXUNGFEMy/vEgap5XgsnJxd16uojyOAhzCEZxAAFdQhVuoQR0IPMIzvMKbp7wX7937mLUuefnMAfyB9/kDNBSOyw==</latexit> 
+
+s13 
+
+<latexit sha1_base64="PqezX9hfRGMF12gTwaFZqDoJCv8=">AAAB7XicbVDJSgNBEK2JW4xb1KOXxiB4CjPidgx48RjBLJCMoafTk7TpZejuEcKQf/DiQRGv/o83/8ZOMgdNfFDweK+KqnpRwpmxvv/tFVZW19Y3ipulre2d3b3y/kHTqFQT2iCKK92OsKGcSdqwzHLaTjTFIuK0FY1upn7riWrDlLy344SGAg8kixnB1klN85AF55NeueJX/RnQMglyUoEc9V75q9tXJBVUWsKxMZ3AT2yYYW0Z4XRS6qaGJpiM8IB2HJVYUBNms2sn6MQpfRQr7UpaNFN/T2RYGDMWkesU2A7NojcV//M6qY2vw4zJJLVUkvmiOOXIKjR9HfWZpsTysSOYaOZuRWSINSbWBVRyIQSLLy+T5lk1uKxe3J1XaiiPowhHcAynEMAV1OAW6tAAAo/wDK/w5invxXv3PuatBS+fOYQ/8D5/ADWZjsw=</latexit> 
+
+s14 
+
+<latexit sha1_base64="M9QoAKXwEgHeMp++tgRb8bmtqtU=">AAAB7XicbVBNSwMxEJ34WetX1aOXYBE8lV2x6rHgxWMF+wHtWrJpto3NJkuSFcrS/+DFgyJe/T/e/Dem7R609cHA470ZZuaFieDGet43WlldW9/YLGwVt3d29/ZLB4dNo1JNWYMqoXQ7JIYJLlnDcitYO9GMxKFgrXB0M/VbT0wbruS9HScsiMlA8ohTYp3UNA+ZX530SmWv4s2Al4mfkzLkqPdKX92+omnMpKWCGNPxvcQGGdGWU8EmxW5qWELoiAxYx1FJYmaCbHbtBJ86pY8jpV1Ji2fq74mMxMaM49B1xsQOzaI3Ff/zOqmNroOMyyS1TNL5oigV2Co8fR33uWbUirEjhGrubsV0SDSh1gVUdCH4iy8vk+Z5xb+sVO8uyjWcx1GAYziBM/DhCmpwC3VoAIVHeIZXeEMKvaB39DFvXUH5zBH8Afr8ATcejs0=</latexit> 
+
+s15 
+
+<latexit sha1_base64="9ixbXC9+nwtXb1rDzKiXbG6yKBY=">AAAB7XicbVBNSwMxEJ34WetX1aOXYBE8lV3R6rHgxWMF+wHtWrJpto3NJkuSFcrS/+DFgyJe/T/e/Dem7R609cHA470ZZuaFieDGet43WlldW9/YLGwVt3d29/ZLB4dNo1JNWYMqoXQ7JIYJLlnDcitYO9GMxKFgrXB0M/VbT0wbruS9HScsiMlA8ohTYp3UNA+ZX530SmWv4s2Al4mfkzLkqPdKX92+omnMpKWCGNPxvcQGGdGWU8EmxW5qWELoiAxYx1FJYmaCbHbtBJ86pY8jpV1Ji2fq74mMxMaM49B1xsQOzaI3Ff/zOqmNroOMyyS1TNL5oigV2Co8fR33uWbUirEjhGrubsV0SDSh1gVUdCH4iy8vk+Z5xa9WLu8uyjWcx1GAYziBM/DhCmpwC3VoAIVHeIZXeEMKvaB39DFvXUH5zBH8Afr8ATijjs4=</latexit> 
+
+s16 
+
+<latexit sha1_base64="uXDLvP8AMRF6op57gq9ZhX0I3/s=">AAAB6nicbVDLSgNBEOyNrxhfUY9eBoPgKeyKz1vAi8eI5gHJGmYnvcmQ2dllZlYISz7BiwdFvPpF3vwbJ8keNFrQUFR1090VJIJr47pfTmFpeWV1rbhe2tjc2t4p7+41dZwqhg0Wi1i1A6pRcIkNw43AdqKQRoHAVjC6nvqtR1Sax/LejBP0IzqQPOSMGivd6YerXrniVt0ZyF/i5aQCOeq98me3H7M0QmmYoFp3PDcxfkaV4UzgpNRNNSaUjegAO5ZKGqH2s9mpE3JklT4JY2VLGjJTf05kNNJ6HAW2M6JmqBe9qfif10lNeOlnXCapQcnmi8JUEBOT6d+kzxUyI8aWUKa4vZWwIVWUGZtOyYbgLb78lzRPqt559ez2tFIjeRxFOIBDOAYPLqAGN1CHBjAYwBO8wKsjnGfnzXmftxacfGYffsH5+AYHs42K</latexit> 
+
+s9 (c) Variate attention visualization. 
+
+Figure 8. Model analysis. (a) Downstream prediction error of TrajWorld under varying data scarcity levels. (b) t-SNE visualization of the linear weights in the model’s prediction head. (c) Variate attention map from the third layer of TrajWorld fine-tuned on Walker2D. None 1% 10% 100% UniTraj 
+
+0.65 
+
+0.70 
+
+0.75 
+
+0.80 
+
+0.85 
+
+0.90 
+
+0.95 
+
+1.00 
+
+1.05 
+
+> Normalized Prediction Error
+
+1.00 
+
+0.73 
+
+0.69 0.68 
+
+0.81 
+
+Aggregated Results (15 train-test dataset pairs) 
+
+JAT Only 
+
+(a) Transition prediction error. None JAT Only 1% 10% 100% UniTraj 
+
+500 
+
+1000 
+
+1500 
+
+2000 
+
+2500 
+
+3000 
+
+3500 
+
+> Episode Return
+
+Environment Walker 
+
+Proposal Policy None JAT Only 1% 10% 100% UniTraj 
+
+600 
+
+800 
+
+1000 
+
+1200 
+
+1400 
+
+1600 
+
+> Episode Return
+
+Environment Hopper 
+
+Proposal Policy (b) Model predictive control. 
+
+Figure 9. Effects of pre-training scale and diversity. (a) Aggregated transition prediction error. (b) Model predictive control performance on Walker2D and Hopper. All results are obtained from models fine-tuned from pre-trained TrajWorld on different subsets of UniTraj. 
+
+ments with mismatched or differently sized state and action spaces. Previous work has resorted to flexible architectures like graph neural networks (Huang et al., 2020; Kurin et al., 2021) and Transformers (Gupta et al., 2022; Hong et al., 2021) for policy learning. Our method leverages a similar architecture for world modeling (Janner et al., 2021; Zhang et al., 2021), but introduces the two-dimensional attention design for the first time in this context. More importantly, no for computational efficiency, as in prior work of other fields (Ho et al., 2019; Arnab et al., 2021; Nayakanti et al., 2023), we show its benefits for cross-environment transfer. 
+
+World model pre-training. The homogeneity of videos across diverse tasks, environments, and even embodiments has driven rapid advancements in large-scale video pre-training for world models (Seo et al., 2022; Wu et al., 2024a;b; Ye et al., 2024; Cheang et al., 2024). However, heterogeneity across different sets of sensors and actuators poses significant challenges to developing general world models based on low-dimensional sensor information. Our work is particularly relevant to Schubert et al. (2023), which trains a generalist transformer dynamics model from 80 heterogeneous environments. Still, they only observe positive transfer when adapting to a simple cart-pole envi-ronment and fail for a more complex walker environment. In contrast, our work, for the first time, validates the positive transfer benefits across such more complex environments. 
+
+7. Conclusion 
+
+We address the challenge of building large-scale pre-trained world models for heterogeneous environments with distinct sensors, actuators, and dynamics. Our contributions include UniTraj, a dataset of over one million trajectories from 80 environments, and TrajWorld, a flexible architecture for cross-environment transfer. Pre-training TrajWorld on Uni-Traj achieves superior results in transition prediction and off-policy evaluation, demonstrating the first successful transfer of world models across complex control environments. 
+
+Limitations and future work. While this work takes a successful first step, there is significant room for further study. Despite the strong practical performance, one limita-tion of our architecture is that the discretization scheme con-strains predictions to a fixed range, making it theoretically difficult to model extremely out-of-distribution transitions beyond these bounds. Additionally, our model, designed for scalable pre-training, has a larger capacity compared to classic MLPs, which poses challenges in model calibration (Guo et al., 2017), particularly in scenarios where uncer-tainty quantification is critical, such as offline RL (Yu et al., 2020b). This increased complexity also comes with addi-tional computational costs. For future work, we envision that pre-training multimodal world models incorporating both visual and proprioceptive observations could lead to models with a deeper understanding of the physical world. 9Trajectory World Models for Heterogeneous Environments 
+
+Acknowledgements 
+
+This work was supported by the National Natural Science Foundation of China (U2342217 and 62021002), the BNRist Innovation Fund (BNR2024RC01010), and the National Engineering Research Center for Big Data Software. 
+
+Impact Statement 
+
+This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here. 
+
+References 
+
+Achiam, J., Adler, S., Agarwal, S., Ahmad, L., Akkaya, I., Aleman, F. L., Almeida, D., Altenschmidt, J., Altman, S., Anadkat, S., et al. Gpt-4 technical report. arXiv preprint arXiv:2303.08774 , 2023. Agarwal, N., Ali, A., Bala, M., Balaji, Y., Barker, E., Cai, T., Chattopadhyay, P., Chen, Y., Cui, Y., Ding, Y., et al. Cosmos world foundation model platform for physical ai. 
+
+arXiv preprint arXiv:2501.03575 , 2025. Arnab, A., Dehghani, M., Heigold, G., Sun, C., Lu ˇci ´c, M., and Schmid, C. Vivit: A video vision transformer. In 
+
+ICCV , 2021. Barth-Maron, G., Hoffman, M. W., Budden, D., Dabney, W., Horgan, D., Dhruva, T., Muldal, A., Heess, N., and Lil-licrap, T. Distributed distributional deterministic policy gradients. In ICLR , 2018. Bradbury, J., Frostig, R., Hawkins, P., Johnson, M. J., Leary, C., Maclaurin, D., Necula, G., Paszke, A., VanderPlas, J., Wanderman-Milne, S., and Zhang, Q. JAX: composable transformations of Python+NumPy programs, 2018. URL 
+
+http://github.com/jax-ml/jax .Brockman, G. Openai gym. arXiv preprint arXiv:1606.01540 , 2016. Brown, T., Mann, B., Ryder, N., Subbiah, M., Kaplan, J. D., Dhariwal, P., Neelakantan, A., Shyam, P., Sastry, G., Askell, A., et al. Language models are few-shot learners. In NeurIPS , 2020. Bruce, J., Dennis, M. D., Edwards, A., Parker-Holder, J., Shi, Y., Hughes, E., Lai, M., Mavalankar, A., Steiger-wald, R., Apps, C., et al. Genie: Generative interactive environments. In ICML , 2024. Chae, H., Kim, N., Ong, K. T.-i., Gwak, M., Song, G., Kim, J., Kim, S., Lee, D., and Yeo, J. Web agents with world models: Learning and leveraging environment dynamics in web navigation. In ICLR , 2025. Cheang, C.-L., Chen, G., Jing, Y., Kong, T., Li, H., Li, Y., Liu, Y., Wu, H., Xu, J., Yang, Y., et al. Gr-2: A generative video-language-action model with web-scale knowledge for robot manipulation. arXiv preprint arXiv:2410.06158 ,2024. Chen, R., Jia, C., Huang, Z., Liu, T.-S., Liu, X.-H., and Yu, Y. Offline transition modeling via contrastive energy learning. In ICML , 2024. Chua, K., Calandra, R., McAllister, R., and Levine, S. Deep reinforcement learning in a handful of trials using proba-bilistic dynamics models. In NeurIPS , 2018. D’Eramo, C., Tateo, D., Bonarini, A., Restelli, M., and Peters, J. Sharing knowledge in multi-task deep rein-forcement learning. In ICLR , 2020. Ebert, F., Finn, C., Dasari, S., Xie, A., Lee, A., and Levine, S. Visual foresight: Model-based deep reinforcement learning for vision-based robotic control. arXiv preprint arXiv:1812.00568 , 2018. Farebrother, J., Orbay, J., Vuong, Q., Ta ¨ıga, A. A., Chebotar, Y., Xiao, T., Irpan, A., Levine, S., Castro, P. S., Faust, A., et al. Stop regressing: Training value functions via classification for scalable deep rl. In ICML , 2024. Florence, P., Lynch, C., Zeng, A., Ramirez, O. A., Wahid, A., Downs, L., Wong, A., Lee, J., Mordatch, I., and Tompson, J. Implicit behavioral cloning. In CoRL , 2022. Fu, J., Kumar, A., Nachum, O., Tucker, G., and Levine, S. D4rl: Datasets for deep data-driven reinforcement learning. arXiv preprint arXiv:2004.07219 , 2020. Fu, J., Norouzi, M., Nachum, O., Tucker, G., Wang, Z., Novikov, A., Yang, M., Zhang, M. R., Chen, Y., Kumar, A., et al. Benchmarks for deep off-policy evaluation. In 
+
+ICLR , 2021. Fujimoto, S., Hoof, H., and Meger, D. Addressing function approximation error in actor-critic methods. In ICML ,2018. Gallou ´edec, Q., Beeching, E., Romac, C., and Dellandr ´ea, E. Jack of all trades, master of some, a multi-purpose trans-former agent. arXiv preprint arXiv:2402.09844 , 2024. Gu, Y., Zheng, B., Gou, B., Zhang, K., Chang, C., Srivas-tava, S., Xie, Y., Qi, P., Sun, H., and Su, Y. Is your llm secretly a world model of the internet? model-based plan-ning for web agents. arXiv preprint arXiv:2411.06559 ,2024. Gulcehre, C., Wang, Z., Novikov, A., Paine, T., G ´omez, S., Zolna, K., Agarwal, R., Merel, J. S., Mankowitz, D. J., Paduraru, C., et al. Rl unplugged: A suite of benchmarks for offline reinforcement learning. In NeurIPS , 2020. 10 Trajectory World Models for Heterogeneous Environments 
+
+Guo, C., Pleiss, G., Sun, Y., and Weinberger, K. Q. On calibration of modern neural networks. In ICML , 2017. Gupta, A., Fan, L., Ganguli, S., and Fei-Fei, L. Metamorph: Learning universal controllers with transformers. In ICLR ,2022. Ha, D. and Schmidhuber, J. Recurrent world models facili-tate policy evolution. In NeurIPS , 2018. Hafner, D., Lillicrap, T., Ba, J., and Norouzi, M. Dream to control: Learning behaviors by latent imagination. In 
+
+ICLR , 2020. Hansen, N., Su, H., and Wang, X. Td-mpc2: Scalable, robust world models for continuous control. In ICLR ,2024. Ho, J., Kalchbrenner, N., Weissenborn, D., and Salimans, T. Axial attention in multidimensional transformers. arXiv preprint arXiv:1912.12180 , 2019. Hong, S., Yoon, D., and Kim, K.-E. Structure-aware trans-former policy for inhomogeneous multi-task reinforce-ment learning. In ICLR , 2021. Huang, W., Mordatch, I., and Pathak, D. One policy to con-trol them all: Shared modular policies for agent-agnostic control. In ICML , 2020. Imani, E. and White, M. Improving regression performance with distributional losses. In ICML , 2018. Janner, M., Fu, J., Zhang, M., and Levine, S. When to trust your model: Model-based policy optimization. In 
+
+NeurIPS , 2019. Janner, M., Li, Q., and Levine, S. Offline reinforcement learning as one big sequence modeling problem. In 
+
+NeurIPS , 2021. Jiang, N. and Li, L. Doubly robust off-policy value evalua-tion for reinforcement learning. In ICML , 2016. Kim, M. J., Pertsch, K., Karamcheti, S., Xiao, T., Balakr-ishna, A., Nair, S., Rafailov, R., Foster, E., Lam, G., San-keti, P., et al. Openvla: An open-source vision-language-action model. In CoRL , 2024. Kirillov, A., Mintun, E., Ravi, N., Mao, H., Rolland, C., Gustafson, L., Xiao, T., Whitehead, S., Berg, A. C., Lo, W.-Y., et al. Segment anything. In ICCV , 2023. Kostrikov, I. and Nachum, O. Statistical bootstrapping for uncertainty estimation in off-policy evaluation. arXiv preprint arXiv:2007.13609 , 2020. Kurin, V., Igl, M., Rockt ¨aschel, T., Boehmer, W., and White-son, S. My body is a cage: the role of morphology in graph-based incompatible control. In ICLR , 2021. Kurutach, T., Clavera, I., Duan, Y., Tamar, A., and Abbeel, P. Model-ensemble trust-region policy optimization. In 
+
+ICLR , 2018. Laskin, M., Yarats, D., Liu, H., Lee, K., Zhan, A., Lu, K., Cang, C., Pinto, L., and Abbeel, P. Urlb: Unsupervised reinforcement learning benchmark. In NeurIPS , 2021. Le, H., Voloshin, C., and Yue, Y. Batch policy learning under constraints. In ICML , 2019. LeCun, Y. A path towards autonomous machine intelligence version 0.9. 2, 2022-06-27. Open Review , 62(1):1–62, 2022. Mitchell, E., Rafailov, R., Peng, X. B., Levine, S., and Finn, C. Offline meta-reinforcement learning with advantage weighting. In ICML , 2021. Nayakanti, N., Al-Rfou, R., Zhou, A., Goel, K., Refaat, K. S., and Sapp, B. Wayformer: Motion forecasting via simple & efficient attention networks. In ICRA , 2023. Oquab, M., Darcet, T., Moutakanni, T., Vo, H., Szafraniec, M., Khalidov, V., Fernandez, P., Haziza, D., Massa, F., El-Nouby, A., et al. Dinov2: Learning robust visual features without supervision. TMLR , 2024. O’Neill, A., Rehman, A., Maddukuri, A., Gupta, A., Padalkar, A., Lee, A., Pooley, A., Gupta, A., Mandlekar, A., Jain, A., et al. Open x-embodiment: Robotic learning datasets and rt-x models: Open x-embodiment collabora-tion 0. In ICRA , 2024. Petrenko, A., Huang, Z., Kumar, T., Sukhatme, G., and Koltun, V. Sample factory: Egocentric 3d control from pixels at 100000 fps with asynchronous reinforcement learning. In ICML , 2020. Qin, R.-J., Zhang, X., Gao, S., Chen, X.-H., Li, Z., Zhang, W., and Yu, Y. Neorl: A near real-world benchmark for offline reinforcement learning. In NeurIPS , 2022. Rafailov, R., Hatch, K., Singh, A., Smith, L., Kumar, A., Kostrikov, I., Hansen-Estruch, P., Kolev, V., Ball, P., Wu, J., et al. D5rl: Diverse datasets for data-driven deep reinforcement learning. In RLC , 2024. Reed, S., Zolna, K., Parisotto, E., Colmenarejo, S. G., Novikov, A., Barth-Maron, G., Gimenez, M., Sulsky, Y., Kay, J., Springenberg, J. T., et al. A generalist agent. 
+
+TMLR , 2022. Schmied, T., Hofmarcher, M., Paischer, F., Pascanu, R., and Hochreiter, S. Learning to modulate pre-trained models in rl. In NeurIPS , 2024. 11 Trajectory World Models for Heterogeneous Environments 
+
+Schrittwieser, J., Antonoglou, I., Hubert, T., Simonyan, K., Sifre, L., Schmitt, S., Guez, A., Lockhart, E., Hassabis, D., Graepel, T., et al. Mastering atari, go, chess and shogi by planning with a learned model. Nature , 588(7839): 604–609, 2020. Schubert, I., Zhang, J., Bruce, J., Bechtle, S., Parisotto, E., Riedmiller, M., Springenberg, J. T., Byravan, A., Hasen-clever, L., and Heess, N. A generalist dynamics model for control. arXiv preprint arXiv:2305.10912 , 2023. Schulman, J., Wolski, F., Dhariwal, P., Radford, A., and Klimov, O. Proximal policy optimization algorithms. 
+
+arXiv preprint arXiv: 1707.06347 , 2017. Seo, Y., Lee, K., James, S. L., and Abbeel, P. Reinforcement learning with action-free pre-training from videos. In 
+
+ICML , 2022. Shafiullah, N. M., Cui, Z., Altanzaya, A. A., and Pinto, L. Behavior transformers: Cloning k modes with one stone. In NeurIPS , 2022. Song, H. F., Abdolmaleki, A., Springenberg, J. T., Clark, A., Soyer, H., Rae, J. W., Noury, S., Ahuja, A., Liu, S., Tirumala, D., Heess, N., Belov, D., Riedmiller, M., and Botvinick, M. M. V-mpo: On-policy maximum a posteriori policy optimization for discrete and continuous control. In ICLR , 2020. Tassa, Y., Doron, Y., Muldal, A., Erez, T., Li, Y., de Las Casas, D., Budden, D., Abdolmaleki, A., Merel, J., Lefrancq, A., Lillicrap, T., and Riedmiller, M. Deepmind control suite. arXiv preprint arXiv: 1801.00690 , 2018. Team, O. E. L., Stooke, A., Mahajan, A., Barros, C., Deck, C., Bauer, J., Sygnowski, J., Trebacz, M., Jaderberg, M., Mathieu, M., et al. Open-ended learning leads to gener-ally capable agents. arXiv preprint arXiv:2107.12808 ,2021. Team, O. M., Ghosh, D., Walke, H., Pertsch, K., Black, K., Mees, O., Dasari, S., Hejna, J., Kreiman, T., Xu, C., et al. Octo: An open-source generalist robot policy. In RSS ,2024. Tian, S., Finn, C., and Wu, J. A control-centric benchmark for video prediction. In ICLR , 2023. van der Maaten, L. and Hinton, G. Visualizing data using t-sne. JMLR , 2008. Wang, L., Chen, X., Zhao, J., and He, K. Scaling proprioceptive-visual learning with heterogeneous pre-trained transformers. In NeurIPS , 2024a. Wang, R., Todd, G., Xiao, Z., Yuan, X., C ˆot ´e, M.-A., Clark, P., and Jansen, P. Can language models serve as text-based world simulators? In ACL , 2024b. Wen, J., Dai, B., Li, L., and Schuurmans, D. Batch station-ary distribution estimation. In ICML , 2020. Wen, Y., Wan, Z., Zhou, M., Hou, S., Cao, Z., Le, C., Chen, J., Tian, Z., Zhang, W., and Wang, J. On realiza-tion of intelligent decision-making in the real world: A foundation decision model perspective. arXiv preprint arXiv:2212.12669 , 2022. Wu, J., Ma, H., Deng, C., and Long, M. Pre-training con-textualized world models with in-the-wild videos for re-inforcement learning. In NeurIPS , 2024a. Wu, J., Yin, S., Feng, N., He, X., Li, D., Hao, J., and Long, M. ivideogpt: Interactive videogpts are scalable world models. In NeurIPS , 2024b. Wu, J., Yin, S., Feng, N., and Long, M. Rlvr-world: Training world models with reinforcement learning. arXiv preprint arXiv:2505.13934 , 2025. Yang, M., Nachum, O., Dai, B., Li, L., and Schuurmans, D. Off-policy evaluation via the regularized lagrangian. In 
+
+NeurIPS , 2020. Yarats, D., Brandfonbrener, D., Liu, H., Laskin, M., Abbeel, P., Lazaric, A., and Pinto, L. Don’t change the algorithm, change the data: Exploratory data for offline reinforce-ment learning. arXiv preprint arXiv:2201.13425 , 2022. Ye, S., Jang, J., Jeon, B., Joo, S., Yang, J., Peng, B., Mandlekar, A., Tan, R., Chao, Y.-W., Lin, B. Y., et al. Latent action pretraining from videos. arXiv preprint arXiv:2410.11758 , 2024. Yu, T., Quillen, D., He, Z., Julian, R., Hausman, K., Finn, C., and Levine, S. Meta-world: A benchmark and evaluation for multi-task and meta reinforcement learning. In CoRL ,2020a. Yu, T., Thomas, G., Yu, L., Ermon, S., Zou, J. Y., Levine, S., Finn, C., and Ma, T. Mopo: Model-based offline policy optimization. In NeurIPS , 2020b. Zhang, M. R., Paine, T. L., Nachum, O., Paduraru, C., Tucker, G., Wang, Z., and Norouzi, M. Autoregressive dynamics models for offline policy evaluation and opti-mization. In ICLR , 2021. Zhou, G., Pan, H., LeCun, Y., and Pinto, L. Dino-wm: World models on pre-trained visual features enable zero-shot planning. arXiv preprint arXiv:2411.04983 , 2024. 12 Trajectory World Models for Heterogeneous Environments 
+
+A. UniTraj Dataset Details 
+
+A.1. Overview of UniTraj Components 
+
+In this part, we provide a brief overview of each component of the UniTraj dataset. 
+
+ExORL (Yarats et al., 2022). Exploratory Data for Offline RL (ExORL) follows a two-step data collection protocol. First, data is generated in reward-free environments using unsupervised exploration strategies (Laskin et al., 2021). Next, this data is relabeled with either a standard or hand-designed reward function specific to each environment’s task. This procedure leads to data with broader state-action space coverage, which benefits generalization-demanding scenarios like offline RL. 
+
+RL Unplugged (Gulcehre et al., 2020). We incorporate RL Unplugged’s dataset from the DeepMind Control Suite domains. Most of the data collected in this domain are generated by recording D4PG’s training runs (Barth-Maron et al., 2018), while Manipulator insert ball and Manipulator insert peg’s data is collected using V-MPO (Song et al., 2020). 
+
+JAT (Gallou ´edec et al., 2024). We utilize Jack of All Trades (JAT)’s released dataset, which is collected using expert RL agent’s rollouts. These agents are trained using asynchronous PPO (Schulman et al., 2017), following the Sample Factory implementation (Petrenko et al., 2020). Specifically, we only use the subset of the dataset that was collected in the OpenAI Gym environments, excluding data collected in Walker2D, HalfCheetah, and Hopper. 
+
+DB-1 (Wen et al., 2022). The dataset for Digital Brain-1 (DB-1), a reproduction of Gato (Reed et al., 2022), also consists solely of expert policy rollouts. Although the released dataset contains only five expert episodes per domain, it spans multiple environments, including various DeepMind Control Suite environments and custom ones from Modular RL. 
+
+TD-MPC2 (Hansen et al., 2024). TD-MPC2 is a state-of-the-art model-based RL algorithm. We include released data from single-task TD-MPC2 agents’ replay buffers, collected from DeepMind Control Suite environments. 
+
+Modular RL (Huang et al., 2020). The Modular RL environments introduced by Huang et al. (2020) feature customizable embodiments with varying limb and joint configurations. We collected the data on these environments by ourselves. Specifically, we used the provided XML files to define different embodiment structures and followed the original reward function designs. We ran the TD3 algorithm (Fujimoto et al., 2018) and stored all episodes until the policy began to converge. The hyperparameters for TD3 are kept consistent with the default settings provided in the official repository repository 2.
+
+A.2. List of Environments 
+
+The curated UniTraj dataset spans a diverse range of environments from multiple sources, including DeepMind Control Suite, OpenAI Gym, and various customized environments. In Table 2, we provide a detailed list of environments used in each component of UniTraj. 
+
+A.3. Sampling Weights 
+
+We manually weighted different subsets, trying to balance size and diversity. The sample weights are shown in Table 3. 
+
+B. Experimental Details 
+
+B.1. Model Implementation TrajWorld. For discretization, as described in Section 4.2, we can employ two methods: one-hot encoding and Gaussian histograms. Specifically, the Gaussian histogram method is utilized for input discretization, while the one-hot encoding is applied for target discretization. Compared to one-hot encoding, Gaussian histograms provide a more fine-grained representation of value information. While we can also use Gaussian histograms for target discretization, one-hot encoding is more suitable for uncertainty quantization in future applications such as offline RL. This is because two Gaussian distributions with the same standard derivation can yield different entropy when discretized into histograms. 
+
+> 2https://github.com/sfujim/TD3
+
+13 Trajectory World Models for Heterogeneous Environments 
+
+Component Environments 
+
+ExORL Cartpole, Jaco, Quadruped, Walker †
+
+RL Unplugged Cartpole, Fish, Humanoid, Manipulator, Walker †
+
+JAT Double Pendulum ∗, Pendulum ∗, Pusher ∗, Reacher ∗, Swimmer ∗
+
+DB-1 Acrobat, Ball In Cup, Cartpole, Cheetah-2-back, Cheetah-2-front, Cheetah-3-back, Cheetah-3-balanced, Cheetah-3-front, Cheetah-4-allback, Cheetah-4-allfront, Cheetah-4-back, Cheetah-4-front, Cheetah-5-back, Cheetah-5-balanced, Cheetah-5-front, Cheetah-6-back, Cheetah-6-front, Finger, Fish, Hopper †, Hopper-3, Hopper-5, Humanoid, Humanoid-2d-7-left-arm, Humanoid-2d-7-left-leg, Humanoid-2d-7-lower-arms, Humanoid-2d-7-right-arm, Humanoid-2d-7-right-leg, Humanoid-2d-8-left-knee, Humanoid-2d-8-right-knee, Humanoid-2d-9-full, Manipulator, Reacher, Swimmer6, Swimmer15, Walker †,Walker-2-flipped, Walker-2-main, Walker-3-flipped, Walker-3-main, Walker-4-flipped, Walker-4-main, Walker-5-flipped, Walker-5-main, Walker-6-flipped, Walker-6-main TD-MPC2 Acrobot, Ball In Cup, Cartpole, Cheetah †, Finger, Fish, Hopper †,Pendulum †, Reacher †, Walker †
+
+Modular RL Cheetah-2-back, Cheetah-2-front, Cheetah-3-back, Cheetah-3-balanced, Cheetah-4-allback, Cheetah-4-back, Cheetah-4-front, Cheetah-5-back, Cheetah-5-balanced, Cheetah-5-front, Cheetah-6-back, Cheetah-6-front, Hopper-3, Hopper-5, Walker-2-flipped, Walker-3-flipped, Walker-4-flipped, Walker-5-flipped, Walker-6-flipped, Walker-7-flipped  
+
+> Table 2. A detailed list of environments used in the UniTraj dataset. For environments sharing the same name, we mark those from OpenAI Gym with an asterisk ( ∗) and those from DeepMind Control Suite with a dagger ( †). Notably, the Gym Hopper, Walker2D, and HalfCheetah environments used for evaluating our methods and baselines differ from their DeepMind Control Suite counterparts, exhibiting variations in state/action definitions and environment parameters.
+
+Subsets ExoRL RLU JAT DB-1 TD-MPC2 Modular RL (Unnormalized) sampling weight 75 5 90 1 90 30  
+
+> Table 3. Sampling weights of subsets for pre-training with UniTraj dataset.
+
+For prediction, each bin [bi−1, b i] is represented by its center ci = ( bi−1 + bi)/2. Given the predicted bin probability pi,the output value distribution can be expressed as P (X = x) = PBi=1 pi1(x = ci) or P (X = x) = PBi=1 pi1(bi−1 < x ≤
+
+bi)/(bi − bi−1). We use the former for simplicity. When pre-training with data from heterogeneous environments, for practical reasons, each batch is made up of data from a single environment. We provide the hyperparameters used in pre-training and fine-tuning in Table 4. On transition prediction and OPE experiments, the environment-specific models trained from scratch use the same set of hyperparameters as fine-tuning. 
+
+Baseline: Transformer Dynamics Model (TDM). TDM (Schubert et al., 2023) does not provide an official implementa-tion. To enable a fair comparison, we adapt our TrajWorld implementation to reproduce TDM while maintaining consistency in discretization and embedding methods. Furthermore, when trained using a cross-entropy loss, we mask actions and require the model to only predict the next states and rewards—unlike the TDM paper, where all variates are predicted. During inference, the model predicts each scalar dimension of the state sequentially, followed by setting each scalar of the action (e.g., provided by the policy in off-policy evaluation) one at a time. The hyperparameters for pre-training and fine-tuning are kept consistent with those used in TrajWorld (Table 4), except for the batch size for pre-training. Due to GPU memory constraints, the batch size for pre-training, originally set to 64, is reduced to 16. Like TrajWorld, we use the same hyperparameters as fine-tuning for environment-specific models trained from scratch. 14 Trajectory World Models for Heterogeneous Environments 
+
+Hyperparameter Value 
+
+Architecture Input discretization Gauss-hist Target discretization One-hot Transformer blocks number 6Attention heads number 4Transformer context length 20 Hidden dimension 256 MLP hidden [1024,256] MLP activation GeLU Pre-training Total gradient steps 1M Batch size 64 Learning rate 1 × 10 −4
+
+Dropout rate 0.05 Optimizer Adam Weight decay 1 × 10 −5
+
+Gradient clip norm 0.25 Scheduler Warmup cosine decay Scheduler warmup steps 10000 Fine-tuning Total max gradient steps 1.5M Max epochs 300 Steps per epoch 5000 Batch size 64 Learning rate 1 × 10 −5
+
+Dropout rate 0.05 Optimizer Adam Weight decay 1 × 10 −5
+
+Gradient clip norm 0.25 Scheduler Warmup cosine decay Scheduler warmup steps 10000  
+
+> Table 4. Hyperparameters for TrajWorld.
+
+Baseline: MLP Ensemble. Following prior work (Chua et al., 2018; Janner et al., 2019; Yu et al., 2020b), we train an ensemble of transition models, parameterized as a diagonal Gaussian distribution of the next state and reward, implemented using MLPs. These models are trained with bootstrapped training samples, and optimized via negative log-likelihood. After training, we select an elite subset of models based on validation loss, and during inference, a model from this subset is randomly sampled for predictions. For pre-training on heterogeneous environments, we implement the MLP Ensemble baseline by padding each state vector to 90 dimensions and each action vector to 30 dimensions, resulting in a 120-dimensional input to the MLP. The model outputs the distribution over a 91-dimensional vector (90 for the next state and 1 for the reward). To ensure a fair comparison with other methods, we match the parameter count of the ensemble to TrajWorld, and no environment identities are provided to this baseline. The hyperparameters are listed in Table 5. Environment-specific models trained from scratch use the same hyperparameters as in fine-tuning. 
+
+B.2. Zero-Shot Generalization 
+
+B.2.1. E NVIRONMENT PARAMETER TRANSFER 
+
+Pendulum. We pre-train the TrajWorld model on 60 Gym Pendulum environments, where the gravity values range from 8
+
+m/s 2 to 12 m/s 2. The pre-training dataset is collected by running the TD3 algorithm (Fujimoto et al., 2018) and storing all episodes until the policy converges. For evaluation, we use five holdout environments with gravity values between 6.5m/s 2
+
+and 7.5m/s 2, collecting data in the same manner as the training datasets. The zero-shot results are reported as the average prediction error on these holdout datasets. 15 Trajectory World Models for Heterogeneous Environments 
+
+Hyperparameter Value 
+
+Architecture MLP hidden [640, 640, 640, 640] Ensemble number 7Ensemble elite Number 5Pre-training Total gradient steps 1M Batch size 256 Learning rate 1 × 10 −4
+
+Optimizer Adam Fine-tuning Total max gradient steps 1.5M Max epochs 300 Steps per epoch 5000 Batch size 256 Learning rate 1 × 10 −5
+
+Optimizer Adam  
+
+> Table 5. Hyperparameters for MLP Ensemble.
+
+Walker2D. We pre-train a four-layer TrajWorld model using 45 training datasets provided by MACAW (Mitchell et al., 2021) and evaluate it on a separate dataset also from MACAW. The datasets in MACAW are collected under varying physical conditions, including differences in body mass, friction, damping, and inertia. B.2.2. C ROSS -E NVIRONMENT TRANSFER 
+
+We evaluate the model pre-trained on UniTraj by performing a ten-step rollout in the Cart-2-Pole and Cart-3-Pole environment from the DeepMind Control Suite. The rollout is conditioned on a history of ten prior timesteps. After this initial context, actions are applied in a simple predefined manner: either continuously pushing to the right ( a = 0 .5) or to the left ( a = −0.5). The action repeat for the Cart-2-Pole and Cart-3-Pole environment is set to 4. 
+
+B.3. Transition Prediction 
+
+The model is trained on a dataset using this dataset’s training set and tested on five test datasets that come from the same environment. The evaluation for each test set is based on the model’s prediction error across the entire test dataset. We use the Mean Absolute Error (MAE) as the evaluation metric. The prediction of TrajWorld is done by maintaining a history context window of 19 to predict the 20th state and reward. In Figure 1, the prediction errors for each train-test dataset pair are normalized by dividing them by the MAE of the TrajWorld model without pre-training. The final result is then obtained by averaging across all environments. 
+
+B.4. Off-Policy Evaluation 
+
+B.4.1. I MPLEMENTATION : M ODEL -B ASED OPE Given a world model, the most direct method for off-policy evaluation (OPE) is Monte Carlo policy evaluation. This involves starting from a set of initial states, performing policy rollouts within the learned model, and averaging the accumulated rewards to estimate the policy value. The procedure is summarized in Algorithm 1. In practice, we use a discount factor of γ = 0 .995 and a horizon length of h = 2000 . The number of samples N is set such that each trajectory’s initial state from the behavior dataset is used exactly once, resulting in approximately N ≈ 1000 . We use KV cache to accelerate the rollouts of our TrajWorld. B.4.2. B ASELINES 
+
+We primarily compare against model-based OPE with Energy-based Transition Models (ETM) (Chen et al., 2024), a strong baseline that significantly outperforms previous methods and represents state-of-the-art on the DOPE benchmark (Fu et al., 2021). 16 Trajectory World Models for Heterogeneous Environments 
+
+Algorithm 1 Model-Based OPE 
+
+Input: learned world model Pθ (st+1 , r t+1 |st, a t), test policy π, samples number N , initial state distribution S0, discount factor γ, horizon length h.
+
+for i = 1 to N do 
+
+Ri ← 0
+
+Sample initial state s0 ∼ S0
+
+for t = 0 to h − 1 do 
+
+at ∼ π(·| st)
+
+st+1 , r t+1 ∼ Pθ (·| st, a t)
+
+Ri ← Ri + γtrt+1 
+
+end for end for Return ˆV (π) = 1
+
+> N
+
+PNi=1 Ri
+
+We also include five classic OPE methods as baselines from the DOPE benchmark: Fitted Q-Evaluation (FQE) (Le et al., 2019), Doubly Robust (DR) (Jiang & Li, 2016), Importance Sampling (IS) , (Kostrikov & Nachum, 2020) DICE (Yang et al., 2020), and Variational Power Method (VPM) (Wen et al., 2020). B.4.3. M ETRICS 
+
+We adopt the evaluation metrics used in the DOPE benchmark. 
+
+Mean Absolute Error. The absolute error quantifies the deviation between the true value and the estimated value of a policy, defined as: AbsErr = |V π − ˆV π |, (7) where V π represents the true value of the policy, and ˆV π denotes its estimated value. The Mean Absolute Error (MAE) is computed as the average absolute error across all evaluated policies. To aggregate results, these values are normalized by the difference between the maximum and minimum true policy values. 
+
+Rank correlation. Rank correlation, also known as Spearman’s rank correlation coefficient ( ρ), measures the ordinal correlation between the estimated policy values and their true values. It is given by: RankCorr = Cov (V π 
+
+> 1: N
+
+, ˆV π 
+
+> 1: N
+
+)
+
+σ(V π 
+
+> 1: N
+
+)σ( ˆV π 
+
+> 1: N
+
+) , (8) where 1 : N represents the indices of the evaluated policies. 
+
+Regret@ k. Regret@ k quantifies the performance gap between the actual best policy and the best policy selected from the top-k candidates (ranked by estimated values). It is formally defined as: Regret@ k = max  
+
+> i∈1: N
+
+V πi − max   
+
+> j∈topk (1: N)
+
+V πj (9) where topk (1 : N ) denotes the indices of the top k policies based on estimated values ˆV π . In our experiments, we specifically use normalized Regret@1 as the evaluation metric. 
+
+B.5. Model Predictive Control 
+
+We evaluate model predictive control (MPC) performance under two planning settings: policy proposal and random shooting. 
+
+Policy proposal setting. Action candidates are generated by perturbing the output of a learned action policy with Gaussian noise. Specifically, we first query the policy to obtain a mean action sequence and then add zero-mean Gaussian noise to each action in the sequence. This results in a set of diverse trajectories centered around the policy’s behavior. 17 Trajectory World Models for Heterogeneous Environments 
+
+Random shooting setting. Candidate action sequences are sampled directly from a Gaussian distribution without guidance from a learned policy. Each trajectory is independently sampled by drawing actions from a zero-mean Gaussian distribution with a fixed standard deviation. 
+
+Hyperparameters. For both settings, we use a sample size of 128 candidate trajectories per MPC rollout, across all environments. The best-performing action sequence is selected based on predicted cumulative reward computed using the world model. The planning horizon is set based on the characteristics of each environment. Specifically, we use a horizon of 25 steps for both HalfCheetah and Walker2D, while a longer horizon of 50 steps is adopted for Hopper. This extended horizon for Hopper helps mitigate short-sighted planning behavior, which is particularly detrimental in this more fragile environment. To ensure optimal performance across different world models, the standard deviation of the Gaussian noise used for action sampling is tuned individually for each environment. The noise level is set to 0.05 for Hopper, 0.2 for Walker2D, and 0.025 for HalfCheetah. These values were empirically selected to balance exploration and stability during trajectory sampling. These settings are used consistently in all experiments involving MPC in this work. The same configurations are applied for evaluating all world models, ensuring fair comparison. 
+
+B.6. Computational Cost 
+
+Our implementation, built upon JAX (Bradbury et al., 2018), benefits from significant computational efficiency. Both pre-training and fine-tuning of the TrajWorld model can be conducted on a single 24GB NVIDIA RTX 4090 GPU. For comparison, the computational cost for 1.5M training steps in our implementations of the MLP Ensemble, TDM, and TrajWorld is 1.5, 36 , and 28 hours, respectively. This highlight that TrajWorld achieves strong performance with lower computational cost than TDM. 
+
+C. Extended Experimental Results 
+
+C.1. Detailed Prediction Error for Baselines 
+
+We report the prediction error for MLP Ensemble and TDM in Figure 10 and 11, respectively. 
+
+C.2. Quantitative Results for Off-Policy Evaluation 
+
+We report the raw absolute error, rank correlation and regret@1 for each OPE method and task in Table 6. 
+
+C.3. Off-Policy Evaluation with Pre-trained Models on Parameter-Variant Environments. 
+
+In addition to the zero-shot prediction error reported in Section 5.1, we further investigate our four-layer model pre-trained on Walker2D with variant friction, mass, etc. Specifically, we evaluate the model’s performance by fine-tuning it and testing it on downstream off-policy evaluation tasks on standard Walker2D. The results are summarized in Table 7. This provides additional evidence, beyond the zero-shot prediction error, demonstrating that TrajWorld exhibits strong capability for transfer to environments with varying parameters. 
+
+Env. Level TrajWorld (w/o PT) TrajWorld (w/ PT) Walker2D random 262 ± 34 76 ± 6 medium 68 ± 2 40 ± 4 m-replay 71 ± 11 46 ± 1 m-expert 49 ± 1 76 ± 1 expert 281 ± 8 186 ± 1  
+
+> Table 7. Raw absolute error of off-policy evaluation for a four-layer TrajWorld model trained from scratch compared to a model fine-tuned from a pre-trained version on the Walker2D dataset with variant environment parameters with holdout onest, averaged over two seeds.
+
+18 Trajectory World Models for Heterogeneous Environments r m-r m m-e e
+
+10 1
+
+10 0
+
+> Prediction Error
+
+halfcheetah-random-v2 
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+halfcheetah-medium-replay-v2 
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+halfcheetah-medium-v2 
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+halfcheetah-medium-expert-v2 
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+halfcheetah-expert-v2 
+
+r m-r m m-e e
+
+10 2
+
+10 1
+
+10 0
+
+> Prediction Error
+
+hopper-random-v2 
+
+r m-r m m-e e
+
+10 2
+
+10 1
+
+10 0
+
+10 1
+
+hopper-medium-replay-v2 
+
+r m-r m m-e e
+
+10 2
+
+10 1
+
+10 0
+
+hopper-medium-v2 
+
+r m-r m m-e e
+
+10 2
+
+10 1
+
+10 0
+
+hopper-medium-expert-v2 
+
+r m-r m m-e e
+
+10 2
+
+10 1
+
+10 0
+
+hopper-expert-v2 
+
+r m-r m m-e e
+
+10 0
+
+> Prediction Error
+
+walker2d-random-v2 
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+walker2d-medium-replay-v2 
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+walker2d-medium-v2 
+
+> MLP Ensemble (w/o PT)
+> MLP Ensemble (w/ PT)
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+walker2d-medium-expert-v2 
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+10 1 walker2d-expert-v2 
+
+Figure 10. Mean absolute errors (MAE) of transition prediction for MLP Ensemble, with and without pre-training (PT), across different train-test dataset pairs. Each subplot corresponds to a distinct training dataset, with the test datasets shown on the x-axis (r=random, m-r=medium-replay, m=medium, m-e=medium-expert, e=expert). Error bars represent the standard deviation across three random seeds. r m-r m m-e e
+
+10 1
+
+10 0
+
+> Prediction Error
+
+halfcheetah-random-v2 
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+halfcheetah-medium-replay-v2 
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+halfcheetah-medium-v2 
+
+r m-r m m-e e
+
+10 1
+
+halfcheetah-medium-expert-v2 
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+halfcheetah-expert-v2 
+
+r m-r m m-e e
+
+10 2
+
+10 1
+
+10 0
+
+> Prediction Error
+
+hopper-random-v2 
+
+r m-r m m-e e
+
+10 2
+
+8 × 10 3
+
+9 × 10 3
+
+hopper-medium-replay-v2 
+
+r m-r m m-e e
+
+10 2
+
+10 1
+
+hopper-medium-v2 
+
+r m-r m m-e e
+
+10 2
+
+10 1
+
+hopper-medium-expert-v2 
+
+r m-r m m-e e
+
+10 2
+
+10 1
+
+10 0
+
+hopper-expert-v2 
+
+r m-r m m-e e
+
+10 1
+
+10 0
+
+> Prediction Error
+
+walker2d-random-v2 
+
+r m-r m m-e e
+
+10 1
+
+2 × 10 2
+
+3 × 10 2
+
+4 × 10 2
+
+6 × 10 2
+
+walker2d-medium-replay-v2 
+
+r m-r m m-e e
+
+10 1
+
+walker2d-medium-v2 
+
+TDM (w/o PT) 
+
+TDM (w/ PT) 
+
+r m-r m m-e e
+
+10 1
+
+walker2d-medium-expert-v2 
+
+r m-r m m-e e
+
+10 2
+
+10 1
+
+10 0
+
+walker2d-expert-v2 
+
+Figure 11. Mean absolute errors (MAE) of transition prediction for TDM, with and without pre-training (PT), across different train-test dataset pairs. Each subplot corresponds to a distinct training dataset, with the test datasets shown on the x-axis (r=random, m-r=medium-replay, m=medium, m-e=medium-expert, e=expert). Error bars represent the standard deviation across three random seeds. 
+
+19 Trajectory World Models for Heterogeneous Environments 
+
+Env. Level ETM MLP (w/o PT) MLP (w/ PT) TDM (w/o PT) TDM (w/ PT) TW (w/o PT) TW (w/ PT) 
+
+Hopper 
+
+random 236 ± 15 245 ± 9 307 ± 15 79 ± 19 160 ± 17 259 ± 27 98 ± 1 medium 47 ± 21 149 ± 30 181 ± 18 140 ± 10 145 ± 7 81 ± 11 127 ± 9 m-replay 29 ± 8 24 ± 5 33 ± 2 38 ± 13 56 ± 13 60 ± 7 73 ± 6 m-expert 32 ± 4 87 ± 35 173 ± 15 116 ± 21 79 ± 3 48 ± 7 69 ± 8 expert 71 ± 16 167 ± 36 218 ± 29 283 ± 8 100 ± 2 105 ± 31 42 ± 2 
+
+Walker2D 
+
+random 339 ± 10 356 ± 4 372 ± 3 291 ± 40 264 ± 9 312 ± 19 269 ± 1 medium 159 ± 13 181 ± 10 371 ± 9 104 ± 22 123 ± 12 61 ± 6 101 ± 7 m-replay 132 ± 31 131 ± 8 313 ± 15 143 ± 52 147 ± 3 54 ± 12 182 ± 10 m-expert 152 ± 9 210 ± 47 340 ± 19 87 ± 24 137 ± 17 60 ± 11 72 ± 7 expert 364 ± 7 344 ± 20 368 ± 15 403 ± 141 458 ± 19 272 ± 124 100 ± 2 
+
+Halfcheetah 
+
+random 842 ± 42 965 ± 2 1137 ± 27 1079 ± 11 1050 ± 4 1028 ± 17 1059 ± 7 medium 655 ± 114 734 ± 24 973 ± 91 1435 ± 54 1312 ± 21 568 ± 23 444 ± 4 m-replay 727 ± 119 712 ± 59 993 ± 41 927 ± 261 730 ± 25 540 ± 45 540 ± 16 m-expert 689 ± 203 692 ± 65 1117 ± 90 923 ± 98 1319 ± 23 809 ± 150 528 ± 10 expert 758 ± 116 973 ± 175 1243 ± 36 1273 ± 158 646 ± 50 1013 ± 246 841 ± 14 
+
+(a) Raw absolute error 
+
+Env. Level ETM MLP (w/o PT) MLP (w/ PT) TDM (w/o PT) TDM (w/ PT) TW (w/o PT) TW (w/ PT) 
+
+Hopper 
+
+random random 0.61 ± 0.15 0.65 ± 0.17 0.43 ± 0.09 0.90 ± 0.05 0.82 ± 0.05 0.56 ± 0.23 0.81 ± 0.01 medium 0.94 ± 0.04 0.81 ± 0.05 0.72 ± 0.03 0.64 ± 0.10 0.46 ± 0.07 0.81 ± 0.06 0.31 ± 0.10 m-replay 0.97 ± 0.02 0.99 ± 0.00 0.98 ± 0.00 0.96 ± 0.01 0.89 ± 0.04 0.86 ± 0.05 0.61 ± 0.36 m-expert 0.95 ± 0.01 0.90 ± 0.09 0.79 ± 0.05 0.55 ± 0.32 0.86 ± 0.01 0.93 ± 0.01 0.87 ± 0.02 expert 0.85 ± 0.05 0.62 ± 0.07 0.42 ± 0.09 -0.34 ± 0.17 0.78 ± 0.04 0.86 ± 0.04 0.95 ± 0.00 
+
+Walker2D 
+
+random -0.12 ± 0.32 0.75 ± 0.03 0.58 ± 0.17 0.73 ± 0.10 0.79 ± 0.02 0.67 ± 0.01 0.78 ± 0.00 medium 0.78 ± 0.12 0.90 ± 0.03 0.44 ± 0.12 0.86 ± 0.04 0.91 ± 0.02 0.95 ± 0.01 0.94 ± 0.00 m-replay 0.77 ± 0.10 0.95 ± 0.01 0.72 ± 0.08 0.88 ± 0.03 0.93 ± 0.02 0.97 ± 0.02 0.77 ± 0.01 m-expert 0.67 ± 0.14 0.92 ± 0.02 0.74 ± 0.06 0.91 ± 0.04 0.79 ± 0.06 0.95 ± 0.01 0.96 ± 0.01 expert 0.54 ± 0.11 0.36 ± 0.11 0.11 ± 0.42 0.36 ± 0.42 0.80 ± 0.01 0.59 ± 0.30 0.94 ± 0.01 
+
+Halfcheetah 
+
+random 0.76 ± 0.10 0.90 ± 0.01 0.84 ± 0.12 0.93 ± 0.00 0.90 ± 0.00 0.91 ± 0.00 0.94 ± 0.00 medium 0.78 ± 0.12 0.93 ± 0.01 0.93 ± 0.01 -0.29 ± 0.38 0.14 ± 0.08 0.96 ± 0.00 0.98 ± 0.00 m-replay 0.77 ± 0.10 0.90 ± 0.00 0.88 ± 0.02 0.93 ± 0.03 0.86 ± 0.02 0.93 ± 0.00 0.93 ± 0.01 m-expert 0.91 ± 0.03 0.96 ± 0.02 0.90 ± 0.00 0.75 ± 0.10 0.27 ± 0.07 0.91 ± 0.06 0.97 ± 0.00 expert 0.81 ± 0.10 0.90 ± 0.06 0.24 ± 0.44 0.24 ± 0.20 0.81 ± 0.02 0.49 ± 0.26 0.94 ± 0.01 
+
+(b) Rank correlation 
+
+Env. Level ETM MLP Ens.(w/o PT) MLP Ens.(w/ PT) TDM (w/o PT) TDM (w/ PT) TW (w/o PT) TW (w/ PT) 
+
+Hopper 
+
+random 0.20 ± 0.10 0.30 ± 0.28 0.62 ± 0.00 0.20 ± 0.15 0.25 ± 0.08 0.39 ± 0.32 0.37 ± 0.00 medium 0.05 ± 0.04 0.03 ± 0.04 0.05 ± 0.04 0.17 ± 0.17 0.16 ± 0.00 0.22 ± 0.13 0.11 ± 0.06 m-replay 0.00 ± 0.00 0.08 ± 0.00 0.08 ± 0.00 0.09 ± 0.02 0.08 ± 0.00 0.15 ± 0.01 0.14 ± 0.00 m-expert 0.08 ± 0.07 0.09 ± 0.02 0.12 ± 0.21 0.37 ± 0.00 0.08 ± 0.00 0.15 ± 0.13 0.08 ± 0.00 expert 0.08 ± 0.02 0.17 ± 0.17 0.17 ± 0.17 0.68 ± 0.55 0.08 ± 0.00 0.12 ± 0.15 0.10 ± 0.02 
+
+Walker2D 
+
+random 0.16 ± 0.09 0.05 ± 0.01 0.41 ± 0.40 0.10 ± 0.04 0.05 ± 0.00 0.17 ± 0.00 0.08 ± 0.00 medium 0.00 ± 0.00 0.08 ± 0.00 0.28 ± 0.00 0.08 ± 0.07 0.12 ± 0.00 0.04 ± 0.07 0.08 ± 0.00 m-replay 0.00 ± 0.00 0.07 ± 0.02 0.19 ± 0.16 0.08 ± 0.04 0.10 ± 0.06 0.03 ± 0.05 0.00 ± 0.00 m-expert 0.03 ± 0.02 0.08 ± 0.00 0.09 ± 0.16 0.06 ± 0.10 0.12 ± 0.00 0.05 ± 0.05 0.08 ± 0.00 expert 0.05 ± 0.05 0.19 ± 0.16 0.19 ± 0.26 0.12 ± 0.14 0.28 ± 0.00 0.28 ± 0.28 0.17 ± 0.10 
+
+Halfcheetah 
+
+random 0.20 ± 0.10 0.15 ± 0.10 0.11 ± 0.12 0.04 ± 0.00 0.09 ± 0.08 0.14 ± 0.10 0.03 ± 0.02 medium 0.08 ± 0.08 0.18 ± 0.00 0.17 ± 0.02 0.70 ± 0.52 0.23 ± 0.07 0.12 ± 0.11 0.12 ± 0.02 m-replay 0.16 ± 0.12 0.15 ± 0.10 0.23 ± 0.07 0.16 ± 0.05 0.25 ± 0.00 0.18 ± 0.00 0.18 ± 0.00 m-expert 0.11 ± 0.10 0.06 ± 0.11 0.18 ± 0.00 0.16 ± 0.05 0.37 ± 0.00 0.14 ± 0.13 0.00 ± 0.00 expert 0.12 ± 0.07 0.16 ± 0.02 0.04 ± 0.00 0.27 ± 0.10 0.14 ± 0.00 0.18 ± 0.03 0.20 ± 0.19 
+
+(c) Regret@1 
+
+Table 6. Quantitative results of all model-based methods (TW=TrajWorld) for OPE, averaged over 3 seeds. 
+
+20 Trajectory World Models for Heterogeneous Environments                                   
+
+> Env. MLP (w/o PT) MLP (w/ PT) TDM (w/o PT) TDM (w/ PT) TW (w/o PT) TW (w/ PT) Proposal Hopper 948 ±61 1091 ±125 1287 ±26 1117 ±145 1090 ±225 1401 ±236 1078 ±143
+> Walker 3353 ±83 3465 ±20 3056 ±236 2619 ±36 2422 ±455 3427 ±370 3049 ±104
+> HalfCheetah 5645 ±10 5692 ±19 5611 ±85 5647 ±25 5858 ±17 5809 ±15 5697 ±30
+> Table 8. Quantitative results of all model-based methods (TW=TrajWorld) for MPC with action proposal, averaged over 3 seeds. Aggregated Results (6 Training Sets)
+> Figure 12. Model predictive control (MPC) results using a random shooting planner, averaged across three random seeds. The proposal policy line indicates the performance of a random action-sampling strategy.
+
+C.4. Additional Model Predictive Control Results Quantitative results with proposal policies. We report quantitative results on MPC with action proposal in Table 8. 
+
+MPC with random shooting planner. Figure 12 presents MPC results using a random shooting planner with models trained on different datasets. 
+
+Computational efficiecny. TrajWorld predicts all variates jointly, unlike TDM which processes them sequentially. This leads to a major speedup: MPC for 1000 environment steps in HalfCheetah takes 40 minutes with TDM, but only 3 minutes with TrajWorld. 
+
+C.5. Additional Zero-shot Cross-Environment Transfer  
+
+> Figure 13. TrajWorld’s zero-shot predictions for two Cart-3-Pole trajectories, which share 10 context steps but diverge due to differing subsequent actions.
+
+Comparison with baselines. We also provide zero-shot prediction from other baselines in Figure 14. As shown, in an unseen environ-ment, both TDM and MLP baselines fail to generalize, producing incorrect predictions and failing to capture the underlying state-action relationship at all. Specifically, TDM fails to predict how push forces from two opposite directions lead to different x positions. On the other hand, MLP fails to produce any reasonable results with extreme error accumulation. 
+
+Cart-3-pole environment. We also test TrajWorld’s zero-shot pre-diction on the more challenging Cart-3-pole environment, which has an 11-dimensional state space. Surprisingly, TrajWorld can still give cart’s position predictions roughly aligned with the ground truth, despite not seeing this embodiment before. The action sequence is depicted in Section B.2.2. 21 Trajectory World Models for Heterogeneous Environments  
+
+> Figure 14. Zero-shot predictions from different pre-trained models on two Cart-2-Pole trajectories that share the same 10 context steps but diverge thereafter due to different future actions.
+
+C.6. Additional Variate Attention Visualization 
+
+We present the variate attention maps of our TrajWorld model across all six layers, comparing a fine-tuned model and a model trained from scratch, in Figures 15 and 16. For the fine-tuned model, in the early layers (Layer 0 and 1), attention is more scattered and less structured, likely capturing broad and low-level features. In contrast, later layers (Layer 4 and 5) exhibit more focused attention, suggesting the model is concentrating on specific relationships or entities. The prominent diagonal patterns and neighboring attentions discussed in Section 5.5 can also be clearly observed in Layer 2. Additionally, diagonal patterns linking joint velocities and actions appear in Layers 1 and 2. Such diagonal patterns are also observed in the attention maps of the model trained from scratch. A notable difference between the attention maps of the fine-tuned model and the model trained from scratch is the earlier emergence of diagonal patterns in the layers of the model trained from scratch. Specifically, while the first two layers of the fine-tuned model exhibit more scattered and less interpretable attention, the scratch-trained model immediately begins capturing structured diagonal patterns, particularly between positions and velocities, as well as velocities and actions. This probably suggests that pre-training changes the model’s behavior. The model without pre-training tends to focus on environment-specific patterns and more localized features for prediction. In contrast, the fine-tuned model seems to dedicate its first two layers to extracting more semantically meaningful and generalizable features, encouraging the model to perform inference through in-context learning from these environment-agnostic representations.   
+
+> Figure 15. Variate attention maps of our pre-trained TrajWorld Model, fine-tuned under Walker2D environment.
+> Figure 16. Variate attention maps of our TrajWorld Model in the Walker2D environment, trained from scratch.
+
+C.7. Additional Ablation Study on Pre-training Dataset 
+
+To investigate the contributions of different components of the UniTraj dataset to the pre-training process, we conduct an ablation study by training a four-layer TrajWorld model on a modified version of the UniTraj dataset, excluding two data 22 Trajectory World Models for Heterogeneous Environments 
+
+sources more closely aligned with the target environments: Modular RL and TD-MPC2. The results presented in Table 9 indicate that the advantages of pre-training stem from the diversity encompassed within the complete UniTraj dataset, rather than relying solely on data from domains closely resembling the target environments. 
+
+Env. Level TrajWorld (w/o PT) TrajWorld (w/ PT) Halfcheetah medium 491 ± 94 468 ± 40 Walker2D medium 88 ± 21 54 ± 2 Walker2D expert 141 ± 15 116 ± 12 
+
+> (a) Raw absolute error
+
+Env. Level TrajWorld (w/o PT) TrajWorld (w/ PT) Halfcheetah medium 0.95 ± 0.00 0.97 ± 0.01 Walker2D medium 0.93 ± 0.01 0.97 ± 0.02 Walker2D expert 0.56 ± 0.20 0.81 ± 0.04 
+
+> (b) Rank Correlation
+
+Env. Level TrajWorld (w/o PT) TrajWorld (w/ PT) Halfcheetah medium 0.18 ± 0.00 0.05 ± 0.07 Walker2D medium 0.04 ± 0.06 0.00 ± 0.00 Walker2D expert 0.34 ± 0.31 0.16 ± 0.16  
+
+> (c) Regret@1
+> Table 9. OPE results for a four-layer TrajWorld model trained from scratch compared to a model fine-tuned from a pre-trained version on the ablation dataset, averaged over two seeds.
+
+D. Extended Discussion 
+
+Limitations of bounded prediction. Our discretization scheme (Section 4.2) has the drawback that it can only represent variate values within the bounded range [b0, b B ], restricted by the maximum and minimum in training data. This can lead to inaccurate predictions. For example, a model trained on trajectories from low-performing policies, may underestimate the reward of a high-rewarding transition. This may explain why our model slightly underperforms in Regret@1 for off-policy evaluation tasks. Since all variates share the same bin embeddings, a promising way to address this issue is to simply extend the value range of bins beyond the observed data limits for variates with narrow coverages. Although the model would not have encountered those out-of-range values for a specific variate during training, we hypothesize it could extrapolate similarly to regression models (e.g., MLPs), leveraging learned bin ordering shared with other variates. This hypothesis is supported by the bin continuity observed in Figure 8b. Further exploration and improvement of this approach are left for future work. 
+
+Discussion with Schubert et al. (2023). We demonstrate positive transfer to complex downstream environments such as Walker2D, not only for offline transition prediction and policy evaluation, but also for online MPC, which Schubert et al. (2023) did not. Our work differentiate from theirs in: (1) Setting: Instead of fine-tuning with 10 4 episodes for MPC with random shooting, we more practically fine-tune with 10 2 episodes for MPC with proposal policies; (2) Data diversity: Our UniTraj dataset emphasizes distribution diversity, rather than using pure expert trajectories; (3) Architecture: TrajWorld incorporates inductive biases tailored to the 2D structure of trajectory data for enhanced transferability. Notably, TDM exhibits negative transfer in our practical MPC setting. We believe our work complements and extends Schubert et al. (2023), offering new insights to the community. 23

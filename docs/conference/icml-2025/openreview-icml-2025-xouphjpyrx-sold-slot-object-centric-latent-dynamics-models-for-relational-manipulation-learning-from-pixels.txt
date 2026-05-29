@@ -1,0 +1,564 @@
+Title: SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels
+
+URL Source: https://openreview.net/pdf?id=XOUpHJPYRX
+
+Number of Pages: 25
+
+Markdown Content:
+# SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+Malte Mosbach * 1 Jan Niklas Ewertz * 2 3 Angel Villar-Corrales 1 Sven Behnke 1
+
+# Abstract 
+
+Learning a latent dynamics model provides a task-agnostic representation of an agent’s understand-ing of its environment. Leveraging this knowl-edge for model-based reinforcement learning (RL) holds the potential to improve sample effi-ciency over model-free methods by learning from imagined rollouts. Furthermore, because the la-tent space serves as input to behavior models, the informative representations learned by the world model facilitate efficient learning of desired skills. Most existing methods rely on holistic representa-tions of the environment’s state. In contrast, hu-mans reason about objects and their interactions, predicting how actions will affect specific parts of their surroundings. Inspired by this, we propose 
+
+Slot-Attention for Object-centric Latent Dynamics (SOLD) , a novel model-based RL algorithm that learns object-centric dynamics models in an un-supervised manner from pixel inputs. We demon-strate that the structured latent space not only im-proves model interpretability but also provides a valuable input space for behavior models to reason over. Our results show that SOLD outper-forms DreamerV3 and TD-MPC2 – state-of-the-art model-based RL algorithms – across a range of multi-object manipulation environments that re-quire both relational reasoning and dexterous con-trol. Videos and code are available at https:// slot-latent-dynamics.github.io .      
+
+> *Equal contribution 1Autonomous Intelligent Systems Group, Computer Science Institute VI – Intelligent Systems and Robotics, Center for Robotics, and the Lamarr Institute for Machine Learn-ing and Artificial Intelligence, University of Bonn, Germany
+> 2Intelligent Robot Perception Group, Informatics Institute for An-thropomatics and Robotics, Karlsruhe Institute of Technology, Germany 3Mercedes-Benz AG, Sindelfingen, Germany. Corre-spondence to: Malte Mosbach <mosbach@ais.uni-bonn.de >.
+> Proceedings of the 42 nd International Conference on Machine Learning , Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s).
+
+# 1. Introduction 
+
+Advances in reinforcement learning (RL) have showcased the ability to learn sophisticated control strategies through interaction, achieving superhuman performance in domains ranging from board games (Silver et al., 2016) to drone racing (Kaufmann et al., 2023). While these approaches excel when explicit models of the environment are avail-able or abundant data can be collected, learning complex control tasks in a sample-efficient manner remains a sig-nificant challenge. Model-based RL (MBRL) has emerged as a promising approach to address this limitation by con-structing models of the environment dynamics. For instance, the Dreamer framework (Hafner et al., 2019; 2020; 2025) improves sample efficiency over model-free methods by learning behaviors via imagined rollouts. While these research efforts have produced world models ca-pable of accurately predicting the dynamics of visual tasks, they rely on a holistic representation of the environment state. In contrast, humans perceive the world by parsing scenes into individual objects (Spelke, 1990), anticipating how their actions will influence specific components of their surroundings. Relational reasoning, particularly in environ-ments with multiple interacting objects, is a cornerstone of human intelligence and a crucial capability for robotic manipulation tasks (Battaglia et al., 2018). Introducing 
+
+structured, object-centric representations into MBRL repre-sents a powerful inductive bias, enabling agents to reason about task-relevant components of the environment while ig-noring irrelevant details. Such structured representations not only enhance interpretability but also improve the efficiency of behavior learning by providing models with meaningful latent spaces. Despite these advantages, the integration of object-centric representations and world models remains largely underexplored. To the best of our knowledge, no prior method learns purely inside imagined rollouts of an object-centric world model trained from pixel inputs. To address the limitations of holistic representations in MBRL, we propose SOLD , a novel algorithm that leverages structured, object-centric states within the latent space of its world model. The contributions of our method are twofold. First, we introduce an object-centric dynamics model that predicts future frames in terms of their slot representation. 1SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+Building on the OCVP framework (Villar-Corrales et al., 2023), we introduce an action-conditional dynamics model, enabling accurate forecasting of action effects on individ-ual objects. Notably, the dynamics model is trained solely from pixels through a loss on the reconstructions and slot representations of the predicted frames, bypassing the need for object annotations and facilitating scalability to com-plex visual tasks. Second, we propose the Slot Aggregation Transformer , a novel architectural backbone that aggregates information from the history of object slots to make reward, value, and action predictions. This enables efficient MBRL training grounded in structured representations. For systematic evaluation, we introduce a suite of visual robotics tasks, shown in Figure 1, that require varying levels of relational reasoning and manipulation capabilities. We perform an extensive comparison on this benchmark, demon-strating that our method achieves superior performance to both state-of-the-art MBRL algorithms DreamerV3 (Hafner et al., 2025) and TD-MPC2 (Hansen et al., 2024). Further, to highlight its broader potential, we apply SOLD to tasks from two RL benchmarks that are not object-centric by design, providing evidence of the generalizability of our framework. In summary, we make the following contributions: • We introduce SOLD , the first MBRL algorithm to learn inside imagined rollouts of an object-centric dynamics model trained directly from pixel inputs, achieving state-of-the-art performance on visual robotics tasks that require both relational reasoning and manipulation. • By visualizing learned attention weights, we show that our method produces human-interpretable attention patterns, providing insights into the decision-making process of behavior models. • We overcome limitations of prior object-centric RL methods by showing that our encoder-decoder module can (i) be adapted to state distributions vastly different from those seen under random pre-training, and (ii) generalize to environments that are not object-centric by design. 
+
+# 2. Background 
+
+Slot Attention for Video (SAVi) SOLD employs SAVi (Kipf et al., 2022), an encoder-decoder architecture with a structured bottleneck composed of N permutation-equivariant object embeddings, referred to as slots. It recur-sively parses a sequence of video frames o0: τ = o0, ..., oτ
+
+into their object representations Z0: τ = Z0, ..., Zτ , Zt ∈
+
+RN ×DZ . At time t, SAVi encodes the input video frame 
+
+ot into a set of feature maps Ft ∈ RL×Dh , where L is the size of the flattened grid (i.e. L = width · height ), and uses Slot Attention (Locatello et al., 2020) to iteratively refine     
+
+> Reach-Specific Reach-Specific-Relative
+> Push-Specific Pick-Specific
+> Reach-Distinct Reach-Distinct-Groups
+> Push-Distinct Pick-Distinct
+
+Figure 1: Suite of visual environments requiring relational reasoning and low-level manipulation to be solved. the previous slot representations conditioned on the current features. Slot Attention performs cross-attention between the slots and image features with the attention coefficients normalized over the slot dimension, thus encouraging the slots to compete to represent feature locations: 
+
+A .
+
+= softmax  
+
+> N
+
+( q(Zt−1) · k(Ft)T
+
+√D ) ∈ RN ×L, (1) where q(.) and k(.) are learned linear mappings to a com-mon dimension D. The slots are then independently updated via a shared Gated Recurrent Unit (Cho et al., 2014) (GRU) followed by a residual MLP: 
+
+Zt
+
+.
+
+= MLP (GRU (A · v(Ft), Zt−1)) ,
+
+An,l 
+
+.
+
+= An,l 
+
+PL−1 
+
+> i=0
+
+An,i 
+
+, (2) and v(.) is a learned linear projection. The steps described in Equations 1 and 2 can be repeated multiple times with shared weights to iteratively refine the slots and obtain an accurate object-centric representation of the scene. Finally, SAVi independently decodes each slot of Zt into per-object images and alpha masks, which can be normal-ized and combined via weighted sum to render video frames. SAVi is trained end-to-end in a self-supervised manner with an image reconstruction loss. 
+
+Object-Centric Video Prediction (OCVP) Our dynam-ics model builds on OCVP (Villar-Corrales et al., 2023) in order to autoregressively predict future object slots condi-tioned on past object states. OCVP is a transformer-encoder model (Vaswani et al., 2017) that decouples the processing of object dynamics and interactions, thus leading to inter-pretable and temporally consistent object predictions while retaining the inherent permutation-equivariant property of the object slots. This is achieved through the use of two specialized self-attention variants: temporal attention up-dates a slot representation by aggregating information from 2SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels enc SAVi dec SAVi dec SAVi 
+
+# ... ... ... ... ... ... 
+
+# ... ... ...   
+
+> (a) World Model Learning: SAVi encodes images otinto slots
+> Zt, which are predicted by the dynamics model given the history of slots and actions. We reconstruct the images and compute their actual slot representation to shape the dynamics prediction. enc SAVi
+
+# ... 
+
+# ... ... ... ... ... 
+
+# ... ... ...       
+
+> (b) Behavior Learning: Actor and critic are trained via imagined rollouts in the latent space of the world model. Trajectories start after Sseed frames (visualized for S= 1 ) and predict forward with actions atsampled from the actor network.
+
+Figure 2: SOLD is trained by concurrently making the world model consistent with replayed experiences and learning behaviors through latent imagination. the corresponding slot up to the current time step, with-out modeling interactions between distinct objects, whereas 
+
+relational attention models object interactions by jointly processing all slots from the same time step. 
+
+# 3. Slot-Attention for Object-centric Latent Dynamics 
+
+We propose SOLD , a method that combines model-based RL with object-centric representations. The three core com-ponents of our method are: the object-centric world model ,which predicts the effects of actions on the environment, the 
+
+critic , which estimates the value of a given state, and the 
+
+actor that selects actions to maximize this value. Figure 2 gives an overview of the training process. The world model operates on structured latent states by split-ting the environment into its constituent objects and then composing future frames via the predicted states of these individual components. Specifically, we pretrain a SAVi encoder-decoder model (Kipf et al., 2022) on random se-quences from the environment to extract object-centric rep-resentations. After pretraining, all components of the world model are trained jointly using replayed experiences from the agent’s interaction with the environment. The actor and critic are trained on imagined sequences of structured latent states. We execute actions sampled from the actor model in the environment and append the resulting experiences to the replay buffer. Detailed explanations of world model learning and behavior learning are provided in Sections 3.1 and 3.2, respectively. 
+
+3.1. World Model Learning 
+
+World models compress an agent’s experience into a predic-tive model that forecasts the outcomes of potential actions. By simulating rollouts within the internal model, agents can learn desired behaviors in a sample-efficient manner. When the inputs are high-dimensional images, it is helpful to learn compact state representations, enabling prediction within this latent space. This type of model, called latent dynamics model, allows for efficient prediction of many latent sequences in parallel. Most prior works rely on generating a single, holistic repre-sentation of the environment state, which contrasts with find-ings from cognitive psychology. Humans perceive scenes as compositions of objects (Spelke, 1990) and reason about how their actions affect distinct parts of their environment. Furthermore, environment dynamics can be compactly ex-plained in terms of objects and their interactions (Battaglia et al., 2016). Therefore, we propose to structure the la-tent space by decomposing visual environments into their constituent parts. 
+
+Components To create a world model that operates on object-centric latent representations, we build on top of OCVP (Villar-Corrales et al., 2023). We begin by pretrain-ing SAVi on a static dataset of frames collected from random episodes. Having a sufficiently large initial dataset is cru-cial for meaningful object-centric representations to emerge. These pretrained representations serve as the foundation for SOLD’s object-centric world model. However, we do not freeze the pretrained encoder-decoder models, allowing 3SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels Context Open-loop prediction True Model Slots True t = 0 2 4 6 8 10 20 30 40 50 Model Slots 
+
+Figure 3: Open-loop predictions of our object-centric dynamics model for the Pick-Distinct task (top) and the Hammer 
+
+environment from MetaWorld (bottom). Starting from a single context frame, our model predicts the next 50 frames by propagating slot representations forward without access to any intermediate images. slots to adapt to novel configurations that do not occur dur-ing random pre-training. The sequence of object slots Z0: t
+
+alongside the action commands a0: t serve as inputs to our transformer-based dynamics model which predicts the slot representation of the next frame ˆZt+1 :Encoder: Zt = eη (ot),
+
+Decoder: ˆot = dη (Zt),
+
+Dynamics model: ˆZt+1 = pψ (Z0: t, a0: t), and Reward predictor: ˆrt ∼ pζ (ˆ rt | Z0: t).
+
+(3) 
+
+Object-centric Dynamics Learning For the dynamics model, we use the sequential attention pattern proposed by Villar-Corrales et al. (2023), which disentangles rela-tional and temporal attention to decouple object dynamics and interactions. During training, we provide the slot rep-resentation of S seed frames as context. We append the predictions to the context and apply this process in an au-toregressive manner to predict the subsequent T frames. We do not employ teacher forcing so that the dynamics model learns to handle its own imperfect predictions. To shape the predicted representations, we reconstruct the subsequent frame ˆot+1 and extract the SAVi representations of the ac-tual frame Zt+1 to compute the hybrid dynamics loss: 
+
+Ldyn (ψ) .
+
+= 
+
+> S+T−1
+
+X
+
+> t=S
+
+h ˆZt − eη (ot) 22
+
+| {z }
+
+> Joint embedding
+
++ ˆot − ot
+
+> 22
+
+| {z }
+
+> Reconstruction
+
+i
+
+. (4) For all loss terms, we specify the parameter group that is being optimized and omit stop-gradient notations for other models to avoid cluttering the notation. 
+
+Reward Model Learning The reward predictor solves a regression problem that maps slot representations to scalar reward values, where the prediction depends on the set of slots rather than being tied to any specific one. To address this, we introduce the Slot Aggregation Transformer (SAT) 
+
+as an architectural backbone, which introduces output to-kens and a variable number of register tokens for all time-steps. Register tokens, recently shown to enhance compu-tation in vision transformers (Darcet et al., 2024), can aid computation when processing a set of inputs to produce a singular output. To encode positional information, we adopt ALiBi (Press et al., 2022) in place of absolute position en-4SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+coding. ALiBi introduces linear biases directly into the attention scores, effectively encoding token recency. This approach helps to generalize to sequences longer than those seen during training. A detailed description of the SAT can be found in Section B.3. To efficiently represent a wide range of reward values, we avoid directly predicting a scalar reward. Instead, the MLP head fζ outputs logits of a soft-max distribution over K exponentially spaced bins bi. The predicted reward can then be computed as the expectation over these bins: 
+
+b .
+
+= symexp([ −20 , ..., +20]) ,
+
+ˆrt
+
+.
+
+= softmax( f MLP  
+
+> ζ
+
+(ht)) T b, (5) where ht are the output tokens after being processed by the SAT backbone. To formulate the loss, the true reward rt is first transformed using the symlog function (Webber, 2012) and then encoded via a two-hot encoding strategy (Belle-mare et al., 2017; Schrittwieser et al., 2020). The model is trained to maximize the log-likelihood of the two-hot en-coded reward distribution under the predicted distribution: 
+
+Lrew (ζ) .
+
+= − 
+
+> T−1
+
+X
+
+> t=0
+
+log pζ (rt | Z0: t). (6) 
+
+3.2. Behavior Learning 
+
+Our strategy of using the world model for behavior learn-ing builds upon the Dreamer framework. At the core of this method lies the process of latent imagination, visu-alized in Figure 2b, which trains the actor and critic net-works purely on imagined trajectories predicted by the world model. Since both the actor and critic operate on the latent state, they benefit from the structured representation learned by the world model. The architecture of both models mirrors that of the reward predictor, consisting of a SAT backbone that processes the slot histories followed by an MLP head: Actor: at ∼ πθ (at | Z0: t),
+
+Critic: ˆRt
+
+.
+
+= E[ vϕ( ˆRt | Z0: t)] . (7) 
+
+Critic Learning To account for rewards beyond the imag-ination horizon T = 15 , the critic is trained to estimate the expected return under the current actor’s behavior. Since no ground truth is available for these estimates, we com-pute bootstrapped λ-returns (Sutton & Barto, 2018), Rλ,via temporal difference learning. These returns integrate predicted rewards ˆr and values ˆR to form the target for the value model: 
+
+Rλt
+
+.
+
+= ˆ rt+1 + γ
+
+
+
+(1 − λ) ˆRt+1 + λR λt+1 
+
+
+
+, (8) where RλT
+
+.
+
+= ˆRT , which is trained to minimize the resulting loss: 
+
+Lcritic (ϕ) .
+
+= − 
+
+> T−1
+
+X
+
+> t=0
+
+log vϕ(Rλt | Z0: t). (9) Table 1: Final success rates (% ± standard deviation) of SOLD and baseline methods for the specific (top) and dis-tinct (bottom) task variants.                                                                                         
+
+> (a) Specific tasks requiring mainly robotic control.
+> Task DreamerV3 TD-MPC2 w/o OCE SOLD
+> Reach 87 .4±197 .6±083 .2±297 .9±0
+> Reach-Rel. 45 .6±679 .1±139 .2±391 .1±2
+> Push 97 .1±172 .7±375 .2±282 .8±2
+> Pick 96 .7±187 .6±222 .9±11 85 .8±7
+> Average 81 .7±21 84 .2±955 .1±25 89 .4±6
+> (b) Distinct tasks requiring challenging relational reasoning.
+> Task DreamerV3 TD-MPC2 w/o OCE SOLD
+> Reach 14 .6±631 .4±311 .3±191 .8±1
+> Reach-Gr. 13 .9±215 .7±25.1±169 .6±2
+> Push 70 .0±512 .2±510 .5±180 .6±5
+> Pick 33 .9±36 9.8±10.7±056 .4±25
+> Average 33 .1±23 17 .3±86.9±474 .6±13
+
+We decouple the gradient scale from value prediction through same approach as in the reward model, predict-ing a categorical distribution over exponentially spaced bins. To stabilize learning, we regularize the critic’s predictions towards the outputs of an exponentially moving average (EMA) of its own parameters (Mnih et al., 2015; Hafner et al., 2025). 
+
+Actor Learning The actor is optimized to select actions that maximize its expected return while encouraging explo-ration through an entropy regularizer. Its model architecture is similar to the critic and reward predictor, but instead of regressing a scalar value, it predicts the parameters of the action distribution. Specifically, the MLP head outputs the mean μt and standard deviation σt of a normal distribution 
+
+N (μt, σt|Z0: t) over possible actions. The trade-off in the actor’s loss function weights expected returns with main-taining randomness in the outputs and is hence subject to reward scale and frequency of the current environment. To adapt to varying scales of value estimates across different environments, we use a normalization factor s V :
+
+Lactor (θ) .
+
+= − 
+
+> T−1
+
+X
+
+> t=0
+
+ˆRλt
+
+max(1 , sV ) +ηH( πθ (at | Z0: t)) , (10) where the value normalization is computed via the EMA of the 5th and 95th percentile of the value estimates (Hafner et al., 2025): sV
+
+.
+
+= EMA 
+
+
+
+Per( ˆRλt , 95) − Per( ˆRλt , 5) , 0.99 
+
+
+
+. (11) 5SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 0 5 10 15                        
+
+> 0
+> 10
+> 20 Return
+> Specific
+> 0510 15 20
+> 0
+> 10
+> 20
+> Specific-Relative
+> 010 20
+> 0
+> 10
+> 20
+> 30
+> Specific
+> 010 20
+> 0
+> 10
+> 20
+> 30
+> Specific
+> 0510 15 Episodes (1e4)
+> 0
+> 10
+> 20 Return
+> Distinct
+> 010 20 30 Episodes (1e4)
+> 0
+> 10
+> 20
+> Distinct-Groups
+> 010 20 Episodes (1e4)
+> 0
+> 10
+> 20
+> 30
+> Distinct
+> 010 20 Episodes (1e4)
+> 0
+> 10
+> 20
+> 30
+> Distinct
+> Reach Push Pick DreamerV3 TD-MPC2 Ours w/o OCE SOLD (Ours)
+
+Figure 4: Achieved returns over the training duration across the eight benchmark environments. The dashed vertical line represents the offset for our method to account for the samples used during pre-training. 
+
+# 4. Results 
+
+In this section, we present the empirical evaluation of SOLD on our suite of visual continuous control tasks. We first de-scribe the comparative baselines and the environments used in our experiments. Using this setup, we aim to answer the following questions: (a) Does SOLD accurately model object-centric dynamics in action-conditional settings, pre-serving the decomposition of visual scenes? (b) Does the structured latent space allow SOLD to outperform SoTA baselines on tasks that require relation reasoning capabili-ties? (c) Can SOLD generalize to visual environments that are not object-centric by design? 
+
+Baselines The chosen baselines in our evaluation serve two primary purposes: assessing the impact of the object-centric paradigm in our method and benchmarking it against state-of-the-art approaches. To evaluate the effect of object-centric representations, we compare our method to a baseline that replaces the object-centric encoder-decoder modules with a standard convolutional architecture (w/o OCE). To benchmark against the best available methods, we include DreamerV3 (Hafner et al., 2025) and TD-MPC2 (Hansen et al., 2024). Both are widely recognized for their strong performance across a wide range of tasks. Addi-tional details for the baselines can be found in Appendix C. 
+
+Environments We introduce a suite of eight object-centric robotic control environments designed to test both relational reasoning and manipulation capabilities. These environ-ments feature two types of problems: Reach tasks, where the agent must identify a target and move the end-effector to its location, and manipulation tasks ( Push and Pick ), where the agent identifies a target block and moves it to a desig-nated goal. To test varying levels of relational reasoning difficulty, we design the following configurations: • Specific The target object is red, with 0 to 4 distractor objects of random, distinct colors present in the scene. • Distinct Inspired by the odd-one-out task in cognitive science (Crutch et al., 2009; Beatty & Vartanian, 2015), this task presents 3 to 5 objects, and the target is the one that differs in color from all the others. For the Reach task, we include two advanced variants: • Specific-Relative The goal is to reach the reddest object, determined by the perceptual CIEDE2000 (Sharma et al., 2005) distance. • Distinct-Groups The environment contains 5 targets, and the goal is to reach the one that appears only once. On these two additional reach tasks, we reuse the SAVi models that were pre-trained for Reach-Specific and Reach-Distinct , respectively without modification. Further details about these environments are provided in Appendix D. 
+
+4.1. Object-centric Dynamics Learning 
+
+The object-centric representations learned by SAVi can be seen in the context frames in Figure 3. The slots effectively decompose the visual scene, with most slots representing distinct objects and three slots capturing different parts of the respective robots. This part-whole segmentation demon-strates that the slots can meaningfully identify separate parts 6SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels Model 3 4 5 6 17 18 19 20 21 t = 2 Attention  ... 
+
+Figure 5: SOLD discovers objects relevant for task completion in an unsupervised manner over long horizons. We depict the normalized attention of the [out] token of the actor over the object tokens using Attention Rollout (Abnar & Zuidema, 2020). The full slot history is shown in Figure 16. of a larger object, representing the gripper jaws in the first example and different parts of the kinematic chain of the Sawyer robot in the second. Notably, the sharp mask pre-dictions show that each slot isolates information about the specific object it represents (see also Section E). This prop-erty is crucial for object-centric behavior learning, as it en-ables subsequent components to reason about task-relevant objects while ignoring irrelevant information. Further, the open-loop prediction of 50 future frames starting from a sin-gle seed frame, shown in Figure 3, demonstrate the model’s ability to generate physically accurate predictions over long horizons. The movements of the robot and blocks are pre-dicted with high accuracy, demonstrating the model’s ability to precisely capture physical interactions between objects. Moreover, the model effectively handles occlusions, as evi-denced by the continued precise prediction of the spherical red target. Importantly, the autoregressive dynamics model maintains a precise and meaningful decomposition of the scene in its predictions, even far into the future. We encour-age readers to view the videos of object-centric open-loop predictions on our project page for a qualitative assessment of these results. 
+
+4.2. Behavior Learning 
+
+To assess SOLD’s performance across our robotic control tasks, we train each method with three different random seeds per environment. The final success rates achieved by each method are presented in Table 1. SOLD con-sistently outperforms the non-object-centric baseline, of-ten by a significant margin, underscoring the effectiveness of object-centric representations for the considered tasks. When compared to state-of-the-art MBRL methods, SOLD demonstrates competitive or superior performance. Notably, while SOLD narrowly surpasses DreamerV3 and TD-MPC2 across the Specific tasks, it significantly outperforms them on the more challenging Distinct variants, which require complex relational reasoning between objects. On these tasks, SOLD achieves more than double the performance of the second-best method. Beyond that, when examining the performance over the course of training, as shown in Figure 4, we observe addi-tional advantages in terms of sample efficiency. We find that SOLD consistently outperforms the highly sample-efficient DreamerV3 and TD-MPC2 baselines on all but the easiest 
+
+Reach-Specific task, even after accounting for the samples used during pre-training. While the non-object-centric base-line demonstrates some success on the Specific tasks, it struggles with the relational reasoning required to solve the 
+
+Distinct variants. In contrast, SOLD excels in tasks that demand reasoning about relationships between objects, as evidenced by the substantial performance gap observed on the Distinct tasks. These results support our hypothesis that a structured latent representation within the world model significantly benefits tasks requiring object reasoning. This is especially valu-able in robotics, where understanding object interactions is essential for solving complex control problems. 
+
+Discovering Task-relevant Objects To demonstrate that SOLD’s improved relational reasoning capabilities are ac-companied by an interpretable focus on task-relevant ob-jects, we visualize an excerpt of the slot history in Figure 5. To illustrate the actor’s attention pattern in the current (rightmost) time step, we multiply the attention scores by the masks of the respective objects and show them overlaid with the RGB reconstructions and as an individual colormap in the second and third rows, respectively. This visualization shows the Push-Specific task, where we find that the model automatically identifies task-relevant objects, disregarding slots that represent distractor objects across all time steps 7SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels Full Frozen Finetuned 4 9 14 19 t = 0 4 9 14 19 t = 0 Target 
+
+Figure 6: Decoded reconstructions of the full scene (top) and the slot corresponding to the target object (bottom) for a frozen (left) and finetuned (right) SAVi model. Finetuning enables the model to represent object configurations not present in the random pre-training data. while focusing primarily on the robot and green cube. Al-though the recency bias induced by ALiBi is evident, we find that the model learns to overcome it when necessary, attending to the red sphere (indicating the goal position) after it has been occluded for 15 time steps, the last time it was visible. We see that the model effectively prioritizes task-relevant information, even when reasoning over long time sequences is required. 
+
+SAVi Finetuning A common limitation of prior work in object-centric RL is the reliance on encoder-decoder models pretrained on sequences with random behaviors and kept frozen during training, restricting their applicability to tasks where random and successful policies encounter similar state distributions. In the Pick tasks, this assumption is explicitly violated, as random behaviors rarely result in blocks being lifted off the table. Consequently, SAVi lacks prior exposure to configurations with blocks in the air, which will inevitably be reached by successful policies. Figure 6 illustrates the necessity of continually fine-tuning the object-centric encoder-decoder model. While the fine-tuned model accurately reconstructs lifted blocks, the frozen variant fails to decode this configuration correctly, causing the target block to dissolve during lifting. Additional examples are shown in Figure 15 in the Appendix. 
+
+4.3. Generalization to Non-Object-Centric Tasks 
+
+While object-centric methods are commonly applied to en-vironments and datasets that naturally lend themselves to such decompositions, we aim to showcase the potential of our method to generalize beyond this setting. To this end, we train SOLD on the Button-Press and Hammer tasks from the Meta-World benchmark (Yu et al., 2019), both of which feature object with complex shapes and textures, challenging the model’s ability to handle more diverse and visually intricate inputs. Additionally, we test SOLD on the Cartpole-Balance and Finger-Spin environments from the DM-Control suite (Tassa et al., 2018), which represent significantly different domains not typically associated with object-centric learning. These environments are shown in Figure 7. SOLD achieves a 100% success rate on both the 
+
+Button-Press and Hammer tasks, highlighting its ability to adapt to visually diverse and challenging object interactions. On the Cartpole-Balance and Finger-Spin tasks, SOLD achieves returns of 497 and 645 , respectively, demonstrat-ing its capacity to generalize to tasks where object-centric reasoning is less pronounced. Details about environment decompositions and dynamics predictions for all four tasks can be found in Section E.2 of the Appendix. 
+
+# 5. Related Work 
+
+Object-Centric Learning In recent years, the field of unsupervised object-centric representation learning from images and videos has gained significant attention (Yuan et al., 2023). Most existing methods follow an encoder-decoder framework with a structured bottleneck composed of N latent vectors called slots, where each of these slots binds to a different object in the input image. Slot-based methods have been widely applied for images (Burgess et al., 2019; Locatello et al., 2020; Singh et al., 2021; 2023; Biza et al., 2023) and videos (Kipf et al., 2022; Singh et al., 2022; Elsayed et al., 2022; Bao et al., 2022). However, despite their impressive performance on synthetic datasets, they often fail to generalize to visually complex scenes. To overcome this limitation, recent methods propose using weak supervision (Elsayed et al., 2022; Bao et al., 2023), levering large pretrained encoders (Seitzer et al., 2023; Aydemir et al., 2023; Kakogeorgiou et al., 2024), or using diffusion models as slot decoders (Jiang et al., 2023). 
+
+Object-Centric Video Prediction Object-centric video prediction aims to understand the object dynamics in a video sequence with the goal of anticipating how these objects will move and interact with each other in future time steps. With this end, multiple methods propose to model and fore-cast the object dynamics using different architectures, in-8SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+cluding RNNs (Zoran et al., 2021; Nakano et al., 2023) transformers (Wu et al., 2023; Villar-Corrales et al., 2023; Song et al., 2023; Daniel & Tamar, 2024; Nguyen et al., 2024) or state-space models (Jiang et al., 2024), achieving an impressive prediction performance on synthetic video datasets and learning representations that can help solve downstream tasks that require reasoning about objects prop-erties and relationships (Wu et al., 2023; Petri et al., 2024). Biza et al. (2022) address the integration of action informa-tion into object-centric world models, but focus solely on action-conditional prediction and do not consider behavior learning through RL. 
+
+Model-based RL Model-based approaches hold the po-tential to improve the sample efficiency of RL methods by learning environment dynamics, and recent years have seen several key contributions advancing this area. Pio-neering work by Ha & Schmidhuber (2018) introduced the concept of a recurrent generative model, termed a world model, which captures the dynamics of visual RL environ-ments. By encoding high-dimensional observations into a compact latent representation, this model enables RL agents to train policies entirely within imagined rollouts. The Planning Network (PlaNet) (Hafner et al., 2019) intro-duced a recurrent state-space model (RSSM) that predicts future states directly in a compact latent space, avoiding the costly step of decoding observations. PlaNet enables efficient planning of action sequences but is limited by the planning horizon. Building on this, Dreamer (Hafner et al., 2020) integrates planning and learning by training agents within a learned world model. Subsequent versions (Hafner et al., 2021; 2025) improved robustness and generalization through enhanced representation learning and optimization techniques. DreamerV3 has shown superior performance in visual control tasks compared to model-free approaches, but uses holistic rather than object-centric state represen-tations. TD-MPC (Hansen et al., 2022) introduced a task-oriented latent dynamics model to optimize trajectories di-rectly within the latent space of a world model. Unlike earlier approaches, TD-MPC avoids reconstructing observa-tions, instead focusing the world model on reward-predictive elements through a loss applied to reward and value predic-tions. TD-MPC2 (Hansen et al., 2024) extends this work by introducing scalability improvements, demonstrating gen-eralization abilities across multiple tasks and action spaces. Micheli et al. (2023) proposed IRIS, a method combining a discrete autoencoder with an autoregressive Transformer to model environment dynamics, demonstrating visually and temporally accurate predictions of game dynamics in Atari environments. While IRIS shares similarities with our ap-proach – encoding an image into a set-based representation and predicting it forward using a Transformer – it lacks the object-centric interpretability afforded by our model.    
+
+> Button-Press Hammer Cartpole-Balance Finger-Spin
+
+Figure 7: Non-object centric environments from Meta-World (Yu et al., 2019) and DM-Control (Tassa et al., 2018). 
+
+RL with Object-Centric Representations Recent works have explored integrating object-centric representations into RL frameworks. SMORL (Zadaianchuk et al., 2021) and EIT (Haramati et al., 2024) combined object-centric repre-sentations with goal-conditioned model-free RL for robotic manipulation. Yoon et al. (2023) investigated pre-training object-centric representations for RL, showing benefits for relational reasoning tasks. The field of object-centric model-based RL is still largely underexplored. Ferraro et al. (2023) introduce FOCUS, which learn object-centric world mod-els for robotic manipulaiton. However, unlike our method, FOCUS does not use the object-centric states in forward prediction or action selection, but mainly to form an ex-ploration target. Further, FOCUS requires supervision via ground-truth segmentation masks to learn the object-centric states. Ugadiarov et al. (2025) introduce ROCA, which learns an object-centric transition model from visual obser-vations. However, unlike our method, this model us used to improve return estimates of the critic instead of learning through imagination inside world model rollouts. 
+
+# 6. Conclusion 
+
+We present SOLD, an object-centric model-based RL algo-rithm that learns directly from pixel inputs. By employing structured latent representations through slot-based dynam-ics models, our method offers a compelling alternative to traditional, holistic approaches. While object-centric rep-resentations have been valued for their role in forward pre-diction (Villar-Corrales et al., 2023), we demonstrate their synergistic benefits in accelerating the learning of behavior models. SOLD achieves strong performance across the in-troduced visual robotics environments, outperforming the state-of-the-art methods DreamerV3 and TD-MPC2, partic-ularly in tasks requiring relational reasoning. Additionally, the learned behavior models exhibit interpretable attention patterns, explicitly focusing on task-relevant parts of the vi-sual scene. To enable broader adoption, it will be interesting for future work to scale object-centric dynamics models to real-world data and highly stochastic environments. Ulti-mately, SOLD suggests that object-centric approaches hold strong potential for advancing model-based reinforcement learning. 9SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+# Impact Statement 
+
+This paper presents work whose goal is to advance the field of machine learning by introducing a novel object-centric model-based reinforcement learning algorithm, SOLD, de-signed for improved interpretability and sample efficiency. Our work has potential applications in robotics and automa-tion, particularly in tasks requiring relational reasoning and manipulation. While we do not anticipate specific societal concerns arising directly from this work, the deployment of reinforcement learning systems in real-world applications warrants thoughtful consideration of ethical and safety chal-lenges, including robustness and accountability in decision-making. Improved model interpretability, as explored in this work, could provide an avenue toward addressing these challenges. 
+
+# Acknowledgment 
+
+This work has partially been funded by grant BE 2556/16-2 (Research Unit FOR 2535 Anticipating Human Behavior) of the German Research Foundation (DFG) and by the German Federal Ministry of Education and Research (BMBF) in the project “Robotics Institute Germany (RIG)” under grant No. 16ME0999. Computational resources were provided by the German AI Service Center WestAI. 
+
+# References 
+
+Abnar, S. and Zuidema, W. Quantifying attention flow in transformers. In Annual Meeting of the Association for Computational Linguistics (ACL) , 2020. Aydemir, G., Xie, W., and Guney, F. Self-supervised object-centric learning for videos. In Advances in Neural Infor-mation Processing Systems (NeurIPS) , 2023. Bao, Z., Tokmakov, P., Jabri, A., Wang, Y.-X., Gaidon, A., and Hebert, M. Discovering objects that can move. In 
+
+Conference on Computer Vision and Pattern Recognition (CVPR) , 2022. Bao, Z., Tokmakov, P., Wang, Y.-X., Gaidon, A., and Hebert, M. Object discovery from motion-guided tokens. In 
+
+Conference on Computer Vision and Pattern Recognition (CVPR) , 2023. Battaglia, P. W., Pascanu, R., Lai, M., Rezende, D. J., and Kavukcuoglu, K. Interaction networks for learning about objects, relations and physics. In Advances in Neural Information Processing Systems (NeurIPS) , 2016. Battaglia, P. W., Hamrick, J. B., Bapst, V., Sanchez-Gonzalez, A., Zambaldi, V., Malinowski, M., Tacchetti, A., Raposo, D., Santoro, A., Faulkner, R., et al. Rela-tional inductive biases, deep learning, and graph networks. 
+
+arXiv preprint arXiv:1806.01261 , 2018. Beatty, E. L. and Vartanian, O. The prospects of work-ing memory training for improving deductive reasoning. 
+
+Frontiers in Human Neuroscience , 2015. Bellemare, M. G., Dabney, W., and Munos, R. A distri-butional perspective on reinforcement learning. In In-ternational Conference on Machine Learning (ICML) ,2017. Biza, O., Platt, R., van de Meent, J.-W., Wong, L. L., and Kipf, T. Binding actions to objects in world models. In 
+
+ICLR Workshop on the Elements of Reasoning: Objects, Structure and Causality , 2022. Biza, O., Van Steenkiste, S., Sajjadi, M. S., Elsayed, G. F., Mahendran, A., and Kipf, T. Invariant slot attention: Object discovery with slot-centric reference frames. In 
+
+International Conference on Machine Learning (ICML) ,2023. Burgess, C. P., Matthey, L., Watters, N., Kabra, R., Higgins, I., Botvinick, M., and Lerchner, A. MONet: Unsuper-vised scene decomposition and representation. arXiv preprint arXiv:1901.11390 , 2019. Cho, K., Van Merri¨ enboer, B., Gulcehre, C., Bahdanau, D., Bougares, F., Schwenk, H., and Bengio, Y. Learning phrase representations using RNN encoder-decoder for statistical machine translation. In Conference on Empiri-cal Methods in Natural Language Processing (EMNLP) ,2014. Crutch, S. J., Connell, S., and Warrington, E. K. The dif-ferent representational frameworks underpinning abstract and concrete knowledge: Evidence from odd-one-out judgements. Quarterly Journal of Experimental Psychol-ogy , 2009. Daniel, T. and Tamar, A. DDLP: Unsupervised object-centric video prediction with deep dynamic latent par-ticles. Transactions on Machine Learning Research (TMLR) , 2024. Darcet, T., Oquab, M., Mairal, J., and Bojanowski, P. Vision transformers need registers. In International Conference on Learning Representations (ICLR) , 2024. Elsayed, G., Mahendran, A., Van Steenkiste, S., Greff, K., Mozer, M. C., and Kipf, T. SAVi++: Towards end-to-end object-centric learning from real-world videos. In Advances in Neural Information Processing Systems (NeurIPS) , 2022. Ferraro, S., Mazzaglia, P., Verbelen, T., and Dhoedt, B. FOCUS: Object-centric world models for robotic manip-ulation. In NeurIPS Workshop on Intrinsically-Motivated and Open-Ended Learning , 2023. 10 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+Ha, D. and Schmidhuber, J. Recurrent world models facili-tate policy evolution. In Advances in Neural Information Processing Systems (NeurIPS) , 2018. Hafner, D., Lillicrap, T., Fischer, I., Villegas, R., Ha, D., Lee, H., and Davidson, J. Learning latent dynamics for planning from pixels. In International conference on Machine Learning (ICML) , 2019. Hafner, D., Lillicrap, T., Ba, J., and Norouzi, M. Dream to control: Learning behaviors by latent imagination. In 
+
+International Conference on Learning Representations (ICLR) , 2020. Hafner, D., Lillicrap, T., Norouzi, M., and Ba, J. Master-ing Atari with discrete world models. In International Conference on Learning Representations (ICLR) , 2021. Hafner, D., Pasukonis, J., Ba, J., and Lillicrap, T. Mastering diverse control tasks through world models. Nature , 2025. Hansen, N., Wang, X., and Su, H. Temporal difference learning for model predictive control. In International Conference on Machine Learning (ICML) , 2022. Hansen, N., Su, H., and Wang, X. TD-MPC2: Scalable, robust world models for continuous control. In Interna-tional Conference on Learning Representations (ICLR) ,2024. Haramati, D., Daniel, T., and Tamar, A. Entity-centric rein-forcement learning for object manipulation from pixels. In International Conference on Learning Representations (ICLR) , 2024. Jiang, J., Deng, F., Singh, G., and Ahn, S. Object-centric slot diffusion. In Advances in Neural Information Processing Systems (NeurIPS) , 2023. Jiang, J., Deng, F., Singh, G., Lee, M., and Ahn, S. SlotSSMs: Slot state space models. In Advances in Neu-ral Information Processing Systems (NeurIPS) , 2024. Kakogeorgiou, I., Gidaris, S., Karantzalos, K., and Ko-modakis, N. SPOT: Self-training with patch-order per-mutation for object-centric learning with autoregressive transformers. In Conference on Computer Vision and Pattern Recognition (CVPR) , 2024. Kaufmann, E., Bauersfeld, L., Loquercio, A., M ¨uller, M., Koltun, V., and Scaramuzza, D. Champion-level drone racing using deep reinforcement learning. Nature , 2023. Kingma, D. P. and Ba, J. Adam: A method for stochastic optimization. In International Conference on Learning Representations (ICLR) , 2015. Kipf, T., Elsayed, G. F., Mahendran, A., Stone, A., Sabour, S., Heigold, G., Jonschkowski, R., Dosovitskiy, A., and Greff, K. Conditional object-centric learning from video. In International Conference on Learning Representations (ICLR) , 2022. Li, R., Jabri, A., Darrell, T., and Agrawal, P. Towards practical multi-object manipulation using relational re-inforcement learning. In International Conference on Robotics and Automation (ICRA) , 2020. Locatello, F., Weissenborn, D., Unterthiner, T., Mahendran, A., Heigold, G., Uszkoreit, J., Dosovitskiy, A., and Kipf, T. Object-centric learning with slot attention. In Advances in Neural Information Processing Systems (NeurIPS) ,2020. Loshchilov, I. and Hutter, F. SGDR: Stochastic gradient descent with warm restarts. In International Conference on Learning Representations (ICLR) , 2017. Micheli, V., Alonso, E., and Fleuret, F. Transformers are sample-efficient world models. In International Confer-ence on Learning Representations (ICLR) , 2023. Mnih, V., Kavukcuoglu, K., Silver, D., Rusu, A. A., Veness, J., Bellemare, M. G., Graves, A., Riedmiller, M., Fidje-land, A. K., Ostrovski, G., et al. Human-level control through deep reinforcement learning. Nature , 2015. Nakano, A., Suzuki, M., and Matsuo, Y. Interaction-based disentanglement of entities for object-centric world mod-els. In International Conference on Learning Representa-tions (ICLR) , 2023. Nguyen, T., Mansouri, A., Madan, K., Nguyen, K. D., Ahuja, K., Liu, D., and Bengio, Y. Reusable slotwise mechanisms. In Advances in Neural Information Process-ing Systems (NeurIPS) , 2024. Paszke, A., Gross, S., Massa, F., Lerer, A., Bradbury, J., Chanan, G., Killeen, T., Lin, Z., Gimelshein, N., Antiga, L., et al. PyTorch: An imperative style, high-performance deep learning library. In Advances in Neural Information Processing Systems (NeurIPS) , 2019. Petri, F., Asprino, L., and Gangemi, A. Transformers and slot encoding for sample efficient physical world mod-elling. arXiv preprint arXiv:2405.20180 , 2024. Press, O., Smith, N., and Lewis, M. Train short, test long: Attention with linear biases enables input length extrapo-lation. In International Conference on Learning Repre-sentations (ICLR) , 2022. Schrittwieser, J., Antonoglou, I., Hubert, T., Simonyan, K., Sifre, L., Schmitt, S., Guez, A., Lockhart, E., Hassabis, D., Graepel, T., et al. Mastering Atari, Go, chess and shogi by planning with a learned model. Nature , 2020. 11 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+Seitzer, M., Horn, M., Zadaianchuk, A., Zietlow, D., Xiao, T., Simon-Gabriel, C.-J., He, T., Zhang, Z., Sch ¨olkopf, B., Brox, T., et al. Bridging the gap to real-world object-centric learning. In International Conference on Learning Representations (ICLR) , 2023. Sharma, G., Wu, W., and Dalal, E. N. The CIEDE2000 color-difference formula: Implementation notes, supplementary test data, and mathematical observations. Color Research & Application , 2005. Silver, D., Huang, A., Maddison, C. J., Guez, A., Sifre, L., Van Den Driessche, G., Schrittwieser, J., Antonoglou, I., Panneershelvam, V., Lanctot, M., et al. Mastering the game of Go with deep neural networks and tree search. 
+
+Nature , 2016. Singh, G., Deng, F., and Ahn, S. Illiterate dall-e learns to compose. In International Conference on Learning Representations (ICLR) , 2021. Singh, G., Wu, Y.-F., and Ahn, S. Simple unsuper-vised object-centric learning for complex and naturalistic videos. In Advances in Neural Information Processing Systems (NeurIPS) , 2022. Singh, G., Kim, Y., and Ahn, S. Neural systematic binder. In International Conference on Learning Representations (ICLR) , 2023. Song, Y.-J., Kim, H., Choi, S., Kim, J.-H., and Zhang, B.-T. Learning object motion and appearance dynamics with object-centric representations. In NeurIPS Workshop on Causal Representation Learning , 2023. Spelke, E. S. Principles of object perception. Cognitive Science , 1990. Sutton, R. S. and Barto, A. G. Reinforcement learning: An introduction . A Bradford Book, 2018. Tassa, Y., Doron, Y., Muldal, A., Erez, T., Li, Y., Casas, D. d. L., Budden, D., Abdolmaleki, A., Merel, J., Lefrancq, A., et al. DeepMind control suite. arXiv preprint arXiv:1801.00690 , 2018. Todorov, E., Erez, T., and Tassa, Y. MuJoCo: A physics engine for model-based control. In International Confer-ence on Intelligent Robots and Systems (IROS) , 2012. Ugadiarov, L., Vorobyov, V., and Panov, A. I. Re-lational object-centric actor-critic. arXiv preprint arXiv:2310.17178 , 2025. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., and Polosukhin, I. Atten-tion is all you need. In Advances in Neural Information Processing Systems (NeurIPS) , 2017. Villar-Corrales, A., Wahdan, I., and Behnke, S. Object-centric video prediction via decoupling of object dynam-ics and interactions. In International Conference on Im-age Processing (ICIP) , 2023. Webber, J. B. W. A bi-symmetric log transformation for wide-range data. Measurement Science and Technology ,2012. Wu, Z., Dvornik, N., Greff, K., Kipf, T., and Garg, A. Slot-Former: Unsupervised visual dynamics simulation with object-centric models. In International Conference on Learning Representations (ICLR) , 2023. Yoon, J., Wu, Y.-F., Bae, H., and Ahn, S. An investiga-tion into pre-training object-centric representations for reinforcement learning. In International Conference on Machine Learning (ICML) , 2023. Yu, T., Quillen, D., He, Z., Julian, R., Hausman, K., Finn, C., and Levine, S. Meta-World: A benchmark and evalu-ation for multi-task and meta reinforcement learning. In 
+
+Conference on Robot Learning (CoRL) , 2019. Yuan, J., Chen, T., Li, B., and Xue, X. Compositional scene representation learning via reconstruction: A sur-vey. Transactions on Pattern Analysis and Machine Intel-ligence (TPAMI) , 2023. Zadaianchuk, A., Seitzer, M., and Martius, G. Self-supervised visual reinforcement learning with object-centric representations. In International Conference on Learning Representations (ICLR) , 2021. Zhang, B. and Sennrich, R. Root mean square layer normal-ization. In Advances in Neural Information Processing Systems (NeurIPS) , 2019. Zoran, D., Kabra, R., Lerchner, A., and Rezende, D. J. PARTS: Unsupervised segmentation with slots, attention and independence maximization. In International Con-ference on Computer Vision (ICCV) , 2021. 12 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+# A. Notation 
+
+Slot Attention for Video (SAVi) 
+
+DZ The slot dimension 
+
+N The number of slots 
+
+Zt A set of slots Zt ∈ RN ×DZ at time-step t
+
+Z0: t A history of slot-sets up to time-step teη A SAVi encoder that maps ot to Zt
+
+dη A SAVi decoder that reconstructs ot from Zt
+
+Ft Features obtained by encoding images 
+
+L Number of spatial locations in F
+
+Reinforcement Learning 
+
+S The number of seed frames 
+
+T The imagination horizon 
+
+ot An image observation 
+
+at An action command 
+
+rt A reward 
+
+Rt A return 
+
+γ A scalar discount factor 
+
+H The entropy of a probability distribution 
+
+f MLP  
+
+> α
+
+An MLP head that belongs to parameter group α
+
+ht A processed output token 13 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+# B. Implementation Details 
+
+Table 2: Implementation details for each of SOLD modules. 
+
+> (a) SAVi
+
+Hyper-Param. Value 
+
+Slot Dim. DZ 128 # Slots N 2-10 Slot Init. Learned # Iters. 3/1 
+
+> (b) Object-centric dynamics
+
+Hyper-Param. Value 
+
+# Layers 4# Heads 8Token Dim. 256 MLP Dim. 512 
+
+> (c) Slot Aggregation Transformer
+
+Hyper-Param. Value 
+
+# Layers 4# Heads 8Token Dim. 256 MLP Dim. 512 In this section, we describe the network architecture and training details for each of the SOLD components. Our models are implemented in PyTorch (Paszke et al., 2019), have 12 million learnable parameters, and are trained on a single NVIDIA A-100 GPU with 40GB of VRAM. A summary of the model implementation details is listed in Table 2. 
+
+B.1. Slot Attention for Video 
+
+We closely follow Kipf et al. (2022) for the implementation of the Slot Attention for Video (SAVi) decomposition model, including their proposed CNN-based encoder eψ and decoder dψ , the transformer-based predictor and the Slot Attention corrector. We employ between 2 and 10 (depending on the environment) 128-dimensional object slots, whose initialization is learned via backpropagation. We empirically verified that learning the initial slots performs more stable than the usual random initialization. Furthermore, we use three Slot Attention iterations for the first video frame in order to obtain a good initial decomposition, and a single iteration for subsequent frames, which is enough to update the slot state given the observed features. 
+
+B.2. Object-centric dynamics model 
+
+Our object-centric dynamics model is based on the OCVP-Seq (Villar-Corrales et al., 2023) architecture, which is a transformer encoder employing sequential and relational attention mechanisms in order to decouple the processing of temporal dynamics and interactions, and has been shown to achieve interpretable and temporally consistent predictions. We use 4 transformer layers employing 256-dimensional tokens, 8 attention heads, and using a hidden dimension of 512 in the feed-forward layers. 
+
+B.3. Slot Aggregation Transformer 
+
+The Slot Aggregation Transformer (SAT) forms the architectural backbone for the reward, value and action models. This module aggregates information from object slots across multiple time steps to produce output tokens that are subsequently fed to MLP heads in order to predict rewards, values, or actions. An overview of our SAT module is depicted in Figure 8. SAT is a causal transformer encoder module that receives as input a history of object slots, as well as a learnable output token [out] for each time step, which is responsible for producing the final output for the corresponding time step. Additionally, we append to the SAT inputs a number of register tokens [reg] per time-step, which have been shown to aid with processing in attention-based models by offloading intermediate computations from the output tokens and helping the module focus on relevant slots (Darcet et al., 2024). To encode the positional information into SAT, we employ Attention with Linear Biases (Press et al., 2022) (ALiBi), which introduces linear biases directly into the attention scores, effectively encoding token recency. This approach helps the model deal with sequences of varying length, as well as generalize to longer sequences than those seen during training, thus outperforming absolute positional encodings. For our experiments, SAT is implemented with 4 transformer encoder layers with causal self-attention, RMS-Normalization layers (Zhang & Sennrich, 2019), 8 attention heads, a token dimension of 256, and a hidden dimensionality in the feed-forward layers of 512. We set the number of learnable register token per time step to 4. Furthermore, we enforce in our causal attention masks that tokens belonging to time step t cannot directly interact with previous output and register tokens. 14 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels RMS Norm MLP RMS Norm 
+
+# ++
+
+Figure 8: The Slot Aggregation Transformer applies causal masking and ensures that output and register token do not attend to themselves on other time-steps. The recency bias induced by ALiBi is visualized through the color gradient in the attention mask, with lighter shades of blue corresponding to a higher negative bias on the attention scores. 
+
+B.4. Training Details SAVi Pretraining SAVi is pretrained for object-centric decomposition on approximately one million frames for 400,000 gradient steps. We use the Adam optimizer (Kingma & Ba, 2015), a batch size of 64 and a base learning rate of 10 −4, which is first linearly warmed-up during the first 2,500 training steps, followed by cosine annealing (Loshchilov & Hutter, 2017) for the remaining of the training procedure. We perform gradient clipping with a maximum norm of 0.05. 
+
+SOLD Training SOLD is trained using the Adam optimizer (Kingma & Ba, 2015) and different learning rates for each component: 10 −4 for the dynamics and rewards models, and 3 · 10 −5 for training the action and value models, as well as for fine-tuning the SAVi encoder. To stabilize training, we perform gradient clipping with maximum norm of 0.05 for the SAVi model, 3.0 for the transition model, and 10.0 for the reward, value, and action models. For all components, we also use learning rate warmup for the first 2,500 gradient steps. Additionally, we implement the exponential moving average (EMA) for the target value network with a decay rate of 0.98. We use an imagination horizon of 15 steps for behavior learning, and the λ-parameter is set to 0.95. 15 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+# C. Baselines 
+
+In our experiments we compare our approach with three different baseline models, namely the state-of-the-art model-based RL algorithms DreamerV3 and TD-MPC2 and a Non-Object-Centric variant of our proposed model. 
+
+DreamerV3 DreamerV3 (Hafner et al., 2025) is a SoTA model-based reinforcement learning algorithm that learns behaviors from visual inputs without requiring task-specific inductive biases or extensive environment interaction. It builds a world model that predicts future states and rewards, which is then used to simulate potential outcomes and guide the agent’s decision. DreamerV3 leverages latent dynamics and a compact, holistic representation of the environment for an efficient exploration, while showing desirable properties such as sample efficiency, scalability, and generalization across a wide range of complex tasks. We select the 12-million-parameter variant to match the parameter count of our proposed model. For further details, we refer to (Hafner et al., 2025). 
+
+TD-MPC2 TD-MPC2 (Hansen et al., 2024) builds upon its predecessor, TD-MPC (Hansen et al., 2022), with a series of architectural enhancements that improve scalability and sample efficiency. Like its predecessor, it avoids reconstructing high-dimensional inputs and instead focuses on modeling task-relevant dynamics in the latent space. The method employs temporal difference (TD) learning to predict future returns in the latent space and uses model predictive control (MPC) to optimize action sequences. Key advancements in TD-MPC2 include enhancements to training stability for larger model architectures and better generalization across tasks. These innovations allow it to achieve state-of-the-art performance on challenging visual and continuous control problems. For our experiments, we utilize the default 5-million-parameter variant since it is recommended by the authors for single-task RL problems. 
+
+Non-Object-Centric Baseline This baseline model follows the same general framework as our proposed model, but replaces the object-centric SAVi encoder and decoder with a simple convolutional auto-encoder while keeping the remaining modules unchanged; thus allowing us to ablate the effect of object-centric representations for model-based reinforcement learning. The CNN auto-encoder used in this baseline consists of an encoder comprised of four strided convolutional layers with 64, 128, 256, and 512 channels respectively, each followed by batch normalization and a ReLU. The output of the final convolutional layer is flattened and fed through a linear layer to produce a 512-dimensional latent vector. The decoder mirrors the encoder structure, reconstructing the observations from the latent representation through the use of four transposed convolutional layers. To compensate for the lack of multiple latent vectors and to ensure a fair comparison, we increase the capacity of this baseline model by scaling the actor, critic, and dynamics models. Specifically, we increase the token dimension from 256 to 512, as well as the MLP hidden dimension from 512 to 1024. The total parameter count for this baseline is approximately 60 million, thus being five times larger than our proposed method and the DreamerV3 baseline. 16 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+# D. Environments 
+
+In this section, we provide further details about our proposed suite of environments, which includes eight object-centric robotic control tasks designed to test relational reasoning and manipulation capabilities. The environments, which are inspired by (Li et al., 2020) and are simulated using MuJoCo (Todorov et al., 2012), follow the same basic structure, consisting of a robot arm mounted on a base, positioned near a table where the manipulation tasks take place. In all environments, the robot is controlled by a 4-dimensional action vector a = [ ax, a y , a z , a grip ] ∈ [−1, 1] 4, where the first three components represent the desired movement direction of the end-effector, whereas the fourth component controls the opening and closing of the gripper. On the Reach and Push tasks, commands to the gripper are ignored, with the gripper fixed in a closed configuration, as gripping is not required to solve these tasks. For all tasks, we define the following constants: • t1 = 20 and t2 = 10 : Temperature parameters that determine the steepness of the reward function. • dm = 0 .05 : Distance threshold (in meters) for considering a task successful. 
+
+Reach In Reach tasks, the agent must identify a spherical target among several distractors and move the end-effector to its location. The reward is calculated as: 
+
+r = exp( −t1 · || pe − pt|| 2), (12) where pe is the position of the end-effector and pt is the target position. Success is defined through the following condition at the last time step of an episode: success =
+
+(
+
+1 if || pe − pt|| 2 < d m
+
+0 otherwise . (13) 
+
+Push & Pick Both Push and Pick correspond to reasoning and manipulation tasks where the agent must identify a single block among several distractors and move it to a target location. In Push tasks, the agent can slide the block to the target position on the table without using its gripper; whereas in Pick the target location can be above the table, thus requiring the agent to grasp the block in order to lift it to the target position. In both task variants the reward is calculated as: 
+
+r = 0 .9 · exp( −t1 · || pc − pt|| 2) + 0 .1 · exp( −t2 · || pe − pc|| 2), (14) where pe is the position of the end-effector, pt is the target position, and pc is the block position. Success is defined through the following criterion, evaluated at the last time step of the episode: success =
+
+(
+
+1 if || pc − pt|| 2 < d m
+
+0 otherwise . (15) 17 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+# E. Additional Results 
+
+E.1. Object-centric Decomposition True RGB Mask Individual slots Model 
+
+Figure 9: Object-centric SAVi decomposition of a video frame. We show the masked RGB image and the segmentation mask corresponding to each object slot. The masked RGB images are combined to reconstruct the observed frame. Figure 9 depicts the object-centric decomposition of a video frame obtained by SAVi. SAVi parses the input frame into per-object RGB reconstructions and alpha masks, which can be combined via a weighted sum in order to accurately reconstruct the observed video frame. Notably, SAVi assigns an object slot to the scene background, five slots to different blocks, one slot to the red target, and one slot to the robot arm. The sharp object masks demonstrate that SAVi isolates object-specific information in each slot, which is beneficial for downstream applications such as behavior learning, allowing the agent to reason about object properties and their relationships while abstracting task-irrelevant details. Moreover, we find that SAVi is able to adapt to the varying number of objects in our environments, leaving extra slots empty when they are not needed to represent a scene. 
+
+E.2. Open-loop Prediction 
+
+We visualize action-conditional open-loop predictions in the Push-Specific (Figure 10), Button-Press (Figure 11), Hammer (Figure 12), Cartpole-Balance (Figure 13), and Finger-Spin (Figure 14) environments. Specifically, we present the ground truth sequence, predicted video frames, instance segmentation – where each object mask is assigned a distinct color – and object reconstructions for each slot. In all examples, our model parses the scene into sharp, accurate object representations and models action-conditional object dynamics and interactions, enabling precise future frame predictions while maintaining object-centric representations. We highlight SOLD ’s ability to capture complex physical interactions, such as pushing a block to a target location (Figure 10), pressing a button (Figure 11), or hammering a nail (Figure 12). Furthermore, we demonstrate that SOLD generalizes to diverse, non-object-centric environments (Figure 13 and Figure 14), where sharp object separations and meaningful groupings emerge automatically – for instance, an object’s shadow, despite being spatially distinct, is assigned to the same slot as the object itself. 18 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels True Context t = 0 2 4 6 8 10 20 30 40 50 Open-loop prediction Model Slots Individual slots 
+
+Figure 10: Open-loop prediction on the Push-Specific task. We visualize the ground truth, predicted frames, segmentation obtained by assigning different colors to each object mask, and per-object reconstructions. In this sequence, SOLD assigns one slot to the background, one slot for the robot, one slot for the target, and four different slots for blocks, while one slot remains empty. 19 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels True Context t = 0 2 4 6 8 10 20 30 40 50 Open-loop prediction Model Slots Individual slots 
+
+Figure 11: Open-loop prediction and decomposition results on the Button-Press task. We visualize the ground truth and predicted video frames, instance segmentation obtained by assigning a different color to each object mask, and per-object reconstructions. SOLD assigns a slot for the scene background, two slots for different robot parts, and a slot for the button-box. 20 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels True Context t = 0 2 4 6 8 10 20 30 40 50 Open-loop prediction Model Slots Individual slots 
+
+Figure 12: Open-loop prediction and decomposition results on the Hammer task. We visualize the ground truth and predicted video frames, instance segmentation obtained by assigning a different color to each object mask, and per-object reconstructions. SOLD assigns a slot for the scene background, three slots for different robot parts, a slot for the hammer, and a slot for the nail-box. 21 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels True Context t = 0 4 9 10 20 30 40 60 50 Open-loop prediction Model Slots Individual slots 
+
+Figure 13: Open-loop prediction and decomposition results on the Cartpole-Balance task. We visualize the ground truth and predicted video frames, instance segmentation obtained by assigning a different color to each object mask, and per-object reconstructions. SOLD assigns a slot for the scene background and a slot for the cart-pole. Notably, the slot represents the object along with its shadow. 22 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels True Context t = 0 1 2 4 6 8 10 20 30 40 50 Open-loop prediction Model Slots Individual slots 
+
+Figure 14: Open-loop prediction and decomposition results on the Finger-Spin task. We visualize the ground truth and predicted video frames, instance segmentation obtained by assigning a different color to each object mask, and per-object reconstructions. SOLD assigns a slot for the scene background, a slot for the finger, and a slot for the spinning target. Notably, the slots represent the objects along with their corresponding shadows. 23 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+E.3. SAVi Fine-tuning 
+
+The Pick tasks highlight the need to design object-centric encoder-decoder modules that can adapt to changing state distribututions. Figure 6 exemplifies this challenge in the Specific variant, where the green target cube dissolves when lifted in the non-fine-tuned model. Figure 15 underscores the importance of fine-tuning the object-centric encoder-decoder model with another example. Without fine-tuning, the blue color, which appears similarly on both colored blocks and the robot arm, leads to an even more drastic degradation of the reconstructions, where the robot itself is no longer accurately captured. In contrast, the fine-tuned model is able to reconstruct the sequence accurately. 
+
+> True Observations
+> Frozen SAVi
+> Finetuned SAVi
+
+Figure 15: Comparison of fine-tuned and frozen SAVi models on Pick-Distinct . We visualize the full reconstruction and the slot that reconstructs the cube that is being lifted for both models. When the blue block is lifted off the table, the frozen model merges it with blue elements from the robot arm, deteriorating the prediction and hallucinating the arm going between the gripper fingers. The fine-tuned model, on the other hand, is able to reconstruct the sequence accurately. 24 SOLD: Slot Object-Centric Latent Dynamics Models for Relational Manipulation Learning from Pixels 
+
+> E.4. Discovering Task-relevant Objects
+> Figure 16: Original, uncut slot-history used in Figure 5. The full rollout highlights both the recency bias introduced by ALiBi and the model’s ability to overcome this bias when task-relevant information must be retrieved from slots far in the past.
+> Figure 17: Visualizing the actor’s attention over the slot-history on the  Pick-Specific  task reveals that the robot’s gripper and target block in the current time-step receive the most attention, highlighting the model’s ability to focus on task-relevant components. Further, the red target sphere is mostly occluded in the current time-step making it difficult to reconstruct its position accurately. However, the model learns to integrate information from previous steps, where it was still clearly visible.
+
+25

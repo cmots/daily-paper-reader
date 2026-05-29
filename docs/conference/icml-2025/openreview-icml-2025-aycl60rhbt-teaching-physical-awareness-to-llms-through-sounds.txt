@@ -1,0 +1,908 @@
+Title: Teaching Physical Awareness to LLMs through Sounds
+
+URL Source: https://openreview.net/pdf?id=Aycl60Rhbt
+
+Number of Pages: 20
+
+Markdown Content:
+# Teaching Physical Awareness to LLMs through Sounds 
+
+Weiguo Wang 1 Andy Nie 1 2 Wenrui Zhou 1 Yi Kai 1 Chengchen Hu 1
+
+## Abstract 
+
+Large Language Models (LLMs) have shown re-markable capabilities in text and multimodal pro-cessing, yet they fundamentally lack physical awareness–understanding of real-world physical phenomena. In this work, we present ACORN, a framework that teaches LLMs physical awareness through sound, focusing on fundamental physical phenomena like the Doppler effect, multipath ef-fect, and spatial relationships. To overcome data scarcity, ACORN introduce a physics-based sim-ulator combining real-world sound sources with controlled physical channels to generate diverse training data. Using this simulator, we build AQA-PHY, a comprehensive Audio Question-Answer dataset, and propose an audio encoder that pro-cesses both magnitude and phase information. By connecting our audio encoder to state-of-the-art LLMs, we demonstrate reasonable results in both simulated and real-world tasks, such as line-of-sight detection, Doppler effect estimation, and Direction-of-Arrival estimation, paving the way for enabling LLMs to understand physical world. 
+
+## 1. Introduction 
+
+Large Language Models (LLMs) have demonstrated remark-able capabilities in processing and generating text and have successfully expanded into multimodal understanding. How-ever, a fundamental limitation remains: LLMs lack physical awareness–the ability to understand and meaningfully inter-act with the physical world. Physical awareness, particularly through sound, is a corner-stone of how humans understand the environment. Sound provides rich, instinctive insights into our surroundings: The Doppler effect, with its frequency shifts, tells us whether a vehicle is approaching or receding; The multipath effect, where sound reflects off surfaces, reveals whether we are     
+
+> 1NIO 2Peking University. Correspondence to: Weiguo Wang
+> <wangwg.wwg@gmail.com >.
+> Proceedings of the 42 nd International Conference on Machine Learning , Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s).
+
+in an enclosed space or outdoors; and binaural hearing al-lows us to pinpoint the sound direction. Apparently, these acoustic cues provide crucial information about physical dynamics and spatial relationships. Despite their ability to recognize and generate speech, cur-rent LLMs can not comprehend the physical properties of sound. This gap poses significant challenges in real-world applications. For example, a voice-controlled vehicle might accept a command such as Open the Window 
+
+from someone outside the car, introducing a security risk due to its inability to discern the physical origin of the voice. Also, in human-robot interaction, embodied AI systems without physical awareness fail to imitate human behaviors, such as turning towards the speaker when addressed. In this paper, we take an initial step toward bridging this gap by proposing ACORN (Acoustic Channel-Oriented Reason-ing Network), a framework that teaches LLMs to develop physical awareness through sound. ACORN equips LLMs with both passive and active acoustic sensing capabilities: Through passive sensing, LLMs can detect line-of-sight (LOS) signal paths, interpret motion via Doppler effects, lo-calize sound sources, and analyze multipath effects. With ac-tive sensing, we extend their capabilities to include distance measurement by generating pulses and analyzing echoes, akin to sonar systems. We demonstrate that LLMs empow-ered by ACORN can not only understand the real world via sound but also interact with it. However, a significant challenge arises in this endeavor: How to collect and annotate a large-scale dataset that cap-tures diverse physical phenomena? (1) Data collection re-quires extensive deployment of recording devices across var-ious environments and conditions, making it prohibitively expensive and impractical. (2) Data annotation is nearly infeasible because, unlike text or images where humans can directly annotate content, audio physical phenomena (like Doppler effects or multipath reflections) can not be labeled by human alone and often requires sophisticated measurement equipment. Our key insight to tackle this challenge is that: The sound that we hear or microphones capture can be decomposed into two independent components—the sound source and the physical channel through which it travels. This decom-position suggests an elegant solution: instead of collecting 1Teaching Physical Awareness to LLMs from Sounds 
+
+real-world recordings, we can synthesize realistic audio data by combining sound sources from existing datasets with simulated physical channel. To this end, we devise a dedicate physical channel simula-tor based on advanced signal processing techniques. This simulator offers complete transparency over the physical channel parameters. It enables precise control over task-specific parameters. Meanwhile, it allows for the systematic randomization of non-critical parameters, ensuring a diverse range of physical channels. By convolving these simulated channels with existing sound sources, this approach facili-tates the building of large-scale, diverse sound datasets with annotated physical phenomena. Leveraging the annotations of the simulated sounds, we cu-rate Question-Answer (QA) pairs that link language with the underlying physical phenomena. To ensure effective align-ment between language and audio, we propose a workflow for generating both closed-form and open-form questions and answers that probe the model’s understanding of these physical phenomena. In this way, we create AQA-PHY, an Audio QA dataset consisting of 1 million <Audio, Ques-tion, Answer > tuples, designed for supervised fine-tuning of LLMs to endow them with physical awareness. To effectively capture physical information from sounds, we also introduce an effective audio encoder architecture. Unlike traditional audio encoders that primarily focus on content recognition based on magnitude information, our design explicitly incorporates both the magnitude and phase components of sounds. This distinction is crucial, as physi-cal effects often manifest in subtle phase relationships that magnitude-only encoders may overlook (Bai et al., 2020). We connect our audio encoder to two state-of-the-art LLMs: LLama3.1-8B and Qwen2-7B. We train the model using AQA-PHY. The model achieves strong results across all tasks: 0.924 accuracy in line-of-sight detection, 0.181 MAE in Doppler effect estimation, 0.907 MAE in direction of arrival estimation, 0.903 accuracy in multipath analysis, and 1.599 relative error percentage in range estimation. These demonstrate the feasibility of teaching LLMs to understand physical phenomena through sound. In summary, our contributions include: • A physics-based channel simulator enabling generation of diverse audios with various physical phenomena. • A novel audio encoder capturing both magnitude and phase information for improved physical understanding. • The AQA-PHY dataset containing 1 million <Audio, Question, Answer > tuples for training LLMs. • Extensive evaluation demonstrating state-of-the-art per-formance in both simulated and real-world environments. 
+
+## 2. Primer: Sound and Space 
+
+The received sound is determined by both its source and the environment through which it travels. When we hear a sound—whether through our ears or microphones—we are receiving a signal that has been transformed by its propagat-ing space. This transformation can be formally modeled as a physical channel filter (Channel Impulse Response, CIR), 
+
+h. Given a sound source s, the received signal y is given by 
+
+y = h ⊛ s, (1) where ⊛ denotes the convolution operation. The human auditory system possesses a remarkable capa-bility: from the received signal y, it extracts rich spatial information embedded within the channel h. This channel contains valuable environmental data, capturing how sound waves interact with surfaces and objects in the environment. Through such acoustic information, humans naturally de-velop an understanding of their physical surroundings (Traer & McDermott, 2016). Drawing inspiration from this innate human ability, we aim to endow LLMs with similar auditory capabilities, enabling them to understand physical world through sound. 
+
+## 3. Model Architecture 
+
+3.1. Overview 
+
+Figure 1(a) illustrates the model architecture of ACORN. Following established practices in the field, we adopt a common end-to-end architecture (Deshmukh et al., 2023; Gong et al., 2023; Chu et al., 2023; 2024) to ensure the generality of our approach. The architecture consists of three main components: (1) an audio encoder, (2) a text encoder, and (3) an LLM. The audio and text encoders transform raw audio and text inputs into sequences of tokens, respectively. These tokens are then concatenated into a unified sequence. Following common practice, we wrap audio tokens with special tokens: <soa > (start of audio) and <eoa > (end of audio) to establish clear boundaries for the audio content. The concatenated token sequence is then fed into the LLM, which generates a textual response based on both the text and the audio. As illustrated in Figure 1(a), consider a scenario where a voice command, Open the Window ,is issued from outside a locked vehicle. Through analysis of the raw audio, the model should be able to detect the absence of a LOS path, indicating that the command originates from outside the secured environment of the vehicle. In such cases, the model’s physical awareness enables it to reject potentially unsafe commands. 2Teaching Physical Awareness to LLMs from Sounds Large Language Model    
+
+> Text
+> Encoder
+> Follow the voice command
+> from the input audio
+> Audio
+> Encoder
+> Audio
+> Encoder
+> Audio Tokens <soa> <eoa> Text Tokens
+> Audio + Text
+> Prompt
+> Text Response
+> with Physical
+> Awareness
+> Concatenated
+> Tokens
+> (Open the window)
+> <physical -awareness> No LOS detected, sound source is blocked.
+> Rejecting command as it's outside the car. </physical -awareness>
+> Command rejected. Please give commands from inside the vehicle.
+> <physical -awareness> No LOS detected, sound source is blocked.
+> Rejecting command as it's outside the car. </physical -awareness>
+> Command rejected. Please give commands from inside the vehicle.
+> Audio Input Phase (sin) Phase (sin)
+> Magnitude Magnitude
+> Phase (cos) Phase (cos)
+> Audio Spectrum
+> GELU
+> GELU
+> GELU
+> Stack  Transfomer
+> Audio Tokens
+> Position
+> Embedding
+> Conv Conv  Conv
+> Conv
+
+(a) Model Architecture (b) Audio Encoder 
+
+Figure 1. Model architecture and audio encoder design . (a) Model architecture: Integrates audio and text encoders to generate unified token sequences for LLMs, enabling physical reasoning (e.g., detecting LOS). (b) Audio encoder: Processes magnitude and phase components of audio to capture physical phenomena such as Doppler effects and multipath. 
+
+3.2. Audio Encoder 
+
+To effectively understand complex physical phenom-ena—such as multipath and Doppler effects, or determining time differences between audio channels—an audio encoder must capture fine-grained features beyond sound sources. Figure 1(b) illustrates our proposed audio encoder. The key design feature is its ability to incorporate phase information through separate channels for the sine and cosine compo-nents, in addition to capturing the magnitude of the audio spectrum. By including phase information, our encoder can more effectively capture the characteristics of both the sound source and the acoustic channel, which are essential for understanding the physical world (Bai et al., 2020). The process first transforms into its spectral components using Short-Time Fourier Transform (STFT). We extract three features from spectral components: • Magnitude : representing the intensity of various fre-quency components, the magnitude M (f, t ) is given by 
+
+M (f, t ) = |X(f, t )|, (2) where X(f, t ) is the STFT out. • Phase (sin) and Phase (cos) : Instead of using the phase angle directly, we compute the sine and cosine of it. This approach is chosen to mitigate numerical instability caused by phase wraparound, occurring when the phase angle transitions from π to −π and vice versa. That is 
+
+(
+
+sin( θ(f, t )) = sin( ∠X(f, t )) cos( θ(f, t )) = cos( ∠X(f, t )) . (3) These help in understanding how the sound wave’s phase changes, critical for analysis of acoustic channel. Each of the three components is processed through a 3x3 1D convolution, expanding from 128 to 1280 channels, fol-lowed by a GELU activation (Hendrycks & Gimpel, 2016). The features are then concatenated (3840 channels) and fused through two 3x3 convolutions, reducing the dimen-sionality to 1280 channels. Sinusoidal positional embed-dings are added to retain temporal context, the outputs are processed by a 32-layer transformer, producing the final audio tokens. 
+
+3.3. Language Model and Training 
+
+Here, the language model is responsible for understand-ing and reasoning about the audio with physical awareness, conditioned by the text prompt. We fuse our audio en-coder to two different LLMs LLama3-8B and Qwen2-7B, respectively. The audio tokens are projected to the word embedding size of these models via a linear projection layer. Both the audio encoder and the LLM are trained jointly on a dataset consisting of <Audio, Question, Answer > tu-ples. The training objective is to maximize the likelihood of predicting the next token in the Answer, conditioned on both the Audio and Question inputs. Our audio encoder is initialized from Whisper-large-v2 (Radford et al., 2023) to leverage pretrained magnitude representations, while the phase-related subnetwork is trained from scratch to capture fine-grained physical cues critical for physical awareness. LLMs are fine-tuned using LoRA (Hu et al., 2022) to re-duce the training workload and to leverage its linguistic capabilities. 
+
+## 4. Channel Simulator 
+
+Training our model requires a large-scale dataset with anno-tations of physical phenomena. However, comprehensive data collection in the physical world presents fundamental scalability challenges, given the need to reproduce diverse acoustic phenomena under controlled conditions. To tackle this, we leverage a key insight: the received signal y can be decomposed into the channel h and the sound source s (see Eq. 1). This reveals that channel h independently captures 3Teaching Physical Awareness to LLMs from Sounds Source      
+
+> Mic.
+> Time Delay
+> Amplitude
+> LOS
+> ECHO 1
+> ECHO 2
+> Time Delay
+> Amplitude
+> LOS
+> ECHO 1
+> ECHO 2
+> Early Reflections
+> Long tail
+> LOS Early Reflections
+> Long tail
+> LOS
+
+τlos  τecho 1 τecho2 
+
+(a) LOS and Early Reflections (b) Simplified CIR (c) Real-world CIR (d) Zoomed-in CIR 
+
+Figure 2. Illustration of Acoustic Channel. 
+
+the physical phenomena, isolating them from source s.Our channel simulator models five main components: (1) LOS paths and (2) early reflections, (3) reverberation, (4) Doppler effects, and (5) microphone array reception. Each can be independently controlled to generate diverse physical phenomena. For more details, please refer to Appendix B. 
+
+4.1. LOS Path and Early Reflections 
+
+We begin with LOS paths and early reflections as they form the basic building blocks of sound propagation. A CIR models how a sound source propagates and interacts with its environment before reaching the microphone. As depicted in Figure 2(a), these interactions include a direct path (LOS) and two reflected paths, ECHO 1 and ECHO 2. Figure 2(b) illustrates the CIR function, which can be ex-pressed as a series of delta functions for these paths: 
+
+h(τ ) = A1δ(τ −τlos )+ A2δ(τ −τecho 1 )+ A3δ(τ −τecho 2 ),
+
+(4) where τlos , τecho 1, and τecho 2 denote the time delays of the LOS, ECHO 1, and ECHO 2 paths, respectively, and Ai is the corresponding path attenuation. 
+
+4.2. Reverberation 
+
+Reverberation describes the continued interaction of sounds with the environment, creating a prolonged echo effect. Figure 2(c) presents a real-world CIR, illustrating a sharp initial spike (representing the LOS) followed by smaller spikes (early reflections) and a long diffuse tail (reverbera-tion). Figure 2(d) provides a closer view, offering a more detailed depiction of these components. To effectively cap-ture reverberation, we extend the channel model as follows: 
+
+h(τ ) = 
+
+> N
+
+X
+
+> i=0
+
+αiδ(τ − τi) + R(τ ), (5) where the first sum represents the impulses of LOS and early reflections, and R(t) represents the reverberation tail. We simulate reverberation R(τ ) by decomposing sound into frequency-specific subbands with unique decay character-istics. We generate Gaussian noise, apply bandpass filters for specific frequency ranges, and modulate with amplitude envelopes to simulate decay. These subbands are recom-bined to create a broadband impulse response. Detailed methodologies are provided in Appendix Section B.2. By controlling the decay rate of R(τ ) and selectively in-cluding path components, we can simulate environments ranging from ‘dry’ spaces with minimal reverberation to those with severe echoes. 
+
+4.3. Doppler Effect 
+
+The Doppler effect, a frequency shift resulting from relative motion between the transmitter and receiver, can be modeled by introducing a time-varying delay in the CIR. Mathematically, for a transmitter and receiver with a relative velocity v, the distance d(t) between them varies as d(t) = (d0 + v · t), where d0 is the initial distance and c is the sound speed. The time-varying CIR with this dynamic delay can be modeled as: 
+
+h(t, τ ) = δ(t − τ (t)) = δ(τ − d0 + v · tc )
+
+We further detail the simulation of the Doppler effect in Appendix Section B.3, along with efficient methods for processing this time-varying CIR. Right Left 
+
+## ө
+
+## d
+
+Δd Left 
+
+Right 
+
+Source 
+
+## τL
+
+## τR
+
+## τө Time 
+
+Time 
+
+Source 
+
+Source 
+
+(a) Signal Reception (b) Timeline 
+
+Figure 3. Microphone Array Model. 
+
+4.4. Microphone Array 
+
+Sound Direction, formally known as Direction of Arrival (DoA), can be estimated by measuring the Time Difference of Arrival (TDoA) between microphones. Due to their spa-tial separation, each microphone receives sound waves at slightly different times, enabling DoA estimation. Figure 3(a) illustrates a binaural recording setup with two microphones placed a distance d apart. When a far-field source (Wang et al., 2020; Benesty, 2008) emits sound from 4Teaching Physical Awareness to LLMs from Sounds 
+
+Table 1. Channel Configuration Settings for Different Tasks.                                 
+
+> Task LOS Path Early Reflect. Reverb. Doppler Effect Mic. Array
+> LOS Detection TRRR✗
+> Doppler Estimation RRRT✗
+> DoA Estimation ✓RRRT
+> Multipath Analysis RRTR✗
+> Range Estimation TRRR✗
+> Note: ✓: enabled; ✗: disabled; R: randomly enabled/disabled; T: controlled target parameter.
+
+direction θ, it creates a differential path length ∆d. The corresponding TDoA, τθ , is given by 
+
+τθ = ∆dc = d cos( θ)
+
+c (6) Figure 3(b) visualizes the timeline of sound reception. For these two microphones, let τL and τR denote the delays to reach the left and right microphones. The CIRs, assuming no attenuation, can be simplified as 
+
+hL(τ ) = δ(t − τL) = δ(t − τLOS ) (7) 
+
+hR(τ ) = δ(t − τL − τθ ) = δ(t − τLOS − τθ ). (8) This general form allows deriving hR(τ ) by accounting for direction θ, facilitating extension from a single CIR to multiple acoustic channels. 
+
+4.5. Configuration 
+
+The above individual components—LOS path, early reflec-tions, reverberation, Doppler effects, and microphone array reception—combine to create comprehensive acoustic sim-ulations. This modularity allows us to isolate and study specific phenomena while maintaining physical realism. Table 1 presents the task-specific configurations, with de-tailed task descriptions provided in Appendix A. For dif-ferent tasks, we configure simulation components as either enabled ( ✓), randomly enabled/disabled ( R), or disabled (✗). When marked as ‘ T’, the component is systematically controlled for target parameter variation. To maximize chan-nel diversity, we aim to randomly toggle each component whenever possible. However, some tasks have specific re-quirements—for example, DoA estimation requires the LOS path to be enabled as it relies on direct sound propagation for DoA calculation (Benesty, 2008). Our simulation approach follows a core principle: targeted physical parameter control with maximal diversity: 
+
+Task-specific Physical Parameterization. Generally, for each task, we control specific parameters to generate physi-cal channels. For LOS Detection, we control the presence or absence of LOS path to create positive and negative samples. Channel 
+
+> Configuration
+> Convolution
+> Operation
+> Existing
+> Audio Dataset
+> e.g.,
+> AudioSet
+> Existing
+> Audio Dataset
+> e.g.,
+> AudioSet
+> Channel
+> Simulation
+> Channel
+> Simulation
+> Sound
+> Source
+> Sound
+> Source
+> Simulated
+> Channel(s)
+> Simulated
+> Channel(s)
+> Received
+> Audio(s)
+> Received
+> Audio(s)
+> Question -
+> Answer Pair
+> Question -
+> Answer Pair
+> Question -
+> Answer Gen.
+> Question -
+> Answer Gen.
+> Question -
+> Answer Gen.
+> Template
+> or
+> GPT4O
+> Datapoint for SFT:
+> <Audio, Question, Answer>
+
+Figure 4. Synthesis Workflow of <Audio, Question, Answer >.
+
+For Doppler Estimation, we vary source speeds to generate different frequency shifts. For DoA Estimation, we adjust arrival directions and microphone spacing to create TDoA variations. For Multipath Analysis, we modify decay rates to simulate various reverberation levels. For Range Esti-mation, we control reflection delays to represent different propagation distances. 
+
+Parameter Randomization. For each enabled or randomly-enabled component, we randomize internal parameters to enhance channel diversity while maintaining control over task-specific variables. Unlike existing methods that recon-struct CIRs by modeling specific geometric environments (Chen et al., 2022; Zheng et al., 2024), our approach simu-lates the entire life cycle of sound waves—from emission to reception—by explicitly modeling its key components, including LOS propagation, early reflections, reverberation, and so on. This component-wise, lifecycle-based model-ing enables scalable and systematic generation of diverse physical channels, avoiding the complexity and limited gen-eralizability of environment-specific reconstructions. 
+
+## 5. The AQA-PHY Dataset 
+
+To train our model to understand physical world from sounds, we introduce AQA-PHY, a Audio Question-Answer dataset. Each datapoint is a <Audio, Question, Answer >
+
+tuple, where audio and question form the input, and answer serves as the target output. Figure 4 illustrates the synthesis workflow of generating a datapoint. 
+
+Sound Source. The synthesis workflow begins by sampling sound sources from an existing dataset. For this, we utilize AudioSet (Gemmeke et al., 2017), which offers approxi-mately 2 million 10-second sound clips annotated with over 500 labels. This extensive collection provides a rich variety of sound sources, enhancing the dataset’s versatility. 
+
+Physical Channel. For each sound source, we generate a physical channel with specific physical properties using configurations from Section 4.5. The Channel Simulation module transforms these specifications into CIR, which are then convolved with sound sources to calculate a sample of received audio exhibiting desired physical effects. 
+
+Question-Answer Pair. Two types of QA pairs are de-5Teaching Physical Awareness to LLMs from Sounds                                                                                                
+
+> Table 2. Overall Performance. Values are presented as (Merged |Sole) where “Merged” indicates models trained on combined dataset and “Sole” indicates models trained separately for each task. By default, we focus on Merged results, with Sole results provided for reference.
+> Model Architecture Task Performances (Merged |Sole)
+> Audio Encoder LLM LOS Detection
+> BCA ( ↑)
+> Doppler Estimation
+> MAE f(↓)
+> DoA Estimation
+> MAE t(↓)
+> Multipath Analysis
+> TCA ( ↑)
+> Range Estimation
+> REP ( ↓)Whisper Llama3.1-8B 0.867 |0.906 1.213 |3.147 5.585 |5.601 0.845 |0.889 12.572 |17.182 Qwen2-7B 0.881 |0.910 1.042 |0.575 2.716 |6.873 0.848 |0.897 10.609 |12.901 ACORN Llama3.1-8B 0.920 |0.965 0.791 |0.557 1.423 |1.349 0.890 |0.945 1.764 |1.446
+> Qwen2-7B 0.924 |0.962 0.181 |0.263 0.907 |1.167 0.903 |0.944 1.599 |1.751 Performance on Open QA (Our Encoder + Qwen2-7B) 0.898 |0.953 0.487 |0.398 2.314 |2.043 ∗0.906 |0.908 2.852 |1.900 ∗
+> Random Baseline ∗∗ 0.50 10.00 66.67 0.33 33.33
+> ∗For both DoA Estimation and Range Estimation in Open QA, LLMs first extract basic measurements from audio signals and then apply step-by-step calculations to determine final results (see example QA in Table 10). For the final calculation results, the MAE of DoA Estimation is 6.505° (Merged) and 5.685° (Sole), while the MAE of Range Estimation is 0.472m (Merged) and 0.352m (Sole).
+> ∗∗ Random Baseline values are computed based on task-specific assumptions: random guessing for LOS (BCA = 0.5) and Multipath (TCA = 0.33), random frequency shifts (±15% at 50 m/s) for Doppler, random TDoA within ±100 samples for DoA, and uniform relative errors (0–100%) for Range Estimation.
+
+signed. Examples of QAs are provided in Table 10. • Closed-form pairs focus on classification or quantitative assessments with well-defined answers. These include binary classifications (e.g., “Does the audio contain a LOS path?” with Yes/No answers), multi-class selections (e.g., Rich/Moderate/Negligible for multipath severity), and numerical estimations (e.g., time delays or Doppler shift percentages). These pairs are generated using fixed templates to ensure consistent evaluation. • Open-form pairs elicit detailed explanations of physi-cal phenomena. These questions are phrased in natu-ral language and require comprehensive responses that demonstrate understanding of the underlying physics. For example, in range estimation tasks, answers include step-by-step calculations and explanations of how distance is derived from time-of-flight measurements. We leverage ChatGPT-4 with specific prompts to generate these QA. 
+
+SFT Datapoint. Finally, the synthesized audio is paired with its corresponding question and answer to form a single datapoint: <Audio, Question, Answer >. This triplet is then formatted into a prompt following the template detailed in Appendix G. For each task, we generate 200,000 closed-form datapoints and 10,000 open-form datapoints. 
+
+## 6. Evaluation 
+
+6.1. Methodology Baseline. We compare two audio encoders: OpenAI’s Whis-per (Radford et al., 2023) encoder (Whisper-large-v2 with 32 Transformer layers and 0.63 billion parameters), a rep-resentative magnitude-only approach widely used in audio processing, and our encoder proposed in ACORN with 0.65 billion parameters. To demonstrate the generalizability of our approach, we pair each encoder with two different large language models (LLMs): Llama3.1-8B-instruct (Dubey et al., 2024) and Qwen2-7B-instruct (Yang et al., 2024). This setting helps verify that our audio encoding improve-ments are model-agnostic and can benefit various LLM architectures. 
+
+Audio Pre-processing. The audio pre-processing pipeline transforms raw waveforms (sampled at 16kHz) into spec-tral representations through Short-Time Fourier Transform (STFT) with a window size of 254 1 and a hop length of 10 ms, chosen specifically to align with the configuration of our baseline, Whisper. Unlike Whisper which converts STFT outputs to mel-spectrograms 2, we directly preserve the full spectral resolution. The process extracts three key components: the log-magnitude spectrum for energy distri-bution, and sine/cosine components of the phase for tem-poral information. These features are stacked to create a three-channel representation of the audio. 
+
+Training. The models are trained using standard next-token prediction loss with the answer text in SFT dataset as labels. We train the models upon MS-SWIFT (Zhao et al., 2024) with modifications to accommodate our specific model ar-
+
+> 1Since the input audio is real-valued, the FFT output is sym-metric, resulting in (254/2 + 1) = 128 unique frequency bins.
+> 2While mel-spectrograms emphasize human speech frequen-cies, we preserve full spectral resolution for fine-grained analysis of physical world sounds.
+
+6Teaching Physical Awareness to LLMs from Sounds 0 10000 20000 30000        
+
+> Step
+> 10 1
+> 10 0
+> 10 1
+> Loss
+> Ours-Train
+> Ours-Val
+> Whisper-Train
+> Whisper-Val
+> (a) Qwen2-7B 010000 20000 30000
+> Step
+> 10 1
+> 10 0
+> 10 1
+> Loss
+> Ours-Train
+> Ours-Val
+> Whisper-Train
+> Whisper-Val (b) Llama3.1-8B
+> Figure 5. Loss History.
+
+chitecture. The model is trained on 4 NVIDIA A100 GPUs with batch size 32 and completes after 7 epochs. The total training time is about 61 hours. For response generation, the decoding parameters are set with temperature 1, top-p 1, and top-k 50. Appendix C lists more train hyperparameters. 
+
+Evaluation Metrics. We employ task-specific metrics to evaluate the model across five tasks. (1) For LOS Detection, we use binary classification accuracy (BCA, ↑) to measure the model’s ability to correctly identify the presence or ab-sence of LOS path. (2) For Doppler estimation, we employ Mean Absolute Error (MAE) to quantify the model’s preci-sion in estimating frequency shift percentage ( MAE f ). (3) DoA estimation accuracy is evaluated using MAE in time samples ( MAE s), measuring the average TDoA deviation between predicted and actual sound source directions. 3 (4) Multipath Analysis performance is evaluated using Triple-class Classification Accuracy (TCA, ↑) across three cate-gories (Rich, Moderate, and Negligible). (5) Range Estima-tion employs Relative Error Percentage (REP, ↓) to provide a scale-invariant measure of distance estimation accuracy. 
+
+6.2. Overall Performance 
+
+As shown in Table 2, our experimental results validate four main findings: (1) the feasibility of teaching LLMs to under-stand physical phenomena through sound, as demonstrated by strong performance across all tasks; (2) the superiority of our audio encoder over existing approaches, showing consistent improvements in all evaluation metrics; (3) the model-agnostic nature of our approach, evidenced by similar performance of different LLM architectures; (4) the effec-tiveness of natural language communication, demonstrated by maintained reasonable performance on open-form QA. Note that, in Table 2, the evaluation metrics show model per-formance in the format “(Merged | Sole)”, where “Merged” represents models trained on combined datasets for all tasks, while“Sole” indicates models trained separately for each individual task. Our evaluation primarily focuses on the Merged results as the default metric, while Sole results is provided for just reference and comparison. 
+
+Feasibility of Understanding Physical World. Our exper-
+
+> 3The key parameter in estimating DoA is TDoA (see Eq. 6).
+
+imental results demonstrate the fundamental feasibility of teaching LLMs physical awareness through sound. Across all tasks, our models achieve promising performance - with BCA above 0.92 for LOS detection, MAE f below 0.8 for Doppler estimation, MAE t around 1.4 for DoA estimation, TCA above 0.89 for multipath analysis, and REP below 1.8 for range estimation. These strong results across di-verse physical tasks demonstrate that LLMs can effectively develop physical awareness through acoustic signals. 
+
+Audio Encoder Superiority. The audio encoder proposed in ACORN shows clear superiority over the existing Whis-per baseline across all evaluation metrics. For LOS detec-tion, we achieve more than 5 percentage points of improve-ment in BCA (0.920 vs 0.867 with Llama). In Doppler Effect estimation, our MAE f shows significant reduction (0.181 vs 1.042 with Qwen2). For DoA Estimation, we reduce 74.5% MAE t (1.423 vs 5.585 with Llama). Perhaps most notably, in Range Estimation, our approach reduces the REP by 7x (1.764 vs 12.572 with Llama), demonstrating substantially more accurate distance estimation capabilities. The convergence behavior further validates this superiority– as shown in Fig. 5, our approach achieves faster conver-gence and lower final loss values during training across both Llama and Qwen architectures. This consistent advantage in both convergence rate and final performance suggests that our audio encoder’s design - particularly its incorporation of both magnitude and phase information - provides a more effective foundation for learning physical awareness. 
+
+Model-agnostic Property. The consistent performance improvements across different LLMs indicate that our au-dio encoding approach is robust and model-agnostic. Both Llama and Qwen show similar patterns of enhancement when paired with our encoder compared to the Whisper baseline, suggesting our method can generalize across dif-ferent LLM architectures. 
+
+Open QA Performance. As shown in Table 2, when testing open-form QA with our encoder and Qwen2-7B, the model demonstrates two key capabilities: natural language commu-nication of physical phenomena and multi-step calculations. For direct estimation tasks like LOS detection (0.898) and multipath analysis (0.906), it provides clear explanations in natural language. For tasks requiring multi-step calculations, such as DoA and range estimation, it extracts measurements and applies physical formulas to derive results (DoA error: 6.505°, Range error: 0.472m). 
+
+6.3. Ablation Study of Acoustic Factors 
+
+We conduct ablation studies to understand how different acoustic factors affect the understanding of physical world. While these factors could potentially impact all tasks, we se-lect representative tasks for illustrative purposes to examine 7Teaching Physical Awareness to LLMs from Sounds W/ LOS W/O LOS       
+
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> TCA
+> Llama Qwen
+> Figure 6. Impact of LOS. W/ Doppler W/O Doppler
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> BCA
+> Llama Qwen Figure 7. Impact of Doppler.
+
+the effects of various acoustic phenomena. By default, we set the audio encoder to our proposed design. 
+
+Impact of LOS. Figure 6 demonstrates the impact of LOS paths on multipath analysis by comparing scenarios with and without LOS components. For Llama, TCA decreases from 0.901 to 0.880 when LOS paths are present, while for Qwen, it shows a similar trend with a smaller gap (0.912 to 0.895). This makes intuitive sense, as strong direct-path signals can overshadow the subtle echoes and reflections that characterize reverberation, making it challenging to assess multipath characteristics like reverberation time. 
+
+Impact of Doppler Effect. Similarly, Figure 7 illustrates how Doppler effects influence LOS detection. The introduc-tion of Doppler shifts slightly reduces the BCA from 0.930 to 0.910 for Llama and from 0.936 to 0.912 for Qwen. This slight decrease in performance is expected, as the Doppler effect can introduce signal distortion, adding complexity to the analysis of LOS components. For a more comprehensive breakdown of the results, see Appendix Section E. Notably, our method demonstrates strong resilience to these acoustic variations, with slight performance degradations. This robustness makes our approach particularly suitable for real-world environments where multiple acoustic phe-nomena often occur simultaneously. 
+
+Impact of SNR. Figure 8 illustrates how signal-to-noise ratio (SNR) affects ranging estimation performance. As expected, estimation accuracy improves significantly with higher SNR levels. For Llama, the MAE decreases steadily from 5.64 samples at low SNR ( <10dB) to 0.91 samples at high SNR ( >40dB). Qwen shows a similar trend, with MAE reducing from 5.33 samples to 0.80 samples as SNR increases. This trend aligns with the general rule of thumb in acoustic sensing or ranging systems. 
+
+6.4. Real-World Experiments Deployment. In line with standard practices in vehicle audio systems, four omni-directional microphones are de-ployed throughout a NIO ES6 vehicle cabin. Two micro-phones are positioned in the front seat area and two in the back, each with left-right configuration. The audio signals are synchronized and collected via a data acquisition board at 16 kHz sampling rate. Detailed hardware specifications <10dB 10-20dB 20-40dB >40dB     
+
+> 0
+> 1
+> 2
+> 3
+> 4
+> 5
+> MAE (sample)  Llama
+> Qwen
+> Figure 8. Impact of SNR. LOS Detection L/R Detection
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Accuracy
+> Llama
+> Qwen Figure 9. Real-World Results.
+
+and data collection setup are provided in Appendix F. 
+
+Results. Our real-world experiments focused on LOS de-tection and DoA estimation in a vehicle environment. The model are trained solely on simulated data and evaluated on real-world data in a zero-shot manner. Figure 8 presents the experimental results. For LOS detection, distinguish-ing between interior and exterior sound sources, the Llama-based model achieved 0.845 accuracy while the Qwen-based model maintained 0.870 accuracy. In the DoA estimation task, implemented as left/right classification within the ve-hicle cabin, Llama achieved 0.8975 accuracy while Qwen maintained 0.925 accuracy. These real-world accuracies show expected degradation compared to our controlled ex-perimental results, reflecting typical challenges in transition-ing from simulated to real-world environments. Despite this performance drop, the results show the practical viability of our approach in the real world. 
+
+## 7. Related Work 
+
+Audio LLM. Recent work has seen significant progress in extending large language models to handle audio modalities. AudioGPT (Huang et al., 2024) and HuggingGPT (Shen et al., 2023) use LLMs as controllers to coordinate multiple specialized audio models for different tasks. In contrast, models like Pengi (Deshmukh et al., 2023), LTU (Gong et al., 2023), and Qwen-Audio (Chu et al., 2023; 2024) take a more unified approach by directly connecting audio en-coders with language models to enable end-to-end learning. SpeechGPT (Zhang et al., 2023) introduces a novel direc-tion by discretizing speech into tokens that can be directly processed by LLMs, while BAT (Zheng et al., 2024) and the work (Tang et al., 2024) extend these capabilities to spatial audio understanding. However, these prior works primarily focus on semantic understanding of audio content or basic spatial properties, without explicitly modeling physical awareness. In contrast, ACORN aims to teach LLMs physical awareness through sound, covering dynamic effects like Doppler, multipath, and range estimation. Furthermore, our approach to audio encoding is distinct from BAT’s method. While BAT com-putes Interaural Phase Difference (IPD) between each pair of microphone channels, our encoder extracts phase infor-8Teaching Physical Awareness to LLMs from Sounds 
+
+mation directly from individual channels. This approach not only avoids the quadratic growth in pairwise computations as microphone count increases but also preserves complete phase information for each channel, enabling a more general representation of acoustic signal. 
+
+Physical Reasoning in LLM. Recent works have explored LLMs’ capabilities in physical reasoning. NEWTON (Wang et al., 2023) introduces a comprehensive benchmark eval-uating LLMs’ physical reasoning through text and visual inputs. The work (Ghaffari & Krishnaswamy, 2024) ex-amines multimodal reasoning about physical dynamics in simulated environments. Works such as (Cherian et al., 2024; Memery et al., 2023) investigate whether LLMs can estimate parameters of physical systems. With the rise of generative LLMs, researchers also explore their applications in robotics, where physical understanding is vital. Works such as (Ahn et al., 2022; Liang et al., 2023; Driess et al., 2023) examine LLMs as back-end planners in situated envi-ronments. While these efforts primarily focus on physical reasoning through textual and visual modalities, our work explores how acoustic information can empower LLMs to develop physical awareness. 
+
+Acoustic Sensing. Prior to the emergence of LLMs for au-dio understanding, acoustic sensing is dominated by hand-crafted signal processing techniques such as ToA, TDoA, FMCW, and CIR (Bai et al., 2020; Li et al., 2022). These methods extract physical properties for tasks like activity recognition (Li et al., 2020), gesture tracking (Mao et al., 2016), communication (Wang et al., 2022a), and localiza-tion (Wang et al., 2022b;c), but often rely on manual feature design, synchronization, or controlled settings. In contrast, our approach leverages pretrained audio models to learn physical awareness directly from data, potentially offering greater adaptability and scalability. 
+
+## 8. Limitations and Future Work 
+
+Multi-turn Conversation. Our current model is limited to single-turn interactions. Future efforts will aim to incorpo-rate multi-turn conversations, enhancing the ability to guide users through more complex reasoning. 
+
+Internal Thought. Our approach currently evaluates di-rect outputs for physical world understanding. Inspired by OpenAI-o1 (OpenAI, 2024) and Deepseek-R1 (Guo et al., 2025), we may examine how LLMs internalize this under-standing to enhance response conditioning, thus improving the integration of physical awareness with LLM capabilities. 
+
+Extensive Real-World Experiments. While our real-world experiments provide valuable insights, they are limited in scope and scale. To fully validate and refine our model’s capabilities, more extensive real-world testing is necessary. 
+
+## 9. Conclusion 
+
+We present ACORN, a framework that teaches LLMs physi-cal awareness through sound. ACORN addresses a funda-mental gap in LLMs’ ability to understand and interact with the physical world. By introducing a physics-based chan-nel simulator, a novel audio encoder architecture, and the AQA-PHY dataset, we enable LLMs to understand various physical phenomena. 
+
+## Acknowledgments 
+
+We sincerely thank the anonymous reviewers for their in-sightful comments and constructive feedback, which helped improve the quality of this work. 
+
+## Impact Statement 
+
+Our research on teaching physical awareness to LLMs through sound holds significant potential for applications across various fields: 
+
+Empowering Embodied AI. Equipping LLMs with phys-ical awareness through sound significantly advances em-bodied AI. By imitating human auditory capabilities, such as turning toward sound sources and adapting to acoustic environments, these systems can engage in more natural and intuitive human-robot interactions. This development enhances usability and user engagement, fostering more effective collaborations between humans and AI. 
+
+Advancements in Safety Applications. This work ad-dresses a critical need for secure and reliable AI systems by enabling LLMs to reason about physical phenomena such as sound source localization and LOS detection. These ca-pabilities can prevent unauthorized access in safety-critical environments like autonomous vehicles and smart homes by rejecting unsafe voice commands originating from external or unauthorized sources. Furthermore, by integrating acous-tic sensing, our approach equips autonomous vehicles with the ability to detect and localize critical sound cues, such as emergency sirens or passenger screams. This advance-ment addresses a potential limitation in current autonomous driving systems, often described as “deaf drivers”. 
+
+Innovations in Channel-Based Simulation Our channel-based simulation framework can be directly applied to ex-isting audio LLMs, enabling the generation of large-scale datasets that capture diverse acoustic phenomena at signifi-cantly lower cost compared to traditional data collection. 
+
+## References 
+
+Ahn, M., Brohan, A., Brown, N., Chebotar, Y., Cortes, O., David, B., Finn, C., Fu, C., Gopalakrishnan, K., Hausman, K., et al. Do as i can, not as i say: Grounding language 9Teaching Physical Awareness to LLMs from Sounds 
+
+in robotic affordances. arXiv preprint arXiv:2204.01691 ,2022. Bai, Y., Lu, L., Cheng, J., Liu, J., Chen, Y., and Yu, J. Acoustic-based sensing and applications: A survey. Com-puter Networks , 181:107447, 2020. Benesty, J. Microphone array signal processing . Springer Verlag, 2008. Chen, C., Schissler, C., Garg, S., Kobernik, P., Clegg, A., Calamia, P., Batra, D., Robinson, P. W., and Grauman, K. Soundspaces 2.0: A simulation platform for visual-acoustic learning. In Proceedings of the Thirty-sixth Conference on Neural Information Processing Systems Datasets and Benchmarks Track (NeurIPS) , 2022. Cherian, A., Corcodel, R., Jain, S., and Romeres, D. Llmphy: Complex physical reasoning using large lan-guage models and world models. arXiv preprint arXiv:2411.08027 , 2024. Chu, Y., Xu, J., Zhou, X., Yang, Q., Zhang, S., Yan, Z., Zhou, C., and Zhou, J. Qwen-audio: Advancing univer-sal audio understanding via unified large-scale audio-language models. arXiv preprint arXiv:2311.07919 ,2023. Chu, Y., Xu, J., Yang, Q., Wei, H., Wei, X., Guo, Z., Leng, Y., Lv, Y., He, J., Lin, J., et al. Qwen2-audio technical report. arXiv preprint arXiv:2407.10759 , 2024. Deshmukh, S., Elizalde, B., Singh, R., and Wang, H. Pengi: An audio language model for audio tasks. In Proceedings of the Thirty-seventh Conference on Neural Information Processing Systems (NeurIPS) , volume 36, pp. 18090– 18108, 2023. Driess, D., Xia, F., Sajjadi, M. S., Lynch, C., Chowdhery, A., Ichter, B., Wahid, A., Tompson, J., Vuong, Q., Yu, T., et al. Palm-e: An embodied multimodal language model. 
+
+arXiv preprint arXiv:2303.03378 , 2023. Dubey, A., Jauhri, A., Pandey, A., Kadian, A., Al-Dahle, A., Letman, A., Mathur, A., Schelten, A., Yang, A., Fan, A., et al. The llama 3 herd of models. arXiv preprint arXiv:2407.21783 , 2024. Gemmeke, J. F., Ellis, D. P., Freedman, D., Jansen, A., Lawrence, W., Moore, R. C., Plakal, M., and Ritter, M. Audio set: An ontology and human-labeled dataset for au-dio events. In IEEE international conference on acoustics, speech and signal processing (ICASSP) . IEEE, 2017. Ghaffari, S. and Krishnaswamy, N. Exploring failure cases in multimodal reasoning about physical dynamics. In 
+
+Proceedings of the AAAI Symposium Series , pp. 105–114, 2024. Gong, Y., Luo, H., Liu, A. H., Karlinsky, L., and Glass, J. Listen, think, and understand. arXiv preprint arXiv:2305.10790 , 2023. Guo, D., Yang, D., Zhang, H., Song, J., Zhang, R., Xu, R., Zhu, Q., Ma, S., Wang, P., Bi, X., et al. Deepseek-r1: In-centivizing reasoning capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948 , 2025. Hendrycks, D. and Gimpel, K. Gaussian error linear units (gelus). arXiv preprint arXiv:1606.08415 , 2016. Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., and Chen, W. LoRA: Low-rank adaptation of large language models. In Proceedings of the Tenth International Conference on Learning Representations (ICLR) , 2022. Huang, R., Li, M., Yang, D., Shi, J., Chang, X., Ye, Z., Wu, Y., Hong, Z., Huang, J., Liu, J., et al. Audiogpt: Understanding and generating speech, music, sound, and talking head. In Proceedings of the AAAI Conference on Artificial Intelligence (AAAI) , pp. 23802–23804, 2024. Li, D., Liu, J., Lee, S. I., and Xiong, J. Fm-track: push-ing the limits of contactless multi-target tracking using acoustic signals. In Proceedings of the 18th Conference on Embedded Networked Sensor Systems , pp. 150–163, 2020. Li, D., Cao, S., Lee, S. I., and Xiong, J. Experience: practi-cal problems for acoustic sensing. In Proceedings of the 28th Annual International Conference on Mobile Com-puting And Networking , pp. 381–390. ACM, 2022. Liang, J., Huang, W., Xia, F., Xu, P., Hausman, K., Ichter, B., Florence, P., and Zeng, A. Code as policies: Lan-guage model programs for embodied control. In IEEE International Conference on Robotics and Automation (ICRA) , pp. 9493–9500. IEEE, 2023. Mao, W., He, J., and Qiu, L. Cat: High-precision acous-tic motion tracking. In Proceedings of the 22nd Annual International Conference on Mobile Computing and Net-working , pp. 69–81. ACM, 2016. Memery, S., Lapata, M., and Subr, K. Simlm: Can language models infer parameters of physical systems? arXiv preprint arXiv:2312.14215 , 2023. OpenAI. Introducing openai o1-preview. 
+
+https://openai.com/index/ introducing-openai-o1-preview/ , 2024. Accessed: 2024-12-01. 10 Teaching Physical Awareness to LLMs from Sounds 
+
+Radford, A., Kim, J. W., Xu, T., Brockman, G., McLeavey, C., and Sutskever, I. Robust speech recognition via large-scale weak supervision. In Proceedings of the 40th In-ternational Conference on Machine Learning (ICML) ,2023. Rao, S. Introduction to mmwave sensing: Fmcw radars. 
+
+Texas Instruments (TI) mmWave Training Series , pp. 1– 11, 2017. Shen, Y., Song, K., Tan, X., Li, D., Lu, W., and Zhuang, Y. HuggingGPT: Solving AI tasks with chatGPT and its friends in hugging face. In Proceedings of Thirty-seventh Conference on Neural Information Processing Systems (NeurIPS) , 2023. Tang, C., Yu, W., Sun, G., Chen, X., Tan, T., Li, W., Zhang, J., Lu, L., Ma, Z., Wang, Y., et al. Can large language models understand spatial audio? In Proceedings of Interspeech , pp. 4149–4153, 2024. Traer, J. and McDermott, J. H. Statistics of natural rever-beration enable perceptual separation of sound and space. 
+
+Proceedings of the National Academy of Sciences , 113 (48):E7856–E7865, 2016. Wang, W., Li, J., He, Y., and Liu, Y. Symphony: localiz-ing multiple acoustic sources with a single microphone array. In Proceedings of the 18th ACM Conference on Embedded Networked Sensor Systems , pp. 82–94, 2020. Wang, W., Li, J., He, Y., Guo, X., and Liu, Y. Motorbeat: Acoustic communication for home appliances via vari-able pulse width modulation. Proceedings of the ACM on Interactive, Mobile, Wearable and Ubiquitous Technolo-gies , 6(1):1–24, 2022a. Wang, W., Li, J., He, Y., and Liu, Y. Localizing multiple acoustic sources with a single microphone array. IEEE Transactions on Mobile Computing , 22(10):5963–5977, 2022b. Wang, W., Mottola, L., He, Y., Li, J., Sun, Y., Li, S., Jing, H., and Wang, Y. Micnest: Long-range instant acoustic localization of drones in precise landing. In Proceedings of the 20th ACM Conference on Embedded Networked Sensor Systems , pp. 504–517, 2022c. Wang, Y. R., Duan, J., Fox, D., and Srinivasa, S. Newton: Are large language models capable of physical reasoning? 
+
+arXiv preprint arXiv:2310.07018 , 2023. Yang, A., Yang, B., Hui, B., Zheng, B., Yu, B., Zhou, C., Li, C., Li, C., Liu, D., Huang, F., et al. Qwen2 technical report. arXiv preprint arXiv:2407.10671 , 2024. Zhang, D., Li, S., Zhang, X., Zhan, J., Wang, P., Zhou, Y., and Qiu, X. Speechgpt: Empowering large language models with intrinsic cross-modal conversational abilities. 
+
+arXiv preprint arXiv:2305.11000 , 2023. Zhao, Y., Huang, J., Hu, J., Wang, X., Mao, Y., Zhang, D., Jiang, Z., Wu, Z., Ai, B., Wang, A., et al. Swift: a scalable lightweight infrastructure for fine-tuning. arXiv preprint arXiv:2408.05517 , 2024. Zheng, Z., Peng, P., Ma, Z., Chen, X., Choi, E., and Harwath, D. Bat: Learning to reason about spatial sounds with large language models. In Proceedings of the Forty-first International Conference on Machine Learning (ICML) ,2024. 11 Teaching Physical Awareness to LLMs from Sounds 
+
+## A. Task Description          
+
+> Table 3. Tasks for Physical Awareness Enhancement in LLMs
+> Task Name Description Example Applications
+> LOS Detection Determine if the line-of-sight path is blocked or not. Reject voice commands from outside a secured area like a car. Doppler Estimation Estimate the frequency shift in sounds due to the rela-tive motion of the source. Determine if the source is approaching or mov-ing away. DoA Estimation Estimate the direction from which a sound originates based on the TDoA. Enable embodied systems to rotate towards sources, imitating human head movements. Multipath Analysis Detect the severity of reverberation resulting from mul-tipath effects. Assess sound quality by identifying distortions due to complex surrounding reflections. Range Estimation Measure the distance to objects by employing sonar techniques. Enable proximity sensing to determine phone screen-lock behavior during calls.
+
+The tasks listed in Table 3 explore both passive and active approaches to understand physical world. The first four tasks - line-of-sight (LOS) Detection, Doppler (Effect) Estimation, Direction of Arrival (DoA) Estimation, and Multipath (Effect) Analysis - demonstrate passive sensing capabilities, where LLMs analyze incoming sounds to understand physical phenomena. The fifth task, Range Estimation, explores the feasibility of active sensing, where the LLM actively probes the environment by playing, recording, and analyzing sound pulses, similar to how sonar systems operate. 
+
+A.1. Passive Sensing Tasks 
+
+Our passive sensing tasks evaluate the ability of LLMs to extract physical information from ambient or environmental sounds: 
+
+LOS Detection enables LLMs to determine whether there is a direct path exists between the sound source and receiver. When sound travels through a direct path, it arrives earlier than reflections and contains highest energy due to minimal path attenuation. This capability is crucial for security applications, such as validating voice commands in vehicles or buildings. For example, a car’s voice control system should reject voice commands from outside the vehicle to prevent unauthorized access. Similarly, smart home devices can use LOS detection to determine if voice commands originate from inside or outside the house. 
+
+Doppler Estimation focuses on measuring frequency shifts caused by relative motion between sound sources and receivers. When a sound source approaches, the perceived frequency increases due to wave compression; when it recedes, the frequency decreases due to wave expansion. This shift largely depends on the relative velocity. This physical awareness is valuable for various applications, from estimating vehicle speeds to enabling proximity-based responses in smart devices. For instance, a device could adjust its behavior based on whether the sound source is approaching or moving away. 
+
+DoA Estimation teaches LLMs to determine where sound originates using multiple microphones. This task relies on analyzing time differences of arriving different microphones (i.e., Time Difference of Arrival, TDoA). This task is beneficial to natural human-robot interaction, allowing systems to turn toward heads just as humans do. It might also enable spatial audio processing and directional noise suppression in applications like smart speakers and hearing aids. 
+
+Multipath Analysis involves understanding how sound reflects and reverberates in different environments. Sound waves bounce off surfaces, creating complex patterns of early reflections and late reverberation. This capability helps systems assess audio quality and adapt to various acoustic environments. For instance, if the LLM detects excessive reverberation degrading sound quality during a voice communication, it could proactively suggest to the other party, ‘It seems there’s a lot of background reverberations—moving to another place might help.’ This level of adaptive response enables the LLM to function similarly to a human listener, enhancing user experience by facilitating clearer communication in less-than-ideal acoustic conditions.” 12 Teaching Physical Awareness to LLMs from Sounds ToF       
+
+> LOS
+> LOS
+> ECHO
+> Wall ECHO
+> ToF
+> LOS
+> LOS
+> ECHO
+> Wall ECHO
+> (a) Deployment (b) Spectrogram
+> Figure 10. Ranging Estimation Illustration.
+
+A.2. Active Sensing Tasks Range Estimation explores active sensing capabilities, requiring LLMs to initiate measurements by transmitting sound pulses and analyzing their echoes. Unlike passive tasks that only observe existing sounds, this represents a significant advancement toward active environmental interaction. We envision that the LLMs can trigger pulse transmission through function calls, measure echo return times, and calculate distances based on the speed of sound. This active approach enables precise distance measurements independent of ambient sound conditions, demonstrating how LLMs can actively engage with their physical environment. To better understand this, we give an example in Figure 10. As shown in Figure 10(a), the basic deployment involves a system that actively transmits a sound pulse. This pulse travels along two paths: a direct Line-of-Sight (LOS) path to the microphone, and a reflected ECHO path that bounces off the wall. This configuration mirrors the principles used in natural and technological sonar systems. The spectrogram in Figure 10(b) illustrates how these paths manifest in the received signal, demonstrating the feasibility of distance estimation. We can clearly observe two distinct bright patterns: the LOS signal arrives first, followed by its ECHO from the wall. The time difference between these signals, marked by the Time-of-Flight (ToF) dashed lines, makes distance calculation straightforward. Since we know sound travels at approximately 343 meters per second in air, and the echo travels twice the distance to the wall (to the wall and back), we can determine the wall distance by taking half of the total distance that the echo traveled. We want to mention that, range estimation is unique among our tasks not only in its active sensing approach but also in its sound source. While other tasks utilize real-world sound sources sampled from the AudioSet dataset, Range Estimation employs specially modulated signals for transmission. Specifically, it uses Frequency-Modulated Continuous Wave (FMCW) signals, also known as chirp , where the frequency changes linearly with time. These chirp signals, widely used in Radar and Sonar systems (Rao, 2017), provide excellent range resolution properties. To ensure the diversity of source sources used for range estimation, we randomize several chirp generation parameters including the starting frequency, ending frequency, and chirp duration. 
+
+## B. Implementation Detailed for Channel Simulator 
+
+B.1. LOS ad Early Reflections 
+
+In Eq. 4, we use the Delta function ( δ) to explain CIR for better understanding. In practice, we employ damped sinusoids, which provide both precise parameter control and naturally model physical acoustic behaviors like attenuation and resonance. Mathematically, Each path in the CIR is modeled as a damped sinusoid 
+
+z(t) = cos(2 πf z t)e−αz t, (9) where fz is the sinusoid wave frequency, αz is the decay rate, and t is the time. Therefore, Eq. 4 can be rewritten as 
+
+h(τ ) = A1z(τ − τlos ) + A2z(τ − τecho 1 ) + A3z(τ − τecho 2 ). (10) Table 4 lists the corresponding parameters used to simulate LOS and early reflections. Except amplitude, The parameters for LOS paths are largely fixed to model the direct path’s consistent nature, as it experiences minimal environmental interactions. In contrast, the parameters for early reflections vary randomly to capture the diversity of channels. 13 Teaching Physical Awareness to LLMs from Sounds                                              
+
+> Table 4. Parameter Specifications for Damped Sinusoid Path Generation
+> Parameter Description Unit Value/Range Sampling Method
+> LOS Early Reflections LOS Early Reflections Base Frequency ( fc)Sinusoid wave frequency Hz 2,000 2,000 Fixed Fixed Frequency Modification Factor for tuning base frequency -1.0 0.8 - 1.2 Fixed Uniform Decay Rate ( αz)Base exponential decay Hz 8,000 8,000 Fixed Fixed Decay Modification Factor for tuning decay rate -1.0 1.0 - 1.5 Fixed Uniform Amplitude ( A)Path strength -5.0 - 20.0 0.1 - 0.5 Uniform Uniform Duration Time duration of path second 0.01 0.01 Fixed Fixed
+
+B.2. Reverberation 
+
+During the simulation of reverberation, Gaussian noise is first generated as the base signal, characterized by a normal distribution with a mean of zero and a standard deviation of one, denoted as 
+
+n(t) ∼ N (0 , 1) . (11) The noise is generated with a sampling rate of 16 kHz, and to accommodate the requirements of our simulation, the duration of n(t) is set to a maximum of 2 seconds, translating to 32,000 samples. This establishes the temporal extent of the impulse response we aim to simulate. Subsequent processing involves bandpass filtering this noise to isolate specific frequency bands, crucial for accurately modeling the frequency-selective behavior observed in real-world reverberation, where different frequency bands decay at different rates. Each subband is obtained using a Butterworth bandpass filter, selected for its flat frequency response within the passband and sharp cutoff characteristics. The frequency range for each subband i is specified by f low i and f higi i . The filtered signal for the subband i is given by 
+
+si(t) = bandpass (n(t), f low i , f high i ). (12) Each filtered signal si(t) is modulated by an amplitude envelope to simulate the natural decay characteristics of sound in an environment. This decay is typically exponential, mathematically represented as ei(t) = exp( −λit), where λi represents the decay rate for subband i.Finally, the processed signals from each subband are summed to construct the broadband reverberation, defined as: 
+
+R(t) = 
+
+> Nband
+
+X
+
+> i=1
+
+si(t) · ei(t), (13) where Nband is the number of subbands. For a detailed breakdown of the parameters used in our reverberation simulation, including the specific frequency bands and decay rates employed, refer to Table 5. 
+
+B.3. Doppler Effect 
+
+This subsection provides an detailed explanation of the method for simulating the Doppler effect within a time-varying CIR and explains an efficient processing approach. Instead of using a traditional convolution operation, we apply the Doppler-induced time-varying delay transformation directly to the transmitted signal, reducing computational complexity. In a stationary channel, the Channel Impulse Response (CIR), h(τ ), is typically constant over time, representing a fixed delay or set of delays for each multipath component. However, for a moving transmitter or receiver, the CIR must vary with time to capture the Doppler effect, which introduces a continuous frequency shift due to the relative motion. To model this, we introduce an additional time dependency t into the CIR, such that h(t, τ ) captures how the path delay 
+
+tau (t) changes with relative speed. 14 Teaching Physical Awareness to LLMs from Sounds 
+
+Table 5. Parameter Specifications for Simulating Reverberation 
+
+Parameter Description Units Value/Range Sampling 
+
+Sampling Rate ( f s ) Sampling rate of audio signal Hz 16,000 Fixed Duration ( T ) Total length of the Gaussian noise signal second 2 Fixed Number of Samples Total number of audio samples sample 32,000 Fixed Number of Subbands ( Nband ) Number of frequency bands for filtering - 6 Fixed Subband Frequency ( f low i ,f high i ) Lower and upper frequency bounds of sub-band i
+
+Hz (50, 200) (200, 500) (500, 1,000) (1,000, 2,000) (2,000, 4,000) (4,000, 8,000) Fixed Decay Rates ( λi) Amplitude decays rate for subband i - 1.5 – 60 ∗ Uniform Butterworth Filter Order Order of the Butterworth bandpass filter - 4 Fixed  
+
+> ∗
+
+A larger decay rate λi means the sound energy decays more quickly, resulting in a shorter reverberation time (RT60). Specifically, a λi value of 1.5 yields an RT60 of approximately 2 seconds, while a λi value of 60 shortens the RT60 to about 0.05 seconds. 
+
+Let’s consider a scenario where the transmitter and receiver are separated by an initial distance d0 and moving at a relative speed v. As they move, the distance between them changes linearly with time: d(t) = d0 + v · t. Since the speed of sound is 
+
+c, this changing distance translates to a time-varying delay τ (t) in the signal: 
+
+τ (t) = d(t)
+
+c = d0 + v · tc . (14) This delay means that the time it takes for each part of the transmitted signal to reach the receiver continuously varies as the distance changes. We can represent this time-varying delay in the CIR by using a delta function that shifts in time. The CIR with Doppler effect then becomes: 
+
+h(t, τ ) = δ
+
+
+
+τ − d0 + v · tc
+
+
+
+. (15) To obtain the received signal y(t), we convolve the transmitted signal x(t) with the time-varying CIR h(t, τ ):
+
+y(t) = 
+
+Z −∞ −∞ 
+
+x(τ )h(t, t − τ )dτ 
+
+=
+
+Z −∞ −∞ 
+
+x(τ )δ
+
+
+
+(t − τ ) − d0 + v · tc
+
+
+
+dτ 
+
+= x
+
+
+
+t − d0 + v · tc
+
+
+
+(16) This expression can be rewritten as: 
+
+y(t) = x
+
+
+
+(1 − vc )t − d0
+
+c
+
+
+
+. (17) As we can see, the factor (1 − vc ) compresses or stretches the time variable, This aligns with the Doppler effect, where relative motion changes the observed frequency. More importantly, This expression shows that the Doppler effect can be viewed as resampling the original source x(t) at a new effective sampling rate of 1 − vc . By interpreting the delay transformation as a resampling problem, we can achieve the Doppler simulation efficiently using 1D interpolation to calculate the received signal y(t).For connivent, Table 6 summarizes the parameters relevant for simulating the Doppler effect. 
+
+B.4. Microphone Array 
+
+Similarly, Table 7 summarizes the key parameters for simulating the reception of microphone array. 15 Teaching Physical Awareness to LLMs from Sounds 
+
+Table 6. Parameter Specifications for Simulating Doppler Effect 
+
+Parameter Description Units Value/Range Sampling 
+
+Sampling Rate ( fs) Rate at which the signal is sampled Hz 16000 Fixed Initial Distance ( d0) Starting distance between transmitter and receiver m 0.5 – 100 Uniform Relative Speed ( v) Relative velocity between transmitter and receiver m/s -50 – 50 Uniform Sound Speed ( c) Speed of sound m/s 343 Fixed 1D Interpolation Method Interpolation technique for resampling N/A Linear Fixed 
+
+Table 7. Parameter Specifications for Simulating the Reception of Microphone Array 
+
+Parameter Description Units Value/Range Sampling 
+
+Inter-microphone Distance ( dmic ) Distance between left and right microphone cm 8 – 15 Uniform Direction of Arrival ( θ) The direction in which the sound source ar-rive at the microphone array degree 0 – 180 Uniform 
+
+## C. Training Hyperparameters 
+
+The main training hyperparameters configured are summarized in Table 8. 
+
+Table 8. Training Hyperparameters 
+
+Parameter Value 
+
+GPUs 4 NVIDIA A100 Global Batch Size 32 Epochs 7Optimizer AdamW Optimizer Parameters β1 = 0.9, β2 = 0.95, ϵ = 1e-8 Learning Rate Schedule WarmupDecayLR Weight Decay 0.1 Warm-up Min Learning Rate 0Warm-up Max Learning Rate 0.0001 Warm-up Ratio 0.05 LoRA Rank 8LoRA Alpha 32 LoRA Dropout 0.05 
+
+## D. Ablation Study of LoRA Rank 
+
+We keep the LoRA rank relatively low, 8, to preserve the LLM’s language ability, as most representation learning occurs in the audio encoder. This choice is aligned with the model-agnostic property of our model. Higher ranks showed minimal benefit but increased cost (see Table 9). 
+
+## E. Detailed Analysis of Doppler Effect on LOS Detection Performance 
+
+Figure 11 demonstrates how varying Doppler speeds affect LOS detection for the models Llama and Qwen. The analysis covers speed bins from -50 to +50 m/s. Both models show consistently stable performance across these speed ranges. Notably, performance variations are evident in conditions of higher speeds, underscoring the models’ varied sensitivity to distortions caused by the Doppler effect. 16 Teaching Physical Awareness to LLMs from Sounds 
+
+Table 9. Ablation Study of LoRA Rank 
+
+Setting Task Performances (Merged) 
+
+Model Architecture LoRA Rank LOS Detection 
+
+BCA ( ↑)
+
+Doppler Estimation 
+
+MAE f (↓)
+
+DoA Estimation 
+
+MAE t (↓)
+
+Multipath Analysis 
+
+TCA ( ↑)
+
+Range Estimation 
+
+REP ( ↓)Our Encoder + Qwen2-7B 4 0.919 0.869 1.631 0.881 1.943 8 0.924 0.181 0.907 0.903 1.599 16 0.908 0.193 0.840 0.881 1.561 
+
+32 0.910 0.187 0.731 0.890 1.724 [-50, -35) 
+
+> [-35, -25)
+> [-25, -15)
+> [-15, -5)
+> [-5, 5)
+> [5, 15)
+> [15, 25)
+> [25, 35)
+> [35, 50)
+> Speed Bins (m/s)
+> 0.84
+> 0.86
+> 0.88
+> 0.90
+> 0.92
+> 0.94
+> BCA
+> Llama
+> Qwen
+
+Figure 11. Impact of Doppler Speed on LOS detection. 
+
+## F. Real-World Deployment 
+
+The data collection setup, as illustrated in Figure 12, consists of four omni-directional SPK0641HT4H digital microphones deployed throughout a vehicle cabin (specifically in a NIO ES6, a smart vehicle with Audio Assistant support). Two microphones (Mic. 1 and Mic. 2) are positioned in the front seat area, with one on the left and one on the right, as shown in Figure 12(a). The remaining two microphones are positioned in the back seat area, following the same left-right configuration, depicted in Figure 12(b) and 9(c). The microphones are driven and sampled by an XMOS XU216 data acquisition board (visible in Figure 12(a)), which ensures synchronization across all four channels. Operating at a sampling rate of 16 kHz, the board streams the synchronized audio signals to a laptop via USB UAC 2.0 protocol for data collection and storage. For comprehensive evaluation, we place a speaker at various test locations. For exterior testing, we deploy the speaker outside at all four car doors (Figure 12(d) shows an example of one door placement). The speaker was also positioned at various interior locations including the front seat (Figure 12(e)) and back seat (Figure 12(f)). For data collection, we gather 200 samples for the LOS detection task, evenly split between interior (100 samples) and exterior (100 samples) positions. For the left/right detection task, we collected 400 samples in total, with 100 samples from each of the four seating positions (left-front, right-front, left-back, and right-back seats). 
+
+## G. Prompt Format 
+
+To ensure the generality and broad applicability, we adopt a standardized prompt format commonly used in the field, similar to those employed by models such as Llama and Qwen. The basic format for single-audio tasks is structured as follows: 
+
+<|im_start|>system{\n} You are a helpful assistant. <|im_end|>{\n} <|im_start|>user{\n} Audio 1: <|audio_bos|><|AUDIO|><|audio_eos|>{\n} {Question} 
+
+17 Teaching Physical Awareness to LLMs from Sounds Data Acq. 
+
+## Board 
+
+## Mic. 1  Mic. 2 
+
+> (a) Mic. 1 and 2, and data acq. board
+
+## Mic. 3  (b) Mic. 3 Mic. 4  (c) Mic. 4 Speaker 
+
+> (d) Speaker outside the car
+
+## Speaker  (e) Speaker at front seat Speaker  (f) Speaker at back seat  
+
+> Figure 12. Illustration of microphone and speaker deployment in the NIO ES6 vehicle. Microphones (Mic. 1–4) are positioned in the front and back seat areas, while the speaker is placed at various locations for replaying audios.
+
+<|im_end|>{\n} <|im_start|>assistant{\n} {Answer} <|im_end|> 
+
+The format uses “You are a helpful assistant” as the default system prompt. The placeholders {Question } and {Answer }
+
+are replaced with the specific question and answer pairs from the dataset. For tasks requiring two audio inputs, we extend the format by adding a second audio segment: 
+
+<|im_start|>system{\n} You are a helpful assistant. <|im_end|>{\n} <|im_start|>user{\n} Audio 1: <|audio_bos|><|AUDIO|><|audio_eos|>{\n} Audio 2: <|audio_bos|><|AUDIO|><|audio_eos|>{\n} {Question} <|im_end|>{\n} <|im_start|>assistant{\n} {Answer} <|im_end|> 
+
+## H. Comparison Between Real and Synthesized CIRs 
+
+To qualitatively validate the diversity of our synthesized CIRs, we retrieve the closest match for several real CIRs using similarity search. Representative examples are shown in Figure 13. 
+
+## I. Example QA Pairs 
+
+Table 10 presents the example QA pairs for five different tasks, including both close and open types. 18 Teaching Physical Awareness to LLMs from Sounds 0 200 400 600 800 1000 
+
+Sample Index 
+
+1.0 
+
+0.5 
+
+0.0 
+
+0.5 
+
+1.0 
+
+> Amplitude
+
+Real CIR 
+
+0 200 400 600 800 1000 
+
+Sample Index 
+
+1.0 
+
+0.5 
+
+0.0 
+
+0.5 
+
+1.0 
+
+Best-Matched Synthesized CIR 
+
+(a) LOS Example 1 0 200 400 600 800 1000 
+
+Sample Index 
+
+1.0 
+
+0.5 
+
+0.0 
+
+0.5 
+
+1.0 
+
+> Amplitude
+
+Real CIR 
+
+0 200 400 600 800 1000 
+
+Sample Index 
+
+1.0 
+
+0.5 
+
+0.0 
+
+0.5 
+
+1.0 
+
+Best-Matched Synthesized CIR 
+
+(b) LOS Example 2 0 200 400 600 800 1000 
+
+Sample Index 
+
+1.0 
+
+0.5 
+
+0.0 
+
+0.5 
+
+1.0 
+
+> Amplitude
+
+Real CIR 
+
+0 200 400 600 800 1000 
+
+Sample Index 
+
+1.0 
+
+0.5 
+
+0.0 
+
+0.5 
+
+1.0 
+
+Best-Matched Synthesized CIR 
+
+(c) NLOS Example 1 0 200 400 600 800 1000 
+
+Sample Index 
+
+1.0 
+
+0.5 
+
+0.0 
+
+0.5 
+
+1.0 
+
+> Amplitude
+
+Real CIR 
+
+0 200 400 600 800 1000 
+
+Sample Index 
+
+1.0 
+
+0.5 
+
+0.0 
+
+0.5 
+
+1.0 
+
+Best-Matched Synthesized CIR 
+
+(d) NLOS Example 2 
+
+Figure 13. Comparison between real and synthesized CIRs in both LOS and NLOS scenarios. For each example, we select a real CIR (left) and retrieve the most similar synthesized CIR (right) using a similarity search. Two LOS and two NLOS cases are shown to demonstrate the diversity and realism of our synthesized CIRs. 
+
+19 Teaching Physical Awareness to LLMs from Sounds 
+
+Table 10. Example QA Pairs for Tasks. 
+
+Task Form Example Question Example Answer 
+
+LOS Detection Close Audio 1: <Audio > Does the audio contain a line-of-sight path? 
+
+{Yes. | No. }
+
+Open Audio 1: <Audio > Is there a clear LOS path in the audio, or not? No, the audio doesn’t have a clear LOS path. I think the source reaches the receiver through indirect paths. Doppler Effect Close Audio 1: <Audio > Audio 2: <Audio > You are pro-vided with a two-channel audio recording. The first channel is the origin the sound. The second channel is the received audio. Please determine whether the sound source is approaching or receding. 
+
+{Approaching. | Receding. }
+
+Close Audio 1: <Audio > Audio 2: <Audio > You are provided with a two-channel audio recording. The first channel is the origin the sound. The second channel is the received audio. Please estimate the Doppler shift percentage. 
+
+{XX%. }
+
+Open Audio 1: <Audio > Audio 2: <Audio > How can the percentage of Doppler shift be estimated from a two-channel audio recording, where the first channel represents the original sound and the second channel captures the received audio? The estimated Doppler shift is approximately 2.5%. The sound seems to approach you due to a noticeable increase in frequency. DoA Estimation Close Audio 1: <Audio > Audio 2: <Audio > Given a two-channel audio recording, where the first channel is from the left microphone and the second from the right, which microphone receives the sound first? 
+
+{Left. | Right. | Front. }
+
+Close Audio 1: <Audio > Audio 2: <Audio > Given a two-channel audio recording, where the first channel is from the left microphone and the second from the right. Please estimate the time difference of arrival. 
+
+{XX samples. }
+
+Open Audio 1: <Audio > Audio 2: <Audio > In a smart home system, two microphones are placed d = 10 cm apart on the ceiling to localize a sound source, such as a speaker, in the living room. Given the recorded audio signals from both microphones and assuming the speed of sound c = 343 m/s with sampling rate fs = 16000 Hz, what is the Direction of Arrival (DoA) of the sound source? Let’s solve this step by step: \n 1. From the audio signals analysis, we estimate the time delay: \n N = -4 samples \n2. Convert the time delay to time ( τ ) in milliseconds: \n
+
+τ = N / fs = -4 / 16000 = -0.25 ms \n 3. Apply the DoA formula: \n θ = arccos(( π × c) / d) = arccos((-0.25 / 1000 × 343) / 0.1) \n \n 4. Simplify the calculation: \n
+
+θ ≈ arccos(-0.8575) = 0.5404 radians \n \n 5. Convert radians to degrees: \n θdeg = ( θ / π) × 180 ≈ 30.96 degrees \n \n Final Answer: \n The estimated Direction of Arrival (DoA) angle is approximately 30.96 degrees. Multipath Analysis Close Audio 1: <Audio > How severe is the multipath effect in this audio? 
+
+{Rich. | Moderate. | Negligible. }
+
+Open Audio 1: <Audio > Could you evaluate the effect of multipath interactions within the given audio piece? The multipath effect is very rich in this audio, with ex-tensive reverberation creating a complex sound profile. Range Estimation Close Audio 1: <Audio > You are given audio data con-taining both the transmitted pulse and the echo. Please estimate the time of flight. 
+
+{XX ms. }
+
+Open Audio 1: <Audio > You are given acoustic data that includes a transmitted sound pulse and its reflection. Please estimate the distance to the object. The time of flight for the sound pulse is 59.0 ms. As-suming the speed of sound in air is 343 m/s, the round trip distance to the temperature inversion layer is calcu-lated as 343 multiplied by 59.0 / 1000, equaling 20.2 meters. The altitude of the layer is half of this value, which equals 10.1 meters. 
+
+20

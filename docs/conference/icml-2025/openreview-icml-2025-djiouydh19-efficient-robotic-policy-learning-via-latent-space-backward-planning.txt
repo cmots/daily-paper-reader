@@ -1,0 +1,440 @@
+Title: Efficient Robotic Policy Learning via Latent Space Backward Planning
+
+URL Source: https://openreview.net/pdf?id=DJiouYdH19
+
+Number of Pages: 15
+
+Markdown Content:
+# Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+Dongxiu Liu 1 2 * Haoyi Niu 1 * Zhihao Wang 1 3 Jinliang Zheng 1 4 Yinan Zheng 1 Zhonghong Ou 2 †
+
+Jianming Hu 1 † Jianxiong Li 1 Xianyuan Zhan 1 4 †
+
+# Abstract 
+
+Current robotic planning methods often rely on predicting multi-frame images with full pixel de-tails. While this fine-grained approach can serve as a generic world model, it introduces two sig-nificant challenges for downstream policy learn-ing: substantial computational costs that hinder real-time deployment, and accumulated inaccu-racies that can mislead action extraction. Plan-ning with coarse-grained subgoals partially alle-viates efficiency issues. However, their forward planning schemes can still result in off-task pre-dictions due to accumulation errors, leading to misalignment with long-term goals. This raises a critical question: Can robotic planning be both efficient and accurate enough for real-time con-trol in long-horizon, multi-stage tasks? To ad-dress this, we propose a Latent Space Backward 
+
+Planning scheme ( LBP ), which begins by ground-ing the task into final latent goals, followed by re-cursively predicting intermediate subgoals closer to the current state. The grounded final goal en-ables backward subgoal planning to always re-main aware of task completion, facilitating on-task prediction along the entire planning hori-zon. The subgoal-conditioned policy incorpo-rates a learnable token to summarize the sub-goal sequences and determines how each sub-goal guides action extraction. Through exten-sive simulation and real-robot long-horizon ex-periments, we show that LBP outperforms ex-isting fine-grained and forward planning meth-ods, achieving SOTA performance. Project Page: 
+
+https://lbp-authors.github.io             
+
+> *Equal contribution . Work done during internship at Institute for AI Industry Research (AIR), Tsinghua University. 1Tsinghua University 2Beijing University of Posts and Telecommunica-tions 3Peking University 4Shanghai AI Lab. Correspondence to: Zhonghong Ou <zhonghong.ou@bupt.edu.cn >, Jianming Hu <hujm@mail.tsinghua.edu.cn >, Xianyuan Zhan <zhanxi-anyuan@air.tsinghua.edu.cn >.
+> Proceedings of the 42 nd International Conference on Machine Learning , Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s).
+
+# 1. Introduction 
+
+Accurately predicting future states is crucial for many robotic planning methods in solving long-horizon, multi-stage tasks, where models must anticipate outcomes over extended temporal sequences. However, this requires bal-ancing two conflicting objectives: (1) capturing sufficiently rich and accurate future information for task completion, and (2) maintaining computational efficiency for real-time decision making. Current methods often struggle with this trade-off. Those that prioritize long-term capability typ-ically predict multi-step future states to provide detailed guidance, but are prone to high computational costs and rapid error accumulation. In contrast, efficiency-oriented methods often sacrifice the semantic richness needed to han-dle complex, long-horizon tasks. This creates a fundamen-tal trilemma—balancing efficiency, accuracy and sufficient future guidance—that remains unresolved and presents a significant challenge in real-world robotic planning. To model future outcomes, one category of existing robotic planning methods (Du et al., 2023; Ajay et al., 2024; Hu et al., 2024) resorts to predicting an episode of future video as policy guidance. However, predicting consecutive frames can propagate inaccuracies that compound over time, result-ing in significant deviations from the intended final goal or physically inconsistent frames that confuse the downstream policies. Furthermore, modeling entire future videos re-quires high computational costs and puts a heavy burden on real-time inference. Obviously, predicting every detail in the future is often unnecessary for task execution, and the fine-grained predictions hinder both computational efficiency and task-oriented consistency. The second category of robotic planning methods focuses on predicting future subgoals (Nair & Finn, 2020; Huang et al., 2024). These coarse-grained subgoals improve planning ef-ficiency and reduce computational burden. However, it still adheres to the forward planning paradigm, often leading to plans that are less aligned with distant goals, which in turn cause off-task behavior (Kang & Kuo, 2025). To address this, recent methods have introduced reachability or optimal-ity checks (Eysenbach et al., 2019; Nasiriany et al., 2019; Fang et al., 2022; Huang et al., 2024) to correct deviations and improve on-task accuracy. However, these post-hoc adjustments also add lots of complexities and do not really 1Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+address the fundamental challenges. The two aforementioned categories of methods both have some pros and cons. The video planning methods provide rich future guidance but suffer from heavy training demands and inefficient inference. The subgoal planning methods enjoy efficient planning but trade off long-horizon task progress guidance. Apart from failing to strike a desirable balance across different considerations, all previous efforts fall short in maintaining on-task prediction accuracy. How can we address the above limitations and enable robots to plan efficiently and effectively through long-horizon tasks? In this paper, we propose a Backward Planning approach in 
+
+Latent space ( LBP ) for language-guided robotic control as in Figure 1. LBP first trains a latent goal predictor that maps the current state and language description to a distant final goal, grounding the task objective in latent image space to enforce task progression. Second, LBP recursively predicts intermediate subgoals that are closer to the current state, ensuring that each subgoal remains aligned with the task progression and completion. These two steps mirror how humans plan in complex tasks: we begin by envisioning the desired outcome based on the task objective, and then break it down into smaller, gradually manageable subgoals that are closer to the present stage. The subgoal sequences in LBP track the path to the goal with less redundancy, providing denser guidance in near terms while preserving task progres-sion information over the entire planning horizon. Lastly, LBP incorporates a subgoal fusion technique that enables the subgoal-conditioned policy to adaptively determine how to best utilize subgoals at varying distances. Collectively, LBP effectively addresses the triplet of challenges of off-task planning, insufficient guidance, and high computational costs inherent in previous methods. LBP provides a lightweight planning framework for robotic policy learning with on-task subgoal generation guarantee. It combines the strengths of latent planning (Wang et al., 2023; Wen et al., 2024) and coarse-grained subgoal plan-ning (Wang et al., 2025; Black et al., 2024), drastically reducing computational costs and enabling real-time deploy-ment. Unlike previous methods that struggle with subgoal horizon selection, LBP provides an informative subgoal sequence spanning the entire planning horizon toward the final goal. This offers flexibility that allows the downstream policy to leverage subgoal signals at varying distances. The backward planning approach further enhances on-task ac-curacy by ensuring that the predicted subgoal sequence remains aligned with the overall task progression and the ultimate objective. Through extensive evaluations in both simulation and real-robot experiments, we demonstrate that LBP significantly outperforms existing methods, especially excelling on long-horizon, multi-stage tasks. �0 �2 ���1 �3 �5�4 �6 ���7                   
+
+> Forward Fine-grained Planning
+> �0�2���1�3�5�4�6���7
+> Forward Coarse-grained Planning
+> �0�2���1�3�5�4�6���7
+> Latent Backward Planning (Ours)
+> ��Language latent feature
+> ��i-th frame latent feature/image ��i-th frame latent feature
+> ��latent goal feature latent goal feature/image ��
+> Figure 1. Illustration of latent space backward planning.
+
+# 2. Related Works 
+
+Video Planning. A significant body of research has ex-plored video generation as planners for visuomotor con-trol (Pertsch et al., 2020; Du et al., 2023; Ajay et al., 2024; Hu et al., 2024; Wu et al., 2024; Bharadhwaj et al., 2024). Approaches such as UniPi (Du et al., 2023) and HiP (Ajay et al., 2024) generate actions using inverse dynamics models from predicted consecutive frames, while Seer (Tian et al., 2025) and GR-1 (Wu et al., 2024) jointly predict actions and subsequent image frames. Although some methods op-erate in latent space (Nair et al., 2020; Hu et al., 2024; Li et al., 2024), this line of work faces significant challenges, including high computational demands and limited real-time capabilities, primarily due to the need to generate every con-secutive frame of the future. Most of these methods operate in a forward autoregressive manner (Wu et al., 2024; Tian et al., 2025), which are prone to rapid error accumulation over time, significantly complicating policy learning. In summary, these approaches attempt to plan with excessive detail that is often unnecessary to visuomotor control, result-ing in computational inefficiency, compounded prediction errors, and challenges in effective action extraction. 
+
+Coarse-grained Planning. Coarse-grained planning ap-proaches focus on predicting intermediate subgoals (Nair & Finn, 2020; Wang et al., 2023; Black et al., 2024; Wang et al., 2025), improving computational efficiency by avoid-ing the need to predict every frame of details. Goal-conditioned supervised (GCSL) (Ghosh et al., 2021; Em-mons et al., 2022; Wang et al., 2025) and reinforcement learning (GCRL) (Chane-Sane et al., 2021; Xu et al., 2022; Park et al., 2024), have demonstrated that planning with intermediate goals can alleviate downstream policy learning burdens while enhancing long-horizon capabilities in sim-2Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+ulation benchmark tasks. However, this paradigm faces unresolved challenges, particularly in subgoal selection, such as 1) determining appropriate prediction horizons, and 2) balancing the number of subgoals for effective policy guidance (Levy et al., 2019; Nachum et al., 2019). Dis-tant subgoals provide limited actionable information, while nearby subgoals may misalign with final task objectives. Similarly, excessive subgoals increase model complexity, whereas sparse subgoals fail to capture task progression semantics. Existing methods lack principled treatment to balance planning efficiency and long-term reliability. Fur-thermore, the forward planning paradigm inherently suffers from error accumulation over time, leading to off-task be-havior (Kang & Kuo, 2025). Recent attempts to mitigate this through post-hoc corrections, such as reachability or optimality checks (Eysenbach et al., 2019; Nasiriany et al., 2019; Fang et al., 2022; Huang et al., 2024), which add extra complexity without addressing the fundamental limitations of forward planning. 
+
+Summary. Both fine-grained (video) and coarse-grained (subgoal) planning approaches fail to resolve the fundamen-tal trilemma of robotic planning: achieving computational efficiency, maintaining long-horizon consistency, and en-suring prediction accuracy. These limitations highlight the need for a novel approach that appropriately balances these objectives in long-horizon, multi-stage visuomotor tasks. Inspired by the “coarse-to-fine” paradigm in natural lan-guage processing (Wei et al., 2022), computer vision (Tian et al., 2024), and decision making (Wang et al., 2025), we propose a backward planning framework that predicts sub-goals in reverse temporal order—from coarse to fine hori-zons—starting from the final goal. At every control step, this approach generates a subgoal sequence that spans the entire task horizon, providing sufficient actionable guidance efficiently while minimizing error accumulation by ensuring consistent task alignment. 
+
+# 3. Preliminaries 
+
+We consider the problem of learning a visuomotor policy conditioned on different contexts c that reflect task objec-tive or completeness. These contexts c can include goal images Ig ∈ G ⊂ I , language descriptions l ∈ L , in-termediate subgoals wi ∈ W ⊂ I , and etc. Each video segment is defined as τi = {(It, a t)}Hi with Hi frames, where It ∈ I represents the image observation and at ∈ A 
+
+denotes the action at time step t. Given a dataset of video segments D = {τ1, τ 2, . . . , τ N } and a distribution over con-texts f (c|τ ), a conditioned policy πθ (a|I, c ) is trained to generate control signals in a closed-loop manner, achieving the desired behaviors aligned with the task description or future goals. The policy learning objective can be given as: 
+
+max 
+
+> θ
+
+X 
+
+> τ∈D
+
+X
+
+> 1≤t≤H
+
+Ec∼f (c|τ )[log πθ (at|It, c )] (1) We use the expectation over all contexts because some video segments are annotated with multiple types of task-relevant information, which can be utilized as guidance during policy learning. For instance, f (l|τ ) represents the distribution of language descriptions, f (Ig , l |τ ) =
+
+f (Ig |It, l )f (l|τ ) models the joint distribution of goal im-ages and language descriptions, and f (w, I g , l |τ ) = f (w =
+
+It+k|It, I g , l )f (Ig |It, l )f (l|τ ) captures the distribution of 
+
+k-step future subgoals, goal images, and language descrip-tions. Each context provides a different level of guidance: language serves as a basic task identifier, goal images indi-cate task completeness, and subgoals reflect task progression toward completion. By exploring different combinations of these contexts, we can adapt the level of guidance to meet varying demands for granularity in policy learning. 
+
+# 4. Latent Backward Planning 
+
+Overview. We propose latent space backward planning (LBP), an efficient and robust planning framework for long-horizon visuomotor tasks, built upon the idea of backward subgoal prediction. We observe that existing long-horizon planning with predicted subgoals struggles with (1) plan-ning inefficiency and (2) off-task prediction. Generating high-dimensional subgoal images poses significant chal-lenges of computation loads, while modeling every future frame sequentially further deteriorates temporal efficiency, collectively hindering real-time real-world planning. Thus, one of our key insights is planning in latent space with coarse-grained subgoals, enhancing planning efficiency in both spatial and temporal dimensions. While latent subgoal planning has been explored in existing works (Veerapaneni et al., 2020), they typically adopt forward planning that often fail to align subgoals with ultimate task objectives. Without accounting for task completion, subgoals can easily deviate from desired task progression, causing downstream policies to suffer from compounding errors snowballing along the planning process. Existing approaches have to introduce additional subgoal quality checks on reachability or optimality to combat the error accumulation (Nair & Finn, 2020; Eysenbach et al., 2019; Nasiriany et al., 2019; Fang et al., 2022; Huang et al., 2024), at the cost of adding un-necessary complexity and trading off efficiency, but without fundamentally resolving the underlying off-task issues. Another key insight of ours is that we can learn a final goal predictor that grounds the ultimate task objective (i.e. lan-guage description) into latent image space (Section 4.1). Latent image space encapsulates much richer task progres-sion information than language space, enabling backward planned subgoal sequences grounded on the predicted final goal to ensure on-task consistency (Section 4.2). The sub-goal sequences can effectively capture task progression and provide flexibility for downstream policy learning to lever-age envisioned subgoals at varying distances. To facilitate 3Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+efficient policy training, we introduce a subgoal fusion tech-nique that non-trivially compresses subgoal information and adaptively determines how to best utilize subgoals across different distances (Section 4.3). 
+
+4.1. Grounding Task Objective as Latent Goals 
+
+Previous research suggests that visual instructions can com-plement language descriptions, significantly enhancing guid-ance performance in conditioned visuomotor policy learn-ing (Radford et al., 2021; Shah et al., 2023; Li et al., 2024; Zheng et al., 2024; Li et al., 2025). This synergy proves to be crucial in long-horizon, multi-stage tasks, where lan-guage descriptions often reduce to task identifiers due to their limited semantic information. In contrast, latent vi-sual representations provide richer information about task progression, with latent visual goals offering precise specifi-cations of the desired final scenario. However, while latent visual goals can be easily obtained through hindsight la-beling during training, their test-time specification presents challenges (Lynch & Sermanet, 2021): it inherently de-pends on the current scenario configurations—for example, in the task “place the brown cup in front of the white cup”, the precise goal state variably depends on the initialized relative spatial locations of the two cups. Crucially, this relationship is not fixed: if the position of the white cup changes at test time, the semantic meaning of “in front of” must be re-evaluated, requiring corresponding adjustments to the target visual goal. To address this, we learn a goal prediction model fg that estimates the latent visual goal zg
+
+from the current observation It and language instruction l.Given a dataset of video segments Dz = {τi}N , with latent visual state zt in τi = {(zt, a t)}Hi and language feature 
+
+ϕl encoded by some pre-trained language-grounded visual encoder (zt, ϕ l) = Φ( It, l ), we optimize: 
+
+max 
+
+> fg
+
+X 
+
+> τ∈D z
+
+X
+
+> 1≤t≤H
+
+Ep(zg ,ϕ l|τ ) log fg (zg |zt, ϕ l) (2) where p(zg , l |τ ) represents the conditional context distri-bution ( p(c|τ )) of latent goals and language instructions derived from trajectory τ . This approach enables dynamic goal specification while ensuring the planning process oper-ates within the semantically rich latent visual space. 
+
+4.2. Predicting Subgoals with a Backward Scheme 
+
+While the final visual goal specifies the condition of task completion, it provides limited guidance about task pro-gression—the sequence of states required to achieve the ultimate objectives. To better capture long-horizon task progression, we predict intermediate subgoals. However, subgoal selection presents a fundamental dilemma (Park et al., 2024; Levy et al., 2019): balancing the sufficiency of subgoals for task progression against the accuracy of their prediction. Sparse subgoal predictions fail to adequately Goal-Fusion Attention 
+
+> ResNet
+> FiLM
+> "Shift Cups"
+> Image Observations
+> Task Description
+> Concat
+> Goal
+> Predictor
+> Context Conditioned Policy
+> Latent Backward Planning Latent Space Projection
+> Subgoal Predictior
+
+Figure 2. Overall framework architecture of LBP. 
+
+reflect task progression, while long subgoal sequences are prone to compounding prediction errors that lead to off-task behaviors deviating from the intended task goals. To address this, we begin by predicting the first subgoal w1 from the current state zt, final goal zg , and language instruction ϕl in latent space, with the optimization objective: 
+
+max  
+
+> f1
+> w
+
+X 
+
+> τ∈D z
+
+X
+
+> 1≤t≤H
+
+Ep(w1,z g ,ϕ l|τ ) log f 1
+
+> w
+
+(w1|zt, z g , ϕ l) (3) To ensure sufficient long-term information, we set the first subgoal relatively close to the final goal, which maintains better alignment with task objectives yet provides less im-mediate guidance for policy learning. To bridge this gap, we recursively predict intermediate subgoals closer to the current state. Specifically, each subsequent subgoal wi is predicted from the previous subgoal wi−1, current state zt,and instruction ϕl, forming a backward chain from coarse to fine temporal resolutions. The optimization objective for predicting subgoal wi is given by: 
+
+max  
+
+> fiw
+
+X 
+
+> τ∈D z
+
+X
+
+> 1≤t≤H
+
+Ep(wi,w i−1,ϕ l|τ ) log f iw(wi|zt, w i−1, ϕ l)
+
+(4) For convenience, let Γ( wi) denote the corresponding time step of subgoal wi in the trajectory. We can thus define a recursive planning coefficient λ = Γ( wi)−t 
+
+> Γ( wi−1)−t
+
+, ( w0 = zg ), to govern the recursive subgoal generation for i = 1 , 2, · · · ,which represents the ratio of the temporal distance between the predicted subgoal and the current state zt relative to the distance between the previous-level subgoal wi−1 and the current state zt.By inspecting Eq. (3) and (4), we can observe that it is possible to use a single unified model fw for all different levels of subgoal predictors f iw, as they all share the same structure. This unified model is expected to predict the intermediate subgoal zλ := z⌈(1 −λ)t+λk ⌉ between any start latent state zt and final latent state zk, where 1 ≤ t < k .4Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+The objective is given by:                         
+
+> max
+> fw
+> X
+> τ∈D z
+> X
+> 1≤t<H
+> Ep(zH,ϕ l|τ),p({zλi}ni=1 |τ)
+> "nX
+> i=1
+> log fw(zλi|zt, z λi−1, ϕ l)
+> #
+> +X
+> τ∈D z
+> X
+> 1≤t<H
+> Ep(zH,ϕ l|τ),p({zλi}ni=1 |τ)
+> "nX
+> i=1
+> log fw(zλi|zt,ˆzλi−1, ϕ l)
+> #
+> (5)
+
+where zλi := z⌈(1 −λi)t+λiH⌉ ⊂ τ, i ∈ [1 , · · · , n ] denotes the ground truth subgoal and ˆzλi denotes its predicted coun-terpart by fw. The first term in Eq. (5) fits subgoal prediction with the ground truths zλi in τ , capturing the actual task progression. The second term optimizes the subgoal predic-tor fw given its own previous predictions ˆzλi−1 as inputs, ensuring the consistency of the recursive prediction of fw at test-time. This recursive mechanism will suffer much less compounding error as the λ-recursion effectively reduces the planning steps, and the training of fw incorporates su-pervision of groundtruths in every recursion level. As illustrated in Figure 1, this backward planning scheme generates asymmetric coarse-to-fine grained latent subgoal sequences spanning the entire task horizon, offering three key advantages over conventional methods: (1) compre-hensive task progression information in subgoal sequences, providing rich and flexible guidance for policy learning; (2) improved prediction consistency with task objectives in a backward manner, reducing error accumulation com-pared to forward planning; and (3) computational efficiency by adopting recursion, avoiding the need for fine-grained frame-by-frame prediction. 
+
+4.3. Learning Context Conditioned Policy 
+
+The generated subgoal sequence provides rich contextual information for policy learning. Given the complete context set c = {wn, . . . , w 1, z g , ϕ l} ∈ R(n+2) ×Nz derived from dataset Dz , we optimize the conditioned policy through: 
+
+max 
+
+> π
+
+X 
+
+> τ∈D z
+
+X
+
+> 1≤t≤H
+
+Ec∼p(c|τ ) log πθ (at|zt, c ) (6) However, even in latent space, the aggregated context di-mensions can burden policy learning. Moreover, the pol-icy should adaptively leverage (sub)goal information rather than treating all predictions equally, as different task exe-cution stages require varied focus between short-term and long-term guidance. For instance, tasks requiring large movements intuitively benefit more from distant subgoals to prevent actions that hinder future progress, while precision-oriented tasks require stronger emphasis on nearby subgoals. To address these challenges, we introduce a goal-fusion module with a Perceiver-style cross-attention (Jaegle et al., 2021) that performs both correlation discovery and dimen-sionality reduction. Specifically, the contexts c are queried by a trainable latent vector of size Dz : z ∈ R1×Nz , which outputs the context embeddings zc. This design compresses all contextual tokens c into a lower-dimensional token zc
+
+while enabling the adaptive extraction of the most relevant context information. This enables dynamic balancing of short- and long-term guidance throughout task execution, maximally leveraging the flexibility of predictions at vary-ing distances and granularities. 
+
+4.4. Practical Algorithm 
+
+In the training phase, we learn a final goal predictor fg with Eq. (2), a unified subgoal predictor fw with Eq. (5), and a conditioned policy π with Eq. (6). At each step t at test time, LBP processes the current observation It and language instruction l into latent state zt and language feature ϕl, and then generates latent (sub)goal plans {wn, . . . , w 2, w 1, z g }
+
+by fg and fw. Then we use the contexts c including pre-dicted goal plans and language features ϕl to condition the policy π(at|It, c ) for action extraction. The detailed architecture of our model is present in Fig-ure 2. We implement the goal predictor fg and the subgoal predictor fw using two-layer MLPs and employ a cross-attention block for the goal-fusion module. Compared to recent planning-based methods that rely on complex pixel-level generative models, LBP demonstrates significant effi-ciency. For the low-level policy, we use a shared ResNet-34 (He et al., 2016) as the backbone to extract visual features from different camera views, where the language embed-dings are injected via FiLM conditioning layers (Perez et al., 2018a). The current visual features encoded by ResNet are then integrated with the contexts to generate actions. The policy is optimized with diffusion loss to model complex distributions (Chi et al., 2023), with the denoising step fixed at 25. More details are provided in Appendix A. 
+
+# 5. Experiments 
+
+5.1. Experimental Setup 
+
+Using previously validated evaluation recipes for embod-ied AI (Black et al., 2024; Kim et al., 2024; Tian et al., 2025; Zheng et al., 2025), we assess the performance of the proposed LBP. Specifically, we assess LBP on both the LIBERO-LONG simulation benchmark and a real-robot environment with long-horizon, multi-stage tasks. For all methods involving subgoal prediction, the planning process is solely applied to the third-person view in the LIBERO-LONG experiments and the top view in the real-world ex-periments. Unless otherwise stated, we adopt a three-step planning scheme (predicting a final goal and two interme-diate subgoals) of LBP and set the planning coefficient 
+
+λ = 0 .5. Ablation studies on key framework designs and different choices of λ are provided in Section 5.3. 
+
+LIBERO-LONG experiments. LIBERO-LONG (Liu et al., 2024) consists of 10 distinct long-horizon robotic 5Efficient Robotic Policy Learning via Latent Space Backward Planning     
+
+> Table 1. LIBERO-LONG results. For each task, we present the average performance of top-3 checkpoints. The metric “Avg. Success” measures the average success rate across 10 tasks. LBP outperforms baselines with higher Avg. Success and better results on most tasks. The best results are bolded . LIBERO-LONG tasks include: (1) put soup and sauce in basket; (2) put box and butter in basket; (3) turn on stove and put pot; (4) put bowl in drawer and close it; (5) put mugs on left and right plates; (6) pick book and place it in back; (7) put mug on plate and put pudding to right; (8) put soup and box in basket; (9) put both pots on stove; (10) put mug in microwave and close it.
+> Method Task ID
+
+1 2 3 4 5 6 7 8 9 10 Avg. Suc ↑
+
+MTACT 0.00 50.0 75.0 85.0 20.0 75.0 0.00 30.0 10.0 65.0 41.0 MVP 78.3 90.0 80.0 88.3 46.6 63.3 45.0 83.3 60.0 46.6 68.2 MPI 86.6 86.6 96.6 95.0 83.3 83.3 56.6 66.6 40.0 78.3 77.3 OpenVLA 45.0 95.0 65.0 45.0 40.0 80.0 60.0 35.0 20.0 55.0 54.0 Seer 88.3 90.0 91.6 81.6 85.0 65.0 86.6 80.0 51.6 66.6 78.6 SuSIE † 83.3 63.3 96.6 100.0 83.3 83.3 83.3 39.9 53.3 76.6 76.3 LBP SigLIP 86.6 100.0 93.3 100.0 63.3 73.3 86.6 80.0 73.3 93.3 85.0 LBP DecisionNCE 90.0 100.0 100.0 100.0 76.6 86.6 90.0 86.6 60.0 96.6 88.6  
+
+> †Since the original SuSIE only supports single-view input, we incorporate a wrist view to reproduce it for fair comparison.
+
+manipulation tasks that require diverse skills such as pick-ing up objects, turning on a stove, and closing a microwave. These tasks involve multi-stage decision-making and span a variety of scenarios, making them particularly challenging. All models are trained on 50 unique expert demonstrations for each task. More details of LIBERO-LONG benchmark are provided in Appendix B. 
+
+Real-world experiments. To investigate the effectiveness of LBP in real world, we specifically design four long-horizon tasks: Stack 3 cups , Move cups , Stack 4 cups and 
+
+Shift cups . Each task is decomposed into multiple sequential stages, as illustrated in Figure 3, requiring the robot to per-form fundamental pick-and-place operations. These tasks establish a critical dependency where progress in subsequent stages is contingent on successful execution of preceding ones. We assess task performance using a stage-based scor-ing system with discrete values {0, 25, 50, 75, 100 } for each stage, where each score corresponds to the completion progress of the current stage. A stage is assigned 100 only upon successful completion of the entire stage. All exper-imental evaluations are conducted with a 6 DoF AIRBOT robotic arm, together with three different views provided by Logitech C922PRO cameras. The overall environmen-tal setups and task illustrations are shown in Figure 3. All models are trained using 200 expert demonstrations for the task Move cups and Shift cups , and a total of 200 expert demonstrations for Stack 3 cups and Stack 4 cups . More details of experimental setups can refer to Appendix C. 
+
+Baselines. For the LIBERO-LONG benchmark, we im-plement the multi-task policy MTACT (Zhao et al., 2023), the general image-based pre-trained policy MVP (Xiao et al., 2022), the interaction-oriented representation learn-ing method MPI (Zeng et al., 2024), large-scale pretrained vision-language-action policy OpenVLA (Kim et al., 2024), an image-editing based subgoal planner SuSIE (Black et al., 2024), and the end-to-end predictive inverse dynamics model Seer (Tian et al., 2025). For real-world experiments, we compare LBP with SuSIE, one of the most competitive methods against LBP in the LIBERO-LONG benchmark. Also, we deploy vanilla Language Conditioned Behavior Cloning (LCBC) and Goal-and-Language Conditioned Be-havior Cloning (GLCBC) for comprehensive comparison. 
+
+Metrics for long-horizon multi-stage tasks. Following Seer (Tian et al., 2025), we evaluate model performance on the LIBERO-LONG benchmark by averaging the results of the top three checkpoints, each evaluated over 10 rollouts per task. For real-world experiments, we evaluate the last three checkpoints, with each checkpoint being tested across 10 rollouts per task to provide an average score at each stage, offering a thorough evaluation of long-horizon capabilities. Since each task consists of multiple stages, we design a fine-grained scoring system to evaluate performance at the stage level. Specifically, a score of 25 is awarded when the robot shows clear intent to approach the correct target object. If the target is successfully picked up, the score increases to 
+
+50 . Carrying the object toward the correct destination yields 
+
+75 points, and placing it successfully at the desired location results in a full score of 100 . For multi-stage tasks, we enforce a strict rule: the robot can proceed to the next stage only if the current stage achieves a full 100 points. This rule makes our real-robot experiments a rigorous benchmark for evaluating long-horizon capability. 
+
+5.2. Main Results Simulation Experiment Results. Table 1 presents the quantitative comparison on the LIBERO-LONG benchmark. 6Efficient Robotic Policy Learning via Latent Space Backward Planning (2 ) Stack        
+
+> cups
+> Stage I Stage II
+> Stage I Stage II Stage III
+> (1) Move
+> cups
+> (3) Shift
+> cups
+> Top view
+> Wrist view
+> Front view
+> 6 DoF
+> AIRBOT
+> Stage I Stage II Stage III Stage IV Stage V
+
+Figure 3. Left: the entire desktop environment setups of real-world experiments contains a 6 DoF AIRBOT arm and three Logitech C922PRO cameras with different views; Right: (1) Move cups: move both brown cups in front of the white ones; (2) Stack cups: stack all paper cups together; (3) Shift cups: shift all the paper cups to another plate, in a clockwise direction. Stage I Stage II Stage III Stage IV Stage V     
+
+> Shift cups
+> LCBC
+> SUSIE
+> GLCBC
+> LBP
+> Stage I Stage II
+> 0
+> 20
+> 40
+> 60
+> 80
+> 100
+> Avg. Score
+> Stack 3 cups
+> Stage I Stage II
+> Move cups
+> Stage I Stage II Stage III
+> Stack 4 cups
+
+Figure 4. Real-world main results . We evaluate LCBC, GLCBC, SuSIE and LBP in aforementioned 4 tasks. The metric ”Avg. Score” measures the average score for each stage. We observe that while LBP slightly outperforms other strong baselines at the early stages, LBP wins by a fairly large margin at the final stages of all tasks. This shows LBP significantly excels in handling long-horizon tasks. 
+
+LBP outperforms all baselines, achieving higher success rates across the majority of tasks. Specifically, LBP at-tains an average success rate of 85.0% in SigLIP (Zhai et al., 2023) latent space and 88.6% in DecisionNCE (Li et al., 2024) latent space, demonstrating its flexibility in leveraging different latent representations. Compared to SuSIE and Seer, which rely on heavy generative models for high-level planning, LBP demonstrates that lightweight MLPs can achieve comparable or even better performance in long-horizon tasks. This improvement stems from the backward planning paradigm adopted in LBP, which main-tains long-horizon consistency by recursively generating subgoals that preserve alignment with the final objective, ultimately enhancing both overall performance and compu-tational efficiency on long-horizon multi-stage tasks. 
+
+Real-world experiment results. In Figure 4, we present the quantitative comparison on the real-world AIRBOT tasks. LBP consistently achieves the best performance at each stage in long-horizon tasks. Notably, in the early stages, the performance gap between different methods is relatively small. However, as the task progresses, other methods strug-gle due to insufficient and inconsistent guidance, leading to failures in later stages, whereas LBP maintains strong per-formance throughout. The results also show that GLCBC sometimes initially outperforms LCBC by incorporating additional visual goal features but suffers a sharp decline in later stages. This drop is likely due to misalignment between the given final goals and current states, which mis-guides the policy in long-horizon tasks, highlighting the importance of dynamically predicting the final latent goal in LBP. Additionally, we observe that SuSIE often generates hallucinated and incorrect subgoal images that confuse the low-level policy. While this issue may be less pronounced in relatively deterministic simulation environments, it sig-nificantly impacts performance in real-world settings with inherently complex disturbances and stochasticity. In con-trast, LBP enables easy prediction and efficient planning in latent space with its backward philosophy. 
+
+Comparison to the forward paradigm. To evaluate the effectiveness of the backward planning paradigm, we com-pare it with the conventional forward planning, with both using the same hyperparameter configurations to ensure a fair comparison. Specifically, the forward planner predicts the subgoal 10 steps ahead at each iteration, autoregressively generating the entire subgoal sequence. We randomly sam-ple 3,000 data points representing the current state from 7Efficient Robotic Policy Learning via Latent Space Backward Planning   
+
+> Figure 5. Mean Squared Errors (MSE) between predicted subgoals and corresponding ground truths under forward and backward paradigm.
+> Table 2. Ablations on different hyperparameter choices of LBP on LIBERO-LONG.
+
+λ (Sub)Goals Avg. Suc ↑
+
+- - 77.3 - zg 83.3 0.5 zg , w 1 85.6 0.5 zg , w 1, w 2 88.6 
+
+0.5 zg , w 1, w 2, w 3 83.0 0.75 zg , w 1 84.6 0.75 zg , w 1, w 2 85.0 0.75 zg , w 1, w 2, w 3 84.0 our real-robot datasets and compute the mean squared error (MSE) between the predicted subgoals and their correspond-ing ground truths. The results are visualized in Figure 5, with normalized task progress shown on the x-axis. We observe that the compounding errors of forward plan-ning increase rapidly across all tasks. In particular, for the most challenging task, Shift Cups , the prediction error becomes unacceptably large when predicting distant sub-goals. This issue is further exacerbated in approaches that attempt to predict continuous future image frames, where compounding errors can be even more severe. In contrast, our backward planning method maintains consistently low error across the entire planning horizon. These results high-light the advantages of our approach, which enables both efficient and accurate subgoal prediction. 
+
+5.3. Ablation Studies 
+
+In this section, we conduct ablation studies to evaluate the impact of different design choices of LBP on long-horizon performance. All models adopt DecisionNCE latent space and are tested on LIBERO-LONG. 
+
+Ablation on key hyperparameters. We perform an ab-lation study on two key hyperparameters: planning steps and the recursive planning coefficient λ in Table 2. We test different numbers of planning steps, where more steps  
+
+> Table 3. Ablations on key design components of LBP on LIBERO-LONG.
+
+Variant Avg. Suc ↑
+
+Effectiveness of the planner w/o planner 77.3 ours 88.6 
+
+The strategy of goal-fusion average pooling 79.0 ours 88.6 
+
+correspond to predicting more subgoals. Additionally, we vary the planning coefficient λ, which controls the temporal sparsity of the subgoal sequence—larger values result in more densely packed subgoals, closer to the final goal. The main findings are: (1) Without grounding the task objective in the latent visual goal zg , the approach reduces to LCBC, achieving an average success rate of 77.3%. When zg is provided as additional context, the variant shows a signifi-cant improvement of 6.0%, demonstrating the effectiveness of leveraging the visual goal. (2) Adding subgoals w as additional contexts leads to an obvious performance im-provement since it provides downstream policy with more about the future, but it is unnecessary to predict a large number of subgoals to achieve optimal results. This reflects the efficiency of our approach—unlike many planning meth-ods that rely on generating numerous continuous waypoints, our method achieves high performance with fewer subgoals. This advantage likely arises from the backward planning philosophy of LBP, where subgoals are predicted recursively in reverse from the final goal, providing efficient yet relevant planning information closely aligned with task progression. (3) We test λ with 0.5 and 0.75, observing that LBP is robust and relatively insensitive to this hyperparameter choice. 
+
+Ablation on key architectural components. We ablate the impact of the LBP planner and goal-fusion strategy, with results presented in Table 3. Removing the planner and re-lying solely on the low-level policy reduces the model to LCBC, resulting in a 11.3% performance drop, underscor-ing the necessity of subgoals predicted by LBP. Besides, replacing our goal-fusion strategy with simple average pool-8Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+ing causes a 9.6% decline in performance, showing that naively compressing subgoals across different horizons un-dermines the low-level policy. This highlights the role of our goal-fusion strategy in adaptively leveraging subgoals at dif-ferent distances in a way that effectively enhances planning performance. 
+
+# 6. Conclusion and Future Direction 
+
+We present LBP, a novel and efficient robotic planning framework that features backward planning in the latent space to break the critical trilemma among planning effi-ciency, long-horizon temporal consistency, and prediction accuracy. By leveraging visual latent space for planning, LBP achieves computational efficiency while maintaining sufficient information to capture task progression. More-over, by adopting the recursive “coarse-to-fine” backward prediction paradigm, LBP fundamentally mitigates the com-pounding prediction errors inherent in traditional forward planning approaches, particularly addressing the challenges of off-task prediction in long-horizon scenarios. Exten-sive evaluations across diverse simulated and real-world environments, including complex long-horizon and multi-stage robotic tasks, consistently demonstrate LBP’s supe-rior performance and robustness. One promising research direction is the integration of advanced subgoal selection mechanisms, such as key-frame detection methods, to en-hance the identification of informative subgoals. Another is the incorporation of more sophisticated robotic encoders to construct better-structured latent spaces for more efficient and accurate planning. 
+
+# Acknowledgement 
+
+This work is supported by funding from Wuxi Research In-stitute of Applied Technologies, Tsinghua University under Grant 20242001120, Beijing Academy of Artificial Intelli-gence (BAAI). 
+
+# Impact Statement 
+
+This paper presents work whose goal is to advance the field of Machine Learning. There might be some potential soci-etal consequences of our work, none which we feel must be specifically highlighted here. 
+
+# References 
+
+Ajay, A., Du, Y., Gupta, A., Tenenbaum, J., Jaakkola, T., and Agrawal, P. Is conditional generative modeling all you need for decision-making? In International Conference on Learning Representations , 2023. 13 Ajay, A., Han, S., Du, Y., Li, S., Gupta, A., Jaakkola, T., Tenenbaum, J., Kaelbling, L., Srivastava, A., and Agrawal, P. Compositional foundation models for hier-archical planning. In Advances in Neural Information Processing Systems , 2024. 1, 2 Bharadhwaj, H., Dwibedi, D., Gupta, A., Tulsiani, S., Do-ersch, C., Xiao, T., Shah, D., Xia, F., Sadigh, D., and Kirmani, S. Gen2act: Human video generation in novel scenarios enables generalizable robot manipulation. arXiv preprint arXiv:2409.16283 , 2024. 2 Black, K., Nakamoto, M., Atreya, P., Walke, H. R., Finn, C., Kumar, A., and Levine, S. Zero-shot robotic manipula-tion with pre-trained image-editing diffusion models. In 
+
+International Conference on Learning Representations ,2024. 2, 5, 6, 12 Chane-Sane, E., Schmid, C., and Laptev, I. Goal-conditioned reinforcement learning with imagined sub-goals. In International Conference on Learning Repre-sentations , 2021. 2 Chi, C., Feng, S., Du, Y., Xu, Z., Cousineau, E., Burchfiel, B., and Song, S. Diffusion policy: Visuomotor policy learning via action diffusion. In Robotics: Science and Systems , 2023. 5, 12 Du, Y., Yang, S., Dai, B., Dai, H., Nachum, O., Tenenbaum, J., Schuurmans, D., and Abbeel, P. Learning universal policies via text-guided video generation. In Advances in Neural Information Processing Systems , 2023. 1, 2 Emmons, S., Eysenbach, B., Kostrikov, I., and Levine, S. Rvs: What is essential for offline RL via supervised learn-ing? In International Conference on Learning Represen-tations , 2022. 2 Eysenbach, B., Salakhutdinov, R. R., and Levine, S. Search on the replay buffer: Bridging planning and reinforce-ment learning. In Advances in Neural Information Pro-cessing Systems , 2019. 1, 3 Fang, K., Yin, P., Nair, A., and Levine, S. Planning to practice: Efficient online fine-tuning by composing goals in latent space. In IEEE/RSJ International Conference on Intelligent Robots and Systems , 2022. 1, 3 Ghosh, D., Gupta, A., Reddy, A., Fu, J., Devin, C. M., Eysenbach, B., and Levine, S. Learning to reach goals via iterated supervised learning. In International Conference on Machine Learning , 2021. 2 Hansen-Estruch, P., Kostrikov, I., Janner, M., Kuba, J. G., and Levine, S. Idql: Implicit q-learning as an actor-critic method with diffusion policies. arXiv preprint arXiv:2304.10573 , 2023. 12 He, K., Zhang, X., Ren, S., and Sun, J. Deep residual learning for image recognition. In IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2016. 5, 12 9Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+Hu, Y., Guo, Y., Wang, P., Chen, X., Wang, Y.-J., Zhang, J., Sreenath, K., Lu, C., and Chen, J. Video prediction policy: A generalist robot policy with predictive visual representations. arXiv preprint arXiv:2412.14803 , 2024. 1, 2 Huang, Z., Lin, Y., Yang, F., and Berenson, D. Subgoal dif-fuser: Coarse-to-fine subgoal generation to guide model predictive control for robot manipulation. In IEEE Inter-national Conference on Robotics and Automation , 2024. 1, 3 Jaegle, A., Gimeno, F., Brock, A., Vinyals, O., Zisserman, A., and Carreira, J. Perceiver: General perception with it-erative attention. In International Conference on Machine Learning , 2021. 5 Janner, M., Du, Y., Tenenbaum, J., and Levine, S. Plan-ning with diffusion for flexible behavior synthesis. In 
+
+International Conference on Machine Learning , 2022. 13 Kang, X. and Kuo, Y.-L. Incorporating task progress knowledge for subgoal generation in robotic manipulation through image edits. In IEEE/CVF Winter Conference on Applications of Computer Vision , 2025. 1, 3 Kim, M. J., Pertsch, K., Karamcheti, S., Xiao, T., Balakr-ishna, A., Nair, S., Rafailov, R., Foster, E. P., Sanketi, P. R., Vuong, Q., Kollar, T., Burchfiel, B., Tedrake, R., Sadigh, D., Levine, S., Liang, P., and Finn, C. Open-VLA: An open-source vision-language-action model. In 
+
+Conference on Robot Learning , 2024. 5, 6, 12 Levy, A., Platt, R., and Saenko, K. Hierarchical reinforce-ment learning with hindsight. In International Conference on Learning Representations , 2019. 3, 4 Li, J., Zheng, J., Zheng, Y., Mao, L., Hu, X., Cheng, S., Niu, H., Liu, J., Liu, Y., Liu, J., et al. DecisionNCE: Embodied multimodal representations via implicit preference learn-ing. In International Conference on Machine Learning ,2024. 2, 4, 7, 12 Li, J., Wang, Z., Zheng, J., Zhou, X., Wang, G., Song, G., Liu, Y., Liu, J., Zhang, Y.-Q., Yu, J., and Zhan, X. Robo-mutual: Robotic multimodal task specification via unimodal learning. In IEEE International Conference on Robotics and Automation , 2025. 4 Liu, B., Zhu, Y., Gao, C., Feng, Y., Liu, Q., Zhu, Y., and Stone, P. Libero: Benchmarking knowledge transfer for lifelong robot learning. In Advances in Neural Informa-tion Processing Systems , 2024. 5 Lynch, C. and Sermanet, P. Language conditioned imitation learning over unstructured data. In Robotics: Science and Systems , 2021. 4 Nachum, O., Tang, H., Lu, X., Gu, S., Lee, H., and Levine, S. Why does hierarchy (sometimes) work so well in re-inforcement learning? arXiv preprint arXiv:1909.10618 ,2019. 3 Nair, S. and Finn, C. Hierarchical foresight: Self-supervised learning of long-horizon tasks via visual subgoal genera-tion. In International Conference on Learning Represen-tations , 2020. 1, 2, 3 Nair, S., Savarese, S., and Finn, C. Goal-aware predic-tion: Learning to model what matters. In International Conference on Machine Learning , 2020. 2 Nasiriany, S., Pong, V., Lin, S., and Levine, S. Planning with goal-conditioned policies. In Advances in Neural Information Processing Systems , 2019. 1, 3 Park, S., Ghosh, D., Eysenbach, B., and Levine, S. Hiql: Offline goal-conditioned rl with latent states as actions. In Advances in Neural Information Processing Systems ,2024. 2, 4 Perez, E., Strub, F., De Vries, H., Dumoulin, V., and Courville, A. Film: Visual reasoning with a general conditioning layer. In AAAI Conference on Artificial Intelligence , 2018a. 5 Perez, E., Strub, F., De Vries, H., Dumoulin, V., and Courville, A. Film: Visual reasoning with a general conditioning layer. In AAAI Conference on Artificial Intelligence , 2018b. 12 Pertsch, K., Rybkin, O., Ebert, F., Zhou, S., Jayaraman, D., Finn, C., and Levine, S. Long-horizon visual plan-ning with goal-conditioned hierarchical predictors. In Ad-vances in Neural Information Processing Systems , 2020. 2Radford, A., Kim, J. W., Hallacy, C., Ramesh, A., Goh, G., Agarwal, S., Sastry, G., Askell, A., Mishkin, P., Clark, J., et al. Learning transferable visual models from natural language supervision. In International Conference on Learning Representations , 2021. 4, 12 Shah, R., Mart ´ın-Mart ´ın, R., and Zhu, Y. Mutex: Learning unified policies from multimodal task specifications. In 
+
+Conference on Robot Learning , 2023. 4 Tian, K., Jiang, Y., Yuan, Z., PENG, B., and Wang, L. Visual autoregressive modeling: Scalable image generation via next-scale prediction. In Advances in Neural Information Processing Systems , 2024. 3 Tian, Y., Yang, S., Zeng, J., Wang, P., Lin, D., Dong, H., and Pang, J. Predictive inverse dynamics models are scal-able learners for robotic manipulation. In International Conference on Learning Representations , 2025. 2, 5, 6, 12 10 Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+Veerapaneni, R., Co-Reyes, J. D., Chang, M., Janner, M., Finn, C., Wu, J., Tenenbaum, J., and Levine, S. Entity abstraction in visual model-based reinforcement learning. In Conference on Robot Learning , 2020. 3 Wang, C., Fan, L., Sun, J., Zhang, R., Fei-Fei, L., Xu, D., Zhu, Y., and Anandkumar, A. Mimicplay: Long-horizon imitation learning by watching human play. In 
+
+Conference on Robot Learning , 2023. 2 Wang, G., Niu, H., Li, J., Jiang, L., HU, J., and Zhan, X. Are expressive models truly necessary for offline RL? In 
+
+AAAI Conference on Artificial Intelligence , 2025. 2, 3 Wei, J., Wang, X., Schuurmans, D., Bosma, M., Xia, F., Chi, E., Le, Q. V., Zhou, D., et al. Chain-of-thought prompting elicits reasoning in large language models. In Advances in Neural Information Processing Systems , 2022. 3 Wen, C., Lin, X., So, J., Chen, K., Dou, Q., Gao, Y., and Abbeel, P. Any-point trajectory modeling for policy learn-ing. In Robotics: Science and Systems , 2024. 2 Wu, H., Jing, Y., Cheang, C., Chen, G., Xu, J., Li, X., Liu, M., Li, H., and Kong, T. Unleashing large-scale video generative pre-training for visual robot manipulation. In 
+
+International Conference on Learning Representations ,2024. 2 Xiao, T., Radosavovic, I., Darrell, T., and Malik, J. Masked visual pre-training for motor control. arXiv preprint arXiv:2203.06173 , 2022. 6 Xu, H., Li, J., Li, J., and Zhan, X. A policy-guided imitation approach for offline reinforcement learning. In Advances in Neural Information Processing Systems , 2022. 2 Zeng, J., Bu, Q., Wang, B., Xia, W., Chen, L., Dong, H., Song, H., Wang, D., Hu, D., Luo, P., et al. Learning ma-nipulation by predicting interaction. In Robotics: Science and Systems , 2024. 6 Zhai, X., Mustafa, B., Kolesnikov, A., and Beyer, L. Sig-moid loss for language image pre-training. In IEEE/CVF Conference on Computer Vision and Pattern Recognition ,2023. 7, 12 Zhao, T. Z., Kumar, V., Levine, S., and Finn, C. Learn-ing fine-grained bimanual manipulation with low-cost hardware. arXiv preprint arXiv:2304.13705 , 2023. 6, 12 Zheng, J., Li, J., Cheng, S., Zheng, Y., Li, J., Liu, J., Liu, Y., Liu, J., and Zhan, X. Instruction-guided visual masking. In Advances in Neural Information Processing Systems ,2024. 4 Zheng, J., Li, J., Liu, D., Zheng, Y., Wang, Z., Ou, Z., Liu, Y., Liu, J., Zhang, Y.-Q., and Zhan, X. Universal actions for enhanced embodied foundation models. In IEEE/CVF Conference on Computer Vision and Pattern Recognition ,2025. 5 11 Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+# A. Implementation Details 
+
+LBP (Ours). For high-level planner, we implement the goal predictor fg and the subgoal predictor fw using two-layer MLPs and employ two cross-attention blocks to realize the goal-fusion attention model. We employ DecisionNCE (Li et al., 2024) and SigLIP (Zhai et al., 2023) as frozen encoders to project language instructions and images to latent space. For the low-level policy, we use a shared ResNet-34 (He et al., 2016) as the backbone to extract visual features from all camera view images, where the language embeddings are injected via FiLM conditioning layers (Perez et al., 2018b). The visual features, goal-fused feature, and current proprioception are then concatenated and fed into a residual MLP (Hansen-Estruch et al., 2023) to generate actions. The policy is optimized with diffusion loss to model complex distributions (Chi et al., 2023), with the denoising step fixed at 25. We employ action chunking with a fixed length of 6 and utilize an exponential weighting scheme to ensemble overlapping action sequences, following (Zhao et al., 2023). For training the high-level planner, we use a batch size of 64 and train for 100k steps with the AdamW optimizer. For the low-level policy on LIBERO-LONG, we set the batch size to 64 and train for 200k steps. In the case of the low-level policy for real-world robot experiments, we increase the batch size to 128 and train for 400k steps. 
+
+SuSIE (Black et al., 2024). The high-level image-editing diffusion model is trained on video data using four A6000 GPUs. We utilize the official codebase with minimal modifications, altering only the datasets. For simulation experiments, we fine-tune the released SuSIE checkpoint on the LIBERO dataset. In the real-robot experiments, we fine-tune the checkpoint exclusively with collected data on Airbot. Regarding the low-level policy, we adopt the same model architecture with the policy model of LBP, while adopting a channel-wise concatenation of subgoal images and current images as inputs. Additionally, language instructions are removed to maintain consistency with the downstream training in SuSIE. 
+
+LCBC. We implement it by directly removing our high-level planner from the architecture of LBP. The language is projected to the latent space by CLIP (Radford et al., 2021), and images are projected by a ResNet-34 (He et al., 2016), then the semantic features are captured by a FiLM (Perez et al., 2018b) module. The low-level policy takes in these semantics, together with current proprioception, and then outputs a predicted diffusion noise. 
+
+GLCBC. The only difference between GLCBC and LCBC is the part before entering the FiLM module: we choose a predefined image as the final goal and then project it to a latent space with DecisionNCE image encoder (Li et al., 2024). We concatenate the language embeddings with the final goal image embeddings, then incorporate them as inputs into the FiLM module. 
+
+Others. For LIBERO-LONG benchmark, since our experimental settings and evaluation metrics are the same with Seer, we obtain the scores of MTACT, MVP, MPI, OpenVLA and Seer from the original paper (Tian et al., 2025). 
+
+# B. LIBERO-LONG Benchmark Details 
+
+We follow (Kim et al., 2024) to re-render the images at a resolution of 256×256. The detailed language instructions and average demonstration lengths for each task of LIBERO-LONG is shown in Table 4. 
+
+# C. Real-Robot Experiment Details 
+
+We collect 200 expert demonstrations each for tasks Move cups , Stack 3 cups , Stack 4 cups and Shift cups . To enhance the robustness of model trained on this dataset, we manually add some augmentation techniques (Table 5), including Distractor augmentation , Target augmentation , Background augmentation and View augmentation . Examples from the side view can be seen at Table 6. View augmentation always exsits because the side view camera is not a fixed-position view. Distractor augmentation means placing various unrelated distractor objects on the table. Target augmentation refers to replacing the target objects with different ones of this type, i.e., replacing paper cups with cups of different materials. Background augmentation is placing tablecloths with various colors above the clean white table. 
+
+# D. Additional Results 
+
+Numerical results. Except for the visualized results of real-robot experiments in Figure 4, we also present the numerical results of each stage for each task in Table 7-10. 12 Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+Table 4. Language instructions and average lengths of LIBERO-LONG.                   
+
+> Task ID Task name Language instruction Average demonstration length (frames) 1put soup and sauce in basket put both the alphabet soup and the tomato sauce in the basket 294 2put box and butter in basket put both the cream cheese box and the butter in the basket 260 3turn on stove and put pot turn on the stove and put the moka pot on it 266 4put bowl in drawer and close it put the black bowl in the bottom drawer of the cabinet and close it 249 5put mugs on left and right plates put the white mug on the left plate and put the yellow and white mug on the right plate 258 6pick book and place it in back pick up the book and place it in the back compartment of the caddy 189 7put mug on plate and put pudding to right put the white mug on the plate and put the chocolate pudding to the right of the plate 255 8put soup and box in basket put both the alphabet soup and the cream cheese box in the basket 270 9put both pots on stove put both moka pots on the stove 416 10 put mug in microwave and close it put the yellow and white mug in the microwave and close it 305
+
+Table 5. Dataset settings of real robot experiments.          
+
+> Task name Language instruction w/ distractor augmentation? w/ view augmentation? w/ target augmentation? w/ background augmentation? Move cups first put the right brown cup in front of the right white cup then put the left brown cup in front of the left white cup
+> ✓✓
+> Stack 3/4 cups stack the paper cups ✓✓
+> Shift cups move each cup to a new position in a clockwise direction ✓✓✓✓
+
+Generalization experiment. We test LBP on the longest real-world task ( Shift Cups ) with different backgrounds and distractor objects, where we find that LBP maintains robust performance in these complex scenarios, still outperforming the strongest baseline LCBC in base setting. The numerical results are present in Table 11. 
+
+Comparison to the parallel planning paradigm. To evaluate the effectiveness of the backward planning paradigm, we further compare it with the parallel planning paradigm (Janner et al., 2022; Ajay et al., 2023), with both using the same hyperparameter configurations with LBP to ensure a fair comparison. Specifically, the parallel planner predicts all subgoals simultaneously in a single batch at each execution step. We randomly sample 3,000 data points representing the current state from our real-robot datasets and compute the mean squared error (MSE) between the predicted subgoals and their corresponding ground truths. The results are visualized in Figure 6, with normalized task progress shown on the x-axis. We observe that although parallel planning avoids error accumulation by predicting all subgoals simultaneously, it suffers from consistently inaccurate predictions across the entire planning horizon. This limitation can be attributed to the difficulty of the training objective, which requires simultaneous supervision of all subgoals. Such an approach demands greater model capacity and incurs significantly higher computational costs. In contrast, our backward planning method maintains consistently low prediction error across the entire planning horizon. These results highlight the advantages of our approach, which enables both efficient and accurate subgoal prediction. 13 Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+Table 6. Demonstrations of augmentation techniques.  
+
+> Augmentation metrics Examples Distractor augmentation
+> Target augmentation
+> Background augmentation
+
+Table 7. Numerical results of task: Stack 3 cups .
+
+Method Stage I Stage II Avg. Score ↑
+
+LCBC 94.1 63.3 78.7 GLCBC 95.0 74.1 84.6 
+
+SuSIE 83.3 37.5 60.4 LBP 94.1 75.0 84.6 
+
+Table 8. Numerical results of task: Move cups .
+
+Method Stage I Stage II Avg. Score ↑
+
+LCBC 84.1 36.6 60.4 GLCBC 85.8 40.0 62.9 SuSIE 71.6 20.8 46.2 LBP 90.0 65.8 77.9 
+
+Table 9. Numerical results of task: Stack 4 cups .
+
+Method Stage I Stage II Stage III Avg. Score ↑
+
+LCBC 90.8 62.5 11.6 55.0 GLCBC 82.5 48.3 5.8 45.5 SuSIE 75.0 37.5 15.0 42.5 LBP 96.6 77.5 43.3 72.5 
+
+14 Efficient Robotic Policy Learning via Latent Space Backward Planning 
+
+Figure 6. Mean Squared Errors (MSE) between predicted subgoals and corresponding ground truths in parallel, forward and backward planning. 
+
+Table 10. Numerical results of task: Shift cups .
+
+Method Stage I Stage II Stage III Stage IV Stage V Avg. Score ↑
+
+LCBC 85.0 55.0 48.3 20.8 0.0 41.8 GLCBC 89.1 75.8 15.8 0.0 0.0 36.1 SuSIE 78.3 10.0 0.0 0.0 0.0 17.7 LBP 97.5 87.5 74.1 50.0 26.6 67.1 
+
+Table 11. Numerical results of generalization experiment on Shift cups .
+
+Method Stage I Stage II Stage III Stage IV Stage V Avg. Score ↑
+
+LCBC (Base setting) 85.0 55.0 48.3 20.8 0.0 41.8 LBP (Distracting objects) 87.5 75.8 48.3 35.0 9.0 51.1 LBP (Different backgrounds) 91.6 84.1 55.8 37.5 13.3 56.4 LBP (Base setting) 97.5 87.5 74.1 50.0 26.6 67.1 
+
+15

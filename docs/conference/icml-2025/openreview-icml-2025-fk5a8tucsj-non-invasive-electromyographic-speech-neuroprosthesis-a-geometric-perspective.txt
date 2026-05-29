@@ -1,0 +1,808 @@
+Title: Non-invasive electromyographic speech neuroprosthesis: a geometric perspective
+
+URL Source: https://openreview.net/pdf?id=fk5a8tUCSJ
+
+Number of Pages: 16
+
+Markdown Content:
+000 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020 021 022 023 024 025 026 027 028 029 030 031 032 033 034 035 036 037 038 039 040 041 042 043 044 045 046 047 048 049 050 051 052 053 054 
+
+# Non-invasive electromyographic speech neuroprosthesis: a geometric perspective 
+
+Anonymous Authors 1
+
+## Abstract 
+
+In this article, we present a high-bandwidth ego-centric neuromuscular speech interface for trans-lating silently voiced speech articulations into text and audio. Specifically, we collect electromyo-gram (EMG) signals from multiple articulatory sites on the face and neck as individuals articu-late speech in an alaryngeal manner to perform EMG-to-text or EMG-to-audio translation. Such an interface is useful for restoring audible speech in individuals who have lost the ability to speak in-telligibly due to laryngectomy, neuromuscular dis-ease, stroke, or trauma-induced damage (e.g., ra-diotherapy toxicity) to speech articulators. Previ-ous works have focused on training text or speech synthesis models using EMG collected during 
+
+audible speech articulations or by transferring audio targets from EMG collected during audi-ble articulation to EMG collected during silent 
+
+articulation. However, such paradigms are not suited for individuals who have already lost the ability to audibly articulate speech. We are the first to present an alignment-free EMG-to-text and EMG-to-audio conversion using only EMG collected during silently articulated speech in an open-sourced manner. On a limited vocabulary corpora, our approach achieves almost 2.4× im-provement in word error rate with a model that is 
+
+25 × smaller by leveraging the inherent geometry of EMG. 
+
+## 1. Introduction 
+
+Electromyogram (EMG) signals gathered from the orofa-cial neuromuscular system during the silent articulation of speech in an alaryngeal manner can be synthesized into per-sonalized audible speech, potentially enabling individuals    
+
+> 1Anonymous Institution, Anonymous City, Anonymous Region, Anonymous Country. Correspondence to: Anonymous Author
+> <anon.email@domain.com >.
+> Proceedings of the 42 nd International Conference on Machine Learning , Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s).
+
+without vocal function to communicate naturally. Further-more, such systems could seamlessly interface with virtual environments where audible communication might disturb others (e.g., multiplayer games) or facilitate telephonic con-versations in noisy environments. A key enabler of such ad-vancements is the rich information encoded in EMG signals recorded from multiple spatially separated locations, which capture muscle activation patterns across different muscles. This richness allows for the decoding of subtle and intricate details, such as nuanced speech articulations, likely with higher bandwidth and lower latency compared to exocentric or allocentric modalities, such as video-based lip-to-speech synthesis. By leveraging this information, EMG-based sys-tems offer a promising foundation for natural and efficient communication across diverse applications. In this article, we present EMG-to-language translation mod-els with a focus on data geometry . We show that EMG-to-language translation can be cast as a graph-connectivity learning problem and provide a single-layer recurrent ar-chitecture with connectionist temporal classification (CTC) loss (Graves et al., 2006) on the manifold of symmetric positive definite (SPD) matrices. Our alignment free trans-lation method is similar to paradigms proposed for invasive speech brain-computer interfaces described by Willett et al. and Metzger et al. While invasive methods are viable for individuals with anarthria or amyotrophic lateral sclerosis, our EMG based non-invasive speech prosthesis is appropri-ate for individuals who have undergone laryngectomy or experience dysarthria or dysphonia. On a limited English dataset with a vocabulary of 67 words, we demonstrate that our model achieves a decoding accuracy of 88% on word transcriptions. On a larger, general English language corpus, we achieve a phoneme error rate (PER) of 56%, as measured using Levenshtein distance (between the original and constructed phoneme sequences). Additionally, we show that the model can be trained with minimal data, achieving good performance even when tested on a dataset nearly 5 times larger than the training set, where sentences are spelled out using NATO phonetic codes. This capability is crucial, as collecting large-scale datasets for such systems is often challenging. These results highlight the potential for the practical deployment of such interfaces at scale. 1055 056 057 058 059 060 061 062 063 064 065 066 067 068 069 070 071 072 073 074 075 076 077 078 079 080 081 082 083 084 085 086 087 088 089 090 091 092 093 094 095 096 097 098 099 100 101 102 103 104 105 106 107 108 109 
+
+> EMG based speech neuroprosthesis
+
+## 2. Prior work 
+
+The current benchmark in silent speech interfaces is estab-lished by Gaddy & Klein; Gaddy & Klein. Using elec-tromyogram (EMG) signals collected during silently artic-ulated speech ( ES ) and audibly articulated speech ( EA), along with corresponding audio signals ( A), they develop a recurrent neural transduction model to map time-aligned features of EA or ES with A. In their baseline model, joint representations between EA and A are learned during train-ing, and the model is tested on ES . To improve performance, a refined model aligns ES with EA and subsequently uses the aligned features to learn joint representations with A.The methods described above have significant shortcomings that limit their practicality for real-world deployment. They are, 1⃝ the unavailability of good quality EA and A in in-dividuals who have lost vocal and articulatory functions, 
+
+> 2
+
+⃝ the need for a 2x sized training corpus for learning x
+
+representations (both EA and ES ), and 3⃝ the requirement of aligned features, which are computationally expensive and time-consuming to obtain, making near real-time imple-mentation challenging. We overcome the above challenges by training a model with only ES and corresponding pho-netic transcription without any alignments, using CTC loss. Besides, unlike Gaddy & Klein; Gaddy & Klein, we demon-strate the efficacy of our models on multiple subjects. Another notable approach is presented by Gowda et al., who demonstrate that, unlike images and audio - which are func-tions sampled on Euclidean grids - EMG signals are defined by a set of orthogonal axes, with the manifold of SPD ma-trices as their natural embedding space. We build upon the methods described by Gowda et al. in our analysis and introduce the following key improvements: 1⃝ we train a re-current model for EMG-to-phoneme sequence-to-sequence generation, as opposed to the classification models proposed by Gowda et al., 2⃝ we operate in the sparse graph spectral domain, effectively circumventing bottlenecks associated with repeated eigenvalue computation in neural networks, which, due to their iterative nature, often have limited paral-lelization capabilities on GPUs, and 3⃝ demonstrate EMG-to-language conversion on continuously articulated speech as opposed to individual words or phonemes. A substantial body of prior work (Jou et al., Schultz & Wand, Kapur et al., Meltzner et al., Toth et al., Janke & Diener, and Diener et al.) has laid the groundwork for the development of silent speech interfaces. While these studies have been instrumental in shaping the field, they place less emphasis on understanding the data structure and the implementation of parameter and data-efficient approaches. In the following sections, 1⃝ we explain the inherent non-Euclidean data structure of EMG signals, 2⃝ quantify the signal distribution shift across individuals, and 3⃝ demon-strate that high fidelity phoneme-by-phoneme translation of EMG-to-language is possible using only ES without EA
+
+and A.
+
+## 3. Methods 
+
+EMG signals are collected by a set of sensors V and are functions of time t. A sequence of EMG signals ES corre-sponding to silently articulated speech, associated with au-dio A and phonemic content L, is represented as ES = fv (t)
+
+for all v ∈ V . Here, fv (t) denotes the EMG signal captured at a sensor node v as a function of time t. The audio signal 
+
+A encodes both phonemic (lexical) content and expressive aspects of speech, such as volume, pitch, prosody, and in-tonation, while L represents purely the phonemic content -a sequence of phonemes. For instance, the phonemic con-tent L of the word <FRIDAY > is denoted by the phoneme sequence <F-R-AY -D-IY >.To model the mapping from ES to L, we employ a sequence-to-sequence model trained using CTC loss. This approach allows us to train the model with unaligned pairs of ES and 
+
+L, eliminating the need for precise alignment between the input signals and their corresponding phoneme sequences. During testing, a sample of ES not in the training set outputs probabilities over all possible phonemes (40 of them in our case) at every time step, and we construct L using beam search. L is then converted to personalized audio A using few-shot learning (Choi et al., 2021), which requires as little as a single audio clip from the individual (an audio clip of about 3-5 minutes, not necessarily containing the same phonemic content as L, recorded before their clinical condition). By leveraging this sample, we generate audio A
+
+that captures both the predicted linguistic content and the speaker’s unique vocal characteristics (we elaborate on this topic in appendix G). 
+
+3.1. EMG data representation 
+
+Gowda et al. demonstrate that the manifold of SPD matrices serves as an effective embedding space for EMG signals, enabling the natural distinction of different orofacial move-ments associated with speech articulation and all English phonemes using raw signals. We make significant improve-ments on their methods to perform phoneme-by-phoneme decoding as opposed to classification paradigms and demon-strate our methods on continuously articulated speech in the English language as opposed to discrete word or phoneme articulations. We construct a complete graph G = ( V, E(τ )) to repre-sent the functional connectivity of EMG signals, where 
+
+E(τ ) denotes the set of edges over a time window τ =[tSTART , t END ] (Gowda et al., 2024). The edge weight be-tween two nodes v1 and v2 ∈ V in a time window is defined as e12 = e21 = fTv1 fv2 , which corresponds to the covari-2110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 
+
+> EMG based speech neuroprosthesis
+
+ance of the signals at those nodes during the time interval. Consequently, the edge (adjacency) matrix E(τ ) is sym-metric and positive semi-definite. Following Gowda et al., we convert semi-definite adjacency matrices into definite ones by adding a shrinkage estimator. We then model these symmetric positive definite (SPD) matrices using the Rie-mannian geometry approach via Cholesky decomposition, as described by Lin. For any adjacency matrix E, we can express it as E =
+
+U ΣU T , where U is the matrix of eigenvectors, and Σ is a diagonal matrix containing the corresponding eigenvalues. However, instead of calculating U for each E at every time-step τ , we fix an approximate common eigenbasis Q derived from the Fr ´echet mean F (Lin, 2019) of all adjacency matri-ces (at different time points) in the training set. Specifically, we compute F as the geometric mean of all E, and decom-pose it as F = QΛQT , where Q contains the eigenvectors of F, and Λ is a diagonal matrix of its eigenvalues. Using this fixed eigenbasis Q, any adjacency matrix E can be approximately diagonalized as QT EQ, yielding a sparse matrix σ. Gowda et al. show that such a matrix Q can be learned using neural networks constrained on the Stiefel manifold (Huang & Van Gool, 2017) and that such a Q
+
+is different for different individuals. However, neural net-works constrained on the Stiefel manifold require perform-ing repeated eigendecomposition operations, which have limited parallelization capability and lead to unstable gra-dients while using CTC loss. Therefore, we simply derive 
+
+Q from the Fr ´echet mean F and use that Q to obtain sparse matrices σ. In appendix D, we show that matrices σ are indeed sparse by comparing the ratio of maximum value of non-diagonal entries to maximum value of diagonal entries of matrices before and after approximate diagonalization. This formulation allows us to work in an approximate graph spectral domain with a consistent orthogonal basis across all time windows τ . For our task, we compute the graph spectral sequences σ for all time windows τ and use these as inputs for EMG-to-language translation. We illustrate these concepts in figure 1. 
+
+3.2. Sequence-to-sequence modeling with a single recurrent layer 
+
+We implement a single-layer gated recurrent unit (GRU) architecture for EMG-to-phoneme sequence-to-sequence modeling. The input to the GRU consists of a sequence of approximately diagonalized matrices, denoted as σ, derived over different time windows τ .To investigate whether recurrent models defined on the man-ifold provide a better representation of σ(τ ) compared to those defined in Euclidean space, we construct three distinct GRU architectures:                                                            
+
+> Figure 1. Conceptual depiction of SPD edge matrices on a 3D convex cone manifold. Edge matrices derived from a given individ-ual can be represented using an approximate common eigenbasis .Consider six edge matrices, corresponding to six different time windows τ1to τ6, for an individual A. These matrices are shown in
+> blue . The Fr ´echet mean of these SPD matrices, denoted as FA, is represented in pink . Each edge matrix EA(τi)can be expressed as:
+> EA(τi) = UAiΣAiUTAi, where ΣAiis a diagonal matrix of eigen-values, and UAiis an orthogonal matrix of eigenvectors ( i∈[1 ,6] ). Instead of representing each edge matrix with a separate eigen-vector matrix, we transform all EA(τi)using a common basis QA,which corresponds to the eigenvectors of the Fr ´echet mean FA.Specifically, we calculate σAi=QTAEA(τi)QA. Matrices σAiare approximately diagonal. We use these approximately diagonalized representations for EMG-to-language translation. Separately, edge matrices from another individual B, shown in green , have their Fr´ echet mean represented in yellow . Matrices belonging to differ-ent individuals reside in distinct neighborhoods on the manifold, and the common basis QAfor individual Acannot approximately diagonalize edge matrices from individual B. Instead, a separate basis QB, derived from the eigenvectors of FB, is required for individual B. Geometrically, the manifold is only locally Euclidean
+> and the tangent spaces for individuals Aand Bare distinct. That is, transformation of the space R|V| induced by EMG signals of subjects Aand Bare different and the approximate orthogonal eigenbasis vectors that characterize such transformations are dif-ferent for different individuals. This signal distribution shift can be approximated as change of basis. An inset diagram illustrates the eigenvectors of EA(τi).1
+
+⃝ GRU A: A GRU layer defined in the Euclidean domain, following the implementation described by Chung et al. (2014), 
+
+> 2
+
+⃝ GRU B : A GRU layer formulated on the manifold of SPD matrices, as proposed by Jeong et al. (2024), and 
+
+> 3
+
+⃝ GRU C : A GRU layer defined on the manifold of SPD matrices, plus an implicit layer solved using neural ordinary differential equations, integrating methodologies from Jeong et al. (2024), Chen et al. (2018), and Lou et al. (2020). 3165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 
+
+> EMG based speech neuroprosthesis
+
+GRU B and GRU C directly accept SPD matrices, σ, as input, whereas GRU A processes the vectorized representations of 
+
+σ. At each time step, the GRU models output probability distributions over 40 phonemes in the English language. The models are trained using CTC loss, and during inference, the most probable phoneme sequence is reconstructed using beam search decoding. The end-to-end EMG-to-language translation model is depicted in figure 2.            
+
+> Figure 2. Illustration of multivariate EMG-to-phoneme sequence
+> translation. Bandpass-filtered and z-normalized raw signals are converted to SPD edge matrices, E(τ), over a time window τ.These edge matrices are then transformed into approximately diag-onalized matrices, σ(τ), which are fed into a bidirectional GRU layer. At each time step (every 20 ms), the GRU outputs probability distributions Pover 40 phonemes in the English language. During inference, the most probable phoneme sequence is reconstructed using beam search decoding.
+
+3.3. Geometric perspective aligns well with biology 
+
+We study multivariate EMG signals collected at |V| sensor nodes in different time windows τ using edge matrices E(τ ),which capture the relationship between every pair of nodes in |V| .This can be understood as studying the transformation of the space R|V| given by the transformation matrix E(τ ). Such a transformation can equivalently be expressed in a coordinate system where the eigenvectors serve as the basis vectors. This change of basis is described by U T E(τ )U = Σ( τ ),where Σ( τ ) is a diagonal matrix. In this eigenbasis coor-dinate system, transformation of space induced by EMG signals can be interpreted as a linear combination of the columns of U , with the diagonal values of Σ acting as coef-ficients. By fixing an approximate eigenbasis Q, we obtain an approximately diagonal matrix σ(τ ) and an approximate linear combination. This formulation aligns well with the bi-ological process underlying EMG signal generation, which involves a purely additive combination of muscle activations which contrasts with processes such as speech production, which can be modeled as the application of a time-varying filter to a time-varying source signal (Sivakumar et al.). For a given individual, we fix the approximate eigenbasis vec-tors and focus on analyzing the approximate eigenvalues 
+
+σ(τ ). These matrices can then be studied using a single layer recurrent neural network. EMG signals from differ-ent individuals induce different transformations of R|V| and have different eigenbasis vectors. The signal distribution shift across different individuals can thus be interpreted as change of basis in R|V| . It should be noted that while a shallow single layer network is sufficient to learn mul-tivariate EMG-phoneme translation using sparse matrices 
+
+σ, and while such an architecture works consistently well across subjects, the weights of the recurrent networks must be fine-tuned for different individuals, as σ from different individuals correspond to different basis vectors Q.
+
+## 4. Data 
+
+We evaluate our models using three datasets, referred to as Data SMALL -VOCAB , Data LARGE -VOCAB , and Data NATO -WORDS ,which are described below. We use Data SMALL -VOCAB and Data LARGE -VOCAB to evaluate naturally articulated speech in a silent manner. We use Data NATO -WORDS to demonstrate that, by using a small codeword set such as NATO codes, we can construct a generalizable language-spelling model that requires very little data for training. Additionally, Data NATO -WORDS is used to show that our models work con-sistently well across individuals. This paradigm is useful for rapid training (or fine-tuning) and deployment of speech prostheses. 
+
+4.1. Data SMALL -VOCAB 
+
+Following Gaddy & Klein, we create a limited vocabulary dataset consisting of 67 unique words. These words include weekdays, ordinal dates, months, and years. Sentences are constructed from these words in the format <WEEKDAY -
+
+> MONTH
+
+-DATE -YEAR >. A single individual articulated 500 such sentences silently, and the resulting EMG data, ES , is translated into output phoneme sequences. We have times-tamps to demarcate the beginning and the end of words within a sentence. We collect EMG data from 31 muscle sites at a sampling rate of 5000 Hz. Of these, 22 electrode sites are identical to those used by Gowda et al., while the remaining 9 electrodes 4220 221 222 223 224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256 257 258 259 260 261 262 263 264 265 266 267 268 269 270 271 272 273 274 
+
+EMG based speech neuroprosthesis 
+
+are placed symmetrically on the opposite side of the neck. The experimental setup is same as that described by Gowda et al. 
+
+4.2. Data LARGE -VOCAB 
+
+We adapt the language corpora from Willett et al., who demonstrated a speech brain-computer interface by translat-ing neural spikes from the motor cortex into speech. The dataset comprises an extensive English language corpus containing approximately 6,500 unique words and 11,000 sentences. Unlike Gaddy & Klein; Gaddy & Klein, we collect only ES (excluding EA and A) and perform ES -to-language translation without time-aligning with EA and 
+
+A. The data collection setup follows the methodology de-scribed for Data SMALL -VOCAB . This corpus includes sentences of varying lengths, with the subject articulating sentences at a normal speed, averaging 160 words per minute. Times-tamps were used solely to mark the beginning and end of each sentence, with the subject clicking the mouse at the start of articulation and again upon completion (unlike Data SMALL -VOCAB , there are no timestamps to demarcate be-tween words within a sentence). 
+
+4.3. Data NATO -WORDS 
+
+We use the dataset provided by Gowda et al. 1 Specif-ically, we use data from their second experiment, in which 4 individuals articulated English sentences in a spelled-out manner using NATO phonemic codes in a silent manner. For instance, the word <RAINBOW > was ar-ticulated as <ROMEO -ALFA -INDIA -NOVEMBER -BRAVO -
+
+> OSCAR
+
+-WHISKEY > with phonemic transcription <R-OW -
+
+> M
+
+-IY -OW |AE -L-F-AH | IH -N-D-IY -AH | N-OW -V-EH -M-B- 
+
+> ER
+
+| B-R-AA -V-OW | AO -S-K-ER | W-IH -S-K-IY >. Subjects articulated phonemically balanced RAINBOW and GRAND - 
+
+> FATHER
+
+passages in this spelled-out format. In total, 1968 NATO code articulations were recorded across both pas-sages. The EMG data was collected from 22 muscle sites in the neck and cheek regions at a sampling rate of 5000 Hz. We present results for Data NATO -WORDS in appendix A. 
+
+## 5. Results 
+
+We describe the experimental setup and results for Data SMALL -VOCAB and Data LARGE -VOCAB , providing a compar-ative analysis with previous benchmarks. 
+
+5.1. Results for Data SMALL -VOCAB 
+
+Raw EMG signals are bandpass filtered between 80 and 1000 Hz and are z-normalized per channel along the time 
+
+> 1
+
+The dataset is available at Gowda et al. dataset. 
+
+dimension. Then, a complete time dependent graph ( E(τ )
+
+and σ(τ )) is constructed using the EMG signals. We follow the same train-validation-test split outlined by Gaddy & Klein. All parameters are detailed below in table 1. 
+
+Table 1. Experimental setup for Data SMALL -VOCAB .
+
+Data A properties 
+
+τ 50 ms (a sliding window with an overlapping context size of 100 ms and a step size of 50 ms) 
+
+E(τ ) and σ(τ ) SPD matrices of dimensions 31 × 31 
+
+Train-validation-test split 
+
+370 - 30 - 100 sentences 
+
+Beamsearch width Top-5
+
+The Fr ´echet mean, computed from the training set, is utilized to calculate σ(τ ) for all τ in the training, validation, and test datasets. Figure 3 illustrates the Levenshtein distances between target and predicted phoneme sequences for three GRU models with varying model sizes. To decode the articulated word(s), we identify a word or a set of words from the vocabulary corpus whose phonemic sequence best matches the predicted sequence, using Levenshtein distance as the metric. Decoding accuracy for EMG-to-text translation is evalu-ated as 1 − WER and is presented in figure 4 for models of different sizes. Model size is controlled exclusively by adjusting the GRU hidden unit dimensionality, which is the 
+
+only hyperparameter in our setup. On this limited vocab-ulary corpus, we achieve a WER as low as 12%, with the average Levenshtein distance between target and predicted sequences below 1. These results underscore the feasibil-ity and practical potential of EMG-to-language translation technology. 10 6
+
+> Model size (log scale)
+> 0.0
+> 0.5
+> 1.0
+> 1.5
+> 2.0
+> 2.5
+> 3.0
+> Levenshtein distance
+> GRU A
+> GRU B
+> GRU C
+
+Figure 3. Model size versus Levenshtein distance. Models are evaluated over 10 random seeds. Lower is better .
+
+5275 276 277 278 279 280 281 282 283 284 285 286 287 288 289 290 291 292 293 294 295 296 297 298 299 300 301 302 303 304 305 306 307 308 309 310 311 312 313 314 315 316 317 318 319 320 321 322 323 324 325 326 327 328 329 
+
+EMG based speech neuroprosthesis 10 6
+
+> Model size (log scale)
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> 0.8
+> 0.9
+> 1.0
+> Decoding accuracy
+> GRU A
+> GRU B
+> GRU C
+
+Figure 4. Decoding accuracy = 1 - WER versus model size. Models are evaluated over 10 random seeds. Higher is better .
+
+Now, we compare our results with the results given by Gaddy & Klein. Gaddy & Klein recorded EMG signals us-ing 8 electrodes at a sampling rate of 1000 Hz. To enable a direct comparison with their approach, we downsample our EMG signals from 5000 Hz to 1000 Hz and select a subset of 8 electrodes from the original 31. The placement of these electrodes is approximately aligned with those specified by Gaddy & Klein to ensure consistency in the experimental setup. We compare our results with their baseline approach, where models were trained for EA-to-A translation and evaluated on ES -to-A translation. In contrast, our approach empha-sizes direct ES -to-L translation. Additionally, their im-proved framework incorporates both EA and ES signals, relying on time alignment between them. However, they do not propose a paradigm that independently translates ES
+
+without leveraging EA or A. In this case, E(τ ) and σ(τ )
+
+are 8 ×8 matrices. The rest of the training paradigm is same as in table 1. We provide the comparison in table 2. Our approach achieves almost 2.4× improvement in WER with a model that is 25 × smaller. 
+
+Table 2. Comparison with Gaddy & Klein. Our approach achieves almost 2.4× improvement in WER with a model that is 25 ×
+
+smaller. WER is averaged over 10 random seeds. Results are for Data SMALL -VOCAB using 8 electrodes with signals downsampled to 1000 Hz. 
+
+Ours Baseline of Gaddy & Klein 
+
+WER - 27% , using GRU B
+
+WER - 64% Model size - about 
+
+1.4 million 
+
+Model size - about 40 million 
+
+5.2. Results for Data LARGE -VOCAB 
+
+As in Data SMALL -VOCAB , we filter, z-normalize, and construct 
+
+σ(τ ). The properties of the dataset are detailed in table 3. Sentences in the validation and test sets do not occur in the training set. On this general English language corpus con-sisting of approximately 6500 words, spoken at an average rate of 160 words per minute, we perform EMG-to-phoneme sequence translation and measure the Levenshtein distances between the target and predicted phoneme sequences. The phoneme error rates (PER) are presented in table 4. Tran-scription examples are given in table 5. 
+
+Table 3. Experimental setup for Data LARGE -VOCAB .
+
+Data LARGE -VOCAB properties 
+
+τ 20 ms (a sliding window with an overlapping context size of 50 ms and a step size of 20 ms) 
+
+E(τ ) and σ(τ ) SPD matrices of dimensions 31 × 31 
+
+Train-validation-test split 
+
+8000 - 1000 - 1970 sentences 
+
+Beamsearch width Top-5
+
+Table 4. We achieve a PER of 56% for speech articulated at 160 words per minute using 31 electrodes. Average phoneme sequence length of sentences is 24.5, and the chance decoding accuracy of a sequence (that is, chance 1 - PER) is ( 140 )24 .5. While the results are modest compared to high density invasive speech brain-computer interfaces, we showcase significant potential of a non-invasive method. Willett et al. report a PER of 21% using 128 intracortical arrays at a slower speech rate of 62 words per minute. Metzger et al. report a PER of 30% on a smaller corpora of 1024 words articulated at a slower rate of 78 words per minute using 253 ECoG electrodes. In future work, we would like to verify if higher density EMG and more training data can lead to better PER. Ours - 31 electrodes 
+
+PER - 56%, using GRU A
+
+Model size - about 4.4 mil-lion 
+
+## 6. Observations and discussions 
+
+1⃝ From Data SMALL -VOCAB and Data LARGE -VOCAB and their corresponding results, we observe that continuously artic-ulated silent speech - where subjects naturally articulate sentences in English but inaudibly - can be translated into phonemic sequences at a fine-scale resolution of 50 ms or 20 ms. This resolution is comparable to state-of-the-art (SOTA) 6330 331 332 333 334 335 336 337 338 339 340 341 342 343 344 345 346 347 348 349 350 351 352 353 354 355 356 357 358 359 360 361 362 363 364 365 366 367 368 369 370 371 372 373 374 375 376 377 378 379 380 381 382 383 384 
+
+> EMG based speech neuroprosthesis
+
+automatic speech recognition (ASR) models, such as those described by Baevski et al. and Hsu et al., which operate at a 20 ms resolution. These findings highlight the potential for real-time EMG-to-language translation, akin to audio-to-audio (language translation) and audio-to-text translation. Furthermore, achieving a word transcription accuracy of ap-proximately 88% on limited-vocabulary corpora and a PER of 56% on open-vocabulary corpora demonstrates that high-fidelity translation is achievable, reinforcing the viability of this approach. 
+
+> 2
+
+⃝ Additionally, results from Data NATO -WORDS (WER of 59% averaged across all 4 subjects) indicate that by leverag-ing NATO phonetic codes, we can establish a generaliz-able EMG-to-language spelling paradigm. Although this approach does not replicate natural speech, it enables a practical mode of limited communication for individuals who have lost speech articulation capabilities. Notably, this paradigm is efficient, requiring only a small corpus for training - our model trained on just 10 minutes of data, demonstrates robust generalization on a much larger test set. 
+
+> 3
+
+⃝ The key contribution of this article lies in the devel-opment of efficient architectures for multivariate EMG-to-phoneme sequence translation. We show that EMG signals can be approximately decomposed into linear combinations of a set of orthogonal axes, represented by the matrices 
+
+σ(τ ). This decomposition enables the analysis of time-varying graph edges in a sparse graph spectral domain using a single recurrent layer. Notably, our model relies on only one hyperparameter - the dimension of the hidden unit in the GRU. Across different datasets and subjects, the models exhibit consistent and predictable behavior with respect to the hidden unit dimension. Specifically, the decoding ac-curacy of GRU A and GRU B improves as the hidden unit dimension increases, eventually plateauing, while GRU C
+
+demonstrates a peak in performance before diminishing (figures 4 and 6). Also, GRU C outperforms other GRU models for Data NATO -WORDS . It also outperforms other GRU models for Data SMALL -VOCAB at smaller model sizes. This demonstrates that modeling dynamics of EMG signals using neural ODEs is beneficial and allows for better abstraction of the data. Importantly, although different datasets and individuals are characterized by distinct orthogonal basis vectors, the same model architecture can be applied across individuals without the need for extensive hyperparameter tuning. 
+
+> 4
+
+⃝ We achieve a word error rate (WER) of approximately 12% on a 67-word vocabulary, not too far from the 9.1% WER reported by Willett et al. on a 50-word vocabulary. Notably, our results are achieved using only 31 non-invasive electrodes, in contrast to the 128 intracortical electrodes employed by Willett et al. On Data LARGE -VOCAB , we achieve a phoneme error rate (PER) of 56% for speech articulated at an average rate of 160 words per minute, whereas Willett et al. report a PER of 21% using 128 intracortical arrays at a slower speech rate of 62 words per minute. In future work, we would like to verify if higher density EMG and more training data can lead to better PER. These findings demonstrate the feasibility of a non-invasive approach for translating silent speech into language. While Willett et al. and Metzger et al. showcase brain-computer speech inter-faces for individuals with anarthria or amyotrophic lateral sclerosis, our method provides a viable alternative for indi-viduals who have undergone laryngectomy or experience dysarthria or dysphonia, where invasive recordings may not be a practical solution. We highlight the significant potential of non-invasive techniques for broad clinical applicability. 
+
+> 5
+
+⃝ D ´efossez et al. demonstrate methods for decoding speech perception from non-invasive neural recordings using mag-netoencephalography (MEG) and electroencephalography (EEG). They show that listened speech segments can be predicted from MEG with an accuracy of 41%. However, such interfaces are not useful for initiating communication. We go beyond these models to demonstrate that, using non-invasive EMG signals, we can decode speech articulation at the phonemic level with a higher accuracy of 44% on a large English language corpus. 
+
+> 6
+
+⃝ We envision EMG-based non-invasive neuroprostheses having a user-friendly form factor that is easy to don and doff. However, even minor variations in electrode place-ment introduce a covariate signal shift, which can be math-ematically represented as a change of basis (Gowda et al., 2024). Additional factors, such as variations in subcuta-neous fat and changes in neural drive characteristics, con-tribute to covariate signal drift over time. To address these challenges, modeling EMG signals using SPD covariance matrices proves advantageous. Our models show consistent performance across subjects, as demonstrated here, and out-perform Euclidean-space models (Gaddy & Klein, Gaddy & Klein) in terms of both decoding accuracy and model param-eter efficiency. Moreover, considering the idiosyncrasies of individuals, the difficulty of collecting large-scale data, and the need for frequent fine-tuning due to circumstantial vari-ations, a streamlined approach is crucial. A simple model leveraging a single GRU layer, as presented here, offers an effective solution for adaptability. 
+
+## 7. Conclusion 
+
+We present an efficient data representation for orofacial EMG signals and demonstrate that our approach enables effective EMG-to-language translation. Our method outper-forms previous benchmarks on limited-vocabulary corpora, showcasing its potential for practical applications. Notably, we demonstrate the ability to translate EMG collected during 
+
+silently voiced speech ( ES ) to language without requiring 7385 386 387 388 389 390 391 392 393 394 395 396 397 398 399 400 401 402 403 404 405 406 407 408 409 410 411 412 413 414 415 416 417 418 419 420 421 422 423 424 425 426 427 428 429 430 431 432 433 434 435 436 437 438 439 
+
+EMG based speech neuroprosthesis 
+
+corresponding audio ( A) and EMG collected during audibly 
+
+voiced speech ( EA), marking a significant advancement in the translation paradigm and paving the way for real-world deployment of such devices. By providing open-source data and code, this work lays a solid foundation for the development of efficient neuromuscular speech prostheses. In future work, we plan to augment our methods with lan-guage models and test their applicability for individuals with clinical etiologies that affect voicing and articulator movement in real time. 
+
+Table 5. Examples of EMG-to-phoneme sequence translations. We do translations using EMG collected during silent articulations ( ES )with CTC loss without making use of corresponding time aligned audio (A) and EMG collected during audible articulation ( EA). Ground truth sentences with corresponding timestamps. Ground truth phonemic transcriptions. Decoded phonemic transcriptions. 
+
+3 transcribed sentences in Data SMALL -VOCAB T-START <WEDNESDAY >T-END T -START <JULY >T-END T -START <TWENTY SIXTH >T-END T -START <NINETEEN SIXTY SEVEN >T-END 
+
+W-EH -N-Z-D-IY SPACE J-UW -L-AY SPACE T-W-EH -N-T-IY -S-IH -K-S-TH SPACE N-AY -N-T-IY -N-S-IH -K-S-T-IY -S-EH -V-AH -NW-AH -N-Z-D-IY SPACE J-UW -L-AY SPACE T-W-EH -N-T-IY -S-IH -K-S-TH SPACE N-AY -N-T-IY -N-S-IH -K-S-T-IY -S-EH -V-AH -N
+
+> T
+
+-START <THURSDAY >T-END T -START <OCTOBER >T-END T -START <TWENTY NINTH >T-END T -START <TWO THOUSAND NINE >T-END 
+
+TH -ER -Z-D-EY SPACE AA -K-T-OW -B-ER SPACE T-W-EH -N-T-IY -N-AY -N-TH SPACE T-UW -TH -AW -Z-AH -N-D-N-AY -NTH -ER -Z-D-EY SPACE AA -K-T-OW -B-ER SPACE T-W-EH -N-T-IY -N-AY -N-TH SPACE T-UW -TH -AW -Z-AH -N-D-T-N-AY -N
+
+> T
+
+-START <TUESDAY >T-END T -START <DECEMBER >T-END T -START <FIFTH >T-END T -START <NINETEEN SEVENTY EIGHT >T-END 
+
+T-UW -Z-D-IY SPACE D-IH -S-EH -M-B-ER SPACE F-IH -F-TH SPACE N-AY -N-T-IY -N-S-EH -V-AH -N-T-IY -EY -TT-UW -Z-D-IY SPACE D-IH -S-EH -M-B-ER SPACE F-IH -F-TH SPACE N-AY -N-T-IY -N-S-EH -V-AH -N-T-IY -AY -N-T
+
+Top-3 (best) transcribed sentences in Data LARGE -VOCAB T-START <ITS KIND OF FUN >T-END 
+
+IH -T-S SPACE K-AY -N-D SPACE AH -V SPACE F-AH -NIH -T-S SPACE K-AY -N-D SPACE F-AH -N
+
+> T
+
+-START <PROBABLY SEVENTIES >T-END 
+
+P-R-AA -B-AH -B-L-IY SPACE S-EH -V-AH -N-T-IY -ZP-R-AH -B-L-IY SPACE S-EH -V-AH -N-T-IY 
+
+> T
+
+-START <IS IT LEGEND >T-END 
+
+IH -Z SPACE IH -T SPACE L-EH -JH -AH -N-DIH -T SPACE IH -T SPACE S-EH -JH -AH -N
+
+Bottom-3 (worst) transcribed sentences in Data LARGE -VOCAB T-START <MEMBER OF THE AMERICAN METEOROLOGICAL SOCIETY >T-END 
+
+M-EH -M-B-ER SPACE AH -V SPACE DH -AH SPACE AH -M-EH -R-AH -K-AH -N SPACE 
+
+M-IY -T-IY -AO -R-AH -L-AA -JH -IH -K-AH -L SPACE S-AH -S-AY -AH -T-IY DH -AH -M-AH SPACE F-AH -B-AE -T-AH SPACE UW SPACE K-L SPACE S-AH SPACE T-IY SPACE D-IH 
+
+> T
+
+-START <PICTURES AND PROJECTS THAT YOU CAN MAKE YOURSELF >T-END 
+
+P-IH -K-CH -ER -Z SPACE AH -N-D SPACE P-R-AA -JH -EH -K-T-S SPACE DH -AE -T SPACE Y-UW SPACE 
+
+K-AE -N SPACE M-EY -K SPACE Y-ER -S-EH -L-FAH SPACE P-R-IY SPACE T-ER -S-AH SPACE P-R-AA SPACE DH -IH -K SPACE DH -AH SPACE T-UW -K-AH SPACE M SPACE Y-UW 
+
+> T
+
+-START <HE EXPECTED CONCLUSIONS AT THE END OF THE YEAR >T-END 
+
+HH -IY SPACE IH -K-S-P-EH -K-T-AH -D SPACE K-AH -N-K-L-UW -ZH -AH -N-Z SPACE AE -T SPACE 
+
+DH -AH SPACE EH -N-D SPACE AH -V SPACE DH -AH SPACE Y-IH -RG-EH -P-IH SPACE AH -K-L-UW -ZH -AH SPACE AH -N SPACE AY -D SPACE AH SPACE TH -Y
+
+8440 441 442 443 444 445 446 447 448 449 450 451 452 453 454 455 456 457 458 459 460 461 462 463 464 465 466 467 468 469 470 471 472 473 474 475 476 477 478 479 480 481 482 483 484 485 486 487 488 489 490 491 492 493 494 
+
+> EMG based speech neuroprosthesis
+
+## Impact statement 
+
+This article provides data and methods for developing non-invasive EMG based neuroprosthesis. Such devices have the potential to restore natural communication in individ-uals who have lost the ability to speak intelligibly due to causes such as neuromuscular disease, stroke, trauma, and head/neck cancer surgery (e.g. laryngectomy) or treatment (e.g. radiotherapy toxicity to the speech articulators). IRB was approved for human subject research. IRB details and its terms and conditions will be made available if the manuscript is accepted. We are unable to publish the data and codes in an anonymized format. Data and codes will be made publicly available if the manuscript is accepted. 
+
+## References 
+
+Arsigny, V., Fillard, P., Pennec, X., and Ayache, N. Geomet-ric means in a novel vector space structure on symmet-ric positive-definite matrices. SIAM Journal on Matrix Analysis and Applications , 29(1):328–347, 2007. doi: 10.1137/050637996. URL https://doi.org/10. 1137/050637996 .Baevski, A., Zhou, Y., Mohamed, A., and Auli, M. wav2vec 2.0: A framework for self-supervised learning of speech representations. Advances in neural information process-ing systems , 33:12449–12460, 2020. Barachant, A., Bonnet, S., Congedo, M., and Jutten, C. Multiclass brain–computer interface classification by rie-mannian geometry. IEEE Transactions on Biomedical Engineering , 59(4):920–928, 2011. Barachant, A., Bonnet, S., Congedo, M., and Jutten, C. Classification of covariance matrices using a riemannian-based kernel for bci applications. Neurocomput. , 112: 172–178, July 2013. ISSN 0925-2312. doi: 10.1016/j. neucom.2012.12.039. URL https://doi.org/10. 1016/j.neucom.2012.12.039 .Chen, R. T., Rubanova, Y., Bettencourt, J., and Duvenaud, D. K. Neural ordinary differential equations. Advances in neural information processing systems , 31, 2018. Choi, H.-S., Lee, J., Kim, W., Lee, J., Heo, H., and Lee, K. Neural analysis and synthesis: Reconstructing speech from self-supervised representations. Advances in Neural Information Processing Systems , 34:16251–16265, 2021. Chung, J., Gulcehre, C., Cho, K., and Bengio, Y. Empirical evaluation of gated recurrent neural networks on sequence modeling. arXiv preprint arXiv:1412.3555 , 2014. D ´efossez, A., Caucheteux, C., Rapin, J., Kabeli, O., and King, J.-R. Decoding speech perception from non-invasive brain recordings. Nature Machine Intelligence ,5(10):1097–1107, 2023. Diener, L., Felsch, G., Angrick, M., and Schultz, T. Session-independent array-based emg-to-speech conversion using convolutional neural networks. In Speech Communica-tion; 13th ITG-Symposium , pp. 1–5, 2018. Gaddy, D. and Klein, D. Digital voicing of silent speech. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP) , pp. 5521–5530, 2020. Gaddy, D. and Klein, D. An improved model for voicing silent speech. In Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing (Volume 2: Short Papers) , pp. 175–181, 2021. Gowda, H. T. and Miller, L. M. Topology of surface elec-tromyogram signals: hand gesture decoding on rieman-nian manifolds. Journal of Neural Engineering .Gowda, H. T., McNaughton, Z. D., and Miller, L. M. Ge-ometry of orofacial neuromuscular signals: speech articu-lation decoding using surface electromyography. arXiv preprint arXiv:2411.02591 , 2024. Graves, A., Fern ´andez, S., Gomez, F., and Schmidhuber, J. Connectionist temporal classification: labelling un-segmented sequence data with recurrent neural networks. In Proceedings of the 23rd international conference on Machine learning , pp. 369–376, 2006. Hsu, W.-N., Bolte, B., Tsai, Y.-H. H., Lakhotia, K., Salakhutdinov, R., and Mohamed, A. Hubert: Self-supervised speech representation learning by masked pre-diction of hidden units. IEEE/ACM transactions on audio, speech, and language processing , 29:3451–3460, 2021. Huang, Z. and Van Gool, L. A riemannian network for spd matrix learning. In Proceedings of the AAAI conference on artificial intelligence , volume 31, 2017. Janke, M. and Diener, L. Emg-to-speech: Direct gen-eration of speech from facial electromyographic sig-nals. IEEE/ACM Transactions on Audio, Speech, and Language Processing , 25(12):2375–2385, 2017. doi: 10.1109/TASLP.2017.2738568. Jeong, S., Ko, W., Mulyadi, A. W., and Suk, H.-I. Deep Efficient Continuous Manifold Learning for Time Series Modeling . IEEE Transactions on Pattern Analysis & Machine Intelligence , 46(01):171–184, January 2024. ISSN 1939-3539. doi: 10.1109/TPAMI.2023.3320125. URL https://doi.ieeecomputersociety. org/10.1109/TPAMI.2023.3320125 .9495 496 497 498 499 500 501 502 503 504 505 506 507 508 509 510 511 512 513 514 515 516 517 518 519 520 521 522 523 524 525 526 527 528 529 530 531 532 533 534 535 536 537 538 539 540 541 542 543 544 545 546 547 548 549 
+
+> EMG based speech neuroprosthesis
+
+Jou, S.-C., Schultz, T., Walliczek, M., Kraft, F., and Waibel, A. Towards continuous speech recognition using surface electromyography. In Ninth International Conference on Spoken Language Processing , 2006. Kapur, A., Sarawgi, U., Wadkins, E., Wu, M., Hollenstein, N., and Maes, P. Non-invasive silent speech recognition in multiple sclerosis with dysphonia. In Machine Learning for Health Workshop , pp. 25–38. PMLR, 2020. Lin, Z. Riemannian geometry of symmetric positive definite matrices via cholesky decomposition. SIAM Journal on Matrix Analysis and Applications , 40(4):1353–1370, 2019. Lou, A., Lim, D., Katsman, I., Huang, L., Jiang, Q., Lim, S. N., and De Sa, C. M. Neural manifold ordinary dif-ferential equations. Advances in Neural Information Pro-cessing Systems , 33:17548–17558, 2020. Meltzner, G. S., Heaton, J. T., Deng, Y., De Luca, G., Roy, S. H., and Kline, J. C. Development of semg sensors and algorithms for silent speech recognition. Journal of neural engineering , 15(4):046031, 2018. Metzger, S. L., Littlejohn, K. T., Silva, A. B., Moses, D. A., Seaton, M. P., Wang, R., Dougherty, M. E., Liu, J. R., Wu, P., Berger, M. A., et al. A high-performance neuropros-thesis for speech decoding and avatar control. Nature ,620(7976):1037–1046, 2023. Panayotov, V., Chen, G., Povey, D., and Khudanpur, S. Librispeech: An asr corpus based on public domain au-dio books. In 2015 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 5206–5210, 2015. doi: 10.1109/ICASSP.2015.7178964. Sabbagh, D., Ablin, P., Varoquaux, G., Gramfort, A., and Engemann, D. A. Manifold-regression to predict from MEG/EEG brain signals without source modeling . Curran Associates Inc., Red Hook, NY, USA, 2019. Schultz, T. and Wand, M. Modeling coarticulation in emg-based continuous speech recognition. Speech Communi-cation , 52(4):341–353, 2010. Sivakumar, V., Seely, J., Du, A., Bittner, S. R., Beren-zweig, A., Bolarinwa, A., Gramfort, A., and Mandel, M. I. emg2qwerty: A large dataset with baselines for touch typing using surface electromyography. In The Thirty-eight Conference on Neural Information Process-ing Systems Datasets and Benchmarks Track .Toth, A. R., Wand, M., and Schultz, T. Synthesizing speech from electromyography using voice transformation tech-niques. In Interspeech 2009 , pp. 652–655, 2009. doi: 10.21437/Interspeech.2009-229. Veaux, C., Yamagishi, J., and King, S. The voice bank corpus: Design, collection and data analysis of a large regional accent speech database. In 2013 International Conference Oriental COCOSDA held jointly with 2013 Conference on Asian Spoken Language Research and Evaluation (O-COCOSDA/CASLRE) , pp. 1–4, 2013. doi: 10.1109/ICSDA.2013.6709856. Willett, F. R., Kunz, E. M., Fan, C., Avansino, D. T., Wilson, G. H., Choi, E. Y., Kamdar, F., Glasser, M. F., Hochberg, L. R., Druckmann, S., et al. A high-performance speech neuroprosthesis. Nature , 620(7976):1031–1036, 2023. 10 550 551 552 553 554 555 556 557 558 559 560 561 562 563 564 565 566 567 568 569 570 571 572 573 574 575 576 577 578 579 580 581 582 583 584 585 586 587 588 589 590 591 592 593 594 595 596 597 598 599 600 601 602 603 604 
+
+> EMG based speech neuroprosthesis
+
+## A. Results for Data NATO -WORDS 
+
+Raw EMG signals are bandpass filtered between 80 and 1000 Hertz and are z-normalized per channel along the time dimension. Then, a complete time dependent graph is con-structed using the EMG signals. We follow the same train-validation-test split outlined by Gowda et al. All parameters are detailed in table 6. Like before, the Fr´ echet mean, computed from the training set, is utilized to calculate σ(τ ) for all τ in the training, vali-dation, and test datasets. Figure 5 illustrates the Levenshtein distances between target and predicted phoneme sequences for three GRU models with varying model sizes across all 4 individuals. To decode the articulated NATO phonetic code, we identify a code from the corpus of 26 codes whose phonetic sequence best matches the predicted sequence, us-ing Levenshtein distance as the metric. Decoding accuracy for EMG-to-text translation is evaluated as 1 − WER and is presented in figure 6 for models of different sizes across all four subjects. For each subject, the best decoding accu-racy across all three GRU models and all model sizes are summarized in table 7.    
+
+> Table 6. Experimental setup for Data NATO -WORDS .
+
+Data NATO -WORDS properties 
+
+τ 30 ms (a sliding window with an overlapping context size of 150 ms and a step size of 30 ms). 
+
+E(τ ) and σ(τ ) SPD matrices of dimensions 22 ×
+
+22.  
+
+> Train set
+
+416 NATO alphabet articulations (26 words, each repeated 16 times)  
+
+> Validation set
+
+104 NATO alphabet articulations (26 words, each repeated 4 times)  
+
+> Test set
+
+1968 NATO alphabet articulations (entire GRANDFATHER and RAIN - 
+
+> BOW
+
+passages articulated in aspelled-out manner). 
+
+> Beamsearch width
+
+Top-5
+
+We compare our results obtained by constructing the most probable phoneme sequences using beam search over the output probability distributions at every time step to that of classification models presented by Gowda et al. in table 7. We see a slight decrease in decoding accuracy. This might be due to the fact that these are single word articulations and classification models have the context of the articulation duration of the entire word as opposed to 150 ms context size in phoneme-by-phoneme sequence-to-sequence modeling.   
+
+> Table 7. Best decoding accuracy across all GRU models and model sizes of all four subjects (calculated by averaging over 10 random seeds). Random chance accuracy is only 3.85% .
+
+Subject Decoding accuracy (1 - WER) via 
+
+> phoneme-by-phoneme reconstruction
+
+Gowda et al. classification model accuracy 1 44.29% 51.34% 2 44.97% 42.89% 3 29.58% 37.21% 4 43.59% 42.79% 
+
+Average 40.61 % 43.56% 
+
+11 605 606 607 608 609 610 611 612 613 614 615 616 617 618 619 620 621 622 623 624 625 626 627 628 629 630 631 632 633 634 635 636 637 638 639 640 641 642 643 644 645 646 647 648 649 650 651 652 653 654 655 656 657 658 659 
+
+EMG based speech neuroprosthesis 10 6
+
+Model size (log scale) 
+
+0.0 
+
+0.5 
+
+1.0 
+
+1.5 
+
+2.0 
+
+2.5 
+
+3.0 
+
+3.5 
+
+4.0 
+
+> Levenshtein distance
+> GRU A
+> GRU B
+> GRU C
+
+10 6
+
+Model size (log scale) 
+
+0.0 
+
+0.5 
+
+1.0 
+
+1.5 
+
+2.0 
+
+2.5 
+
+3.0 
+
+3.5 
+
+4.0 
+
+> Levenshtein distance  GRU A
+> GRU B
+> GRU C
+
+10 6
+
+Model size (log scale) 
+
+0.0 
+
+0.5 
+
+1.0 
+
+1.5 
+
+2.0 
+
+2.5 
+
+3.0 
+
+3.5 
+
+4.0 
+
+> Levenshtein distance
+> GRU A
+> GRU B
+> GRU C
+
+10 6
+
+Model size (log scale) 
+
+0.0 
+
+0.5 
+
+1.0 
+
+1.5 
+
+2.0 
+
+2.5 
+
+3.0 
+
+3.5 
+
+4.0 
+
+> Levenshtein distance
+> GRU A
+> GRU B
+> GRU C
+
+Figure 5. Average Levenshtein distance between target and predicted phoneme sequences of all four subjects (subject 1 to subject 4, starting from top left in a clockwise manner). Models are evaluated over 10 random seeds. Lower is better. 10 6
+
+Model size (log scale) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Decoding accuracy
+> GRU A
+> GRU B
+> GRU C
+
+10 6
+
+Model size (log scale) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Decoding accuracy
+> GRU A
+> GRU B
+> GRU C
+
+10 6
+
+Model size (log scale) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Decoding accuracy
+> GRU A
+> GRU B
+> GRU C
+
+10 6
+
+Model size (log scale) 
+
+0.0 
+
+0.2 
+
+0.4 
+
+0.6 
+
+0.8 
+
+1.0 
+
+> Decoding accuracy
+> GRU A
+> GRU B
+> GRU C
+
+Figure 6. Average decoding accuracy = 1 - WER of all four subjects (subject 1 to subject 4, starting from top left in a clockwise manner). Models are evaluated over 10 random seeds. Higher is better. 
+
+12 660 661 662 663 664 665 666 667 668 669 670 671 672 673 674 675 676 677 678 679 680 681 682 683 684 685 686 687 688 689 690 691 692 693 694 695 696 697 698 699 700 701 702 703 704 705 706 707 708 709 710 711 712 713 714 
+
+> EMG based speech neuroprosthesis
+
+## B. Training paradigms 
+
+We trained our models on the training set and validated them on the validation set. For testing on the test set, we selected the model weights corresponding to the epoch with the minimum validation loss, provided the losses in the im-mediately preceding and succeeding epochs did not exceed more than 20% of the minimum loss. All GRU models were trained for 100 epochs on Data SMALL -VOCAB and 500 epochs on Data LARGE -VOCAB . For Data NATO -WORDS , GRU A
+
+was trained for 250 epochs, while GRU B and GRU C were each trained for 150 epochs. Model training is completed in just a few minutes, whether using a GPU or CPU. For WER calculation, we compute the Levenshtein dis-tance between the predicted phoneme sequence and all entries in the word corpora (or combinations of them). When multiple entries share the lowest distance with the predicted sequence and the ground truth is among them, we classify it as a wrong prediction. For instance, the predicted sequence <T-TH -UW -AH -Z-D-EY > could be de-coded as either <TUESDAY > or <THURSDAY >, whose phonetic transcriptions are <T-UW -Z-D-IY > and <TH -ER -
+
+> Z
+
+-D-EY >, respectively. In this case, the ground truth text prompt is <THURSDAY >. However, both <TUESDAY >
+
+and <THURSDAY > yield the same minimum Levenshtein distance from the predicted sequence within the 67-word corpora. Since the articulation is silently produced by the individ-ual, there is no ground truth audio to verify the accuracy of the actual articulation (for example, the subject might have started with TUESDAY and then corrected for THURS -
+
+> DAY
+
+). Therefore, recognizing the inherent ambiguity and emphasizing the model’s ability to closely approximate the intended word, we can classify such predictions as cor-rect . We denote word error rate calculated in this man-ner as WER ∗. In this case, the best decoding accuracy on Data SMALL -VOCAB is 91 % (WER ∗ of just 9%, as opposed to 12% with the previous way of calculating WER). When such predictions are classified as correct, the genera-tion accuracy of Data NATO -WORDS significantly increases and is summarized in table 8. 
+
+B.1. Beam search algorithm 
+
+We use an algorithm that performs beam search decoding solely on the CTC output probabilities, without incorporat-ing any external language models or prior linguistic knowl-edge. At each timestep, it evaluates the likelihood of extend-ing existing sequences based purely on the symbol probabili-ties provided by the CTC output, maintaining a fixed number of the most probable beams (defined by beam width), and ultimately returns the most likely sequence based on the CTC probabilities.     
+
+> Table 8. Best decoding accuracy across all GRU models and model sizes of all four subjects (best value is calculated by averaging over 10 random seeds). When multiple entries in the word corpora share the lowest Levenshtein distance with the predicted sequence and the ground truth is among them, we classify it as a correct
+> prediction. Results are for Data NATO -WORDS
+
+.
+
+Subject Best accuracy (1 - WER ∗)1 54.48% 2 59.45% 3 38.90% 4 56.29% 
+
+Average 52.28% 
+
+## C. Background on Riemannian geometry of SPD matrices 
+
+Speech articulation involves the coordinated activation of various muscles, with their activation patterns defined by the functional connectivity of the underlying neuromuscular sys-tem. Consequently, EMG signals collected from multiple, spatially separated muscle locations exhibit a time-varying graph structure. Gowda et al. demonstrate that the graph edge matrices corresponding to orofacial movements under-lying speech articulation are inherently distinguishable on the manifold of SPD matrices. Through experiments with 16 subjects, they highlight the effectiveness of using SPD manifolds as an embedding space for these edge matrices. Building on this foundation, we investigate the temporal evo-lution of graph connectivity using edge matrices to enable EMG-to-language translation. Directly working with SPD matrices using affine-invariant or log-Euclidean metrics (Arsigny et al., 2007) involves computationally expensive operations, such as matrix expo-nential and matrix logarithm calculations. These operations make mappings between the manifold space and the tan-gent space, and vice versa, computationally intensive. To address this, Lin proposed methods to operate on SPD ma-trices using Cholesky decomposition. They established a diffeomorphism between the Riemannian manifold of SPD matrices and Cholesky space, which was later utilized by Jeong et al. to develop computationally efficient recurrent neural networks. In Cholesky space, the computational bur-den is significantly reduced: logarithmic and exponential computations are restricted to the diagonal elements of the matrix, making them element-wise operations. Additionally, the Fr´ echet mean is derived in a closed form. Given a set of SPD edge matrices E(τ ) over different time windows τ , we first calculate their corresponding Cholesky decompositions L(τ ) = CHOLESKY (E(τ )) , such 13 715 716 717 718 719 720 721 722 723 724 725 726 727 728 729 730 731 732 733 734 735 736 737 738 739 740 741 742 743 744 745 746 747 748 749 750 751 752 753 754 755 756 757 758 759 760 761 762 763 764 765 766 767 768 769 
+
+> EMG based speech neuroprosthesis
+
+that E(τ ) = L(τ )L(τ )T . Then, the Fr ´echet mean of the Cholesky decomposed matrices L(τ ) is given by 
+
+FCHOLESKY = 1
+
+n
+
+> n
+
+X
+
+> i=1
+
+⌊L (τi)⌋ +exp 1
+
+n
+
+> n
+
+X
+
+> i=1
+
+log( D(L(τi))) 
+
+!
+
+.
+
+The Fr ´echet mean F on the manifold of SPD matrices is calculated as 
+
+F = FCHOLESKY FT 
+
+> CHOLESKY
+
+.
+
+In the above equation, ⌊L (τ )⌋ is the strictly lower triangular part of the matrix L(τ ), and D(L(τ )) is the diagonal part of the matrix L(τ ).GRU A is a standard GRU (Chung et al., 2014). GRU B
+
+is constructed from GRU A by replacing the arithmetic op-erations of GRU A defined in the Euclidean domain with the corresponding operations on the SPD manifold. Gates of GRU B as defined by Jeong et al. are given below. Given the sparse SPD edge matrices σ(τ ) over different time windows τ , we first calculate their corresponding Cholesky decompositions l(τ ) = CHOLESKY (σ(τ )) , such that σ(τ ) = l(τ )l(τ )T .Update-gate zτ at time-step τ is 
+
+zτ = SIGMOID (wz ⌊lτ ⌋ + uz ⌊hτ −1⌋ + bz )+ 
+
+> SIGMOID
+
+(bz′ [exp( wz′ log( D(lτ ))+ 
+
+uz′ log( D(hτ −1))]) . (1) Reset-gate rτ at time-step τ is 
+
+rτ = SIGMOID (wr ⌊lτ ⌋ + ur ⌊hτ −1⌋ + br )+ 
+
+> SIGMOID
+
+(br′ [exp( wr′ log( D(lτ ))+ 
+
+ur′ log( D(hτ −1))]) . (2) Candidate-activation vector ˆhτ is 
+
+ˆhτ = TANH (wh⌊lτ ⌋ + uh(⌊rτ ⌋ ∗ ⌊ hτ −1⌋) + bh)+ 
+
+> SOFTPLUS
+
+(bh′ exp( wh′ log( D(lτ )) + uh′ log( D(rτ ) ∗ D(hτ −1)))) . (3) Output vector hτ is 
+
+hτ = (1 − ⌊ zτ ⌋) ∗ ⌊ hτ −1⌋ + ⌊zτ ⌋ ∗ ⌊ ˆhτ ⌋+exp((1 − D(zτ )) ∗ log( D(hτ −1))+ 
+
+D(zτ ) ∗ log( D(ˆhτ ))) . (4) In the above equations, hτ −1 is the hidden-state at time-step 
+
+τ − 1.In GRU C , we define an additional implict layer solved using neural ODEs. The dynamics f of EMG data is modeled by a neural network with parameters Θ. The output state hτ is updated as, 
+
+hτ −1 ← ODES OLVE (fΘ, gLOG (hτ −1), (τ − 1, τ )) 
+
+hτ = GRU (lτ , gEXP (hτ −1)) , (5) where gLOG is the logarithm mapping from the mani-fold space of SPD matrices to its tangent space and 
+
+gEXP is its inverse operation as defined by Lin. GRU is a gated recurrent unit whose gates are given by equations 1 - 4. Previous work by Gowda & Miller demonstrated the effectiveness of SPD matrices in decoding discrete hand gestures from EMG signals collected from the upper limb. Furthermore, SPD matrix representations have been extensively utilized to model electroencephalogram (EEG) signals, although they have never been applied to complex tasks such as sequence-to-sequence speech decoding. For example, Barachant et al.; Barachant et al. employed Riemannian geometry frameworks for classification tasks in EEG-based brain-computer interfaces, while Sabbagh et al. developed regression models based on Riemannian geometry for biomarker exploration using EEG data. The novelty of our work lies in the algebraic interpreta-tion of manifold-valued data through linear transformations, and the development of models for complex sequence-to-sequence tasks. This approach moves beyond the conven-tional applications of classification and regression. 14 770 771 772 773 774 775 776 777 778 779 780 781 782 783 784 785 786 787 788 789 790 791 792 793 794 795 796 797 798 799 800 801 802 803 804 805 806 807 808 809 810 811 812 813 814 815 816 817 818 819 820 821 822 823 824 
+
+EMG based speech neuroprosthesis 
+
+## D. σ(τ ) are sparse matrices 
+
+We show that σ(τ ) are indeed sparse matrices in figure 7. Data A Data B (S1) Data B (S2) Data B (S3) Data B (S4) 
+
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> max(non diagonal) max(diagonal)
+
+Figure 7. Blue: Average value of max( ABS (( NON DIAG (Σ( τ ))) max( DIAG (Σ( τ )) for all τ in train-validation-test set. Red: Average value of    
+
+> max( ABS (( NON DIAG (σ(τ))) max( DIAG (σ(τ))
+
+for all τ in train-validation-test set. As we can see, σ(τ ) are approximately diagonal compared to Σ( τ ).We use sparse matrices σ(τ ) for EMG-to-language translation. Subjetcs are abbreviated with notation S1, S2, S3, S4 .
+
+## E. Effect of training data size on decoding accuracy 
+
+We train the GRU A model with varying train dataset sizes for Data SMALL -VOCAB and present the decoding accuracy and Levenshtein distance in figure 8. As we can see, decoding accuracy demonstrates a plateauing trend with increase in train dataset size, but importantly, has not saturated yet. In future, we would like to explore if more training data can lead to better decoding accuracy. 100 200 300 
+
+> # Sentences in training set
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> Decoding accuracy
+> 1
+> 2
+> 3
+> 4
+> 5
+> Levenshtein distance
+
+Figure 8. Decoding accuracy and Levenshtein distance versus train-ing dataset size for Data SMALL -VOCAB . All experiment parameters are same as in table 1 except for the varying train set size. We use GRU A for training. 
+
+## F. Electrode position versus decoding accuracy 
+
+The form factor of an EMG-based neuroprosthesis plays a critical role in its usability, particularly in facilitating ease of application and removal. Here, we evaluate three electrode configurations. We have 31 electrodes placed on the throat, neck and the left cheek. The configurations are defined as follows: 
+
+1⃝ Configuration A: We consider electrodes placed on the throat and left neck only (10 electrodes). 
+
+2⃝ Configuration B : We consider electrodes placed on the left cheek, with the neck electrodes excluded (11 electrodes). 
+
+4⃝ Configuration C : We consider electrodes on the throat and left neck and cheek, excluding those on the right neck (22 electrodes). This exploration aims to assess the practicality and perfor-mance of each configuration to inform design choices for an optimal neuroprosthetic interface. Electrode placement on the throat, the left neck and left cheek is same as described in Gowda et al. Electrode placement on the right neck is symmetrical to that of left neck. Decoding accuracy for various configurations are shown in table 9. The training paradigm is same as in table 1, except for the varying num-ber of electrodes. Decoding accuracy are obtained using GRU A for Data SMALL -VOCAB .
+
+Table 9. Decoding accuracy with various electrode configurations. 
+
+Configuration Accuracy (1 - WER) Configuration A 86.00% Configuration B 84.24% Configuration C 85.96% Above results show that EMG based neuroprosthesis can have a small form factor (such as neck only or cheek only), and still provide good decoding accuracy (decoding accu-racy using all 31 electrodes is 88% ). 
+
+## G. Text to personalized audio synthesis 
+
+The generated personalized audio files will be made available as part of the open-sourced codes. We synthesize constructed phoneme sequences into person-alized audio using methods described by Choi et al. For this, we train the model proposed by Choi et al. on speech corpora provided by Panayotov et al. (LibriSpeech TRAIN -
+
+> CLEAN
+
+-360 and TRAIN -CLEAN -100) and Veaux et al. 15 825 826 827 828 829 830 831 832 833 834 835 836 837 838 839 840 841 842 843 844 845 846 847 848 849 850 851 852 853 854 855 856 857 858 859 860 861 862 863 864 865 866 867 868 869 870 871 872 873 874 875 876 877 878 879 
+
+> EMG based speech neuroprosthesis
+
+(VCTK corpus). For few-shot learning, we use a 40-second reference audio clip from the subject (Data SMALL -VOCAB ) to capture the speaker’s vocal characteristics. The process involves converting the predicted text into audio using Google Text-to-Speech (gTTS). The gTTS-generated audio is then personalized using the model by Choi et al., leveraging the 40-second reference audio data (the refer-ence audio includes linguistic content L that is absent from the Data SMALL -VOCAB ). This approach ensures that the syn-thesized audio closely mimics the speaker’s unique vocal attributes. 16

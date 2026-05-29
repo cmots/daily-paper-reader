@@ -1,0 +1,2045 @@
+Title: ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior
+
+URL Source: https://openreview.net/pdf?id=1Dq4rW1Oy4
+
+Number of Pages: 29
+
+Markdown Content:
+# ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+Zhongweiyang Xu 1 Xulin Fan 1 Zhong-Qiu Wang 2 Xilin Jiang 3 Romit Roy Choudhury 1
+
+# Abstract 
+
+Blind Speech Separation (BSS) aims to sepa-rate multiple speech sources from audio mixtures recorded by a microphone array. The problem is challenging because it is a blind inverse problem, i.e., the microphone array geometry, the room im-pulse response (RIR), and the speech sources, are all unknown. We propose ArrayDPS to solve the BSS problem in an unsupervised, array-agnostic, and generative manner. The core idea builds on diffusion posterior sampling (DPS), but unlike DPS where the likelihood is tractable, ArrayDPS must approximate the likelihood by formulating a separate optimization problem. The solution to the optimization approximates room acoustics and the relative transfer functions between micro-phones. These approximations, along with the diffusion priors, iterate through the ArrayDPS sampling process and ultimately yield separated voice sources. We only need a simple single-speaker speech diffusion model as a prior, along with the mixtures recorded at the microphones; no microphone array information is necessary. Eval-uation results show that ArrayDPS outperforms all baseline unsupervised methods while being comparable to supervised methods in terms of SDR. Audio demos and codes are provided at: https://arraydps.github.io/ArrayDPSDemo/ and https://github.com/ArrayDPS/ArrayDPS. 
+
+# 1. Introduction 
+
+The cocktail party problem is a classic challenge in audio signal processing and machine learning (Cherry, 1953; Mc-Dermott, 2009). It arises when multiple speakers talk simul-taneously in the same room, and several microphones cap-       
+
+> 1Department of Electrical and Computer Engineering, Univer-sity of Illinois Urbana-Champaign, Champaign, USA 2Department of Computer Science and Engineering, Southern University of Science and Technology, Shenzhen, China 3Columbia Univer-sity, NYC, USA. Correspondence to: Romit Roy Choudhury
+> <croy@illinois.edu >, Zhongweiyang Xu <zx21@illinois.edu >.
+> Proceedings of the 42 st International Conference on Machine Learning , Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s).
+
+ture their voices. Each microphone records a mixture of all the speakers’ voices. The objective is to separate these mix-tures to recover the individual voice sources. In recent years, supervised learning based methods have shown remarkable potential to solve the cocktail party problem (Wang & Chen, 2018). However, these methods are usually trained with supervision from speech datasets that were synthesized by using acoustic simulators. Such synthetic supervision inher-its several problems: 
+
+(1) Generalizability: The simulated dataset does not match real-world acoustic environments, causing model general-ization issues (Pandey & Wang, 2020; Zhang et al., 2021). 
+
+(2) Deterministic: These models are trained to be determin-istic, and hence they output one fixed separation solution for a given mixture. This can give blurred results when the solution is not unique (Jayaram & Thickstun, 2020), i.e., the probability distribution of the sources, given the mixture, is a multi-modal distribution. 
+
+(3) Fixed Array Geometry : These models usually assume the geometry of microphone arrays is fixed and known, pre-venting flexibility to unseen arrays (Taherian et al., 2022). To address all the problems above, we propose ArrayDPS, a generative, unsupervised, and array-agnostic algorithm for speech separation, which fully exploits speech prior in-formation. Building on the diffusion posterior sampling (DPS) technique (Chung et al., 2023b; Song et al., 2023), ArrayDPS treats speech separation as an inverse problem. Briefly, our goal is to recover speech sources s from multi-microphone mixture measurements x = A(s) + ϵ, where 
+
+A(·) denotes the source mixing process in reverberant con-ditions. DPS samples from p(s|x) by using a pre-trained diffusion prior p(s), and a tractable likelihood model p(x|s).While we use a pre-trained speech source diffusion prior as well, unfortunately, the likelihood is intractable in our case. This is because the distortion function A(·) depends not only on the unknown array geometry but also on the unknown RIRs over which the speech arrives at each micro-phone. Without any knowledge of the array geometry, the RIRs, and the speech sources, this is referred to as a “blind” separation problem. To solve the problems mentioned above, at each diffusion sampling step, with the current source estimate ˆs, we esti-mate A by: ˆA = arg max 
+
+> A
+
+p(x|ˆs, A ). Then we use p(x|ˆs, ˆA)
+
+1ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+as a tractable approximation for the intractable likelihood 
+
+p(x|ˆs). Lastly, similar to DPS, we can use the prior score and our approximated likelihood score to get the posterior score, which allows posterior sampling for separation. We borrow ideas from Forward Convolutive Prediction (Wang et al., 2021a;b; Wang & Watanabe, 2023) for the estimation of A mentioned above, and we use Independent Vector Analysis (IVA) (Kim et al., 2006; Hiroe, 2006) for initialization to improve sampling stability. Extensive evaluation shows that ArrayDPS can achieve sim-ilar performance against recent supervised methods evalu-ated on ad-hoc microphone arrays, and performs the best among all unsupervised blind speech separation algorithms. The gains arise from using stronger speech priors from the diffusion models, as opposed to other unsupervised meth-ods (Wang & Watanabe, 2023; Tran Vu & Haeb-Umbach, 2010; Kim et al., 2006) that do not fully exploit speech source priors. As a result, they often suffer from problems like frequency permutation or spatial aliasing, which pre-vents correct separation. In contrast, ArrayDPS leverages the diffusion prior which automatically bypasses those prob-lems. Our main contributions are summarized as follows: 
+
+Unsupervised: Only a clean-speech pre-trained diffusion model is needed, mitigating the generalization issues that affect supervised methods. 
+
+Array-Agnostic: ArrayDPS does not rely on array patterns and can generalize on any microphone array geometries. 
+
+Generative: The method samples from the posterior, allow-ing multiple plausible separation results while fully exploit-ing the speech source prior. 
+
+DPS for Multi-channel: ArrayDPS is the first method to solve the multi-channel array inverse problem with DPS; we believe that it can enable many other applications beyond speech separation in multi-channel array signal processing. 
+
+# 2. Problem Formulation 
+
+In a reverberant environment, assume a C-channel micro-phone array is recording K concurrent speakers. Let us de-note the K clean speech sources as ˜s1(t), ˜s2(t), ..., ˜sK (t) ∈
+
+R, where t ∈ { 0, 1, 2, ..., T − 1} is the sample index of the waveform. These clean speech sources get filtered by the room impulse responses (RIR) and arrive at the C mi-crophones, forming the reverberant speech source images 
+
+sk,c (t) ∈ R, where k ∈ { 1, 2, ..., K } indexes the sources and c ∈ { 1, 2, ..., C } indexes the microphones. Thus, each microphone captures a mixture of K source images and some measurement noise, and we denote this mixture as 
+
+xc(t) ∈ R. The speaker-to-microphone filtering and mixing process can be modeled as:             
+
+> sk,c (t) = hk,c (t)∗˜sk(t)(1)
+> xc(t) =
+> KX
+> k=1
+> sk,c (t) + nc(t),nc(t)∼ N (0 , σ 2
+> nI)(2) (a) RIR signal Model
+> (b) Relative RIR Model
+> virtual source 1 virtual source 2
+> (c) Virtual Source Model
+> Figure 1. (a) Signal mixing in the real world; (b) Relative RIR model; and (c) Relative RIR from virtual sources to real channels. Measurement noise is ignored in the figures.
+
+where hk,c (t) is the RIR from the kth source location to the 
+
+cth microphone, and ∗ is the convolution operation. nc(t)
+
+is the cth microphone’s white noise. Fig. 1(a) illustrates the signal model for the case of C = 2 and K = 2 . Our goal is to extract all K reverberant speech source images at the reference channel (c = 1 ), i.e., extract s1: K, 1 from all the mixtures x1: C , without assuming any microphone array geometry, any source location, or any supervision 1.We approach this problem through a generative model, i.e., sampling from p(s1: K, 1|x1: C ). Before formulating that, we first discuss the relative room impulse response (relative RIR) model often useful for microphone arrays (shown in Fig. 1(b)). The relative RIR models the linear relationship between any given channel and a designated reference chan-nel (conventionally denoted as c1 = 1 ). Note that from Eq. 1, there exists a linear filter that can filter sk,c 1 (t) to             
+
+> 1For convenience, we use sk1:k2,c 1:c2to denote {sk,c (t)|c1≤
+> c≤c2, k 1≤k≤k2}, and same applies to all signals like x1: C.
+
+2ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior Diffusion U-Net  
+
+> Diffusion U-Net denoise
+> Log Likelihood Approx.
+> prior score
+> Source 1 Sampling ODE Source 2 Sampling ODE
+
+(a) Array DPS Overview  
+
+> likelihood score
+> Noisy Sources
+> Convolve
+> Convolve Log Likelihood Approximation
+> (Sampling ODE)
+> ODE
+> Solver
+> Output: Separated Sources
+> Input Multi-Channel Mixtures
+> Output
+
+(b)  Zoom-in View of Log Likelihood Approximation 
+
+> Relative RIR Estimator
+
+Figure 2. An overview of ArrayDPS for K = 2 sources. Left figure (a) shows the pipeline for separation with diffusion posterior sampling, which uses the likelihood approximation pipeline shown in the right figure (b). 
+
+obtain sk,c 2 (t) if hk,c 1 (t) is invertible: 
+
+gkc1→c2 (t) = hk,c 2 (t) ∗ h−1 
+
+> k,c 1
+
+(t) (3) 
+
+sk,c 2 (t) = gkc1→c2 (t) ∗ sk,c 1 (t) (4) 
+
+Eq. 3 is called the relative RIR between channel c1 and 
+
+c2 for speaker k, and Eq. 4 is the convolution filtering pro-cess. The relative RIR model is useful because the reference channel can serve as an anchor, and all the other channel measurements can be modeled relative to this anchor. 
+
+Can we take one more step and avoid designating a micro-phone as a reference channel? One idea is to imagine a virtual source sk for each speaker and apply a relative RIR filter to map it to a real channel. Fig.1(c) shows an example where relative RIR g10→1(t) maps the virtual source s1(t) to the source image s1,1(t) at channel 1. The same occurs for all ⟨virtual source, real channel ⟩ pairs: 
+
+sk,c (t) = gk
+
+> 0→c
+
+(t) ∗ sk (t), c ∈ { 1, 2, ..., C } (5) 
+
+What is the advantage of modeling such a virtual source? 
+
+The key reason is that virtual sources (along with their rela-tive RIRs) offer the flexibility to model many system config-urations. For instance, a virtual source could be the anechoic speaker’s voice signal, or it could be the measurement at a real channel c1, or it could even be the signal at an imag-inary microphone c0 placed near the speakers. Whatever the virtual signal represents, the corresponding relative RIR filters can adapt to match the measurements x1: C at the real microphones. This flexibility allows (1) treating the refer-ence channel c1 the same as all other channels, and (2) more freedom in the optimization, allowing better performance in some algorithms (Wang & Watanabe, 2023). 
+
+# 3. ArrayDPS 
+
+3.1. Brief Background and Overview Background: Our problem is formulated as x1: C =
+
+A(s1: K ) + n1: C , where A can be understood as the filter and sum process in Fig. 1(c). Separating the sources can be viewed as sampling from the posterior p(s1: K |x1: C ). For this, we use Diffusion Posterior Sampling (DPS) (Chung et al., 2023b; Song et al., 2023; 2021) which samples from the posterior by solving a score-based probabilistic flow ordinary differential equation (ODE): 
+
+ds τ 
+
+> 1: K
+
+= −σ(τ )∇sτ 
+
+> 1: K
+
+log p(sτ 
+
+> 1: K
+
+|x1: C )dτ (6) 
+
+where sτk is the noisy version of sk at diffusion time τ . The ODE is adapted from EDM (Karras et al., 2022), assuming a linear noise schedule ( σ(τ ) = τ ). Score-based diffusion model (Song et al., 2021; Karras et al., 2022) suggests that sampling from p(s1: K |x1: C ) is basically first initializing the sources sτmax  
+
+> 1: K
+
+∼ N (0 , σ 2(τmax )I), and then getting the sepa-rated virtual sources s1: K by solving the ODE in Eq. 6 until 
+
+τ = τmin ≃ 0. We elaborate on the details in Appendix A. To acquire the posterior score ∇sτ 
+
+> 1: K
+
+log p(sτ 
+
+> 1: K
+
+|x1: C ) in the ODE above, DPS decomposes the posterior score into a prior score and a likelihood score, where the former is estimated from a pre-trained diffusion model, and the latter is approximated based on a tractable likelihood model (also explained in Appendix A). However, in our “blind” source separation problem, the likelihood is intractable, and solving this is at the crux of this paper. 
+
+Overview: Fig. 2(a) shows the ArrayDPS model. The multi-channel audio mixtures x1: C are inputs (shown at the bottom left of the figure) and the outputs are separated vir-3ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+tual sources from the ODE (shown at the top of the figure). The whole ArrayDPS pipeline essentially develops the com-ponents needed for the ODE to reverse the diffusion process. At each diffusion time τ , ArrayDPS can be summarized in five key steps (following Fig. 2(a)): 
+
+(Step 1) : The final posterior score ∇sτ 
+
+> 1; K
+
+log p(sτ 
+
+> 1: K
+
+|x1: C )
+
+in the ODE is constructed by adding the prior score 
+
+∇sτk log p(sτk ) and likelihood score log ∇sτk p(x1: C |sτ 
+
+> 1: K
+
+)
+
+for each source. 
+
+(Step 2) : The prior score is estimated using Tweedie’s For-mula: ∇sτk p(sτk ) = (ˆ s0 
+
+> k
+
+− sτk )/σ 2(τ ). The ˆs0 
+
+> k
+
+in the formula, which is the estimate of clean source, is the output of a dif-fusion denoising U-Net with noisy source sτk as input. 
+
+(Step 3) : The likelihood p(x1: C |ˆs1: K ) is intractable be-cause the distortion function A(·) (filtering+mixing) in-cludes the unknown relative RIRs. However, given the relative RIRs, the log likelihood log p(x1: C |ˆs01: K , g 1: K 
+
+> 0→1: C
+
+)
+
+becomes tractable. This motivates our log likelihood ap-proximation model expanded in Fig. 2(b). Given the measured mixture x1: C and the denoised esti-mates ˆs01: K from time τ , the yellow module in Fig. 2(b) es-timates the relative RIRs ˆg1: K 
+
+> 0→1: C
+
+in a maximum likelihood manner (detailed next in Sec. 3.2). Recall these relative RIRs are transfer functions from the virtual sources to the real microphone channels, hence appropriately convolving 
+
+ˆg1: K 
+
+> 0→1: C
+
+with the virtual source estimates ˆs1: K gives us the 
+
+actual source image estimates ˆs1: K, 1: C at all the microphone channels. Adding up these actual source image estimates yields the estimated mixtures ˆx1: C . Finally, based on the Gaussian noise model nc(t) in Eq. 2, the log likelihood can be directly calculated as ∥x1: C − ˆx1: C ∥22, weighted by a signal energy-based scaler ξ.
+
+(Step 4) : Back in Fig. 2(a), the approximated log likelihood is back-propagated to sτk to compute the likelihood score. 
+
+(Step 5) : This likelihood score and the prior score (from step 2) are combined to obtain the posterior score at τ .Note that Fig. 2(a) is separating the virtual sources s1: K .Since we want to estimate the source images at the reference channel, namely s1: K, 1, we convolve with the estimated relative RIRs ˆgk 
+
+> 0→1
+
+to obtain the separated source images 
+
+ˆsk, 1.
+
+3.2. Relative RIR Estimation 
+
+Since log likelihood log p(x1: C |ˆs01: K , g 1: K 
+
+> 0→1: C
+
+) is tractable, we propose to estimate the g1: K 
+
+> 0→1: C
+
+in a maximum likelihood manner using mixtures x1: C and denoised sources ˆs01: K :
+
+ˆg1: K 
+
+> 0→1: C
+
+= arg max 
+
+> g1: K
+> 0→1: C
+
+log p(x1: C |g1: K 
+
+> 0→1: C
+
+, ˆs01: K ) (7) 
+
+However, previous work has shown that it is better to esti-mate the filters in spectral domain (Saijo et al., 2024; Gan-not et al., 2017) instead of in the time domain shown above. Hence, we transform to the Short-Time-Fourier-Transform (STFT) domain. In STFT domain, Eq. 5 becomes: 
+
+Sk,c (l, f ) = Gk
+
+> 0→c
+
+(f ) · Sk (l, f ) (8) 
+
+where Sk,c (l, f ) and Sk(l, f ) are the STFT of sk,c (t) and 
+
+sk(t), respectively. Gk
+
+> 0→c
+
+(f ) is the discrete Fourier trans-form of gk
+
+> 0→c
+
+(t), where the FFT size is the same as the STFT. 
+
+Relaxing narrowband assumption: The above equation is unrealistic for speech signals because it makes a narrowband approximation; it assumes that the length of the relative RIR filter is shorter than the FFT size. In real environments, the relative RIR filter can be in hundreds of milliseconds, while the FFT size is usually only tens of milliseconds. To relax this assumption, we model the relative RIR over multiple time-frames as Gk
+
+> 0→c
+
+(l, f ). This multi-frame filter in the STFT domain is then convolved with the virtual source as follows: 
+
+Sk,c (l, f ) = Gk
+
+> 0→c
+
+(l, f ) ∗l Sk (l, f ) (9) 
+
+where l, f are frame and frequency index, and F, P are the number of future and past frames of the relative RIR 
+
+Gk
+
+> 0→c
+
+(l, f ), all in STFT domain. Observe that ∗l in Eq.9 denotes convolution in the frame dimension: 
+
+Gk
+
+> 0→c
+
+(l, f ) ∗l Sk (l, f ) = 
+
+> P
+
+X
+
+> j=−F
+
+Gk
+
+> 0→c
+
+(j, f )Sk (l − j, f ) (10) 
+
+Thus, the complete signal model — that connects the virtual sources to the actual mixtures at the microphones — can be modeled as: 
+
+Xc(l, f ) = 
+
+> K
+
+X
+
+> k=1
+
+Gk
+
+> 0→c
+
+(l, f ) ∗l Sk (l, f ) + Nc(l, f ) (11) 
+
+ML Estimation: Under this setting, we intend to estimate relative RIRs Gk
+
+> 0→c
+
+(l, f ) in a maximum likelihood manner. We found that the Forward Convolutive Prediction (FCP) method (Wang et al., 2021a;b; Wang & Watanabe, 2023) is able to achieve this. Basically, FCP estimates relative RIRs Gk
+
+> 0→c
+
+(l, f ) from the multi-channel mixtures Xc(l, f )
+
+and the virtual source estimate ˆSk(l, f ) by solving a linear problem:                               
+
+> ˆGk
+> 0→c(l, f ) = FCP (Xc(l, f ),ˆSk(l, f )) (12)
+> =arg min
+> Gk
+> 0→c(l,f )
+> X
+> l,f
+> 1ˆλkc(l, f )Xc(l, f )−Gk
+> 0→c(l, f )∗lˆSk(l, f )2
+> (13)
+> ˆλkc(l, f ) = 1
+> C
+> CX
+> c=1
+> |Xc(l, f )|2+ϵ·max
+> l,f
+> 1
+> C
+> CX
+> c=1
+> |Xc(l, f )|2(14)
+
+As shown above, FCP is solving a weighted least squares problem, so it has an analytical solution as in (Wang & Watanabe, 2023). The weight ˆλkc (l, f ) aims to prevent over-fitting to high-energy STFT bins, and ϵ is a parameter to adjust the weight. Note that two important parameters for FCP are F and P from Eq. 10, which control the past and future filter lengths of the relative RIR. We prove FCP is equivalent to the maximum likelihood relative RIR estima-tor in Appendix B.2 Theorem B.1. Thus, with the FCP estimated filters, we can obtain the estimated source images 4ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+at all microphone channels: 
+
+ˆSk,c (l, f ) = ˆGk
+
+> 0→c
+
+(l, f ) ∗l ˆSk (l, f ) (15) 
+
+3.3. Posterior Score Approximation 
+
+The log likelihood approximation gives us relative RIR esti-mates and the corresponding source image estimates at each microphone channel. All of these were computed based on clean source estimates denoised by the diffusion model at time τ . Using all the available estimates, ArrayDPS now needs to compute the posterior score, and then run the ODE solver in Eq. 6 to ultimately get samples from p(s1: K |x1: C ).We describe this process next. Assume we have a pre-trained diffusion denoising model 
+
+Dθ (sτk , σ (τ )) trained on single-channel speech sources; the corresponding score model Sθ (sτk , σ (τ )) approximates 
+
+∇sτk log p(sτk ). Based on this, we present here a novel ap-proximation of the posterior score ∇sτ 
+
+> 1: K
+
+log p(sτ 
+
+> 1: K
+
+|x1: C )
+
+to enable sampling using the ODE above. All the derivation, proof, and analysis of our approximation is in Appendix B. Below is our final result, where we first denoise the noisy sources sτ 
+
+> 1: K
+
+and then transform to STFT domain: 
+
+ˆs0 
+
+> k
+
+= Dθ (sτk , σ (τ )) , ˆS0 
+
+> k
+
+= STFT (ˆ s0 
+
+> k
+
+), k ∈ { 1, ..., K }
+
+(16) 
+
+Then we use FCP to estimate all relative RIRs: 
+
+ˆGk 
+
+> 0→c
+
+= FCP (Xc, ˆS0 
+
+> k
+
+), ˆSk,c = ˆGk 
+
+> 0→c
+
+∗l ˆSk (17) 
+
+The relative RIRs enable log likelihood estimates (at the output of Fig. 2(b)), and to get their respective likelihood scores, we back-propagate to sτ 
+
+> 1
+
+, s τ 
+
+> 2
+
+to calculate the gradient. In the final step, the likelihood scores and the prior scores are summed up to give the posterior score: 
+
+∇sτ 
+
+> 1: K
+
+log p(sτ 
+
+> 1: K
+
+|x1: C ) ≃
+
+> K
+
+X
+
+> k=1
+
+Sθ (sτk , σ (τ )) + 
+
+> C
+
+X
+
+> c=1
+
+∇sτ 
+
+> 1: K
+
+ξ(τ ) xc − ISTFT 
+
+> K
+
+X
+
+> k=1
+
+ˆS0
+
+> k,c
+
+! 22
+
+(18) 
+
+ISTFT above denotes Inverse-Short-Time-Fourier-Transform. Note that the functional relationship between 
+
+sτ 
+
+> 1: K
+
+and ˆS01: K, 1: C is fully differentiable, as operations 
+
+Dθ , STFT, ISTFT and FCP are all differentiable. Thus, in the second term in Eq. 18, the likelihood score can be calculated by back-propagating to sτ 
+
+> 1: K
+
+. Again, detailed proof of correctness, analysis, and relation to Expectation Maximization is included in Appendix B. 
+
+3.4. IVA as Initialization 
+
+At the early stages of solving the separation ODE, the source estimates ˆs01: K are extremely inaccurate, which means the estimated relative RIRs are inaccurate. To mitigate this, we propose to use an Independent Vector Analysis algo-rithm (Kim et al., 2006; Hiroe, 2006) as initialization, for both the sources and the relative RIRs. IVA is a classic unsupervised algorithm for multi-channel blind speech separation, which has limited performance in reverberant conditions (Kim et al., 2006; Hiroe, 2006). For 
+
+Algorithm 1 ArrayDPS 
+
+Require: {N, σ i∈{ 0,...,N }, γ i∈{ 0,...,N −1}, S noise }
+
+Inputs : mixtures x1: C , number of sources K
+
+1: X1: C ← STFT (x1: C )
+
+2: ˆSIVA  
+
+> 1,1
+
+, ..., ˆSIVA  
+
+> K, 1
+
+← IVA (X1: C ) ▷ IVA separation 
+
+3: ˆsIVA  
+
+> 1,1
+
+, ..., ˆsIVA  
+
+> K, 1
+
+← ISTFT ( ˆSIVA  
+
+> 1,1
+
+), ..., ISTFT ( ˆSIVA  
+
+> K, 1
+
+)
+
+4: for k = 1 to K, c = 1 to C do 
+
+5: ˆGk, IVA  
+
+> 1→c
+
+← FCP (Xc, ˆSIVA  
+
+> k, 1
+
+) ▷ IVA Init. relative RIR 6: end for 
+
+7: for k = 1 to K do 
+
+8: Initialize sτ0 
+
+> k
+
+∼ N (ˆ sIVA 
+
+> k, 1
+
+, σ 20 I) ▷ Diff. Init. with IVA 9: end for 
+
+10: for i = 0 to N − 1 do ▷ 2nd order Heun stochastic sampler 11: ˆσi ← σi + γiσi
+
+12: Sample ϵi ∼ N (0 , S 2
+
+> noise
+
+I)
+
+13: for k = 1 to K do 
+
+14: ˆsτi 
+
+> k
+
+← sτi 
+
+> k
+
++ pˆσ2 
+
+> i
+
+− σ2 
+
+> i
+
+ϵi ▷ add stochasticity 15: end for 
+
+16: score ← GET SCORE (ˆsτi 
+
+> 1: K
+
+, x1: C , ˆGk, IVA  
+
+> 1→c
+
+, i) ▷ Algo.2 17: di ← − ˆσi · score 
+
+18: sτi+1  
+
+> 1: K
+
+← ˆsτi 
+
+> 1: K
+
++ ( σi+1 − ˆσi) · di ▷ 1st order Euler step 19: if σi̸ = 0 then ▷ 2nd order correction 20: score ′ ← GET SCORE (sτi+1  
+
+> 1: K
+
+, x1: C , ˆGk, IVA  
+
+> 1→c
+
+, i + 1 )21: d′ 
+
+> i
+
+← − σi+1 · score ′
+
+22: sτi+1  
+
+> 1: K
+
+← ˆsτi 
+
+> 1: K
+
++ 12 (σi+1 − ˆσi) · (di + d′
+
+> i
+
+)
+
+23: end if 
+
+24: end for 
+
+25: ˆS1: K ← STFT (sτN 
+
+> 1: K
+
+)
+
+26: for k = 1 to K do ▷ transform to channel 1 with FCP 27: ˆGk, final  
+
+> 0→1
+
+← FCP (X1, ˆSk )
+
+28: ˆsk, 1 ← ISTFT ( ˆGk, final  
+
+> 0→1
+
+∗ ˆSk )
+
+29: end for 
+
+30: return sτN 
+
+> 1: K
+
+, ˆs1: K, 1 ▷ separated virtual and channel 1 sources 
+
+initialization purposes, we use IVA to separate the sources at the reference channel ( c1 = 1 ) and then use these separated sources to further estimate the relative RIRs ˆGk, IVA  
+
+> 1→c
+
+:
+
+ˆSIVA  
+
+> 1,1
+
+, ... ˆSIVA  
+
+> K, 1
+
+= IVA (X1: C ) (19) 
+
+ˆGk, IVA  
+
+> 1→c
+
+= FCP (Xc, ˆSIVA  
+
+> k, 1
+
+), k ∈ { 1, ..., K }, c ∈ { 1, ..., C }
+
+(20) 
+
+Then the IVA separated sources ˆSIVA  
+
+> 1: K, 1
+
+are used to initial-ize the starting point of posterior sampling, and the esti-mated relative RIRs ˆGk, IVA  
+
+> 1→c
+
+are used to guide the posterior sampling in early stages, which will be discussed next in Sec. 3.5. 
+
+3.5. Algorithm 
+
+Our proposed ArrayDPS is specified in Algorithm 1, which calls the posterior score approximation function, 
+
+GET SCORE( ·), presented in Algorithm 2. We intuitively explain blocks of the algorithm below while the details can be found in Appendix C. 
+
+ArrayDPS Algorithm: The ArrayDPS algorithm in Al-gorithm 1 needs a few sampler parameters to be pre-defined: sampling steps and schedule N , σi∈{ 0,...,N −1},and γi∈{ 0,...,N −1}, Snoise , which all follow the stochastic 5ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+Algorithm 2 Posterior Score Approximation 
+
+Require: {Dθ , σ i∈{ 0,...,N }, N ref , N fg , ξ 1(τ ), ξ 2(τ ), λ } 
+
+> 1:
+
+function G E T S C O R E (sτi 
+
+> 1: K
+
+, x1: C , ˆGk, IVA  
+
+> 1→c
+
+, i) 
+
+> 2:
+
+for k = 1 to K do  
+
+> 3:
+
+ˆs0 
+
+> k
+
+← Dθ (sτi 
+
+> k
+
+, σ i) ▷ diffusion denoiser 4: ˆS0                                                                                    
+
+> k←STFT (ˆ s0
+> k)
+> 5: end for
+> 6: ci←ˆs01: K−sτi
+> 1: K
+> σ2
+> i
+> ▷get prior score 7: X1: C←STFT (x1: C)
+> 8: for k= 1 to K,c= 1 to Cdo
+> 9: if i≤Nfg then
+> 10: ˆGk
+> 0→c←FCP (Xc,ˆS0
+> k)▷Est. relative RIR 11: else
+> 12: ˆGk
+> 0→c←ˆGk, IVA
+> 1→c▷Use IVA init. relative RIR 13: end if
+> 14: ˆsk,c ←ISTFT ( ˆGk
+> 0→c∗lˆS0
+> k)▷filter to all channels 15: end for
+> 16: gi← − ξ1(τi)∇sτ
+> 1: K
+> CP
+> c=1
+> xc−PKk=1 ˆsk,c
+> 22
+> 17: if i≤Nref then ▷reference channel guidance 18: ri← − ξ2(τi)∇sτ
+> 1: Kx1−PKk=1 ˆs0
+> k
+> 22
+> 19: gi←gi+λr i▷update posterior score 20: end if
+> 21: return ci+gi▷final posterior score 22: end function
+
+sampler in EDM (Karras et al., 2022). The algorithm then takes the mixtures x1: C and number of sources K as in-puts, to separate source images in the reference channel. From lines 1-6, IVA is used to separate reference-channel source images, which are further used to estimate the rel-ative RIRs. Then in lines 7-9, the IVA separated sources are used as diffusion initialization. Line 10-24 is a second-order Heun stochastic sampler following EDM (Karras et al., 2022), where the score is using our Posterior Score Approx-imation, GET SCORE( ·), in Algorithm 2. Note that the sampler is sampling the virtual sources instead of reference channel source images; we discuss the reason later in Ap-pendix G. Then, to output separated source images in the reference channel, lines 25-30 use FCP to estimate the rel-ative RIRs that allow filtering virtual sources to reference channel source images. 
+
+Posterior Score Approximation Algorithm: The posterior score approximation in Algorithm 2 follows the result in Sec. 3.3 and provides Algorithm 1 with the posterior score for diffusion sampling. Algorithm 2 needs a few pre-defined parameters. Dθ is pre-trained diffusion denoiser. Nref is the number of early steps needed for reference channel guid-ance, where the sum of estimated sources are directly guided by the reference channel mixture (lines 17-19). We found this empirical term helps improve algorithm robustness and convergence. Nfg means in the first Nfg sampling steps, the IVA initialized relative RIRs are used to calculate the like-lihood, instead of the FCP-estimated ones. ξ1(τ ), ξ 2(τ ), λ 
+
+are all weighting scalars which will be discussed in detail in Appendix C. The algorithm takes the current diffusion noisy sources sτi 
+
+> 1: K
+
+, the mixtures x1: C , the IVA initialized relative RIRs ˆGk, IVA  
+
+> 1→c
+
+and the diffusion step i as inputs. In lines 2-6, the noisy sources are denoised, and are then used to estimate the prior score (using Tweedie’s Formula). Then in lines 9-15, the relative RIRs (estimated from IVA init. or estimated using current source est.) are used to transform estimated virtual sources to all channels. In line 16 the ap-proximated likelihood score is estimated. Line 17-19 is the reference channel guidance mentioned. Then in line 21, the posterior score is the sum of the prior score and likelihood score. 
+
+# 4. Experiments and Evaluation 
+
+We first discuss ArrayDPS’s training and sampling config-urations, as well as the baseline configurations. Then we show results and analysis on both fixed microphone array (test samples are all from one single microphone array) and 
+
+ad-hoc microphone arrays (test samples are from differ-ent unknown microphone arrays). We have open sourced ArrayDPS in https://github.com/ArrayDPS/ArrayDPS. 
+
+4.1. Datasets 
+
+As mentioned in Sec. 3, ArrayDPS relies on a pre-trained single-channel single-speaker denoising diffusion model 
+
+Dθ . We train this unconditional speech diffusion model on a clean subset of speech corpus LibriTTS (Zen et al., 2019). Since the virtual source could be reverberant, we train another diffusion prior to reverberant speech, where we convolve LibriTTS clean speech with room impulse re-sponses (RIR). We discuss details, including the architecture and diffusion training configurations, in Appendix D. For the final sampler and the posterior score approximation, we discuss the parameter configurations in Appendix C.3. For evaluation, we use SMS-WSJ (Drude et al., 2019b) dataset for fixed microphone array evaluation and use Spa-tialized WSJ0-2Mix dataset (Wang et al., 2018) for ad-hoc microphone array evaluation. SMS-WSJ contains simulated mixtures and sources on a fixed microphone array while Spatialized WSJ0-2Mix contains samples on different mi-crophone arrays. All datasets are designed for 2-speaker source separation. Details of the datasets are explained in Appendix E. 
+
+4.2. ArrayDPS and Variants (for ablations) 
+
+Row 2a–2e, 3a–3b, and 4a–4b in Table 1 show Array-DPS and its variants for ablations. ArrayDPS-A in row 
+
+2a is default ArrayDPS with anechoic clean speech diffu-sion prior. ArrayDPS-B in row 2b is the same but the diffusion prior is trained on reverberant speech. ArrayDPS-C in row 2c shows the ablation when the reference channel guidance is removed from Algorithm 2. ArrayDPS-D in row 2d shows the ablation when IVA initialization is re-6ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior                                                                                                                                                                                        
+
+> Table 1. Evaluation results for 3-channel SMS-WSJ. Methods denoted with †are results from UNSSOR (Wang & Watanabe, 2023), and methods denoted with ∗mean it is impractical. Note that SMS-WSJ only contains samples with a fixed microphone array. Top results are color-coded as top1 , top2 , and top3 . Row Methods Unsup. Array Agnostic Prior IVA Init. Ref. Guide. SDR (dB) SI-SDR (dB) PESQ eSTOI 0Mixture -----0.1 0.0 1.87 0.603 1a Spatial Cluster †✓✓---9.5 8.5 2.52 0.759 1b IVA †✓✓Laplace --12.0 10.7 2.67 0.802 1c IVA ✓✓Gaussian --13.4 12.2 2.82 0.834 1d UNSSOR †✓×---15.4 14.4 3.20 0.875 2a ArrayDPS-A ✓✓Anechoic ✓✓15.8 ±1.2 15.0 ±1.3 3.38 ±0.12 0.865 ±0.020 2b ArrayDPS-B ✓✓Reverb. ✓✓15.1 ±1.1 14.3 ±1.2 3.29 ±0.11 0.850 ±0.019 2c ArrayDPS-C ✓✓Anechoic ✓×14.9 ±1.3 14.0 ±1.5 3.16 ±0.16 0.844 ±0.026 2d ArrayDPS-D ✓✓Anechoic ×✓8.5 ±4.6 6.8 ±5.2 2.59 ±0.48 0.731 ±0.111 2e ArrayDPS-E ✓✓Anechoic ××0.9 ±1.6 -1.4 ±1.9 1.74 ±0.15 0.518 ±0.058 3a ArrayDPS-A-Max ∗✓✓Anechoic ✓✓17.2 16.5 3.52 0.888 3b ArrayDPS-D-Max ∗✓✓Anechoic ×✓14.4 13.4 3.19 0.860 4a ArrayDPS-A-ML ✓✓Anechoic ✓✓16.9 16.2 3.49 0.884 4b ArrayDPS-D-ML ✓✓Anechoic ×✓14.0 12.9 3.15 0.851 5a TF-GridNet-SMS †××---16.8 16.3 3.91 0.924 5b TF-GridNet-SMS ××---16.2 15.7 3.72 0.908 5c TF-GridNet-Spatial ×(3-mics) ---14.7 14.1 3.35 0.877
+
+moved, while ArrayDPS-E in row 2e shows the ablation when both initialization and reference channel guidance are removed. Note that the sampling parameters for Ar-rayDPS with and without initialization are different (see Appendix C.3). Because all ArrayDPS in Row 2(a–e) are generative, we sample 5 separated samples for each mix-ture and report the 5-sample mean and standard deviation (mean ±std in Row 2, Table 1), averaged over all the mix-tures in the test set. In Row 3a–3b , ArrayDPS-A-Max and ArrayDPS-D-Max 
+
+shows the max metric score from the 5 samples, averaged for all test samples. Row 4a-4b represents ArrayDPS-A-ML 
+
+and ArrayDPS-D-ML , where ML stands for ‘maximum likelihood’. Basically, from the 5 samples, we find the one with the maximum likelihood (highest mixture reconstruc-tion SNR) and report the separation metric averaged over the test set. Row 3a and 4a’s methods are the same as the default 2a (default), while 3b and 4b are the same as 2d (no initialization). Note that Row 4 is a practical algorithm because it only uses the mixture to calculate the likelihood. 
+
+4.3. Baseline Methods 
+
+For the baseline models, we include three unsupervised models: Spatial Clustering (Rickard, 2007; Tran Vu & Haeb-Umbach, 2010; Sawada et al., 2011; Ito et al., 2016), 
+
+Independent Vector Analysis (IVA) (Kim et al., 2006; Hi-roe, 2006), UNSSOR (Wang & Watanabe, 2023), as well as supervised TF-GridNet (Wang et al., 2023). TF-GridNet-SMS † is the supervised baseline model reported in UN-SSOR (Wang & Watanabe, 2023) trained on SMS-WSJ Corpus (Drude et al., 2019b). TF-GridNet-SMS and TF-GridNet-Spatial are our reproduced TF-GridNet trained on SMS-WSJ and Spatialized WSJ0-2Mix corpus respectively. Note that TF-GridNet-Spatial in Table 1 row 5c should gen-eralize to any 3-channel ad-hoc microphone arrays. All baseline models are discussed in detail in Appendix F. 
+
+4.4. Metrics 
+
+For metrics, we use the first channel clean source images as the reference signals. We use the signal-to-distortion ratio (SDR) (Vincent et al., 2006) and Scale-Invariant SDR (SI-SDR) (Roux et al., 2018) to measure sample-level sepa-ration performance. We use perceptual evaluation of speech quality (PESQ) (Rix et al., 2001) and extended short-time objective intelligibility (eSTOI) (Taal et al., 2011) to mea-sure perceptual quality and speech intelligibility respectively. 
+
+4.5. Fixed Microphone Array Evaluation 
+
+We show the evaluation result for the 3-channel (using first, third, and fifth mics) SMS-WSJ test set in Table 1. 6-channel SMS-WSJ results are in Appendix I. 
+
+Against Unsupervised: We first compare against the unsu-pervised methods. Comparing rows 2a vs. 1(a–d) , we see ArrayDPS-A’s mean score consistently outperforms spa-tial clustering and IVA-based methods by a substantive margin; also outperforms the unsupervised state-of-the-art method UNSSOR in all metrics except eSTOI. Moreover, ArrayDPS-A’s standard deviation is quite robust. Note that UNSSOR is trained only for a fixed array on the SMS-WSJ dataset. If we further compare row 4a vs. 1d , we see that by selecting the maximum likelihood sample, ArrayDPS-A-ML shows strong improvement over UNSSOR (1.8 dB of SI-SDR, 0.29 PESQ). 
+
+Against Supervised: Outperforming recent supervised 7ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+methods is extremely challenging and all previous unsuper-vised methods exhibit a gap to supervised methods (Wang & Watanabe, 2023; Saijo et al., 2024). On comparing row 
+
+2a vs. 5a–5b , ArrayDPS-A is consistently worse than the recent supervised methods, as expected. However, compar-ing row 3a vs. 5a–5b , ArrayDPS-A-Max shows better SDR and SI-SDR than the supervised method, which means if we sample 5 samples using ArrayDPS, one of the samples can outperform supervised methods in terms of SDR and SI-SDR. However, since ArrayDPS-Max’s max operation is not practical, we check ArrayDPS-A-ML, i.e., row 4a vs. 5a–5b ; observe that the maximum likelihood sample from 5 samples achieves slightly better SDR than the supervised method, but a bit worse on other metrics. 
+
+Ablation Studies: We compare the ablations in rows 2a-2e. Comparing 2b vs. 2a , we find that it is better to use the anechoic clean speech diffusion prior instead of the reverberant one. The possible reason is related to FCP, which we explain in Appendix G. Comparing 2c vs. 2a , we find that with initialization, the reference channel guidance can improve all metrics and reduce the standard deviation (instability). Comparing 2d vs. 2a , the performance drops severely without the IVA initialization, while the std is also high, meaning sometimes the method can separate but not always. When it’s able to separate, from row 3b and 4b , the best result from 5 samples is reasonable even without IVA initialization. Lastly, we compare row 2d vs. 2e and find that without IVA initialization, the reference channel guidance is extremely important to obtain reasonable performance. Lastly, we check row 5c , which is supervised TF-GridNet trained on 3-channel Spatialized WSJ0-2Mix dataset (ad-hoc array dataset) and we test how well it works on the SMS-WSJ dataset. Observing row 5b vs. 5c , we see that for su-pervised models, generalizing to ad-hoc arrays costs a huge performance drop. Comparing row 5b vs. 2a , ArrayDPS-A outperforms supervised TF-GridNet-Spatial in SDR and SI-SDR by about 1dB, while ArrayDPS-A-ML (row 4a )outperforms TF-GridNet-Spatial for all metrics. 
+
+4.6. Ad-hoc Array Evaluation 
+
+We evaluate the ad-hoc array setting on the Spatialized WSJ0-2Mix (Wang et al., 2018) dataset. In Table 2, we show results for the 4-channel case (using the first 4 mics for each sample, different samples’ array geometries are different); the 2-channel and 3-channel results are in Ap-pendix H. Following Table 2, ArrayDPS-A-ML (row 5a ) outperforms all unsupervised methods by a substantive margin, while ArrayDPS-A (row 2a )’s mean metrics performs better than UNSSOR (row 1d ) in SDR, SI-SDR, and eSTOI. Com-paring row 2a vs. 6a , we see ArrayDPS-A’s mean metric scores are even better than supervised TF-GridNet in SDR                                                                    
+
+> Table 2. Ad-hoc Array Evaluation results for 4-channel Spatialized WSJ0-2Mix. Note that the microphone positions are random for this dataset. Top results are emphasized in top1 ,top2 , and top3 . Methods denoted with ∗mean it is impractical. Row Methods SDR SI-SDR PESQ eSTOI 0Mixture 0.2 0.0 1.81 0.545 1a Spatial Cluster 9.3 8.0 2.48 0.745 1b IVA-Laplace 7.9 5.2 2.41 0.648 1c IVA-Gaussian 12.5 10.1 3.01 0.808 1d UNSSOR 15.2 14.2 3.54 0.873 2a ArrayDPS-A 16.1
+> ±0.6 15.3
+> ±0.6 3.47
+> ±0.07 0.877
+> ±0.012 3a ArrayDPS-D 6.7
+> ±4.5 4.7
+> ±5.0 2.45
+> ±0.51 0.677
+> ±0.120 4a ArrayDPS-A-Max* 16.8 16.0 3.54 0.891 4b ArrayDPS-D-Max* 12.9 11.6 3.14 0.830 5a ArrayDPS-A-ML 16.6 15.8 3.52 0.886 5b ArrayDPS-D-ML 12.3 10.8 3.06 0.810 6a TF-GridNet-Spatial 15.8 15.1 3.67 0.895
+
+and SI-SDR, showing ArrayDPS’s superiority in ad-hoc array setting. 
+
+4.7. 3 speakers and Real-World Evaluations 
+
+We also show that our ArrayDPSworks nicely in 3-speaker and real-world samples. For 3-speaker evaluation, we evaluate ArrayDPSon the Spatialized WSJ0-3Mix dataset, which is the 3-speaker version of the Spatialized WSJ0-2Mix dataset. This means the dataset also contains samples recorded from ad-hoc microphones. The separation results are shown in Appendix J, showing that ArrayDPS easily outperforms supervised methods by a large margin. For real-world mixture evaluation, we recorded 15 mixtures in a 7m x 4m x 2.7m room. Two volunteers speak simul-taneously with weak environmental noise and are recorded by 3 microphones. The separation results are shown in the demo site: https://arraydps.github.io/ArrayDPSDemo/. 
+
+4.8. Source and Filter Visualizations 
+
+Recall that ArrayDPSsamples virtual source signals and then uses FCP to estimate the relative RIRs that filter the virtual sources to the reference channel sources. Thus, we conduct a visualization analysis of the virtual sources, and the es-timated relative RIRs are in the spectrogram domain. The visualization and a detailed explanation are in Appendix L. The virtual source listening demos are also on our demo site. Our observation is that the virtual source separated is closer to the anechoic clean source speech than the reverber-ant clean source speech, meaning that ArrayDPShas some dereverberation effects. 
+
+# 5. Related Work 
+
+Blind speech separation has been advanced greatly by deep neural networks using supervised training (Wang & Chen, 8ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+2018; Hershey et al., 2016; Yu et al., 2017; Kalkhorani & Wang, 2024; Wang et al., 2023; Quan & Li, 2023; Tahe-rian et al., 2023; Xu et al., 2024; Li et al., 2024). However, supervised methods have generalization issues (Pandey & Wang, 2020; Zhang et al., 2021), especially in multi-channel scenarios, where training on multiple microphones with ar-ray agnostic tricks (Luo et al., 2020; Yoshioka et al., 2022; Taherian et al., 2022) cannot guarantee generalization on unseen microphone arrays (Taherian et al., 2022). Also, supervised methods are usually discriminative, often pro-ducing blurred results with nonlinear distortions. To solve this problem, generative separation methods (Subakan & Smaragdis, 2018; Scheibler et al., 2023; Karchkhadze et al., 2024; Lutati et al.) are proposed to sample clean sources conditioned on the given mixture. However, these generative methods still need clean-mixture paired data for supervised training. For unsupervised separation, independent component anal-ysis (ICA) (Amari et al., 1995; Hyv ¨arinen et al., 2009; Sawada et al., 2019) separates sources by enforcing inde-pendence between sources. Independent vector analysis (IVA) (Kim et al., 2006; Hiroe, 2006; Nakashima et al., 2021) adds a Gaussian assumption on each source’s STFT bins. Spatial Clustering (Tran Vu & Haeb-Umbach, 2010; Sawada et al., 2011; Ito et al., 2016; Rickard, 2007) based methods separate the sources by clustering the STFT bins using spatial features. Deep learning based unsupervised source separation has also been studied widely. Mixture invariant training (MixIT) (Wisdom et al., 2020; Tzinis et al., 2020; 2022a;b; Saijo & Ogawa, 2023; Sivaraman et al., 2022) synthesizes new mixtures by mixing real-world mixtures, and train the separation model output sources can be mixed somehow to the original mixtures. MixIT has been modified to the multi-channel scenarios (Wang & Watanabe, 2023; Han et al., 2024), but shows limited performance. Another line of work (Tzinis et al., 2019; Drude et al., 2019a; Seethara-man et al., 2019; Togami et al., 2020; Xu & Choudhury, 2022) uses classic methods like spatial clustering to generate pseudo-labels as training targets. However, the performance is bounded by the classic method. More recently, one group of work tried to exploit the multi-channel signal model for unsupervised training (Aralikatti et al., 2023; Saijo et al., 2024; Wang & Watanabe, 2023; Drude et al., 2019c; Bando et al., 2021; 2022). These methods train a neural network to separate sources, which after filtering and mixing, would be close to the multi-channel mixture. Although these methods show promising results, they do not exploit the speech prior information during training. One way to incorporate prior is to use a diffusion model (Ho et al., 2020; Karras et al., 2022; Song et al., 2021; Sohl-Dickstein et al., 2015). Score-based diffusion model learns to generate from a distribution by following a probabilistic SDE/ODE from a noise initialization (Song et al., 2021). Diffusion posterior sampling (DPS) (Chung et al., 2023b; Song et al., 2023; 2021) tries to solve the inverse problem with a pre-trained prior diffusion model and a known like-lihood model. Later, a few works are further proposed to solve the blind inverse problem with DPS (Chung et al., 2023a; Moliner et al., 2024b; Bai et al., 2024; ˇSvento et al., 2025b; Thuillier et al., 2025; ˇSvento et al., 2025a; Moliner et al., 2025; Laroche et al., 2024). More recently, DPS has been applied for source separa-tion (Yu et al., 2023; Mariani et al., 2024; Jayaram & Thick-stun, 2020). However, these methods only consider single-channel source separation where the likelihood is tractable, which is not the case for multi-channel problems. 
+
+# 6. Conclusion 
+
+This paper proposes ArrayDPS, an unsupervised, array-agnostic, and generative method to separate speech from multi-channel mixture recordings. ArrayDPS proposes to use a speech diffusion prior and a novel likelihood approxi-mation to enable posterior sampling. The result shows our method outperforms other unsupervised methods and per-forms on par with supervised methods in SDR. We leave future work to explore ArrayDPS for more general array inverse problems. 
+
+# Acknowledgment 
+
+We thank Foxconn and NSF (grant 2008338, 1909568, 2148583, and MRI-2018966) for funding this research. We are also grateful to the reviewers for their insightful feed-back. 
+
+# Impact Statement 
+
+This paper explores advancements in unsupervised, array-agnostic, and generative blind speech separation, which lies in the intersection of several established fields, including ar-ray signal processing and machine learning. The algorithm we developed has many positive societal consequences. One notable application of our algorithm is assistive/augmented hearing, which improves communication and accessibility for individuals in noisy environments, especially those with hearing impairments. Also, our method has the potential to improve automatic speech transcription technology on ad-hoc microphone arrays. Although our method is gen-erative, it does not synthesize harmful speeches that are not initially presented in the speech mixture. Nonetheless, the capability to isolate individual voices may pose privacy risks, which need careful regulations. We believe no other concerns require specific emphasis at this point. 9ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+# References 
+
+Allen, J. B. and Berkley, D. A. Image method for efficiently simulating small-room acoustics. The Journal of the Acoustical Society of America , 65(4):943–950, 1979. Amari, S.-i., Cichocki, A., and Yang, H. A new learning algorithm for blind signal separation. Advances in neural information processing systems , 8, 1995. Aralikatti, R., Boeddeker, C., Wichern, G., Subramanian, A., and Le Roux, J. Reverberation as supervision for speech separation. In IEEE International Conference on Acoustics, Speech and Signal Processing , pp. 1–5, 2023. Bai, W., Chen, S., Chen, W., and Sun, H. Blind inversion using latent diffusion priors, 2024. URL https:// arxiv.org/abs/2407.01027 .Bando, Y., Sekiguchi, K., Masuyama, Y., Nugraha, A. A., Fontaine, M., and Yoshii, K. Neural full-rank spatial covariance analysis for blind source separation. IEEE Signal Processing Letters , 28:1670–1674, 2021. Bando, Y., Aizawa, T., Itoyama, K., and Nakadai, K. Weakly-supervised neural full-rank spatial covariance analysis for a front-end system of distant speech recogni-tion. In Interspeech , pp. 3824–3828, 2022. Boeddeker, C. Example of mixture model. https: //github.com/fgnt/pb_bss/blob/master/ examples/mixture_model_example.ipynb ,2019. Cherry, E. C. Some experiments on the recognition of speech, with one and with two ears. The Journal of the acoustical society of America , 25(5):975–979, 1953. Chung, H., Kim, J., Kim, S., and Ye, J. C. Parallel diffusion models of operator and image for blind inverse problems. In Proceedings of the IEEE/CVF Conference on Com-puter Vision and Pattern Recognition , pp. 6059–6069, 2023a. Chung, H., Kim, J., Mccann, M. T., Klasky, M. L., and Ye, J. C. Diffusion posterior sampling for general noisy inverse problems. In International Conference on Learning Representations , 2023b. URL https: //openreview.net/forum?id=OnD9zGAGT0k .Drude, L., Hasenklever, D., and Haeb-Umbach, R. Unsuper-vised training of a deep clustering model for multichannel blind source separation. In ICASSP 2019-2019 IEEE In-ternational Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 695–699. IEEE, 2019a. Drude, L., Heitkaemper, J., Boeddeker, C., and Haeb-Umbach, R. Sms-wsj: Database, performance measures, and baseline recipe for multi-channel source separation and recognition, 2019b. URL https://arxiv.org/ abs/1910.13934 .Drude, L., Heymann, J., and Haeb-Umbach, R. Unsuper-vised training of neural mask-based beamforming. arXiv preprint arXiv:1904.01578 , 2019c. Gannot, S., Vincent, E., Markovich-Golan, S., and Oze-rov, A. A consolidated perspective on multimicrophone speech enhancement and source separation. IEEE/ACM Transactions on Audio, Speech, and Language Process-ing , 25(4):692–730, 2017. doi: 10.1109/TASLP.2016. 2647702. Han, C., Wilson, K., Wisdom, S., and Hershey, J. R. Un-supervised multi-channel separation and adaptation. In 
+
+ICASSP 2024-2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 721–725. IEEE, 2024. Hershey, J. R., Chen, Z., Le Roux, J., and Watanabe, S. Deep clustering: Discriminative embeddings for segmentation and separation. In 2016 IEEE international conference on acoustics, speech and signal processing (ICASSP) , pp. 31–35. IEEE, 2016. Hiroe, A. Solution of permutation problem in frequency do-main ica, using multivariate probability density functions. In Rosca, J., Erdogmus, D., Pr ´ıncipe, J. C., and Haykin, S. (eds.), Independent Component Analysis and Blind Sig-nal Separation , pp. 601–608, Berlin, Heidelberg, 2006. Springer Berlin Heidelberg. ISBN 978-3-540-32631-1. Ho, J., Jain, A., and Abbeel, P. Denoising diffusion proba-bilistic models. arXiv preprint arxiv:2006.11239 , 2020. Hyv ¨arinen, A., Hurri, J., Hoyer, P. O., Hyv ¨arinen, A., Hurri, J., and Hoyer, P. O. Independent component analysis .Springer, 2009. Ito, N., Araki, S., and Nakatani, T. Complex angular central gaussian mixture model for directional statistics in mask-based microphone array signal processing. In 2016 24th European Signal Processing Conference (EUSIPCO) ,pp. 1153–1157, 2016. doi: 10.1109/EUSIPCO.2016. 7760429. Jayaram, V. and Thickstun, J. Source separation with deep generative priors. In International Conference on Ma-chine Learning , pp. 4724–4735. PMLR, 2020. Kalkhorani, V. A. and Wang, D. Tf-crossnet: Lever-aging global, cross-band, narrow-band, and positional encoding for single- and multi-channel speaker sep-aration. IEEE/ACM Transactions on Audio, Speech, and Language Processing , 32:4999–5009, 2024. doi: 10.1109/TASLP.2024.3492803. 10 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+Karchkhadze, T., Izadi, M. R., and Zhang, S. Improving source extraction with diffusion and consistency models. 
+
+arXiv preprint arXiv:2412.06965 , 2024. Karras, T., Aittala, M., Aila, T., and Laine, S. Elucidating the design space of diffusion-based generative models. In 
+
+Proc. NeurIPS , 2022. Kim, T., Eltoft, T., and Lee, T.-W. Independent vector analysis: An extension of ica to multivariate components. In International conference on independent component analysis and signal separation , pp. 165–172. Springer, 2006. Kinoshita, K., Delcroix, M., Yoshioka, T., Nakatani, T., Habets, E., Haeb-Umbach, R., Leutnant, V., Sehr, A., Kellermann, W., Maas, R., Gannot, S., and Raj, B. The reverb challenge: A common evaluation framework for dereverberation and recognition of reverberant speech. In 2013 IEEE Workshop on Applications of Signal Pro-cessing to Audio and Acoustics , pp. 1–4, 2013. doi: 10.1109/WASPAA.2013.6701894. Ko, T., Peddinti, V., Povey, D., Seltzer, M. L., and Khu-danpur, S. A study on data augmentation of reverberant speech for robust speech recognition. In 2017 IEEE International Conference on Acoustics, Speech and Sig-nal Processing (ICASSP) , pp. 5220–5224, 2017. doi: 10.1109/ICASSP.2017.7953152. Laroche, C., Almansa, A., and Coupete, E. Fast diffu-sion em: a diffusion model for blind inverse problems with application to deconvolution. In Proceedings of the IEEE/CVF Winter Conference on Applications of Com-puter Vision , pp. 5271–5281, 2024. Li, A., Yu, G., Xu, Z., Fan, C., Li, X., and Zheng, C. Tabe: Decoupling spatial and spectral processing with taylor’s unfolding method in the beamspace domain for multi-channel speech enhancement. Information Fusion , 101: 101976, 2024. Luo, Y., Chen, Z., Mesgarani, N., and Yoshioka, T. End-to-end microphone permutation and number invariant multi-channel speech separation. In ICASSP 2020-2020 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 6394–6398. IEEE, 2020. Lutati, S., Nachmani, E., and Wolf, L. Separate and dif-fuse: Using a pretrained diffusion model for better source separation. In The Twelfth International Conference on Learning Representations .Mariani, G., Tallini, I., Postolache, E., Mancusi, M., Cosmo, L., and Rodol `a, E. Multi-source diffusion models for simultaneous music generation and separation. In The Twelfth International Conference on Learning Represen-tations , 2024. URL https://openreview.net/ forum?id=h922Qhkmx1 .McDermott, J. H. The cocktail party problem. Current Biology , 19(22):R1024–R1027, 2009. Moliner, E., Lehtinen, J., and V ¨alim ¨aki, V. Solving audio inverse problems with a diffusion model. In ICASSP 2023 - 2023 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 1–5, 2023. doi: 10.1109/ICASSP49357.2023.10095637. Moliner, E., Elvander, F., and V ¨alim ¨aki, V. Blind au-dio bandwidth extension: A diffusion-based zero-shot approach. IEEE/ACM Transactions on Audio, Speech, and Language Processing , 32:5092–5105, 2024a. doi: 10.1109/TASLP.2024.3507566. Moliner, E., Lemercier, J.-M., Welker, S., Gerkmann, T., and V ¨alim ¨aki, V. Buddy: Single-channel blind un-supervised dereverberation with diffusion models. In 
+
+2024 18th International Workshop on Acoustic Signal Enhancement (IWAENC) , pp. 120–124, 2024b. doi: 10.1109/IWAENC61483.2024.10694254. Moliner, E., ˇSvento, M., Wright, A., Juvela, L., Rajmic, P., and V ¨alim ¨aki, V. Unsupervised estimation of nonlinear audio effects: Comparing diffusion-based and adversar-ial approaches, 2025. URL https://arxiv.org/ abs/2504.04751 .Nakashima, T., Scheibler, R., Togami, M., and Ono, N. Joint dereverberation and separation with iterative source steering. ICASSP 2021 -2021 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 216–220, 2021. URL https://api.semanticscholar. org/CorpusID:231918419 .Pandey, A. and Wang, D. On cross-corpus general-ization of deep learning based speech enhancement. 
+
+IEEE/ACM Transactions on Audio, Speech, and Lan-guage Processing , 28:2489–2499, 2020. URL https: //api.semanticscholar.org/CorpusID: 211068769 .Quan, C. and Li, X. Spatialnet: Extensively learning spatial information for multichannel joint speech sep-aration, denoising and dereverberation, 2023. URL 
+
+https://arxiv.org/abs/2307.16516 .Rickard, S. The DUET Blind Source Separation Al-gorithm , pp. 217–241. Springer Netherlands, Dor-drecht, 2007. ISBN 978-1-4020-6479-1. doi: 10.1007/ 978-1-4020-6479-1 8. URL https://doi.org/10. 1007/978-1-4020-6479-1_8 .11 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+Rix, A., Beerends, J., Hollier, M., and Hekstra, A. Percep-tual evaluation of speech quality (pesq)-a new method for speech quality assessment of telephone networks and codecs. In 2001 IEEE International Conference on Acous-tics, Speech, and Signal Processing. Proceedings (Cat. No.01CH37221) , volume 2, pp. 749–752 vol.2, 2001. doi: 10.1109/ICASSP.2001.941023. Roux, J. L., Wisdom, S., Erdogan, H., and Hershey, J. R. Sdr – half-baked or well done? ICASSP 2019 - 2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 626–630, 2018. URL https://api.semanticscholar. org/CorpusID:53246666 .Saijo, K. and Ogawa, T. Self-remixing: Unsupervised speech separation via separation and remixing. In ICASSP 2023-2023 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 1–5. IEEE, 2023. Saijo, K., Wichern, G., Germain, F. G., Pan, Z., and Le Roux, J. Enhanced reverberation as supervision for unsupervised speech separation. In Interspeech 2024 , pp. 607–611, 2024. doi: 10.21437/Interspeech.2024-1241. Sawada, H., Araki, S., and Makino, S. Underdetermined convolutive blind source separation via frequency bin-wise clustering and permutation alignment. IEEE Trans-actions on Audio, Speech, and Language Processing , 19 (3):516–527, 2011. doi: 10.1109/TASL.2010.2051355. Sawada, H., Ono, N., Kameoka, H., Kitamura, D., and Saruwatari, H. A review of blind source separation meth-ods: two converging routes to ilrma originating from ica and nmf. APSIPA Transactions on Signal and Information Processing , 8:e12, 2019. Scheibler, R. and Saijo, K. torchiva: Tools for independent vector analysis in pytorch. https://github.com/ fakufaku/torchiva , 2022. Scheibler, R., Ji, Y., Chung, S.-W., Byun, J., Choe, S., and Choi, M.-S. Diffusion-based generative speech source separation. In ICASSP 2023-2023 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 1–5. IEEE, 2023. Seetharaman, P., Wichern, G., Le Roux, J., and Pardo, B. Bootstrapping single-channel source separation via unsu-pervised spatial clustering on stereo mixtures. In ICASSP 2019-2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 356–360. IEEE, 2019. Sivaraman, A., Wisdom, S., Erdogan, H., and Hershey, J. R. Adapting speech separation to real-world meetings us-ing mixture invariant training. In ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 686–690. IEEE, 2022. Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., and Ganguli, S. Deep unsupervised learning using nonequi-librium thermodynamics. In International conference on machine learning , pp. 2256–2265. PMLR, 2015. Song, J., Vahdat, A., Mardani, M., and Kautz, J. Pseudoinverse-guided diffusion models for inverse prob-lems. In International Conference on Learning Represen-tations , 2023. URL https://openreview.net/ forum?id=9_gsMA8MRKQ .Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., and Poole, B. Score-based generative mod-eling through stochastic differential equations. In In-ternational Conference on Learning Representations ,2021. URL https://openreview.net/forum? id=PxTIG12RRHS .Subakan, Y. C. and Smaragdis, P. Generative adversar-ial source separation. In 2018 IEEE International Con-ference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 26–30. IEEE, 2018. ˇSvento, M., Moliner, E., Juvela, L., Wright, A., and V ¨alim ¨aki, V. Estimation and restoration of unknown nonlinear distortion using diffusion. arXiv preprint arXiv:2501.05959 , 2025a. ˇSvento, M., Moliner, E., Juvela, L., Wright, A., and V ¨alim ¨aki, V. Estimation and restoration of unknown nonlinear distortion using diffusion. arXiv preprint arXiv:2501.05959 , 2025b. Taal, C. H., Hendriks, R. C., Heusdens, R., and Jensen, J. An algorithm for intelligibility prediction of time–frequency weighted noisy speech. IEEE Transactions on Audio, Speech, and Language Processing , 19(7):2125–2136, 2011. doi: 10.1109/TASL.2011.2114881. Taherian, H., Eskimez, S. E., Yoshioka, T., Wang, H., Chen, Z., and Huang, X. One model to enhance them all: array geometry agnostic multi-channel personalized speech en-hancement. In ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 271–275. IEEE, 2022. Taherian, H., Pandey, A., Wong, D., Xu, B., and Wang, D. Multi-input multi-output complex spectral mapping for speaker separation. ISCA, 2023. Taherian, H., Pandey, A., Wong, D., Xu, B., and Wang, D. Leveraging sound localization to improve continu-ous speaker separation. In ICASSP 2024 - 2024 IEEE International Conference on Acoustics, Speech and Sig-nal Processing (ICASSP) , pp. 621–625, 2024. doi: 10.1109/ICASSP48485.2024.10446934. 12 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+Thuillier, E., Lemercier, J.-M., Moliner, E., Gerkmann, T., and V ¨alim ¨aki, V. Hrtf estimation using a score-based prior. In ICASSP 2025-2025 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 1–5. IEEE, 2025. Togami, M., Masuyama, Y., Komatsu, T., and Nakagome, Y. Unsupervised training for deep speech source separa-tion with kullback-leibler divergence based probabilistic loss function. In ICASSP 2020-2020 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 56–60. IEEE, 2020. Tran Vu, D. H. and Haeb-Umbach, R. Blind speech sepa-ration employing directional statistics in an expectation maximization framework. In 2010 IEEE International Conference on Acoustics, Speech and Signal Processing ,pp. 241–244, 2010. doi: 10.1109/ICASSP.2010.5495994. Tzinis, E., Venkataramani, S., and Smaragdis, P. Unsu-pervised deep clustering for source separation: Direct learning from mixtures using spatial information. In 
+
+ICASSP 2019-2019 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 81–85. IEEE, 2019. Tzinis, E., Wisdom, S., Jansen, A., Hershey, S., Remez, T., Ellis, D. P., and Hershey, J. R. Into the wild with audioscope: Unsupervised audio-visual separation of on-screen sounds. arXiv preprint arXiv:2011.01143 , 2020. Tzinis, E., Adi, Y., Ithapu, V. K., Xu, B., Smaragdis, P., and Kumar, A. Remixit: Continual self-training of speech enhancement models via bootstrapped remixing. IEEE Journal of Selected Topics in Signal Processing , 16(6): 1329–1341, 2022a. Tzinis, E., Wisdom, S., Remez, T., and Hershey, J. R. Au-dioscopev2: Audio-visual attention architectures for cali-brated open-domain on-screen sound separation. In Eu-ropean Conference on Computer Vision , pp. 368–385. Springer, 2022b. Vincent, E., Gribonval, R., and Fevotte, C. Performance measurement in blind audio source separation. IEEE Transactions on Audio, Speech, and Language Process-ing , 14(4):1462–1469, 2006. doi: 10.1109/TSA.2005. 858005. Wang, D. and Chen, J. Supervised speech separation based on deep learning: An overview. IEEE/ACM Transactions on Audio, Speech, and Language Processing , 26(10): 1702–1726, 2018. doi: 10.1109/TASLP.2018.2842159. Wang, Z.-Q. and Watanabe, S. UNSSOR: Unsupervised neural speech separation by leveraging over-determined training mixtures. In Thirty-seventh Conference on Neu-ral Information Processing Systems , 2023. URL https: //openreview.net/forum?id=T5h69frFF7 .Wang, Z.-Q., Le Roux, J., and Hershey, J. R. Multi-channel deep clustering: Discriminative spectral and spa-tial embeddings for speaker-independent speech separa-tion. In 2018 IEEE International Conference on Acous-tics, Speech and Signal Processing (ICASSP) , pp. 1–5, 2018. doi: 10.1109/ICASSP.2018.8461639. Wang, Z.-Q., Wichern, G., and Le Roux, J. Convolutive prediction for reverberant speech separation. In 2021 IEEE Workshop on Applications of Signal Processing to Audio and Acoustics (WASPAA) , pp. 56–60, 2021a. doi: 10.1109/WASPAA52581.2021.9632667. Wang, Z.-Q., Wichern, G., and Roux, J. L. Convolutive prediction for monaural speech dereverberation and noisy-reverberant speaker separation. IEEE/ACM Transactions on Audio, Speech, and Language Processing , 29:3476– 3490, 2021b. doi: 10.1109/TASLP.2021.3129363. Wang, Z.-Q., Cornell, S., Choi, S., Lee, Y., Kim, B.-Y., and Watanabe, S. Tf-gridnet: Integrating full- and sub-band modeling for speech separation. IEEE/ACM Transactions on Audio, Speech, and Language Processing , 31:3221– 3236, 2023. doi: 10.1109/TASLP.2023.3304482. Wisdom, S., Tzinis, E., Erdogan, H., Weiss, R., Wilson, K., and Hershey, J. Unsupervised sound separation using mix-ture invariant training. Advances in neural information processing systems , 33:3846–3857, 2020. Xu, A. and Choudhury, R. R. Learning to separate voices by spatial regions. In International Conference on Machine Learning , pp. 24539–24549. PMLR, 2022. Xu, Z., Aroudi, A., Tan, K., Pandey, A., Lee, J.-S., Xu, B., and Nesta, F. Fovnet: Configurable field-of-view speech enhancement with low computation and distortion for smart glasses. In Interspeech 2024 , pp. 3350–3354, 2024. doi: 10.21437/Interspeech.2024-2124. Yoshioka, T., Wang, X., Wang, D., Tang, M., Zhu, Z., Chen, Z., and Kanda, N. Vararray: Array-geometry-agnostic continuous speech separation. In ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pp. 6027–6031. IEEE, 2022. Yu, C.-Y., Postolache, E., Rodol `a, E., and Fazekas, G. Zero-shot duet singing voices separation with diffusion models. 
+
+arXiv preprint arXiv:2311.07345 , 2023. Yu, D., Kolbæk, M., Tan, Z.-H., and Jensen, J. Permu-tation invariant training of deep models for speaker-independent multi-talker speech separation. In 2017 IEEE International Conference on Acoustics, Speech and 
+
+13 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+Signal Processing (ICASSP) , pp. 241–245, 2017. doi: 10.1109/ICASSP.2017.7952154. Zen, H., Dang, V., Clark, R., Zhang, Y., Weiss, R. J., Jia, Y., Chen, Z., and Wu, Y. Libritts: A corpus derived from librispeech for text-to-speech. In Interspeech 2019 , pp. 1526–1530, 2019. doi: 10.21437/Interspeech.2019-2441. Zhang, W., Shi, J., Li, C., Watanabe, S., and Qian, Y. Clos-ing the gap between time-domain multi-channel speech enhancement on real and simulation conditions. In 2021 IEEE Workshop on Applications of Signal Processing to Audio and Acoustics (WASPAA) , pp. 146–150, 2021. doi: 10.1109/WASPAA52581.2021.9632720. 14 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+We organize the appendix as follows: • Appendix A provides a background on score-based diffusion and diffusion posterior sampling (DPS). • Appendix B provides proposed posterior score derivation, analysis, and relation to the classic EM algorithm. • Appendix C presents Algorithm 1 and Algorithm 2 in detail, and provides algorithm configurations. • Appendix D explains diffusion prior training configuration and model architecture. • Appendix F discusses all the baseline models in detail. • Appendix E illustrates the SMS-WSJ and Spatialized WSJ0-2Mix datasets for evaluation. • Appendix G shows ablation experiments for FCP method and explains why we use the virtual source signal model. • Appendix H reports the result of 2-channel and 3-channel Spatialized WSJ0-2Mix dataset. • Appendix I reports the result of 6-channel SMS-WSJ dataset. • Appendix J reports the 3-speaker separation results on the 4-channel Spatialized WSJ0-3Mix dataset. • Appendix K shows ArrayDPS’s sensitivity and robustness to hyperparameters. • Appendix L shows the visualization of ArrayDPS separated virtual sources, FCP estimated RIRs, and ArrayDPS separated reference channel sources. 
+
+# A. Score-based Diffusion and Diffusion Posterior Sampling 
+
+Score Diffusion Model: Diffusion-based generative models aim to sample from a data distribution pdata (s), by starting from a noise sample and then gradually denoising it (Song et al., 2021; Karras et al., 2022; Ho et al., 2020). Score-based diffusion model (Song et al., 2021; Karras et al., 2022) can also formulate the diffusion denoising process with a probabilistic flow ODE. Following EDM (Karras et al., 2022), with the specific diffusion noise schedule σ(τ ) = τ , where τ is the diffusion time, then the probabilistic flow ODE is defined by:        
+
+> ds τ=−σ(τ)∇sτlog p(sτ)dτ (21)
+
+where p(sτ ) = N (s, σ 2(τ )I). This probabilistic flow ODE allows transformation from sτmax (noise) to sτmin (data), using an ODE solver like Euler’s method. During training, a denoiser Dθ (sτ , σ (τ )) is learned to denoise sτ with the following denoising loss:             
+
+> EτEs∼pdata En∼N (0 ,σ 2(τ)I)∥Dθ(s+n, σ (τ)) −s∥2(22)
+
+After training, the score function ∇sτ log p(sτ ) is approximated by Sθ (sτ , σ (τ )) =: Dθ (sτ ,σ (τ )) −sτ  
+
+> σ2(τ)
+
+, using the Tweedie’s Formula. During sampling, sτmax is first sampled from N (0 , σ 2(τmax )I), and then an ODE solver is used to integrate through Eq.21 from sτmax to a data sample sτmin ∼ pdata .
+
+Diffusion Posterior Sampling: This diffusion model further allows a universal framework to solve the general inverse problem, which is known for diffusion posterior sampling (Chung et al., 2023b; Song et al., 2023). Consider a clean signal 
+
+s (e.g., image or speech) is distorted by a distortion function A(·), which results in a distorted signal x = A(s) + ϵn. To recover the original clean signal s, diffusion posterior sampling proposes to sample from p(s|x) by using the probabilistic flow ODE similar to Eq. 21 except using the posterior score:        
+
+> ds τ=−σ(τ)∇sτlog p(sτ|x)dτ (23)
+
+To approximate the posterior score ∇sτ log p(sτ |x), it’s decomposed into a prior score and a likelihood score with Bayes’ theorem:             
+
+> ∇sτlog p(sτ|x) = ∇sτlog p(sτ) + ∇sτlog p(x|sτ)(24)
+
+where ∇sτ log p(sτ ) is estimated by Sθ (sτ , σ (τ )) , and in DPS (Chung et al., 2023b), the second term ∇sτ log p(x|sτ ) is empirically approximated by:                    
+
+> ∇sτlog p(x|ˆs0(sτ)) , where ˆs0(sτ) = Dθ(sτ, σ (τ)) (25)
+> =∇sτξ(τ)∥x−A(Dθ(sτ, σ (τ))) ∥22(26)
+
+The ξ(τ ) is a parameter to control the amount of likelihood guidance for each step, which theoretically relates to the measurement noise variance. Note that this solution assumes that the distortion function A(·) is known in advance. 15 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+# B. Posterior Score Approximation 
+
+This section first gives a derivation of the proposed posterior score approximation as in Sec. 3.3 Eq. 18. Then to understand why this makes sense, we give a thorough analysis of our approximation in Sec. B.2, where we also prove FCP as a maximum likelihood estimator. Finally, in Sec. B.3, we connect our likelihood score approximation step with the classic expectation maximization algorithm. 
+
+B.1. Derivation 
+
+This section gives a full detailed derivation of our approximation of the posterior score as proposed in Sec. 3.3. Basically, our goal is to approximate ∇sτ 
+
+> 1: K, 1
+
+log p(sτ 
+
+> 1: K
+
+|x1: C ) that’s needed for sampling. First, similar to Eq. 24, we decompose 
+
+∇sτ 
+
+> 1: K
+
+log p(sτ 
+
+> 1: K
+
+|x1: C ) with the Bayes’ theorem: 
+
+∇sτ 
+
+> 1: K
+
+log p(sτ 
+
+> 1: K
+
+|x1: C ) = ∇sτ 
+
+> 1: K
+
+log p(sτ 
+
+> 1: K
+
+) + ∇sτ 
+
+> 1: K
+
+log p(x1: C |sτ 
+
+> 1: K
+
+) (27) 
+
+=
+
+> K
+
+X
+
+> k=1
+
+∇sτk log p(sτk ) + ∇sτ 
+
+> 1: K
+
+log p(x1: C |sτ 
+
+> 1: K
+
+) (28) Now notice that in the first part of Eq. 28, all the summands ∇sτk log p(sτk ) (prior score) can be approximated by the score model Sθ (sτk , σ (τ )) trained on single-speaker speech. Thus, we try to approximate the second part of Eq. 28 (likelihood score): 
+
+∇sτ 
+
+> 1: K
+
+log p(x1: C |sτ 
+
+> 1: K
+
+) = 
+
+> C
+
+X
+
+> c=1
+
+∇sτ 
+
+> 1: K
+
+log p(xc|sτ 
+
+> 1: K
+
+) (29) 
+
+≃
+
+> C
+
+X
+
+> c=1
+
+∇sτ 
+
+> 1: K
+
+log p(xc|ˆs01(sτ 
+
+> 1
+
+), ..., ˆs0 
+
+> K
+
+(sτK )) , where ˆs0
+
+> k
+
+(sτk ) = Dθ (sτk , σ (τ )) (30) Eq. 29 is correct because we assume that for the mixtures, different channels’ mixtures are conditionally independent given all the sources, which is our array-agnostic assumption. Eq. 29 to Eq. 30 is based on the likelihood approximation in DPS, as shown before in Eq. 25. However, in Eq. 30, log p(xc|ˆs01(sτ 
+
+> 1
+
+), ..., ˆs0 
+
+> K
+
+(sτK )) is still not tractable because the estimated clean sources are single-channel virtual sources, while the mixtures are multi-channel. To build the connection, we transfer to the STFT domain and then estimate the relative RIRs to transform from virtual sources to real channel source images. First, follow the notation in Sec. 3.2, we denote Xc as the STFT of xc and denote ˆS0 
+
+> k
+
+as the STFT of ˆs0
+
+> k
+
+(sτk ). Then we use the FCP algorithm defined in Sec. 3.2 Eq. 12 and Eq. 15 to estimate the relative RIRs which allows the transformation from virtual source estimates to all-channel source images: 
+
+ˆGk 
+
+> 0→c
+
+= FCP (Xc, ˆS0 
+
+> k
+
+), ˆSk,c = ˆGk 
+
+> 0→c
+
+∗l ˆS0 
+
+> k
+
+, k ∈ { 1, 2, ..., K }, c ∈ { 1, 2, ..., C } (31) Now given the estimated source images ˆSk,c , we are able to approximate the likelihood score in Eq. 30 in a tractable way: 
+
+∇sτ 
+
+> 1: K
+
+log p(xc|ˆs01(sτ 
+
+> 1
+
+), ..., ˆs0 
+
+> K
+
+(sτK )) (32) 
+
+=∇sτ 
+
+> 1: K
+
+log p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+) (33) 
+
+≃∇ sτ 
+
+> 1: K
+
+log p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+, ˆG10→c, ..., ˆGK
+
+> 0→c
+
+) (34) 
+
+=∇sτ 
+
+> 1: K
+
+ξ(τ ) Xc −
+
+> K
+
+X
+
+> k=1
+
+ ˆGk
+
+> 0→c
+
+(l, f ) ∗l ˆS0 
+
+> k
+
+(l, f )
+
+ 22
+
+(35) 
+
+=∇sτ 
+
+> 1: K
+
+ξ(τ ) Xc −
+
+> K
+
+X
+
+> k=1
+
+ˆSk,c 
+
+> 22
+
+(36) 
+
+≃∇ sτ 
+
+> 1: K
+
+ξ(τ ) xc − ISTFT 
+
+> K
+
+X
+
+> k=1
+
+ˆSk,c 
+
+! 22
+
+(37) 16 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+Eq. 32 to Eq. 33 is just a STFT transform. Eq. 33 to Eq. 34 is an empirical approximation. A simple intuition of this is that Eq. 34 is tractable while Eq. 33 is not. The reason is that the relative RIRs Gk 
+
+> 0→c
+
+are needed for the likelihood to be tractable, according to the signal model in Eq. 11. Thus an empirical choice is to estimate the Gk 
+
+> 0→c
+
+using FCP, as in Eq. 31. Later in next section, we will show that these FCP estimated relative RIRs ˆG1: K 
+
+> 0→1: C
+
+are exactly maximum likelihood relative RIRs: 
+
+ˆG10→c, .., ˆGK 
+
+> 0→c
+
+= arg max 
+
+> G10→c,..,G K
+> 0→c
+
+p(Xc| ˆS01 , .., ˆS0 
+
+> K
+
+, G 10→c, .., G K
+
+> 0→c
+
+) (38) We analyze the validity from Eq. 33 to Eq. 34 (likelihood score approximation) in the next subsection where we also show the connection to the classic Expectation Maximization (EM) algorithm. Eq. 34 to Eq. 35 is based on the signal model in Eq. 11 with the Gaussian measurement noise. Eq. 35 to Eq. 36 is a simplification using Eq. 31, and Eq. 36 to Eq. 37 is based on the power preservation of STFT or the STFT version of Parserval’s theorem. Now we can finalize our derivation of the approximated posterior score using Eq. 28, Eq. 30, and Eq. 37, which derives our result in Eq. 18 Sec. 3.3: 
+
+∇sτ 
+
+> 1: K
+
+log p(sτ 
+
+> 1: K
+
+|x1: C ) ≃
+
+> K
+
+X
+
+> k=1
+
+Sθ (sτk , σ (τ )) + 
+
+> C
+
+X
+
+> c=1
+
+∇sτ 
+
+> 1: K
+
+ξ(τ ) xc − ISTFT 
+
+> K
+
+X
+
+> k=1
+
+ˆSk,c 
+
+! 22
+
+(39) 
+
+B.2. Analysis and Validation 
+
+This section complements the derivation above showing the analysis and validation of our posterior score approximation. We first show that the relative RIR filter estimation using FCP is equivalent to maximum likelihood filter estimation, which would validate Eq. 38. We then validate the likelihood score approximation from Eq. 33 to Eq. 34. Lastly, we show the likelihood score approximation’s relationship with the classic Expectation Maximization algorithm. To show the FCP as a maximum likelihood relative RIR estimator, we first recap the FCP formulation in Eq. 12 and Eq. 13, 
+
+ˆGk
+
+> 0→c
+
+(l, f ) = FCP (Xc(l, f ), ˆSk(l, f )) = arg min  
+
+> Gk
+> 0→c(l,f )
+
+X
+
+> l,f
+
+1ˆλkc (l, f ) Xc(l, f ) − Gk
+
+> 0→c
+
+(l, f ) ∗ ˆSk(l, f ) 2
+
+(40) 
+
+Theorem B.1. Assume Xc(l, f ) = KP
+
+> k=1
+
+Gk
+
+> 0→c
+
+(l, f ) ∗l Sk(l, f ) + Nc(l, f ), where Nc(l, f ) ∼ N (0 , σ 2 
+
+> N
+
+I). Then when 
+
+ˆλkc (l, f ) = 12σ2
+
+> N
+
+, the FCP relative RIR estimator is a maximum likelihood filter estimator: FCP (Xc, ˆS01 ), ..., FCP (Xc, ˆS0 
+
+> K
+
+) = arg max 
+
+> G10→c,..,G K
+> 0→c
+
+log p(Xc|G10→c, .., G K
+
+> 0→c
+
+, ˆS01 , .., ˆS0 
+
+> K
+
+) (41) 
+
+Proof. First, let ˆG10→c, .., ˆGK 
+
+> 0→c
+
+be the maximum likelihood estimator as shown below: 
+
+ˆG10→c, .., ˆGK 
+
+> 0→c
+
+= arg max 
+
+> G10→c,..,G K
+> 0→c
+
+log p(Xc|G10→c, .., G K
+
+> 0→c
+
+, ˆS01 , .., ˆS0 
+
+> K
+
+) (42) 
+
+= arg max 
+
+> G10→c,..,G K
+> 0→c
+
+log N (Xc;
+
+> K
+
+X
+
+> k=1
+
+GK 
+
+> 0→c
+
+∗l ˆS0 
+
+> K
+
+, σ 2 
+
+> N
+
+I) (43) 
+
+= arg min 
+
+> G10→c,..,G K
+> 0→c
+
+12σ2
+
+> N
+
+Xc −
+
+> K
+
+X
+
+> k=1
+
+GK 
+
+> 0→c
+
+∗l ˆS0
+
+> K
+> 22
+
+(44) Eq. 42 to Eq. 44 is based on the signal model in the assumption. Then based on the orthogonal principle in estimation theory, independence of the sources, and linearity of the filtering operation, Eq. 44 is equivalent to: 
+
+ˆGk 
+
+> 0→c
+
+= arg min 
+
+> Gk
+> 0→c
+
+12σ2
+
+> N
+
+Xc − Gk 
+
+> 0→c
+
+∗l ˆS0
+
+> k
+> 22
+
+, ∀k ∈ { 1, 2, ..., K } (45) which is exactly the FCP objective mentioned in Eq. 40, where ˆλkc (l, f ) = 12σ2
+
+> N
+
+as in the assumption. 17 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+With Theorem B.1, it is also obvious that FCP is equivalent to the maximum posterior solution of the relative RIR because we do not assume any prior of the relative RIR filter. Note that empirically in FCP, the weight ˆλkc (l, f ) is set to 
+
+ˆλkc (l, f ) = 1
+
+> C
+
+PCc=1 |Xc(l, f )|2 + ϵ · max 
+
+> l,f
+> 1
+> C
+
+PCc=1 |Xc(l, f )|2 for better regularization. Now with Theorem B.1 relating FCP with filter likelihood, we further analyze the correctness of the likelihood score approximation from Eq. 33 to Eq. 34 in the derivation section B.1. From Eq. 33 to Eq. 34, we have the FCP estimated relative RIRs so that the likelihood is tractable: 
+
+∇sτ 
+
+> 1: K
+
+log p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+) ≃ ∇ sτ 
+
+> 1: K
+
+log p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+, ˆG10→c, ..., ˆGK
+
+> 0→c
+
+) (46) Now we find the assumption that would make the approximation into equality: 
+
+p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+) = 
+
+Z
+
+> G10→c,...,G K
+> 0→c
+
+p(G10→c, ..., G K
+
+> 0→c
+
+)p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+, G 10→c, ..., G K
+
+> 0→c
+
+)dG 10→c, ..., dG K,τ (47) 
+
+= p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+, ˆG10→c, ..., ˆGK
+
+> 0→c
+
+) if p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+, G 10→c, ..., G K
+
+> 0→c
+
+) = 
+
+(
+
+1 if Gk 
+
+> 0→c
+
+= ˆGk 
+
+> 0→c
+
+for all k
+
+0 else (48) We can see that the approximation becomes equality under the assumption that p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+, G 10→c, ..., G K
+
+> 0→c
+
+) is a delta function of all the relative RIRs G10→c, ..., G K
+
+> 0→c
+
+, where the function has non-zeros values only when the relative RIRs are the FCP estimated relative RIRs ˆG10→c, ..., ˆGK
+
+> 0→c
+
+, which are also the maximum likelihood estimators as mentioned before. This assumption makes sense when there is no measurement noise, where a slight error in the relative RIR would cause a likelihood of 0. However, of course, when there is relatively larger measurement noise, the assumption is no longer true, but would still work empirically as shown in our SMS-WSJ separation result in Table 1. 
+
+B.3. Likelihood Approximation and Expectation Maximization 
+
+While we analyze the correctness of our posterior score approximation in the previous section, we also find that the most challenging step (likelihood score approximation Eq. 46) has a strong connection with the classic Expectation Maximization algorithm. Note that in EM algorithm, when the likelihood p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+) is intractable because of the unobserved relative RIRs G10→c, ..., G K
+
+> 0→c
+
+, the Expectation (E) step and the Maximization (M) step are iterated: E-Step: calculate ψ(G10→c, ..., G K
+
+> 0→c
+
+) ← p(G10→c, ..., G K
+
+> 0→c
+
+|Xc, ˆS01 , ..., ˆS0 
+
+> K
+
+) (49) M-Step: update ˆS01 , ..., ˆS0 
+
+> K
+
+← arg max   
+
+> ˆS01,..., ˆS0
+> K
+
+Eψ(G10→c,...,G K
+
+> 0→c)
+
+h
+
+log p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+, G 10→c, ..., G K
+
+> 0→c
+
+)
+
+i
+
+(50) The E step updates the distribution ψ(G10→c, ..., G K
+
+> 0→c
+
+) of the unobserved relative RIRs to be the distribution of the relative RIRs given the current source estimates ˆS01 , ..., ˆS0 
+
+> K
+
+and the mixture Xc. Then using the E step updated distribution 
+
+ψ(G10→c, ..., G K
+
+> 0→c
+
+), the M step maximizes the expectation of log likelihood by update the source estimates ˆS01 , ..., ˆS0 
+
+> K
+
+.Then this procedure is iterated until convergence, which is called the Expectation Maximization algorithm. In our case, we only want to estimate the current log likelihood without updating the sources estimate ˆS01 , ..., ˆS0 
+
+> K
+
+, so our log likelihood approximation only contains one E step and then calculate the expected log likelihood as in the M step (Eq.50). However, The E step is also not tractable in our case, so we just approximate it with: 
+
+ψ(G10→c, ..., G K
+
+> 0→c
+
+) ≃
+
+(
+
+1 if Gk 
+
+> 0→c
+
+= ˆGk 
+
+> 0→c
+
+for all k
+
+0 else (51) where ˆG10→c, ˆG2,τ 
+
+> 0→c
+
+, ..., ˆGK 
+
+> 0→c
+
+= arg max 
+
+> G10→c,..,G K
+> 0→c
+
+log p(G10→c, .., G K
+
+> 0→c
+
+|Xc, ˆS01 , .., ˆS0 
+
+> K
+
+) (52) 
+
+= arg max 
+
+> G10→c,..,G K
+> 0→c
+
+log p(Xc|G10→c, .., G K
+
+> 0→c
+
+, ˆS01 , .., ˆS0 
+
+> K
+
+) (53) 
+
+= FCP (Xc, ˆS01 ), FCP (Xc, ˆS02 ), ..., FCP (Xc, ˆS0 
+
+> K
+
+) (54) We set the distribution ψ(G10→c, ..., G K
+
+> 0→c
+
+) in the E step to be deterministic at ˆG10→c, ..., ˆGK
+
+> 0→c
+
+, which are both the maximum likelihood filters and maximum posterior filters because no priors are assumed for the filters. Then as mentioned in Sec. B.2 18 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+Theorem B.1, ˆG10→c, ..., ˆGK 
+
+> 0→c
+
+can be directly estimated by the FCP method. Then after the E step, we can calculate the expected log likelihood in M step by only calculating log p(Xc| ˆS01 , ..., ˆS0 
+
+> K
+
+, ˆG10→c, ..., ˆGK
+
+> 0→c
+
+), because ψ is defined to be a deterministic distribution. 
+
+# C. Algorithm Details 
+
+This section provides all the details of the two algorithms in Sec. 3.5, including ArrayDPS as in Algorithm 1 and posterior score approximation in Algorithm 2. 
+
+C.1. ArrayDPS Algorithm 
+
+This section discusses the ArrayDPS Algorithm 1 in detail. 
+
+IVA Initialization: From lines 1-6 in Algorithm 1, IVA first separates K speech source images in the reference channel (channel 1). Then these IVA-separated sources are used as source estimates to calculate the relative RIR using FCP. Note that in lines 4-6, the relative RIR ˆGIVA  
+
+> 1→c
+
+is calculated for all channels. These IVA-initialized relative RIRs will be later used for posterior score approximation as in Algorithm 2, which will be discussed later. Then line 7-9 initializes the starting diffusion noise with the IVA separated sources, in the reference channel (channel 1). Although we are trying to output a virtual source, we still initialize it to be the reference channel’s IVA outputs. 
+
+Stochastic Sampler: Lines 10-24 in Algorithm 1 show the discrete sampler that integrates through the separation ODE in Eq. 6 starting from the diffusion noise initialized in line 8. This sampler is proposed in EDM (Karras et al., 2022), with the parameters N, σ i∈{ 0,...,N −1}, γ i∈{ 0,...,N −1}, S noise } and inputs {x1: C , K }. x1: C is the multi-channel mixture input and K
+
+is the number of sources to separate. N is the number of diffusion denoising steps. σi∈{ 0,...,N } is the noise schedule for each diffusion denoising step (i.e., amount of noise to remove at each step), where σN = 0 , σ 0 = σ(τmax ), σ N −1 = σ(τmin ).Then all other steps’ schedule follows: 
+
+σi<N =
+
+
+
+σ(τmax ) 1 
+
+> ρ
+
++ iN − 1
+
+
+
+σ(τmin ) 1 
+
+> ρ
+
+− σ(τmax ) 1
+
+> ρ
+
+ρ
+
+(55) 
+
+ρ is a parameter that controls how the noise level per step changes from σ(τmax ) to σ(τmin ), e.g., ρ > 1 means the noise level per step will decrease more rapidly as i increases. Note that in our ODE settings as in Sec.3, σ(τi) = τi = σi.
+
+γi∈{ 1,...,N −1} are parameters to control the amount of stochasticity added in the beginning of each step, as in lines 11-14. In EDM (Karras et al., 2022), γi∈{ 1,...,N −1} is set to be: 
+
+γi =
+
+(
+
+min   Schurn  
+
+> N
+
+, √2 − 1 if σi ∈ [Smin , S max ]0 otherwise (56) , where Schurn controls the amount of stochasticity and Smin , S max set the steps for adding stochasticity. Snoise in line 12 also controls the amount of stochasticity within step i ∈ [Smin , S max ]. In general, the sampler first has a usual 1st order Euler step to update the sources (16-18), and then the newly updated source is used to calculate a 2nd order correction step (lines 20-22). More details of the sampler can be checked in the original EDM paper (Karras et al., 2022). 
+
+Post FCP Filtering: Note the sampler mentioned above in Algorithm 3.5 is separating virtual sources (line 24). To get the final separated source images in reference channel 1, post-filtering is needed. Lines 26-29 use the FCP algorithm to estimate the relative RIR that can transform the virtual sources into the reference channel. Then after convolutional filtering (line 28), the final reference channel-separated source images are returned as outputs (line 30). 
+
+C.2. Posterior Score Approximation Algorithm 
+
+In Algorithm 1, each update step needs to calculate the posterior score, which uses the GET SCORE function in Algorithm 2. The function GET SCORE (sτi 
+
+> 1: K
+
+, x1: C , ˆGk, IVA   
+
+> 1→c
+
+, i) aims to approximate the posterior score ∇sτ 
+
+> 1: K
+
+log p(sτ 
+
+> 1: K
+
+|x1: C ) at sampling step i, using our propose approximation formulation in Sec. 3.3, but with some empirical modifications. The function needs a few pre-defined parameters {Dθ , σ i∈{ 0,...,N }, N ref , N fg , ξ 1(τ ), ξ 2(τ )}. Dθ is the diffusion denoiser mentioned in Sec. 3.3. 
+
+σi∈{ 0,...,N } is the sampler’s noise schedule as mentioned in the stochastic sampler paragraph. 
+
+Nref is a sampler step threshold such that when i ≤ Nref , there is an empirical reference-channel guidance term that aims to match the sum of estimated virtual sources PKk=1 ˆsk to the reference channel (channel 1) mixture x1. This is shown in line 19 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+18 in Algorithm. 2. We found that this is important to the algorithm’s stability. Nfg is also a sampler step threshold for the filtering guidance of IVA initialized relative RIR. As shown in lines 7-14, when i ≤ Nfg , instead of using FCP to estimate the relative RIR, the IVA initialized relative RIR ˆGk, IVA   
+
+> 1→c
+
+is directly used. We found that this helps a lot for sampling stability and performance gain. The intuition is that in the first Nfg steps, the source estimate would be extremely blurred and so as the relative RIR estimates, while the IVA initialized relative RIR is a much better choice. Note that ˆGk, IVA   
+
+> 1→c
+
+are actually relative RIRs from reference channel 1 to all channels, but our estimated sources are all virtual sources. We clarify here that this is on purpose, which means in the first Nfg steps, the virtual source estimation would be close to the reference channel, and then the constraint is relaxed in later steps. 
+
+ξ1(τ ) and ξ2(τ ) are the weights for the mixture likelihood guidance in lines 16 and l8 in Algorithm. 2. Theoretically, 
+
+ξ1(τ ) = 12σ2
+
+> n
+
+, where σ2 
+
+> n
+
+is the white noise variance defined in Eq. 2, and ξ2(τ ) = 0 , because the term in line 18 is empirical. However, for sampling stability, we resort to the common practice used in previous audio posterior sampling work (Moliner et al., 2023; 2024a;b), where we set ξ1(τ ) and ξ2(τ ) to the following: 
+
+ξ1(τ ) = ξ√Tτ ∇sτ
+
+> 1: K
+> C
+
+P
+
+> c=1
+
+xc − PKk=1 ˆsk,c  
+
+> 222
+
+(57) 
+
+ξ2(τ ) = ξ√Tτ ∇sτ 
+
+> 1: K
+
+x1 − PKk=1 ˆsk 
+
+> 222
+
+(58) All the variables in Eq. 57 and Eq. 58 directly refer to the same variables in lines 16 and 18 in Algo. 2. T is the length of the audio samples. ξ is just a single scalar parameter to tune the mixture likelihood guidance. Note that ξ1(τ ) and ξ2(τ )
+
+directly depend on the calculated gradient term so the the notations ξ1(τ ) and ξ2(τ ) are not accurate. However, we stick to it because the notation is simpler and it is also used in previous papers (Moliner et al., 2023; 2024a). Overall, in Algorithm 2, the diffusion denoiser first denoises the noisy virtual sources (lines 3), and then the prior score is calculated using Tweedie’s formula (line 6). Then depending on the current sample step i, the algorithm either chooses the IVA initialized relative RIR (line 12) or directly estimates the relative RIR (line 10) using FCP. The relative RIR is then used to filter the virtual source estimates to all real channels (channel 1 to C) (line 14), which allows the calculation of the gradient likelihood guidance (line 16) and the reference channel guidance (19). Finally, the prior score and the guidance terms are added together to output the approximated posterior score (line 21). 
+
+C.3. Algorithm Configurations 
+
+Here we show our ArrayDPS configurations. For the default configuration as in row 2a (ArrayDPS-A) in Table 1, we set N = 400 and Snoise = 1 as in Algorithm 1, σ0 = τmax = 0 .8, σN = τmin = 1 e − 6, ρ = 10 as in Eq. 55, Smin = 0 ,
+
+Smax = 50 , and Schurn = 30 as in Eq 56, ξ = 2 , Nref = 200 , Nfg = 100 , and λ = 1 .3 as in Algorithm 2. The diffusion prior trained on anechoic speech is used. For the FCP algorithm, we use an FFT size of 512 (64 ms), hop size of 64 (8 ms), square root Hanning window, and ϵ = 0 .001 as in Eq. 14. For the IVA initialization, we use the open-source torchiva 
+
+toolkit (Scheibler & Saijo, 2022), and we use FFT size of 2048 (256 ms), hop size 256 (32 ms), Gaussian Prior, and 100 iterations. For ArrayDPS-B in row 2b of Table 1, the diffusion model is trained on reverberant speech, as discussed in Sec. 4.2 and Appendix D. For ArrayDPS-C in row 2c of Table 1, the reference channel guidance in Algorithm 2 is removed, which means 
+
+λ = 0 . For ArrayDPS-D and ArrayDPS-E in row 2d-2e of Table 1, the IVA initialization is removed, which means Nfg = 0 
+
+and no IVA is needed. Moreover, in the case of no IVA initialization, we set σ0 = τmax = 2 and ξ = 6 since we found this set of parameters perform better when tuning on validation sets. For ArrayDPS-E, the reference-channel guidance is also removed, so Nref = 0 in this case. 
+
+# D. Diffusion Training Details 
+
+As mentioned in Sec.4.2, the diffusion prior is trained on the train-clean-100 and train-clean-360 subset of LibriTTS dataset (Zen et al., 2019). This subset contains about 460 hours clean speech with 1000+ speakers. However, this training set is primarily reverberation-free or anechoic. Since the virtual source could be reverberant, we also train a second diffusion 20 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+model on reverberant speech. The reverberant speech dataset is the same subset of LibriTTS, but each speech utterance is convolved with a randomly selected room impulse response (RIR) to synthesize reverberant speech. The randomly selected RIRs are from the SLR26 and SLR28 dataset (Ko et al., 2017), which contains 3,076 real and about 115,000 synthetic RIRs. For the diffusion denoising architecture, we use the waveform domain U-Net as MSDM (Mariani et al., 2024), implemented in audio-diffusion-pytorch/v0.0.432 2. The U-Net takes audio waveform as inputs, and also outputs audio waveforms. The U-Net consists of encoder, bottleneck, and decoder. The encoder contains 6 layers of 1-D convolutional ResNet blocks, where the last three layers also contain multi-head slef-attention blocks following the ResNet block. The input channel is 1 because we are modeling single channel speech. The number of output channels for each encoder layer is [256, 512, 1024, 1024, 1024, 1024], and the number of downsampling factors for each layer is [4, 4, 4, 2, 2, 2]. For self attention blocks, we use 8 attention heads where each is 128 dimensional. The bottleneck also contains an attention block, with one ResNet block before the attention block and one ResNet block after the attention block. The decoder is then reverse symmetric to the encoder, with output channel size 1 to output a same size waveform. For diffusion training configurations, we use the EDM (Karras et al., 2022) training framework following the training recipe in CQT-Diffusion 3. The diffusion denoiser Dθ (sτ , σ (τ )) is set to be a linear combination of the noisy input and the U-Net 
+
+fθ output: 
+
+Dθ (sτ , σ (τ )) = cskip (σ(τ )) · sτ + Cout (σ(τ )) · fθ (cin sτ , c noise ) (59) (60) ,where cskip (σ), cout (σ), cin (σ), cnoise (σ), are defined as: 
+
+cskip (σ) = σ2
+
+> data
+
+σ2 + σ2
+
+> data
+
+, c out (σ) = σ · σdata 
+
+pσ2 + σ2
+
+> data
+
+, c in (σ) = 1
+
+pσ2 + σ2
+
+> data
+
+, c noise (σ) = 14 ln( σ) (61) 
+
+σdata shown above is a parameter to set based on the standard deviation of the training dataset. We set this value to 0.057. Then the diffusion denoising objective is shown as: 
+
+Eτ ∼pτ Es∼pdata En∼N (0 ,σ 2(τ )I) ∥Dθ (s + n, σ (τ )) − s∥2 (62) where pτ is empirically set to match the diffusion sampling scheduler’s density. During training, we set σ(τmax ) = 10 ,
+
+σ(τmin ) = 1 e − 6, ρ = 10 , Schurn = 5 for the diffusion scheduler. We train on speech samples with 65,536 samples ( ∼8.2 s) with batsh size 16 and learning rate 0.0001. The learning rate is multiplied by 0.8 every 60,000 training steps. Also exponential moving average (EMA) is used to update the neural network weights during training. The EMA updated weights after training is used for sampling in inference time. We train the model for 840,000 training steps. 
+
+# E. Evaluation Datasets 
+
+In this paper, two datasets are used for evaluation. The first dataset is SMS-WSJ (Drude et al., 2019b) for fixed microphone array evaluation, where all the methods are evaluated on one single microphone array recorded samples. The second dataset is Spatialized WSJ0-2Mix (Wang et al., 2018) for ad-hoc microphone array evaluation, where methods are evaluated on multiple unknown microphone arrays. 
+
+E.1. SMS-WSJ Dataset 
+
+SMS-WSJ (Drude et al., 2019b) is a commonly used reverberant speech separation corpus (Wang & Watanabe, 2023; Taherian et al., 2024; Saijo et al., 2024; Kalkhorani & Wang, 2024). The dataset is simulated from WSJ0 and WSJ1 datasets. The dataset is for multi-channel 2-speaker separation in reverberant conditions for a fixed simulated microphone array. The simulated microphone array is a circular array with six microphones, uniformly on a circle with 10 cm of radius. For each sample, the shoebox room is randomly sampled, with the length and width uniformly sampled from [7.6, 8.4] m and [5.6, 6.4] m, respectively. The array center position is randomly sampled from [3.6, 4.4] m from the shorter wall and [2.6, 3.4] m from the longer wall. Then the array is randomly rotated along all three geometric axes. The mixture contains two speaker sources, which are sampled form WSJ0 and WSJ1 datasets. For each speaker, the speaker-to-array distance is uniformly 
+
+> 2https://github.com/archinetai/audio-diffusion-pytorch/tree/v0.0.43
+> 3https://github.com/eloimoliner/CQTdiff
+
+21 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+sampled from [1.0, 2.0] m, and each speaker position’s azimuth related to the array center is also randomly sampled. The room impulse responses are simulated using image-source method (Allen & Berkley, 1979). The sound decay time (T60) is uniformly sampled from [200, 500] ms. Finally, to simulate sensor noise, an SNR value is sampled to be [20, 30] dB, and then the white noise is sampled and scaled to satisfy the SNR required. The dataset consists 33,561 ( ∼87.4 h), 982 ( ∼2.5 h), and 1,332 ( ∼3.4 h) train, validation, and test mixtures, respectively, all in 8kHz sampling rate. 
+
+E.2. Spatialized WSJ0-2Mix Dataset 
+
+Spatialized WSJ0-2Mix (Wang et al., 2018) is the spatialized version of the WSJ0-2Mix (Hershey et al., 2016) dataset, which is a commonly used speech separation dataset mixed by randomly selecting sources from the WSJ0 corpus. Multi-channel Deep Clustering (Wang et al., 2018) creates the Spatialized WSJ0-2Mix dataset for multi-channel reverberant speech separation. For each dataset sample in WSJ0-2Mix, a shoebox room, 8-channel microphone array geometry, source positions, and microphone array center are sampled randomly to spatialize that sample. The room length l, width 
+
+w, and height are uniformly sampled from [5, 10] m, [5, 10] m, and [3, 4] m, respectively. The RIRs’ sound decay time (T60) is sampled from [200, 600] ms. The microphone array center is set to be (l/ 2 + n1, w/ 2 + n2, h ), where 
+
+n1 and n2 are uniformly sampled from [-0.2, 0.2] m, and h is uniformly sampled from [1, 2] m. Then the microphone array geometry is randomly sampled. First, the array radius is uniformly sampled from [7.5, 12,5] cm. The first two microphones are sampled on the sphere with the sampled radius, and are symmetric according to the array origin. Two more microphones are randomly sampled inside the sphere while making sure the distances between any two microphones has to be at least 5 cm. Then 4 more microphones are randomly sampled inside the sphere without any restrictions. In total, eight microphones are randomly sampled. For the speakers, each speaker’s location (x, y, z ) is sampled such that 
+
+l/ 2 + n1 − 1.5 ≤ x ≤ l/ 2 + n1 + 1 .5, w/ 2 + n2 − 1.5 ≤ y ≤ w/ 2 + n2 + 1 .5, 1.5 ≤ z ≤ 2. The source locations are sampled such that the source-array distance is at least 0.5 m, and source-source distance is at least 1 m. The RIR simulation is also using the image source method (Allen & Berkley, 1979). The sample rate is set to 8kHz. In general, the Spatialized WSJ0-2Mix dataset contains 20,000( ∼30h), 5,000 ( ∼10h), and 3,000 ( ∼5h) utterances in training, validation, and testing, respectively. Different utterances are using different microphone geometries, allowing training models that can generalize to diverse ad-hoc microphone arrays. Also, the direct-to-reverb energy radio of the dataset is 2.5 dB with 3.8 dB of standard deviation. 
+
+# F. Baseline Methods 
+
+As in Row 1a of Table 1, Spatial clustering (Rickard, 2007; Tran Vu & Haeb-Umbach, 2010; Sawada et al., 2011; Ito et al., 2016) tries to cluster the multi-channel spatial features in STFT domain. Then each STFT bin is assigned to a source based on the clustering, which relies on the assumption that different speech do not overlap in STFT domain, known as W-Disjoint Orthogonality (W-DO) (Rickard, 2007). We use the same spatial clustering configuration as in the baselines of UNSSOR (Wang & Watanabe, 2023), which uses the open source implementation (Boeddeker, 2019). The FFT size is 1024 (256 ms) and the hop size is 128 (32 ms). The number of sources is set to K + 1 and the lowest energy source is discarded as a garbage source. For the Independent Vector Analysis baseline, similar to the baseline in UNSSOR (Wang & Watanabe, 2023), we use the 
+
+torchiva toolkit with FFT size 2048 (64 ms) and hop size 256 (32 ms). In UNSSOR, the spherical Laplace prior is used as in 
+
+Row 1b of Table 1. We also include Gaussian prior because we find it to perform better, as shown in Row 1c of Table 1. For the UNSSOR baseline trained on Spatialized WSJ0-2Mix datasets, we use the default configuration where both MC and ISMS loss are used, and I = 19 and J = 0 , following the notation in the paper. We use the open source code 4 to train UNSSOR. We found that UNSSOR training is quite sensitive to the ISMS loss weight, which is γ in the original paper. Thus we sweep γ ∈ { 0.03 , 0.04 , 0.05 , 0.06 , 0.08 , 0.3} and report the best result for the 2/3/4-channel of Spatialized WSJ0-2Mix dataset. For the SMS-WSJ dataset, we just borrow the result in the original UNSSOR paper and report as UNSSOR † as in Table 1. 
+
+Row 5a-5c of Table 1 show the supervised TF-GridNet (Wang et al., 2023) with permutation invariant training (PIT) (Yu et al., 2017), where TF-GridNet-SMS † is the exact model trained on SMS-WSJ dataset provided as the supervised baseline of UNSSOR, showing superior performance. However, we also need a supervised baseline model trained on the Spatialized WSJ0-2Mix dataset. Thus we reproduce a supervised TF-GridNet training pipeline using the same architecture with 
+
+> 4https://github.com/merlresearch/reverberation-as-supervision
+
+22 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+TF-GridNet-SMS † as in UNSSOR, but trained with with SI-SDR(Roux et al., 2018) PIT loss for simplicity (we are not clear about the training details of the TF-GridNet supervised baseline reported in UNSSOR). We use ADAM optimizer and start with 1e-4 learning rate. We half the learning rate whenever the validation loss do not improve in 3 consecutive epochs. We use batch size 4 and each training segment is 4 seconds long. As in Row 5b of Table 1, TF-GridNet-SMS is our implemented supervised TF-GridNet trained on 3-channel SMS-WSJ with 120 epochs (about 1,000,000 steps). In Table 2, TF-GridNet-Spatial is our implementation of the supervised TF-GridNet trained on Spatialized WSJ0-2Mix dataset mentioned in E.2, which tries to generalize to any 3-channel microphone arrays. The model is trained for 200 epochs (about 1,000,000 steps) on Spatialized WSJ0-2Mix dataset. These models are all trained on a single A100 GPU and converges in about 5-6 days. 
+
+# G. FCP Ablations 
+
+The FCP mentioned in Sec. 3.2 takes a c1 channel mixture Xc1 and a c2 channel source estimate ˆSk,c 2 as inputs, and then output the relative RIR ˆGkc2→c1 that can transform ˆSk,c 2 to ˆSk,c 1 :
+
+ˆGkc2→c1 = FCP (Xc1 , ˆSk,c 2 ), ˆSk,c 1 = ˆGkc2→c1 ∗l ˆSk,c 2 (63) As discussed in Sec. 2, we decided to use the virtual sources as the estimated sources, which is more flexible comparing with reference channel source images. Here we list a few obvious choices for the virtual source and reason why we use the virtual source based on the oracle FCP performance. First, the virtual source can be the anechoic source signal ˜Sk. Second, the virtual source can be a partially-reverberant source signal Searly  
+
+> k,c 2
+
+in channel c2, where only the first 50 milliseconds of the actual room impulse response is applied to filter the anechoic source ˜Sk. Note that this early reverberant signal is motivated by the REVERB challenge (Kinoshita et al., 2013), where people found adding the first 50 ms of early reverberation to the anechoic signal sounds better. Third and last, since the virtual source is flexible, it can also be the channel c2’s reverberant image Sk,c 2 .Now we do a few FCP ablations for different kinds of virtual sources. Without loss of generality, we let c1 = 1 . Remember the FCP function always takes two signal inputs: the FCP target signal, and the source estimate signal. In Eq. 63, the FCP target is Xc1 , and the source estimate signal is the channel c2 estimate ˆSk,c 2 . Here, we do the ablations for different kinds of FCP input combinations, where the source estimate inputs can be the three kinds of virtual sources mentioned above (anechoic, early, reverberant), and the FCP target can be either channel c1 = 1 mixture, or the channel c1 = 1 reverberant source image. Now given the ground-truth virtual sources and the FCP targets, FCP is used to estimate the relative RIRs. Then after applying the estimated relative RIR on the virtual source estimate, we get the channel 1 source image estimate 
+
+ˆSk, 1 which is used to calculate the speech metrics in Table 3. We calculate all the results in SMS-WSJ test set.  
+
+> Table 3. FCP ablations for different kinds of FCP inputs combinations.The metrics reported are on channel 1 source images.
+
+Row Source Estimate FCP Target FCP SDR (dB) SI-SDR (dB) PESQ eSTOI 1 anechoic ˜Sk mixture (ch-1) X1 FCP (X1, ˜Sk) 22.0 19.8 4.15 0.974 2 early (ch-2) Searly  
+
+> k, 2
+
+mixture (ch-1) X1 FCP (X1, S early  
+
+> k, 2
+
+) 16.5 13.2 3.91 0.943 3 reverb (ch-2) Sk, 2 mixture (ch-1) X1 FCP (X1, S k, 2) 14.7 11.3 3.59 0.917 4 anechoic ˜Sk reverb (ch-1) Sk, 1 FCP (Sk, 1, ˜Sk) 34.9 33.3 4.45 0.997 5 early (ch-2) Searly  
+
+> k, 2
+
+reverb (ch-1) Sk, 1 FCP (Sk, 1, S early  
+
+> k, 2
+
+) 18.2 14.5 4.15 0.967 6 reverb (ch-2) Sk, 2 reverb (ch-1) Sk, 1 FCP (Sk, 1, S k, 2) 16.0 12.1 3.84 0.941 First, observe the first three rows in Table 3, where the FCP target is set to be the channel 1 mixture. In rows 1, 2, and 3, the source estimate is set to be the anechoic source, the early reverberant source, and the reverberant source, respectively. We can see that when the source estimate is set to be the anechoic source, the FCP filtering performance is much better than when the source estimate is early reverberant or reverberant. To see why this is the case, remember that in our signal 23 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+model in Eq. 3 in Sec. 2, the relative RIR from one channel source image to another channel source image involves a inverse filtering operation, which may not exist. This also explains why in row 2a-2b in Table 1, using an anechoic speech prior performs better than using the reverberant speech prior. Row 4,5,6 in Table 3 shows the case when the FCP target is the channel 1 source image. Note that in row 4, when the source estimate is set to groud-truth anechoic source, the metrics is almost perfect, showing the correctness of the signal model used in Sec. 2. 
+
+# H. 2 and 3 Channels Spatialized WSJ0-2Mix Evaluation Results    
+
+> Table 4. Evaluation results for 2-channel Spatialized WSJ0-2Mix. Note that the microphone positions are random for this dataset. Top results are emphasized in top1 , top2 , and top3 . Methods denoted with ∗means it is impractical.
+
+Row Methods Unsup. Array Agnostic Prior IVA Init. Ref. Guide. SDR (dB) SI-SDR (dB) PESQ eSTOI 0 Mixture - - - - - 0.2 0.0 1.81 0.545 1a Spatial Cluster ✓ ✓ - - - 7.9 6.5 2.38 0.689 1b IVA ✓ ✓ Laplace - - 9.3 8.1 2.52 0.725 1c IVA ✓ ✓ Gaussian - - 10.9 9.8 2.68 0.770 1d UNSSOR ✓ × - - - 0.3 -2.7 1.78 0.478 2a ArrayDPS-A ✓ ✓ Anechoic ✓ ✓ 14.5 ±0.7 13.7 ±0.7 3.32 ±0.08 0.853 ±0.014 2b ArrayDPS-D ✓ ✓ Anechoic ✓ ✓ 5.6 ±4.0 3.6 ±4.6 2.34 ±0.45 0.652 ±0.114 3a ArrayDPS-A-Max* ✓ ✓ Anechoic ✓ ✓ 15.3 14.6 3.41 0.870 3b ArrayDPS-D-Max* ✓ ✓ Anechoic × ✓ 11.2 9.9 2.96 0.799 4a ArrayDPS-A-ML ✓ ✓ Anechoic ✓ ✓ 15.1 14.3 3.39 0.865 4b ArrayDPS-D-ML ✓ ✓ Anechoic × ✓ 10.4 8.9 2.87 0.773 5a TF-GridNet-Spatial × (2-mics) - - - 15.2 14.5 3.63 0.888    
+
+> Table 5. Evaluation results for 3-channel Spatialized WSJ0-2Mix. Note that the microphone positions are random for this dataset. Top results are emphasized in top1 , top2 , and top3 . Methods denoted with ∗means it is impractical.
+
+Row Methods Unsup. Array Agnostic Prior IVA Init. Ref. Guide. SDR (dB) SI-SDR (dB) PESQ eSTOI 0 Mixture - - - - - 0.2 0.0 1.81 0.545 1a Spatial Cluster ✓ ✓ - - - 9.1 7.8 2.53 0.735 1b IVA ✓ ✓ Laplace - - 10.4 8.5 2.66 0.750 1c IVA ✓ ✓ Gaussian - - 13.9 12.1 3.07 0.842 1d UNSSOR ✓ × - - - 1.7 -2.4 1.94 0.519 2a ArrayDPS-A ✓ ✓ Anechoic ✓ ✓ 15.7 ±0.6 15.0 ±0.7 3.44 ±0.07 0.872 ±0.012 2b ArrayDPS-D ✓ ✓ Anechoic ✓ ✓ 6.3 ±4.3 4.3 ±4.9 2.41 ±0.49 0.668 ±0.119 3a ArrayDPS-A-Max* ✓ ✓ Anechoic ✓ ✓ 16.4 15.7 3.52 0.886 3b ArrayDPS-D-Max* ✓ ✓ Anechoic × ✓ 12.3 11.0 3.07 0.808 4a ArrayDPS-A-ML ✓ ✓ Anechoic ✓ ✓ 16.3 15.5 3.49 0.881 4b ArrayDPS-D-ML ✓ ✓ Anechoic × ✓ 11.5 10.0 2.99 0.796 5a TF-GridNet-Spatial × (3-mics) - - - 15.5 14.8 3.65 0.892 In addition to the 4-channel Spatialized WSJ0-2Mix dataset’s result in Table 2, we also report 2-channel (first 2 mics) and 3-channel (first 3 mics) results on Spatialized WSJ0-2Mix dataset, in Table 4 and Table 5 respectively. 24 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+For the 2-channel case, we first note that in row 1d of Table 4, the UNSSOR does not work properly. This is actually as expected because UNSSOR assumes an over-determined scenario (Wang & Watanabe, 2023), which means the number of microphones should be larger than the number of speakers. In contrast, our ArrayDPS is able to work properly. In addition, our method easily outperforms any other unsupervised methods. Finally, we compare row 5a with row 2a and row 4a , we find that the supervised method is slightly better than ArrayDPS-A-ML in all metrics for the 2-channel case. For the 3-channel results shown in Table 5, the result is very similar to the 4-channel results shown in Table 2. In short, ArrayDPS-A outperforms all other unsupervised methods, while UNSSOR does not work properly in this 3-channel setting. As mentioned in Sec. F, UNSSOR is very sensitive to ISMS loss weight γ, but we still cannot find a working weight after an extensive parameter search. Note that we ensure that our training is correct as it works for both 4-channel Spatialized WSJ0-2Mix and 3-channel SMS-WSJ datasets. One explanation is that the training dataset contains samples recorded by different 3-channel ad-hoc microphone arrays, which makes it more difficult for UNSSOR to converge. We further compare ArrayDPS (row 2a, 4a ) with the supervised baseline (row 5a ), where ArrayDPS-A’s mean SDR and SI-SDR can outperform the supervised TF-GridNet-Spatial. 
+
+# I. 6-Channel SMS-WSJ Evaluation Results 
+
+In addition to the 3-channel SMS-WSJ result reported in Table 1, we also report a full 6-channel (all mics used) result for SMS-WSJ dataset. We first compare row 1(a-c) with row 2a , where our ArrayDPS-A easily outperforms spatial clustering and IVA. Comparing row 1d with row 2d , we can see that ArrayDPS-A’s mean metric score outperforms UNSSOR by about 0.7 dB in SDR and SI-SDR, but performs a bit worse in terms of PESQ and eSTOI. However, our maximum likelihood version ArrayDPS-A-ML (row 4a ) easily outperforms UNSSOR in all metrics by a large margin. Although in 6-channel setting, ArrayDPS-A-ML is still better than any other unsupervised methods, the supervised TF-GridNet-SMS in row 5a 
+
+leads our ArrayDPS by a large margin. Future research will be conducted to reduce this performance gap.      
+
+> Table 6. Evaluation results for 6-channel SMS-WSJ. Methods denoted with †are results from UNSSOR (Wang & Watanabe, 2023), and methods denoted with ∗mean it is impractical. Note that SMS-WSJ only contains samples with a fixed microphone array. Top results are emphasized in top1 , top2 , and top3 .
+
+Row Methods Unsup. Array Agnostic Prior IVA Init. Ref. Guide. SDR (dB) SI-SDR (dB) PESQ eSTOI 0 Mixture - - - - - 0.1 0.0 1.87 0.603 1a Spatial Cluster † ✓ ✓ - - - 11.9 10.2 2.61 0.735 1b IVA † ✓ ✓ Laplace - - 10.6 8.9 2.58 0.764 1c IVA ✓ ✓ Gaussian - - 14.7 13.4 3.07 0.865 1d UNSSOR † ✓ × - - - 15.7 14.7 3.47 0.884 2a ArrayDPS-A ✓ ✓ Anechoic ✓ ✓ 16.3 ±1.2 15.4 ±1.3 3.45 ±0.12 0.873 ±0.019 2b ArrayDPS-D ✓ ✓ Anechoic ✓ ✓ 8.9 ±4.9 7.2 ±5.4 2.67 ±0.54 0.743 ±0.115 3a ArrayDPS-A-Max* ✓ ✓ Anechoic ✓ ✓ 17.6 16.9 3.59 0.896 3b ArrayDPS-D-Max* ✓ ✓ Anechoic × ✓ 15.1 14.0 3.32 0.873 4a ArrayDPS-A-ML ✓ ✓ Anechoic ✓ ✓ 17.4 16.6 3.56 0.891 4b ArrayDPS-D-ML ✓ ✓ Anechoic × ✓ 14.6 13.5 3.27 0.862 5a TF-GridNet-SMS † × × - - - 19.4 18.9 4.08 0.949 
+
+# J. 3-Speaker Evaluation Results 
+
+For 3-speaker source separation, we evaluate on the spatialized WSJ0-3Mix dataset, which is the 3-speaker version of the ad-hoc spatialized WSJ0-2Mix dataset. We evaluate on the first 4 microphones, where the results are shown in Table 7. As shown in Row 2a-5a , ArrayDPS outperforms the supervised baseline by a large margin in all metrics. If we sample five samples and then take the maximum likelihood one (Row 4a ), ArrayDPS outperforms supervised TF-GridNet-Spatial by more than 3 dB in terms of SDR and SI-SDR. This shows the potential of ArrayDPS in more diverse acoustic scenarios. 25 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior          
+
+> Table 7. Evaluation results for 3-speaker reverberant speech separation on 4-channel Spatialized WSJ0-3Mix. Note that the microphone positions are random for this dataset. Top results are emphasized in top1 ,top2 , and top3 . Methods denoted with ∗means it is impractical.
+
+Row Methods Unsup. Array Agnostic Prior IVA Init. Ref. Guide. SDR (dB) SI-SDR (dB) PESQ eSTOI 0 Mixture - - - - - -3.0 -3.3 1.50 0.371 1a Spatial Cluster ✓ ✓ - - - 6.9 5.6 2.10 0.625 1b IVA ✓ ✓ Laplace - - 5.9 3.8 2.10 0.574 1c IVA ✓ ✓ Gaussian - - 9.6 7.6 2.46 0.701 1d UNSSOR ✓ × - - - -2.8 -6.1 1.50 0.313 2a ArrayDPS-A ✓ ✓ Anechoic ✓ ✓ 12.8 ±1.2 11.8 ±1.3 3.11 ±0.16 0.791 ±0.028 3a ArrayDPS-A-Max ∗ ✓ ✓ Anechoic ✓ ✓ 14.3 13.4 3.31 0.816 4a ArrayDPS-A-ML ✓ ✓ Anechoic ✓ ✓ 14.0 13.0 3.27 0.807 5a TF-GridNet-Spatial × (4-mics) - - - 10.6 9.7 2.85 0.747 
+
+# K. Ablations on Sensitivity to Hyperparameters 
+
+To evaluate our ArrayDPS’s sensitivity and robustness to hyper-parameters, we conduct ablation experiments on the likelihood score guidance ξ, the sampling starting noise level τmax , FCP filter length F , the number of steps Nf g to use the IVA initialized filters, whether to use Gaussian or Laplace prior for IVA initialization, and whether to use the IVA separated source as diffusion initialization (line 8 of Algorithm 1). For each parameter, we do ablations by modifying it starting from the default parameter mentioned in Appendix F. All the ablations are conducted on the first 50 samples of the SMS-WSJ validation set. Results are shown in Table 8-13 .   
+
+> Table 8. Ablation study for ξ.
+
+ξ 1.2 1.4 1.6 1.8 2.0 2.2 2.4 2.6 2.8 SI-SDR 15.2 ±1.1 15.5 ±1.1 15.6 ±1.0 15.6 ±1.2 15.3 ±1.6 15.0 ±1.5 15.0 ±1.6 15.2 ±2.6 15.1 ±1.8   
+
+> Table 9. Ablation study for τmax .
+
+τmax 0.5 0.6 0.7 0.8 0.9 1.0 1.1 SI-SDR 16.1 ±0.9 16.0 ±0.8 15.8 ±1.2 15.6 ±1.1 15.1 ±1.7 14.8 ±1.8 14.3 ±2.1    
+
+> Table 10. Ablation study for FCP filter length F.
+
+F 10 11 12 13 14 15 16 SI-SDR 15.8 ±1.3 15.5 ±1.6 15.6 ±1.2 15.1 ±1.7 14.9 ±1.7 14.9 ±1.5 14.8 ±1.6    
+
+> Table 11. Ablation study for filter guidance steps Nf g .
+
+Nf g 70 80 90 100 110 120 130 SI-SDR 15.0 ±1.7 15.2 ±1.7 14.6 ±2.1 15.2 ±1.7 15.4 ±1.2 15.5 ±1.1 15.5 ±1.1 26 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior  
+
+> Table 12. Ablation study for IVA prior used for IVA initialization.
+
+IVA Prior Gaussian Laplace SI-SDR 15.3 ±1.6 14.8 ±1.6  
+
+> Table 13. Ablation study for using IVA separated sources as diffusion initialization (line 8 of Algorithm 1).
+
+Diffusion Initialization Yes No SI-SDR 15.3 ±1.6 13.3 ±2.3 
+
+# L. Filter and Source Visualization 
+
+Figure 3- 6 gives visualization of the separated sources and the final FCP estimated relative RIRs. In each figure of Figure 3- 6, the first row contains the ground-truth anechoic source 1 ˜s1, the ground-truth RIR h1,1 (from anechoic source to reference channel), and the reference-channel reverberant source 1 s1,1. Obviously, the third signal is the convolution of the first two signals. Then the second row shows the same for our ArrayDPS, i.e., separated virtual source 1 ˆs0, the final FCP estimated relative RIR ˆg10→1, and the separated reference-channel source 1 ˆs1,1. These two adjacent rows allow direct comparison between the ground-truth and ArrayDPS. Similarly, row 3 and row 4 show results for source 2. These figures show us the difference between the final FCP estimated filter and the ground truth RIR. Those two signals might not be aligned, but sometimes show similar structure on the spectrogram. On the other hand, the virtual source separated by ArrayDPS is more like the anechoic signal rather than the reverberant signal. We explain this for two reasons: 1) the diffusion model is trained mostly on clean anechoic speech, hence the inclination to generate anechoic sources; 2) FCP performs much better when the input source signal is anechoic (see Appendix G). This means outputting an anechoic source (instead of a reverberant one) would satisfy a higher likelihood. Our demo site also shows virtual sources with 2-speaker separation. We urge readers to listen to the virtual source samples and compare them with the final output and the ground-truth anechoic source. It appears that ArrayDPS is indeed accomplishing some dereverberation, however, we do not want to over-claim here and intend to verify this promise in future research. 27 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+Figure 3. SMS-WSJ Sample 0 442c040o 443c040g Visualization 
+
+Figure 4. SMS-WSJ Sample 1015 446c0415 442c040c Visualization 
+
+28 ArrayDPS: Unsupervised Blind Speech Separation with a Diffusion Prior 
+
+Figure 5. SMS-WSJ Sample 1120 445c040c 441c040m Visualization 
+
+Figure 6. SMS-WSJ Sample 999 441c040c 447c040k Visualization 
+
+29

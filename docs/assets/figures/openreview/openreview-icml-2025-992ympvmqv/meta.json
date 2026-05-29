@@ -1,0 +1,105 @@
+{
+  "version": 2,
+  "extractor": "papercropper",
+  "figures": [
+    {
+      "url": "assets/figures/openreview/openreview-icml-2025-992ympvmqv/fig-001.webp",
+      "caption": "",
+      "page": 0,
+      "index": 1,
+      "width": 1751,
+      "height": 573,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/openreview/openreview-icml-2025-992ympvmqv/fig-002.webp",
+      "caption": "",
+      "page": 0,
+      "index": 2,
+      "width": 1758,
+      "height": 567,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/openreview/openreview-icml-2025-992ympvmqv/fig-003.webp",
+      "caption": "",
+      "page": 0,
+      "index": 3,
+      "width": 832,
+      "height": 759,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/openreview/openreview-icml-2025-992ympvmqv/fig-004.webp",
+      "caption": "",
+      "page": 0,
+      "index": 4,
+      "width": 845,
+      "height": 635,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/openreview/openreview-icml-2025-992ympvmqv/fig-005.webp",
+      "caption": "",
+      "page": 0,
+      "index": 5,
+      "width": 785,
+      "height": 574,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/openreview/openreview-icml-2025-992ympvmqv/fig-006.webp",
+      "caption": "",
+      "page": 0,
+      "index": 6,
+      "width": 839,
+      "height": 665,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/openreview/openreview-icml-2025-992ympvmqv/fig-007.webp",
+      "caption": "",
+      "page": 0,
+      "index": 7,
+      "width": 1675,
+      "height": 774,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/openreview/openreview-icml-2025-992ympvmqv/fig-008.webp",
+      "caption": "",
+      "page": 0,
+      "index": 8,
+      "width": 895,
+      "height": 678,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/openreview/openreview-icml-2025-992ympvmqv/fig-009.webp",
+      "caption": "",
+      "page": 0,
+      "index": 9,
+      "width": 1427,
+      "height": 1065,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/openreview/openreview-icml-2025-992ympvmqv/fig-010.webp",
+      "caption": "",
+      "page": 0,
+      "index": 10,
+      "width": 1426,
+      "height": 1065,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/openreview/openreview-icml-2025-992ympvmqv/fig-011.webp",
+      "caption": "",
+      "page": 0,
+      "index": 11,
+      "width": 1426,
+      "height": 1071,
+      "label": "Figure"
+    }
+  ]
+}

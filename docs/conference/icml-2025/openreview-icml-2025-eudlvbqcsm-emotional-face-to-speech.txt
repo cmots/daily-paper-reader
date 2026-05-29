@@ -1,0 +1,1333 @@
+Title: Emotional Face-to-Speech
+
+URL Source: https://openreview.net/pdf?id=EuDlvBqcSm
+
+Number of Pages: 21
+
+Markdown Content:
+Emotional Face-to-Speech 
+
+Jiaxin Ye 1 Boyuan Cao 1 Hongming Shan 1
+
+Abstract 
+
+How much can we infer about an emotional voice solely from an expressive face? This intriguing question holds great potential for applications such as virtual character dubbing and aiding indi-viduals with expressive language disorders. Ex-isting face-to-speech methods offer great promise in capturing identity characteristics but struggle to generate diverse vocal styles with emotional expression. In this paper, we explore a new task, termed emotional face-to-speech , aiming to syn-thesize emotional speech directly from expressive facial cues. To that end, we introduce DEmo-Face , a novel generative framework that leverages a discrete diffusion transformer (DiT) with cur-riculum learning, built upon a multi-level neural audio codec. Specifically, we propose multimodal DiT blocks to dynamically align text and speech while tailoring vocal styles based on facial emo-tion and identity. To enhance training efficiency and generation quality, we further introduce a coarse-to-fine curriculum learning algorithm for multi-level token processing. In addition, we develop an enhanced predictor-free guidance to handle diverse conditioning scenarios, enabling multi-conditional generation and disentangling complex attributes effectively. Extensive experi-mental results demonstrate that DEmoFace gen-erates more natural and consistent speech com-pared to baselines, even surpassing speech-driven methods. Demos of DEmoFace are shown at our project https://demoface.github.io.    
+
+> 1Institute of Science and Technology for Brain-Inspired Intelli-gence, MOE Frontiers Center for Brain Science, Key Laboratory of Computational Neuroscience and Brain-Inspired Intelligence, and State Key Laboratory of Brain Function and Disorders, Fudan University, Shanghai, China. Correspondence to: Hongming Shan
+> <hmshan@fudan.edu.cn >.
+> Proceedings of the 42 nd International Conference on Machine Learning , Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s).
+
+1. Introduction 
+
+When we encounter a person’s face on platforms like Insta-gram or Facebook without hearing their voice, our minds instinctively generate auditory expectations based on visual cues. These expectations are shaped by our experiences and cultures, influencing how we perceive individuals to sound based on their external appearance, such as age, gender, na-tionality, or emotion (Paris et al., 2017; Taitelbaum-Swead & Fostick, 2016). These preconceived notions drive us to form judgments about others’ voices even before they speak. In recent years, face-guided Text-to-Speech (TTS) (Goto et al., 2020; Kang et al., 2023; Jang et al., 2024), also known as Face-to-Speech or F2S, has attracted growing interest with diverse applications, such as virtual character dub-bing and assistance for individuals with expressive language disorders. The goal of the F2S is to create voices that are consistent with the guided face. However, users increasingly expect generated speech that not only replicates speakers’ identities but also conveys rich emotional prosody, enhanc-ing their experience in human-machine interactions (Wen et al., 2024; Cong et al., 2024a; Ye et al., 2023b). This ex-pectation is beyond the scope of existing F2S tasks, lacking explicit guidance to produce desired emotional speech. Considering that facial expressions are the most direct indi-cators of emotion, we propose an extension to the F2S task grounded in visual cues, termed emotional Face-to-Speech (eF2S) . An example of the proposed eF2S task is illustrated in Fig. 1(b). Unlike the conventional F2S task, which con-verts text to speech guided solely by identity embeddings extracted from a reference face, our eF2S task further decou-ples identity and emotion from the facial input, producing speech that preserves the speaker’s identity while enriching it with the emotional expression derived from the reference face. While the new eF2S task may initially appear to only require the generated speech to convey emotions, it raises several novel challenges. On the task level, traditional F2S tasks are insufficient for eF2S, as they focus on converting text into speech that reflects facial characteristics without considering emotional states. On the method level, previous expressive speech generation methods focus on generating speech tied to either a specific identity or a specific emotion, but customizing both simultaneously remains a significant challenge—particularly in the absence of speech cues. 1Emotional Face-to-Speech (a) F2S struggles to model consistent speech         
+
+> 🔥 🔥
+> “Angry”
+> Speech Output
+> “Neutral”
+> Hello World
+> Inconsistent
+> Text Prompt
+> Face Prompt
+> (b) Our eF2S explores consistent synthesis from rich visual cues
+> !!!
+> Consistent
+> “Surprised”
+> Text Prompt
+> Speech Output
+> Face Prompt
+> “Surprised”
+> Hello World
+> !!!
+> Face -to -Speech Emotional
+> Face -to -Speech
+
+Figure 1: Tasks comparison. (a) Conventional Face-to-Speech (F2S). (b) The introduced Emotional Face-to-Speech (eF2S). Given text and face prompts, the model is expected to generate speech that aligns with both the facial identity and emotional expression. Our eF2S offers a novel perspective for generating consistent speech without relying on any vocal cues. To address these challenges, we propose a novel discrete 
+
+Diffusion framework for Emo tional Face -to-speech, called 
+
+DEmoFace , which is the first attempt to generate consis-tent auditory expectations ( i.e. identity and emotions) di-rectly from visual cues. Specifically, to mitigate the one-to-many issues inherent in continuous speech features (Xue et al., 2023), we begin by discretizing the speech gener-ation process utilizing neural audio codec with Residual Vector Quantization (RVQ). Considering the low-to-high frequency distributions across different RVQ levels, we then introduce a discrete diffusion model with a coarse-to-fine curriculum learning strategy, to enhance both training ef-ficiency and diversity of generated speech. Building on this, we propose a multimodal DiT (MM-DiT) for the re-verse diffusion process, which dynamically aligns speech and text prompts, and customizes face-style linguistic ex-pressions. Furthermore, for challenging multi-conditional generation of eF2S, we develop enhanced predictor-free guidance (EPFG) on the discrete diffusion model, boosting efficient response to the global condition while facilitat-ing the decoupling of multiple local conditions. Compre-hensive experiments demonstrate that DEmoFace achieves diverse and high-quality speech synthesis, outperforming the state-of-the-art models in naturalness and consistency— exceeding even speech-guided methods. The contributions of this paper are summarized below: • We introduce an extension to F2S task, named Emotional Face-to-Speech (eF2S), which is the first attempt to cus-tomize a consistent vocal style solely from the face. • We propose a novel discrete diffusion framework for speech generation, which incorporates multimodal DiT and RVQ-based curriculum learning, achieving high-fidelity generation and efficient training. • We devise enhanced predictor-free guidance to boost sampling quality in multi-conditional scenarios of eF2S. • Extensive experimental results demonstrate that DEmo-Face can generate more consistent, natural speech with enhanced emotions compared to previous methods. 
+
+2. Related Work 
+
+2.1. Residual Vector Quantization for TTS 
+
+Neural audio codecs (Zeghidour et al., 2022; Zhang et al., 2024) enable discrete speech modeling by reconstructing high-quality audio at low bitrates. Residual Vector Quantiza-tion (RVQ) (Vasuki & Vanathi, 2006; Zheng et al., 2024) is a standard technique for codecs that quantizes audio frames by multiple hierarchical layers of quantizers, with each sub-sequent layer working on the residual of the previous stage. Recent models (Kharitonov et al., 2023; Shen et al., 2024) rely on codecs with the RVQ to synthesize speech, and show promising performance on naturalness. For example, VALL-E (Wang et al., 2023) employs Encodec (D ´efossez et al., 2023) to transform the speech into a sequence of discrete tokens, then uses an auto-regressive (AR) model to predict tokens based on phonemes and speaker prompts. However, existing methods are mainly based on the AR manner, leading to unstable and inefficient sampling. We propose a discrete diffusion framework DEmoFace to re-construct tokens from the RVQ codec, achieving faster and more diverse sampling by parallel iterative refinement. 
+
+2.2. Face-driven TTS 
+
+Face-driven TTS (F2S) aims to synthesize speech based on visual information about the speaker (Pl ¨uster et al., 2021; Lee et al., 2024; Goto et al., 2020; Kang et al., 2023; Ye & Shan, 2025). Previous F2S methods focus on how to learn visual representation from speech supervision. For example, Goto et al. (Goto et al., 2020) propose a supervised gen-eralized end-to-end loss to minimize the distance between visual embedding and vocal speaker embedding. However, existing methods ignore the rich emotional cues inherent in the face, which often generate over-smoothing speech lacking diverse emotional naturalness. Although Kang et al. (Kang et al., 2023) additionally introduce speech prosody codes to enhance the naturalness. They still depend on the speech prompt to achieve natural generation, which does not satisfy the requirements of eF2S. In contrast, our DEmo-2Emotional Face-to-Speech 
+
+Face only utilizes visual cues to form the emotional auditory expectations without relying on any vocal features. 
+
+2.3. Emotional TTS 
+
+Emotional TTS aims to enhance synthesized speech with emotional expressiveness (Li et al., 2024; Guo et al., 2023b; Chen et al., 2022). Existing methods can be divided into two categories based on how to integrate emotion informa-tion into TTS systems. For emotion label conditioning (Ye et al., 2023a; Wen et al., 2022; Ye et al., 2022), EmoD-iff (Guo et al., 2023b) introduces a diffusion model with soft emotion labels as a classifier guidance. In contrast, V2C-Net (Chen et al., 2022) employs emotion and speaker embeddings from reference face and speech individually for speech customization. However, previous methods do not explore how to learn both speaker identity and emotion from the face image. We offer a novel perspective of the relationship between auditory expectations and visual cues for TTS without relying on any vocal cues. 
+
+3. Preliminary: Discrete Diffusion Models 
+
+Continuous Diffusion Models (CDM) (Blattmann et al., 2023; Li et al., 2023; Ruan et al., 2023) have achieved state-of-the-art results in generative modeling, but face chal-lenges in speech generation due to high-dimensional speech features and excessive diffusion steps, frustrating practical application. The fundamental solution lies in compressing the speech feature space, such as a discrete space. Recently, Discrete Diffusion Models (DDMs) have shown promise in language modeling (Meng et al., 2022; Lou et al., 2024) and speech generation (Yang et al., 2023; Wu et al., 2024). We emphasize that DDM has yet to be explored in multi-conditional speech generation with high-quality audio compression. In this paper, to our knowledge, we take the first attempt to generate RVQ-based speech tokens with DDM. Below, we outline the forward and reverse processes of the DDM, along with its training objective. 
+
+Forward diffusion process. Given a sequence of tokens 
+
+x = x1 . . . x d from a state space of length d like X d =
+
+{1, . . . , n }d. The continuous-time discrete Markov chain at time t is characterized by the diffusion matrix Qt ∈ Rnd×nd
+
+(i.e. transition rate matrix), as follows: 
+
+p(xit+∆ t|xit) = δxit+∆ txit +Qt(xit+∆ t, x it)∆ t+o(∆ t), (1) where xit denotes i-th element of xt, Qt(xit+∆ t, x it) is the 
+
+(xit+∆ t, x it) element of Qt, denoting the transition rate from state xit to state xit+∆ t at time t, and δ is Kronecker delta. Since the exponential size of Qt, existing works (Lou et al., 2024; Ou et al., 2024) propose to assume dimensional inde-pendence, conducting a one-dimensional diffusion process for each dimension with the same token-level diffusion ma-trix Qtok  
+
+> t
+
+= σ(t)Qtok ∈ Rn×n, where σ(t) is the noise schedule and Qtok is designed to diffuse towards an absorb-ing state [MASK] . Then the forward equation is formulated as P (xit, x i
+
+> 0
+
+) = exp  ¯σ(t)Qtok (xit, x i
+
+> 0
+
+), where transition probability matrix P (xit, x i
+
+> 0
+
+) := p(xit|x0), and cumulative noise ¯σ(t) = R t 
+
+> 0
+
+σ(s)ds . There are two probabilities in the Pt|0: 1 − e−¯σ(t) for replacing the current tokens with 
+
+[MASK] , e−¯σ(t) for keeping it unchanged. 
+
+Reverse denoising process. As the diffusion matrix Qtok 
+
+> t
+
+is known, the reverse process can be given by a reverse tran-sition rate matrix ¯Qt (Sun et al., 2023; Kelly, 2011), where 
+
+¯Qt(xit−∆t, x it) = p(xit−∆t) 
+
+> p(xit)
+
+Qtok  
+
+> t
+
+(xit, x it−∆t) and xit−∆t̸ =
+
+xit, or ¯Qt(xit−∆t, x it) = − P 
+
+> z̸=xt
+
+¯Qt(z, x it). The reverse equation is formulated as follows: 
+
+p(xit−∆t|xit) = δxit−∆txit + ¯Qt(xit−∆t, x it)∆ t+o(∆ t), (2) where we can estimate the ratio p(xit−∆t) 
+
+> p(xit)
+
+(which is known as the concrete score (Lou et al., 2024; Meng et al., 2022) to measure the transition probability or closeness from a state 
+
+xi at time t to a state ˆxi at time t − ∆t) of ¯Qt by a score network sθ (xit, t )xit−∆t ≈ [ p(xit−∆t) 
+
+> p(xit)
+
+]xit̸ =xit−∆t . So that the reverse matrix is parameterized to model the reverse process 
+
+qθ (xit−∆t|xit) (i.e. parameterize the concrete score). 
+
+Training objective. Denoising score entropy (DSE) (Lou et al., 2024) is introduced to train the score network sθ :
+
+Z T
+
+> 0
+
+Ext∼p(xt|x0)
+
+X 
+
+> ˆxt̸=xt
+
+Qt
+
+ ˆxit, x it
+
+ h
+
+sθ
+
+ xit, t 
+
+> ˆxit
+
+−cˆxitxit log sθ
+
+ xit, t 
+
+> ˆxit
+
++ N(cˆxitxit )
+
+i
+
+dt, 
+
+(3) where the concrete score cˆxitxit = p(ˆxit|xi
+
+> 0
+
+)
+
+> p
+
+(xit|xi
+
+> 0
+
+) and a normaliz-ing constant function N(c) := c log c − c that ensures loss non-negative. During sampling, we can replace the concrete score with the trained score network on Equation (2). 
+
+4. Methodology 
+
+4.1. Task Formulation for eF2S 
+
+Given a triplet of multimodal-driven conditions c =
+
+{cid , cemo , ctext }, which correspond to reference identity, emotion, and text, respectively, the eF2S task aims to syn-thesize speech based on the c. More precisely, the syn-thesized speech content aligns with the text condition ctext ,while its voice identity and emotional attributes correspond to the identity condition cid and emotion condition cemo ,respectively—both extracted from the input face. 3Emotional Face-to-Speech Speech Tokenization & Diffusion 
+
+1 4 6…
+
+3 1 4…
+
+> …
+> …
+> …
+> …
+
+Diffuse 
+
+1 M M…
+
+M M M
+
+> …
+> …
+> …
+> …
+
+…
+
+Codec 
+
+Encoder 
+
+× N
+
+MM -DiT Block 
+
+× N
+
+Layer Norm 
+
+Scale, Shift 
+
+Scale 
+
+Multi -Head 
+
+Self -Attention 
+
+Layer Norm 
+
+Multi -Head 
+
+Cross -Attention 
+
+Layer Norm 
+
+Scale, Shift 
+
+Scale 
+
+MLP 
+
+MLP 
+
+<latexit sha1_base64="Kzpu9/OBKEmqWBEtf5/dQ2ACm+0=">AAAB73icbVDLSgNBEOyNrxhfUY9eBoPgKeyKqMeAF48RzAOSJfROZpMhM7PrzKwQQn7CiwdFvPo73vwbJ8keNLGgoajqprsrSgU31ve/vcLa+sbmVnG7tLO7t39QPjxqmiTTlDVoIhLdjtAwwRVrWG4Fa6eaoYwEa0Wj25nfemLa8EQ92HHKQokDxWNO0Tqp3R2glNgLeuWKX/XnIKskyEkFctR75a9uP6GZZMpSgcZ0Aj+14QS15VSwaambGZYiHeGAdRxVKJkJJ/N7p+TMKX0SJ9qVsmSu/p6YoDRmLCPXKdEOzbI3E//zOpmNb8IJV2lmmaKLRXEmiE3I7HnS55pRK8aOINXc3UroEDVS6yIquRCC5ZdXSfOiGlxVL+8vKzWSx1GEEziFcwjgGmpwB3VoAAUBz/AKb96j9+K9ex+L1oKXzxzDH3ifP6jpj6A=</latexit> 
+
+ 1
+
+<latexit sha1_base64="bUvxVRlqBsFEGXVx/MXKl8FUI6M=">AAAB7nicbVDLSgNBEOyNrxhfUY9eBoPgKexKUI8BLx4jmAckS5id9CZDZh/M9Aoh5CO8eFDEq9/jzb9xkuxBEwsaiqpuuruCVElDrvvtFDY2t7Z3irulvf2Dw6Py8UnLJJkW2BSJSnQn4AaVjLFJkhR2Uo08ChS2g/Hd3G8/oTYyiR9pkqIf8WEsQyk4WandC5B43+uXK27VXYCtEy8nFcjR6Je/eoNEZBHGJBQ3puu5KflTrkkKhbNSLzOYcjHmQ+xaGvMIjT9dnDtjF1YZsDDRtmJiC/X3xJRHxkyiwHZGnEZm1ZuL/3ndjMJbfyrjNCOMxXJRmClGCZv/zgZSoyA1sYQLLe2tTIy45oJsQiUbgrf68jppXVW962rtoVapszyOIpzBOVyCBzdQh3toQBMEjOEZXuHNSZ0X5935WLYWnHzmFP7A+fwB5QKPLw==</latexit> 
+
+ 1
+
+<latexit sha1_base64="/fbnD8cDmV8hF4h+7X1sm/g3HF8=">AAAB7nicbVDLSgNBEOyNrxhfUY9eBoPgKeyGoB4DXjxGMImQLGF20kmGzD6Y6RXCko/w4kERr36PN//GSbIHTSxoKKq66e4KEiUNue63U9jY3NreKe6W9vYPDo/KxydtE6daYEvEKtaPATeoZIQtkqTwMdHIw0BhJ5jczv3OE2oj4+iBpgn6IR9FcigFJyt1egES79f65YpbdRdg68TLSQVyNPvlr94gFmmIEQnFjel6bkJ+xjVJoXBW6qUGEy4mfIRdSyMeovGzxbkzdmGVARvG2lZEbKH+nsh4aMw0DGxnyGlsVr25+J/XTWl442cySlLCSCwXDVPFKGbz39lAahSkppZwoaW9lYkx11yQTahkQ/BWX14n7VrVu6rW7+uVBsvjKMIZnMMleHANDbiDJrRAwASe4RXenMR5cd6dj2VrwclnTuEPnM8f5oaPMA==</latexit> 
+
+ 2
+
+<latexit sha1_base64="OsPE/luT86hA/32cWxccaQnLEtQ=">AAAB73icbVBNS8NAEJ3Ur1q/qh69LBbBU0lKUY8FLx4r2A9oQ5lsN+3SzSbuboQS+ie8eFDEq3/Hm//GbZuDtj4YeLw3w8y8IBFcG9f9dgobm1vbO8Xd0t7+weFR+fikreNUUdaisYhVN0DNBJesZbgRrJsohlEgWCeY3M79zhNTmsfywUwT5kc4kjzkFI2Vun0UyRgHtUG54lbdBcg68XJSgRzNQfmrP4xpGjFpqECte56bGD9DZTgVbFbqp5olSCc4Yj1LJUZM+9ni3hm5sMqQhLGyJQ1ZqL8nMoy0nkaB7YzQjPWqNxf/83qpCW/8jMskNUzS5aIwFcTEZP48GXLFqBFTS5Aqbm8ldIwKqbERlWwI3urL66Rdq3pX1fp9vdIgeRxFOINzuAQPrqEBd9CEFlAQ8Ayv8OY8Oi/Ou/OxbC04+cwp/IHz+QOvCY+k</latexit> 
+
+↵2
+
+<latexit sha1_base64="wzQRN8/Dq2SGFqZ8nVM2SX7leeE=">AAAB73icbVBNS8NAEJ3Ur1q/qh69LBbBU0mkqMeCF48V7Ae0oUy2m3bpZpPuboQS+ie8eFDEq3/Hm//GbZuDtj4YeLw3w8y8IBFcG9f9dgobm1vbO8Xd0t7+weFR+fikpeNUUdaksYhVJ0DNBJesabgRrJMohlEgWDsY38399hNTmsfy0UwT5kc4lDzkFI2VOj0UyQj7Xr9ccavuAmSdeDmpQI5Gv/zVG8Q0jZg0VKDWXc9NjJ+hMpwKNiv1Us0SpGMcsq6lEiOm/Wxx74xcWGVAwljZkoYs1N8TGUZaT6PAdkZoRnrVm4v/ed3UhLd+xmWSGibpclGYCmJiMn+eDLhi1IipJUgVt7cSOkKF1NiISjYEb/XlddK6qnrX1dpDrVIneRxFOINzuAQPbqAO99CAJlAQ8Ayv8OZMnBfn3flYthacfOYU/sD5/AGthY+j</latexit> 
+
+↵1
+
+<latexit sha1_base64="L1GGn+GE9OVDXqerTE30IvK8R64=">AAAB73icbVBNS8NAEJ3Ur1q/qh69LBbBU0lKUY8FLx4r2A9oQ5lsN+3S3STuboQS+ie8eFDEq3/Hm//GbZuDtj4YeLw3w8y8IBFcG9f9dgobm1vbO8Xd0t7+weFR+fikreNUUdaisYhVN0DNBI9Yy3AjWDdRDGUgWCeY3M79zhNTmsfRg5kmzJc4injIKRordfsjlBIHtUG54lbdBcg68XJSgRzNQfmrP4xpKllkqECte56bGD9DZTgVbFbqp5olSCc4Yj1LI5RM+9ni3hm5sMqQhLGyFRmyUH9PZCi1nsrAdko0Y73qzcX/vF5qwhs/41GSGhbR5aIwFcTEZP48GXLFqBFTS5Aqbm8ldIwKqbERlWwI3urL66Rdq3pX1fp9vdIgeRxFOINzuAQPrqEBd9CEFlAQ8Ayv8OY8Oi/Ou/OxbC04+cwp/IHz+QOqbY+h</latexit> 
+
+ 2 ,
+
+,
+
+text 
+
+emo ID c
+
+time 
+
+Token Embedding 
+
+Linear 
+
+> Codebook Dim  𝑪
+
+Token Length 𝒍 ×𝒅 𝐭𝐨𝐤 
+
+…
+
+> …
+> …
+> …
+> …
+
+…
+
+…
+
+…
+
+…
+
+> …
+> …
+> …
+> …
+
+RVQ -2 Score RVQ -𝒍 Score 
+
+…
+
+…
+
+> …
+> …
+> …
+> …
+
+RVQ -1 Score 
+
+AdaLN + Linear Head RVQ Token Heads Multi -level Linear Heads 
+
+GT 
+
+Speech 
+
+Element -wise Addition 
+
+Frozen Weight 
+
+Embed Embedding Layer 
+
+Concatenation c Masked Token M
+
+Text Conditioner 
+
+Hello 
+
+World SpeechT5 
+
+Input Text Text Cond 
+
+c
+
+Poster2 
+
+FaceNet 
+
+ArcFace 
+
+ID 
+
+Face Conditioner 
+
+Input Face 
+
+Emo Cond 
+
+ID Cond 
+
+Embed 
+
+MLP 
+
+label 
+
+GE2E 
+
+GT Speech 
+
+emo 
+
+text 
+
+<latexit sha1_base64="4kM29U3q7NrHS02MAxyREizj770=">AAACAXicbVDLSsNAFJ34rPUVdSPoYrAIrkoiRV0W3LisYB/QhDCZTNqhkwczN2IJceOvuHGhiFv/wp1/46TtQlsPDHM4517uvcdPBVdgWd/G0vLK6tp6ZaO6ubW9s2vu7XdUkknK2jQRiez5RDHBY9YGDoL1UslI5AvW9UfXpd+9Z1LxJL6DccrciAxiHnJKQEueeej4iQjUONJfTgvPAfYAOQ8Kz6xZdWsCvEjsGamhGVqe+eUECc0iFgMVRKm+baXg5kQCp4IVVSdTLCV0RAasr2lMIqbcfHJBgU+1EuAwkfrFgCfq746cRKpcUldGBIZq3ivF/7x+BuGVm/M4zYDFdDoozASGBJdx4IBLRkGMNSFUcr0rpkMiCQUdWlWHYM+fvEg653X7ot64bdSax7M4KugInaAzZKNL1EQ3qIXaiKJH9Ixe0ZvxZLwY78bHtHTJmPUcoD8wPn8A3N2XsQ==</latexit> 
+
+cid 
+
+<latexit sha1_base64="1wlKAQceLaLSjwzSWC9+isHwLm4=">AAACAnicbVBNS8NAEN34WetX1JPoIVgETyWRoh4LXjxWsB/QlrDZTNulm2zYnYglFC/+FS8eFPHqr/Dmv3HT9qCtD5Z9vDfDzLwgEVyj635bS8srq2vrhY3i5tb2zq69t9/QMlUM6kwKqVoB1SB4DHXkKKCVKKBRIKAZDK9zv3kPSnMZ3+EogW5E+zHvcUbRSL592AmkCPUoMl/Gxn4H4QEziOTYt0tu2Z3AWSTejJTIDDXf/uqEkqURxMgE1brtuQl2M6qQMwHjYifVkFA2pH1oGxrTCHQ3m5wwdk6NEjo9qcyL0ZmovzsyGul8S1MZURzoeS8X//PaKfauuhmPkxQhZtNBvVQ4KJ08DyfkChiKkSGUKW52ddiAKsrQpFY0IXjzJy+SxnnZuyhXbiul6vEsjgI5IifkjHjkklTJDamROmHkkTyTV/JmPVkv1rv1MS1dsmY9B+QPrM8fvBiYLw==</latexit> 
+
+cemo 
+
+<latexit sha1_base64="uX9PEtMzbqyCsmxLT7uNOu+wRA0=">AAACA3icbVDLSsNAFJ34rPUVdacuBovgqiRS1GXBjcsK9gFNCJPJpB06eTBzI5YQcOOvuHGhiFt/wp1/46TtQlsPzMzhnHuZe4+fCq7Asr6NpeWV1bX1ykZ1c2t7Z9fc2++oJJOUtWkiEtnziWKCx6wNHATrpZKRyBes64+uS797z6TiSXwH45S5ERnEPOSUgJY889DxExGocaSfnBaeA+wB8vIqPLNm1a0J8CKxZ6SGZmh55pcTJDSLWAxUEKX6tpWCmxMJnApWVJ1MsZTQERmwvqYxiZhy88kOBT7VSoDDROoTA56ovztyEqlyTF0ZERiqea8U//P6GYRXbs7jNAMW0+lHYSYwJLgMBAdcMgpirAmhkutZMR0SSSjo2Ko6BHt+5UXSOa/bF/XGbaPWPJ7FUUFH6ASdIRtdoia6QS3URhQ9omf0it6MJ+PFeDc+pqVLxqznAP2B8fkDtD6YvQ==</latexit> 
+
+ctext 
+
+<latexit sha1_base64="soKljN9jWJT22gVWIwAqIYDAtes=">AAACA3icbVDLSsNAFJ3UV62vqjt1ESyCq5KUoi4LblxWsA9oS5hMbtqhkwczN2IJATf+ihsXirj1J9z5N07aLrT1wDCHc+7l3nvcWHCFlvVtFFZW19Y3ipulre2d3b3y/kFbRYlk0GKRiGTXpQoED6GFHAV0Ywk0cAV03PF17nfuQSoehXc4iWEQ0GHIfc4oaskpH/XdSHhqEugvZZnTR3jAdAg1yJxyxapaU5jLxJ6TCpmj6ZS/+l7EkgBCZIIq1bOtGAcplciZgKzUTxTElI3pEHqahjQANUinN2TmmVY804+kfiGaU/V3R0oDla+pKwOKI7Xo5eJ/Xi9B/2qQ8jBOEEI2G+QnwsTIzAMxPS6BoZhoQpnkeleTjaikDHVsJR2CvXjyMmnXqvZFtX5brzRO5nEUyTE5JefEJpekQW5Ik7QII4/kmbySN+PJeDHejY9ZacGY9xySPzA+fwAe55hb</latexit> 
+
+cge2e 
+
+Cross -Modal 
+
+Alignment 
+
+Time 𝒕 
+
+𝒕 
+
+Embed Embed …
+
+Average 
+
+time 
+
+Masked Token 
+
+…
+
+> …
+> …
+> …
+
+M M M
+
+> …
+
+…1 M M
+
+Curriculum 
+
+Learning Embed 
+
+ID 
+
+emo 
+
+text 
+
+Condition Set 𝒄 
+
+EPFG 
+
+Codec Decoder 
+
+Speech Waveform 
+
+Euler Sampler 
+
+<latexit sha1_base64="PQ7IUjfSwBK+X9JTnvd8N3fc8kc=">AAACBnicbVDLSsNAFJ3UV62vqEsVBovgqiSlqLgquHFZwT6gjWEymbRDJ5MwMxFLyMqNv+LGhSJu/QZ3/o2TNgttPTDM4Zx7ufceL2ZUKsv6NkpLyyura+X1ysbm1vaOubvXkVEiMGnjiEWi5yFJGOWkrahipBcLgkKPka43vsr97j0Rkkb8Vk1i4oRoyGlAMVJacs2jgRcxX05C/aUPmavuUuHal8JN7XqWuWbVqllTwEViF6QKCrRc82vgRzgJCVeYISn7thUrJ0VCUcxIVhkkksQIj9GQ9DXlKCTSSadnZPBEKz4MIqEfV3Cq/u5IUSjzTXVliNRIznu5+J/XT1Rw4aSUx4kiHM8GBQmDKoJ5JtCngmDFJpogLKjeFeIREggrnVxFh2DPn7xIOvWafVZr3DSqzcMijjI4AMfgFNjgHDTBNWiBNsDgETyDV/BmPBkvxrvxMSstGUXPPvgD4/MH4hSZRA==</latexit> 
+
+xr1:r12 
+
+t
+
+<latexit sha1_base64="3va9dtvcFK6rcQ4Nidu+Z8q//b8=">AAACAXicbVDLSgMxFM3UV62vUTeCLoJFcFVmpKjLghuXFewD2nHIZNI2NJMMSUYsw7jxV9y4UMStf+HOvzHTzkJbD4QczrmXe+8JYkaVdpxvq7S0vLK6Vl6vbGxube/Yu3ttJRKJSQsLJmQ3QIowyklLU81IN5YERQEjnWB8lfudeyIVFfxWT2LiRWjI6YBipI3k2wf9QLBQTSLzpQ+Zr+9S6adulvl21ak5U8BF4hakCgo0ffurHwqcRIRrzJBSPdeJtZciqSlmJKv0E0VihMdoSHqGchQR5aXTCzJ4YpQQDoQ0j2s4VX93pChS+ZKmMkJ6pOa9XPzP6yV6cOmllMeJJhzPBg0SBrWAeRwwpJJgzSaGICyp2RXiEZIIaxNaxYTgzp+8SNpnNfe8Vr+pVxtHRRxlcAiOwSlwwQVogGvQBC2AwSN4Bq/gzXqyXqx362NWWrKKnn3wB9bnD8nxl6Q=</latexit> 
+
+xr1
+
+t
+
+<latexit sha1_base64="z8cWIBYRSg1Bb1+TE5drsCW34bw=">AAACAnicbVDLSgMxFM34rPU16kp0ESyCqzJTirosuHFZwT6gHYdMJm1DM8mQZMQyDG78FTcuFHHrV7jzb8y0s9DWAyGHc+7l3nuCmFGlHefbWlpeWV1bL22UN7e2d3btvf22EonEpIUFE7IbIEUY5aSlqWakG0uCooCRTjC+yv3OPZGKCn6rJzHxIjTkdEAx0kby7cN+IFioJpH50ofM13ep9FO3lmW+XXGqzhRwkbgFqYACTd/+6ocCJxHhGjOkVM91Yu2lSGqKGcnK/USRGOExGpKeoRxFRHnp9IQMnholhAMhzeMaTtXfHSmKVL6lqYyQHql5Lxf/83qJHlx6KeVxognHs0GDhEEtYJ4HDKkkWLOJIQhLanaFeIQkwtqkVjYhuPMnL5J2reqeV+s39UrjuIijBI7ACTgDLrgADXANmqAFMHgEz+AVvFlP1ov1bn3MSpesoucA/IH1+QNEiZfg</latexit> 
+
+xr12 
+
+t
+
+<latexit sha1_base64="ggTPcTJCya6ZEBma8dQ5gs4Uygw=">AAACAnicbVDLSgMxFM34rPU16kp0ESyCqzJTirosuHFZwT6gHYdMJm1DM8mQZMQyDG78FTcuFHHrV7jzb8y0s9DWAyGHc+7l3nuCmFGlHefbWlpeWV1bL22UN7e2d3btvf22EonEpIUFE7IbIEUY5aSlqWakG0uCooCRTjC+yv3OPZGKCn6rJzHxIjTkdEAx0kby7cN+IFioJpH50ofMd+5S6aduLct8u+JUnSngInELUgEFmr791Q8FTiLCNWZIqZ7rxNpLkdQUM5KV+4kiMcJjNCQ9QzmKiPLS6QkZPDVKCAdCmsc1nKq/O1IUqXxLUxkhPVLzXi7+5/USPbj0UsrjRBOOZ4MGCYNawDwPGFJJsGYTQxCW1OwK8QhJhLVJrWxCcOdPXiTtWtU9r9Zv6pXGcRFHCRyBE3AGXHABGuAaNEELYPAInsEreLOerBfr3fqYlS5ZRc8B+APr8wfbBpec</latexit> 
+
+xr12 
+
+0
+
+<latexit sha1_base64="O8TXPBUL/ZKHUk/g+ajt04TKEeY=">AAACAXicbVDLSgMxFM3UV62vUTeCLoJFcFVmpKjLghuXFewD2nHIZNI2NJMMSUYsw7jxV9y4UMStf+HOvzHTzkJbD4QczrmXe+8JYkaVdpxvq7S0vLK6Vl6vbGxube/Yu3ttJRKJSQsLJmQ3QIowyklLU81IN5YERQEjnWB8lfudeyIVFfxWT2LiRWjI6YBipI3k2wf9QLBQTSLzpQ+Z79yl0k/dLPPtqlNzpoCLxC1IFRRo+vZXPxQ4iQjXmCGleq4Tay9FUlPMSFbpJ4rECI/RkPQM5SgiykunF2TwxCghHAhpHtdwqv7uSFGk8iVNZYT0SM17ufif10v04NJLKY8TTTieDRokDGoB8zhgSCXBmk0MQVhSsyvEIyQR1ia0ignBnT95kbTPau55rX5TrzaOijjK4BAcg1PgggvQANegCVoAg0fwDF7Bm/VkvVjv1sestGQVPfvgD6zPH2DBl2A=</latexit> 
+
+xr1
+
+0
+
+Figure 2: Overall framework of DEmoFace . The MM-DiT inputs masked token xr1:r12 
+
+t , time t, and condition set c to synthesize speech, consisting of N blocks for conditioning and 12 linear heads to predict concrete scores. During training, we propose a curriculum learning that first inputs low-level tokens and refines them by adding high-level tokens progressively. During sampling, an Euler sampler with our EPFG refines the tokens, while a codec decoder reconstructs the waveform. 
+
+4.2. Overview of DEmoFace 
+
+Fig. 2 illustrates the overview of DEmoFace. The MM-DiT comprises N blocks for conditional information injec-tion and 12 linear heads for concrete score prediction. The masked tokens xr1:r12 
+
+t are obtained via speech tokenization and forward diffusion, with face and text conditioners form-ing the condition set c. Meanwhile, identity and emotion conditions with time are injected through adaptive layer normalization (AdaLN) (Peebles & Xie, 2023), and the text condition is injected with cross-attention. During train-ing, we propose a curriculum learning algorithm, which first inputs low-level tokens xr1:rl−1
+
+t and refines them by adding high-level token xrl
+
+t progressively. During sampling, we utilize an Euler sampler with our EPFG to iteratively refine the generated tokens, while a codec decoder recon-structs the waveform. Notably, when ground truth speech is provided during training, the reference features cge2e are extracted from the GE2E (Wan et al., 2018) to guide identity customization. During inference, we use the cross-modal aligned face encoder to extract the cid instead of cge2e .Next, we detail the key components in DEmoFace. 
+
+4.3. Conditional Concrete Score Modeling 
+
+For the concrete score sθ modeling, we first define the to-kenization and forward diffusion processes, followed by a description of the conditioners and architecture, and con-clude with the modulation of the concrete score using EPFG. 
+
+RVQ speech tokenization. We utilize the recent RVQ-based codec (Wang et al., 2024) as the tokenizer, which achieves hierarchical modeling of diverse information across different RVQ layers. Given a single-channel speech signal, the tokenizer compresses it to the output tokens xr1:r12 =
+
+{1, . . . , C code }12 ×dtok , where ri is the i-th RVQ level of to-ken, dtok is the length of the token sequence, respectively. The number of RVQ layers is 12 with a codebook size 
+
+Ccode = 1 , 024 in each layer. 
+
+RVQ token diffusion process. Given the hierarchical struc-ture of RVQ tokens, following the previous diffusion pro-cess (Lou et al., 2024), we randomly corrupt each level token xri
+
+t at timestep t. Specifically, we first extract input tokens xr1:rl
+
+0 from the codec encoder according to the cur-riculum training stage, where rl denotes the max level for the current input. We then conduct the diffusion process as defined in Equation (1) for xri
+
+t , where 1 ≤ i ≤ l.
+
+Conditioners. For face conditioner, as presented in Fig. 2, we build identity encoder and emotion encoder to learn identity embedding cid and emotion embedding cemo , re-spectively. Specifically, we first employ a composite iden-tity embedding by introducing two face recognition models ArcFace (Deng et al., 2022) and FaceNet (Schroff et al., 2015), then utilize a multilayer perceptron (MLP) for trans-formation and shape alignment. To precisely model the high-fidelity vocal style associated with the face, we ex-tract the speech speaker embedding cge2e from the speaker 4Emotional Face-to-Speech 
+
+recognition model GE2E (Wan et al., 2018), and make cid 
+
+aligned with the cge2e across modalities using cosine sim-ilarity, L1, and L2 losses, as detailed in Sec. 4.4. For the emotion embedding, we employ a strong facial expression recognition model Poster2 (Mao et al., 2023). Since the continuous emotion embedding of backbone is insufficient for decoupling identity information (Liu et al., 2024), we leverage the predicted label and a learnable embedding layer to learn identity-agnostic embedding cemo .For text conditioner, we introduce a text encoder to learn text embedding ctext . Specifically, raw text is preprocessed into an International Phonetic Alphabet (IPA) phone se-quence using a standard IPA phonemizer. Next, embed-ding is extracted from a pre-trained text-speech encoder SpeechT5 (Ao et al., 2022), and is then subsequently pro-jected into the hidden state via an MLP. 
+
+Multimodal DiT. We propose the Multimodal DiT (MM-DiT), which differs from DiT (Peebles & Xie, 2023) in three aspects. (1) Input , the masked speech tokens xr1:r12 
+
+> t
+
+at timestep t are fed to embedding layers and subsequently averaged to serve as the input. (2) Conditioning , to cus-tomize face-style speech generation, we concatenate cid 
+
+and cemo along with the timestep embedding, is passed through an MLP to inject the global face-style condition. The MLP aims to regress the scale and shift parameters 
+
+α1, γ 1, β 1, α 2, γ 2, β 2 for the AdaLN. Additionally, to learn face-style linguistic expressions, we apply cross-attention with rotary position embeddings (Su et al., 2024) enabling dynamic alignment with text ctext . (3) Output , we incorpo-rate 12 linear heads including a combination of AdaLN and linear layer to predict concrete scores for each RVQ level. 
+
+Enhanced predictor-free guidance. Several guidance tricks can boost sampling quality for the conditional gen-eration, such as predictor-free guidance (PFG) (Nisonoff et al., 2024; Ho & Salimans, 2021). However, given K
+
+conditions c = {c1, . . . , cK }, these guidance methods are not readily amenable to multi-conditional scenarios (Liu et al., 2022). From the perspective of Energy-Based Models (EBMs), we propose an Enhanced PFG (EPFG) enhancing the efficient response to global condition while facilitating the decoupling of local conditions. Specifically, to simplify the notation, we define xit, x it−∆t
+
+as x, ˆx. The key of conditional sampling process is to estimate the concrete score ˆsθ (x, t, c)ˆx ≈ p(ˆ x) 
+
+> p(x)
+
+linked to the transition probability. Using Bayes rule, we can obtain a compositional concrete score ˆsθ (x, t, c)ˆx from 
+
+p(xt−∆t = ˆ x|xt = x, c) based on Equation (2): 
+
+ˆsθ (x, t, c)ˆx = sθ (x, t )ˆxKY
+
+> k=1
+
+sθ (x, t, ck)ˆx
+
+sθ (x, t )ˆx
+
+. (4) Instead of sampling from ˆsθ (x, t, c)ˆx, we can utilize tem-perature sampling (Kingma & Dhariwal, 2018; Mehta et al., 2023) for more controllable generated outputs by introduc-ing ˆs(w) 
+
+> θ
+
+(x, t, c)ˆx = sθ (x, t )ˆx
+
+QKk=1    
+
+> swkθ(x,t, ck)ˆx
+> swkθ(x,t )ˆx
+
+, where 
+
+wk denotes the guidance scale. However, this compositional guidance lacks interactions among local conditions and struggles to guide sampling with a global consistent direc-tion. Inspired by the formulation of the EBM, the score can also be formulated as ˆsθ (x)ˆx ≈ pθ (ˆ x)  
+
+> pθ(x)
+
+= efθ (ˆ x)/Z efθ (x)/Z = efθ (ˆ x)  
+
+> efθ(x)
+
+,where Z is the normalizing constant, and fθ is the energy function. Hence, we can associate compositional and joint conditions by summing up the energy functions, and finally obtain the modulated score by multiplying both scores: 
+
+ˆs(w) 
+
+> θ
+
+(x, t )ˆx = sθ (x, t )ˆxKY   
+
+> k=1
+> swiθ(x,t, ck)ˆx
+> swiθ(x,t )ˆx
+
+| {z }
+
+> Compositional
+
+· sw0  
+
+> θ(x,t, c)ˆx
+> sw0−1
+> θ(x,t )ˆx
+
+| {z }
+
+> Joint
+
+, (5) where c = {cid , cemo , ctext }, w0 controls the scale of guid-ance strength for the joint injection of all conditions, while 
+
+wi for 1 ≤ k ≤ K is assigned to each independent attribute. Please refer to Appendix C for detailed derivation. 
+
+4.4. Curriculum-based Training and Inference Training. Curriculum learning aims to progressively train the model from simple to hard tasks, with the key challenge of identifying samples varying in difficulty. Previous studies show that neural networks prioritize low-frequency informa-tion first (Rahaman et al., 2019). Fig. 5(a) shows different frequency distributions across RVQ levels, with low-level features exhibiting low-frequency patterns. Therefore, we reveal curriculum learning for RVQ-based tokens from the frequency perspective. As shown in Fig. 2, we gradually introduce higher-level tokens xrl 
+
+> t
+
+every 3 epochs, starting from previous low-level ( i.e. low-frequency) tokens xr1:rl−1
+
+> t
+
+to high-level tokens xr1:rl 
+
+> t
+
+, facilitating effective training. Furthermore, the training procedure contains two stages: concrete score prediction and identity feature alignment. In the concrete score prediction, the training objective is the multi-level DSE loss based on Equation (3) with the sum across current rl RVQ levels as Lscore =Pli=1 LDSE (xri , t, c). For conducting EPFG in Equa-tion (5), we randomly set ∅ with 10% probability for each condition, and enforce all conditions set to ∅ for 10% samples. For the cross-modal alignment, we use co-sine similarity, L1, and L2 losses to align the visual iden-tity vectors with cge2e . With these compositional losses, the training objective for the face encoder is as Lalign =1 − cos( cid , cge2e ) + L1( cid , cge2e ) + L2( cid , cge2e ). Notably, to avoid information degradation with teacher-student dis-tillation, we directly train MM-DiT with ground truth cge2e 
+
+and use the aligned identity embedding cid during inference. 5Emotional Face-to-Speech 
+
+Methods Audio Visual EmoSim ↑ SpkSim ↑ RMSE ↓ MCD ↓ WER(%) ↓
+
+Ground Truth - - 1.0000 1.0000 0.00 0.0000 10.82 
+
+Acoustic-guided Speech Generation 
+
+EmoSpeech (Diatlova & Shutov, 2023) ✓ ✗ 0.7667 0.5677 114.70 7.1328 29.59 FastSpeech2 (Ren et al., 2021) ✓ ✓ 0.7010 0.5217 115.97 7.3461 29.49 V2C-Net (Cong et al., 2023) ✓ ✓ 0.6788 0.5773 115.55 6.8901 29.54 HPM (Chen et al., 2022) ✓ ✓ 0.6817 0.4404 97.19 7.7614 77.31 StyleDubber (Cong et al., 2024b) ✓ ✓ 0.6742 0.4753 103.59 7.4497 43.14 DE MO FACE ∗ (Ours) ✓ ✓ 0.7921 0.7990 94.68 6.5505 19.72 
+
+Visual-guided Speech Generation 
+
+Face-TTS (Lee et al., 2023) ✗ ✓ 0.5230 0.1968 118.96 8.4649 17.47 
+
+DEmoFace (Ours) ✗ ✓ 0.6965 0.6679 101.18 6.8601 20.78 Table 1: Speech quantitative results. The Audio and Visual indicate whether specific modality conditions are used for speech generation guidance. ↑ (↓) means the higher (lower) value is better. We bold the best-performing method. Notably, the ∗ denotes that we use the speech condition cge2e , rather than the face condition cid to guide identity conditioning. 
+
+Inference. During inference, we introduce a frame-level du-ration predictor to estimate speech durations, initializing the input length dtok . Then the reverse process is executed with Euler sampling (Lou et al., 2024) and EPFG with 96 steps. The details of the duration predictor refer to Appendix E.1. 
+
+5. Experimental Results 
+
+5.1. Experimental Setups Datasets. All our models are pre-trained on three datasets with pairs of face video and speech: RAVDESS (Living-stone & Russo, 2018), MEAD (Wang et al., 2020; Gan et al., 2023), and MELD-FAIR (Carneiro et al., 2023). For data pre-processing, we first resample the audio to 16 kHz, and apply a speech separation model SepFormer (Subakan et al., 2021) to enhance voice. Then, we introduce Whis-per (Radford et al., 2023) to filter non-aligned text-speech pairs. Then, all models are trained on a combination of all three datasets. The RAVDESS and MEAD of the combined one are randomly segmented into training, validation, and test sets without any speaker overlap. For the MELD-FAIR, we follow the original splits. Additionally, these datasets lack sufficient semantic units in real-world environments, making it challenging to train a TTS model. We incorporate a 10-hour subset from LRS3 (Afouras et al., 2018) for pre-training, allowing the model to be comparable to Face-TTS trained on 400 hours of LRS3. Finally, the combined dataset comprises 31.33 hours of audio recordings and 26,767 ut-terances across 7 basic emotions ( i.e. angry, disgust, fear, happy, neutral, sad, and surprised) and 953 speakers. 
+
+Evaluation metrics. For eF2S, we evaluate the genera-tion performance based on naturalness ( i.e. speech quality) and expressiveness. For the naturalness, we employ Mel Cepstral Distortion (MCD) (Chen et al., 2022) to assess discrepancies between generated and target speech. Addi-tionally, the Word Error Rate (WER) (Wang et al., 2018; Radford et al., 2023) is used to gauge intelligibility. For the expressiveness, we calculate cosine similarity metrics based on emotion embeddings (Ma et al., 2024) and d-vectors to assess emotion similarity (EmoSim) and speaker identity similarity (SpkSim), as well as the Root Mean Square Error (RMSE) for F0 (Hayashi et al., 2017). 
+
+Implementation details. We implement DEmoFace based on DiT architecture (Peebles & Xie, 2023). We use a log-linear noise schedule σ(t) (Lou et al., 2024) where the ex-pectation of the number of masked tokens is linear with t.During training, we use the AdamW optimizer (Loshchilov & Hutter, 2019) with a learning rate of 1e-4, batch size 32. The total number of iterations is 300k. During inference, we use the Euler sampler to conduct the reverse process with 96 steps. We set the joint guidance scale w0 = 1 .9, and compositional scales w1 = w2 = 1 .0, w 3 = 1 .6. Please refer to Appendix E for more implementation details. 
+
+5.2. Quantitative Evaluation 
+
+For quantitative evaluation, we compare DEmoFace with previous state-of-the-art (SOTA) methods, categorized into two paradigms based on the type of guidance. The acoustic-guided methods customize identity using acoustic prompts, and drive emotion generation from either visual or acoustic cues, while the visual-guided methods aim to customize both identity and emotion only from visual conditions. 
+
+Objective evaluation. As shown in Tab. 1, compared with Face-TTS, we achieve 17.35% and 47.11% improvements in terms of EmoSim and SpkSim, reflecting the great abil-6Emotional Face-to-Speech (a) Ours Ground Truth (b) Face-TTS (c) EmoSpeech (d) V2C-Net    
+
+> with ‘Angry‛
+> Mel Bins F0 (Hz)
+> Face Prompt
+> with ‘Fear‛
+> Mel Bins F0 (Hz)
+> with ‘Surprise‛
+> Mel Bins F0 (Hz)
+> Face Prompt Face Prompt
+> (e) StyleDubber
+
+Figure 3: Speech qualitative results. The red rectangles highlight key regions with acoustic differences or over-smoothing issues, and the red dotted circle shows similar F0 contours with ground truth. Zoom in for more details. ity to maintain voice-identity while enhancing consistency. For prosody modeling, we can estimate a more precise F0 contour with relative 14.95% gains, exhibiting more natural speech expressiveness. The MCD improved by a relative 18.96%, indicating minimal acoustic difference with the target speech. While Face-TTS achieves a better WER by utilizing over 10 times the data, DEmoFace significantly improves naturalness and consistency with fewer data. Notably, we observe that the visual-guided DEmoFace even outperforms the acoustic-guided methods, which are the most efficient for speech generation by leveraging isomor-phic features. It demonstrates that DEmoFace bridges the cross-modal gap using only heterogeneous face features. Furthermore, we introduce the acoustic-guided DE MO -FACE ∗ replacing face condition cid with speech condition 
+
+cge2e , which gains greater improvements than other acoustic-guided methods in all metrics by a large margin. 
+
+Subjective evaluation. We further conduct the subjective evaluation with 50 participants, to compare our DEmoFace with SOTA methods (Diatlova & Shutov, 2023; Lee et al., 2023). Specifically, we introduce three metrics based on five mean opinion scores (MOS), each rated on a scale from 1 to 5 in 0.5 increments. Among them, MOS nat evaluates speech naturalness and generation quality, while MOS id ,and MOS emo assess the perceived similarity of timbre and emotional prosody, respectively. We randomly generate 15 utterances from the test set for subjective evaluation. The scoring results of the user study, summarized with 95% confidence intervals in Tab. 2, demonstrate that DEmoFace has a clear advantage over SOTA methods in all metrics. 
+
+Methods MOS nat ↑ MOS id ↑ MOS emo ↑
+
+EmoSpeech 2.30 ±0.19 2.93 ±0.09 2.78 ±0.13 Face-TTS 2.28 ±0.09 2.67 ±0.12 2.75 ±0.09 DEmoFace (Ours) 3.17 ±0.18 3.20 ±0.11 3.26 ±0.12 
+
+Table 2: Subjective evaluation on speech naturalness, and similarity of identity ( i.e. timbre) and emotion, compared with acoustic- and visual-guided methods. Notably, it achieves a 38% relative improvement in MOS nat ,confirming its superiority in generating high-quality speech. Furthermore, compared to the acoustic-guided EmoSpeech, DEmoFace yields higher MOS emo and MOS id scores, re-flecting its ability to generate speech with greater emotional and identity consistency. 
+
+5.3. Qualitative Results Qualitative comparisons. As shown in Fig. 3, from mel-spectrogram in the first row, we observe severe temporal in-consistencies and over-smoothing issues in Face-TTS, Emo-Speech, and V2C-Net, which result in misaligned speech durations and a significant degradation in generation qual-ity. Furthermore, the F0 curves in the third row indicate that these baselines produce pitch contours that deviate markedly from the ground truth (GT), reflecting mismatches in prosodic features such as pitch height, emotion, and in-tonational patterns. In contrast, our DEmoFace produces speeches that are more closely aligned with the GT in both spectrogram structure and F0 dynamics, highlighting the benefits of our enhanced multi-conditional generation and dynamic synchronization capabilities. 7Emotional Face-to-Speech DEmoFace (Ours) Ground Truth Face-TTS DEmoFace wo DEmoFace (Ours) Ground Truth Face-TTS DEmoFace wo (a) Emotion Distribution Visualization (b) Identity Distribution Visualization  
+
+> cemo cid
+
+Figure 4: t-SNE visualization based on emotion2vec ( i.e. speech emotion features) and d-vector ( i.e. speech identity features) representations. Each point represents a speech sample, and colors indicate different emotions or identities. Points in close distance indicate higher similarity, while overlapping points suggest potential confusion. We compare our DEmoFace with real speech, an ablation without emotional or identity conditioning, and Face-TTS baseline. Results show that we achieve better clustering than other methods with great ability in emotional and identity generation. 
+
+Visualization of speaker embeddings. To explore the di-versity of emotional expressions and speaker identities in the generated speech, we utilize the t-SNE technique (Van der Maaten & Hinton, 2008) to visualize the distribution of emo-tion2vec features and d-vector features extracted from the synthesized speech. As shown in Fig. 4, ablating the emo-tion condition cemo or speaker condition cid leads to wrong emotion or speaker clustering. The feature overlap implies that the model may struggle to generate speech with clearly distinguishable identity and affective characteristics, validat-ing the effectiveness of our proposed emotional and identity conditioning. Furthermore, Face-TTS exhibits noticeable wrong mixing among different emotions and speakers, sug-gesting that it fails to perceive speaker timbre and emotional prosody effectively. In contrast, our DEmoFace effectively clusters the speech embeddings from the same speaker and emotion, while maintaining stronger speaker- and emotion-discriminative properties, indicating the ability to synthesize diverse vocal styles and faithful speeches from visual cues. 
+
+5.4. Ablation Studies Ablation on multimodal conditioning. As the variant (a) in Tab. 3, the results demonstrate that incorporating cid sig-nificantly enhances speaker similarity with 26% SpkSim improvement and speech naturalness with 17% MCD rel-ative improvement, while maintaining stable EmoSim and WER scores. Similarly, the inclusion of cemo leads to im-proved emotional prosody in EmoSim and RMSE without compromising intelligibility. These results indicate that DE-moFace can successfully decouple different conditioning signals from others through our EPFG algorithm.                                    
+
+> Vars EmoSim ↑SpkSim ↑RMSE ↓MCD ↓WER ↓
+> (a) 0.69 0.41 109.62 8.25 22.35 (b) 0.64 0.65 104.92 7.29 21.35 (c) 0.67 0.66 104.41 7.24 27.52 (d) 0.69 0.58 115.30 8.33 39.06 (e) 0.67 0.63 106.67 7.31 40.13 Ours 0.70 0.67 101.18 6.86 20.78
+
+Table 3: Ablation studies. ”Vars” refers to the ablation variants, with (a) to (e) indicating the removal of identity condition cid , emotion condition cemo , curriculum learning, identity feature alignment, and EPFG, respectively. 
+
+Ablation on curriculum learning. To demonstrate the ef-fectiveness of curriculum learning, we input all RVQ-level tokens during the whole training process as the variant (c) in Tab. 3. Based on the fact that RVQ Codec preserves semantic information in low-level tokens while retaining acoustic details in high-level tokens (Nishimura et al., 2024), Fig. 3 shows: (1) we achieve better WER and EmoSim than baseline during early training, as prioritized low-level learn-ing effectively captures low-level information; (2) SpkSim initially lags due to unseen high-level tokens but improves as they are progressively introduced. The results highlight the effectiveness of curriculum learning. 
+
+Ablation on identity alignment. Due to the heterogeneous differences between speaker features extracted from vision and speech, achieving accurate cross-modal identity cus-tomization remains challenging. As shown in Tab. 3 (d), removing identity alignment leads to a significant 9% drop in SpkSim, indicating a clear misalignment between real 8Emotional Face-to-Speech (a) (b) (c) (d) 
+
+Figure 5: Ablation study on curriculum learning . (a) Feature distribution across RVQ levels, with low-level features showing low-frequency patterns. (b)-(d) For the baseline without curriculum learning, we vary the number of training epochs compared with three metrics on the validation set. The effect is evident for WER and EmoSim while slight on SpkSim. Combination of ( , )  
+
+> (a) (b)
+> Combination of (  , )w0 w1
+> w2w3
+
+Figure 6: (a) Parameters grid search for the EPFG, with axes as two-parameter combinations, colors as normalized performance. (b) Effect on sampling steps. timbre and visual identity embedding. Moreover, the pres-ence of noise in visual features further disrupts the genera-tion process, resulting in degraded performance across all evaluation metrics. 
+
+Ablation on EPFG. The EPFG enables an effective gener-alization across combinations of multiple conditions, even those unseen during pre-training. From Tab. 3 (e), we ob-serve that EmoSim, SpkSim, and WER metrics have de-graded when all conditions are treated as a unified one, showing the incorporation of EPFG can significantly en-hance multi-conditional generation quality. Furthermore, we conduct a grid search for all parameters of the EPFG on the validation set. As shown in Fig. 6(a), axes denote two parameter combinations ( i.e. (w0 ∈ [1 .0, 2.0] , w 1 ∈
+
+[1 .0, 1.4]) , (w1 ∈ [1 .0, 1.4] , w 2 ∈ [1 .0, 2.0]) ), the color of the grid indicates normalized performance score, and the red rectangle marking the final parameter combination we select. We observe performance degradation ( i.e. the light area) with complex entanglement, as the unconditional score dominates with low guidance scales across conditions, fur-ther demonstrating the effectiveness of the EPFG. 
+
+Ablation on inference efficiency. To explore the effective-ness of sampling steps, we first normalize each metric to 
+
+[0 , 1] and obtain the average performance. As shown in Fig. 6(b), the performance improves with more steps, satu-rating at 32 steps. It demonstrates that DEmoFace achieves acceptable generation quality with just 32 steps. To balance performance with efficiency, we utilize 96 steps in this paper. Furthermore, we evaluate inference Real-Time Factor (RTF) to measure the time (in seconds) required to synthesize one second of speech. Specifically, we utilize a mini-batch size of 1 and 32 with the Number of Function Evaluations (NFE) fixed at 32. When using a batch size of 1, our method achieves an RTF of 0.49, demonstrating the potential for real-time speech synthesis—approximately twice as fast as real-time. With a batch size of 32, the RTF further improves to 0.13, highlighting the efficiency of DEmoFace. 
+
+6. Conclusion 
+
+We propose DEmoFace, the first RVQ-based discrete dif-fusion framework for eF2S with high diversity and quality, serving as a foundation for future research in multimodal personalized TTS systems. Specifically, the MM-DiT dy-namically aligns speech and text prompts, and customizes face-style linguistic expressions. Meanwhile, we introduce a coarse-to-fine curriculum learning strategy to enhance train-ing efficiency. Moreover, to boost efficient response to the global condition while facilitating the decoupling of multi-ple local conditions, we develop an enhanced predictor-free guidance to achieve multi-conditional generation of eF2S. Extensive experimental results show that DEmoFace out-performs existing methods and effectively synthesizes the speech solely from the visual cues. 
+
+Limitation. Despite achieving advanced performance, we struggle to precisely reconstruct a true voice due to visual-voice biases within the dataset, tending to produce average-sounding speech. Furthermore, the limited size of the dataset poses a significant challenge to achieving accurate pronunciation. We will incorporate larger datasets to improve the diversity and intelligibility of the model. 
+
+Acknowledgment 
+
+This work was supported in part by STI2030-Major Projects (No. 2021ZD0200204), National Natural Science Founda-tion of China (No. 62471148), and Shanghai Center for Brain Science and Brain-inspired Technology. 9Emotional Face-to-Speech 
+
+Impact Statement 
+
+Given the privacy of identity information in face and speech, ensuring compliance with ethical standards and privacy rules is essential to safeguard individual rights and prevent poten-tial misuse. We stress the necessity of consent agreements for using published models, to ensure responsible applica-tion while respecting individual privacy and rights. 
+
+References 
+
+Afouras, T., Chung, J. S., and Zisserman, A. LRS3-TED: a large-scale dataset for visual speech recognition. CoRR ,abs/1809.00496, 2018. Ao, J., Wang, R., Zhou, L., Wang, C., Ren, S., Wu, Y., Liu, S., Ko, T., Li, Q., Zhang, Y., Wei, Z., Qian, Y., Li, J., and Wei, F. SpeechT5: Unified-modal encoder-decoder pre-training for spoken language processing. In Proc. Annu. Meeting Assoc. Comput. Linguistics , pp. 5723– 5738. Association for Computational Linguistics, 2022. Austin, J., Johnson, D. D., Ho, J., Tarlow, D., and van den Berg, R. Structured denoising diffusion models in discrete state-spaces. In Adv. Neural Inform. Process. Syst. , pp. 17981–17993, 2021. Blattmann, A., Rombach, R., Ling, H., Dockhorn, T., Kim, S. W., Fidler, S., and Kreis, K. Align your latents: High-resolution video synthesis with latent diffusion models. In IEEE Conf. Comput. Vis. Pattern Recog. , pp. 22563– 22575, 2023. Carneiro, H. C. C., Weber, C., and Wermter, S. Whose emotion matters? speaking activity localisation without prior knowledge. Neurocomputing , 545:126271, 2023. Carreira, J. and Zisserman, A. Quo vadis, action recogni-tion? A new model and the kinetics dataset. In IEEE Conf. Comput. Vis. Pattern Recog. , pp. 4724–4733, 2017. Chen, Q., Tan, M., Qi, Y., Zhou, J., Li, Y., and Wu, Q. V2C: Visual voice cloning. In IEEE Conf. Comput. Vis. Pattern Recog. , pp. 21210–21219, 2022. Chung, J. S., Nagrani, A., and Zisserman, A. VoxCeleb2: Deep speaker recognition. In Yegnanarayana, B. (ed.), 
+
+Annu. Conf. Int. Speech Commun. Assoc. , pp. 1086–1090, 2018. Cong, G., Li, L., Qi, Y., Zha, Z., Wu, Q., Wang, W., Jiang, B., Yang, M., and Huang, Q. Learning to dub movies via hierarchical prosody models. In IEEE Conf. Comput. Vis. Pattern Recog. , pp. 14687–14697, 2023. Cong, G., Pan, J., Li, L., Qi, Y., Peng, Y., van den Hengel, A., Yang, J., and Huang, Q. Emodubber: Towards high quality and emotion controllable movie dubbing. CoRR ,2412.08988, 2024a. Cong, G., Qi, Y., Li, L., Beheshti, A., Zhang, Z., van den Hengel, A., Yang, M., Yan, C., and Huang, Q. Style-Dubber: Towards multi-scale style learning for movie dubbing. In Findings Proc. Annu. Meeting Assoc. Com-put. Linguistics , pp. 6767–6779, 2024b. D ´efossez, A., Copet, J., Synnaeve, G., and Adi, Y. High fidelity neural audio compression. Trans. Mach. Learn. Res. , 2023, 2023. Deng, J., Guo, J., Yang, J., Xue, N., Kotsia, I., and Zafeiriou, S. Arcface: Additive angular margin loss for deep face recognition. IEEE Trans. Pattern Anal. Mach. Intell. , 44 (10):5962–5979, 2022. Diatlova, D. and Shutov, V. EmoSpeech: Guiding Fast-Speech2 towards emotional text to speech. In ISCA Speech Synthesis Worksh. , pp. 106–112, 2023. Gan, Y., Yang, Z., Yue, X., Sun, L., and Yang, Y. Efficient emotional adaptation for audio-driven talking-head gen-eration. In Int. Conf. Comput. Vis. , pp. 22577–22588, 2023. Geng, C., Han, T., Jiang, P., Zhang, H., Chen, J., Hauberg, S., and Li, B. Improving adversarial energy-based model via diffusion process. In Int. Conf. on Mach. Learn. , 2024. Goto, S., Onishi, K., Saito, Y., Tachibana, K., and Mori, K. Face2Speech: Towards multi-speaker text-to-speech synthesis using an embedding vector predicted from a face image. In Annu. Conf. Int. Speech Commun. Assoc. ,pp. 1321–1325, 2020. Guo, Q., Ma, C., Jiang, Y., Yuan, Z., Yu, Y., and Luo, P. EGC: Image generation and classification via a diffu-sion energy-based model. In Int. Conf. Comput. Vis. , pp. 22895–22905, 2023a. Guo, Y., Du, C., Chen, X., and Yu, K. Emodiff: Inten-sity controllable emotional text-to-speech with soft-label guidance. In IEEE Conf. Acoust. Speech Signal Process. ,pp. 1–5, 2023b. Hayashi, T., Tamamori, A., Kobayashi, K., Takeda, K., and Toda, T. An investigation of multi-speaker training for wavenet vocoder. In IEEE Autom. Speech Recognit. Understanding Worksh. , pp. 712–718, 2017. Ho, J. and Salimans, T. Classifier-free diffusion guidance. In Adv. Neural Inform. Process. Syst. Worksh , pp. 1–14, 2021. Ho, J., Jain, A., and Abbeel, P. Denoising diffusion prob-abilistic models. In Adv. Neural Inform. Process. Syst. ,2020. Ito, K. and Johnson, L. The lj speech dataset. https:// keithito.com/LJ-Speech-Dataset/ , 2017. 10 Emotional Face-to-Speech 
+
+Jang, Y., Kim, J., Ahn, J., Kwak, D., Yang, H., Ju, Y., Kim, I., Kim, B., and Chung, J. S. Faces that speak: Jointly synthesising talking face and speech from text. In IEEE Conf. Comput. Vis. Pattern Recog. , pp. 8818–8828, 2024. Kang, M., Han, W., and Yang, E. Face-stylespeech: Im-proved face-to-voice latent mapping for natural zero-shot speech synthesis from a face image. CoRR ,abs/2311.05844, 2023. Kelly, F. P. Reversibility and stochastic networks . Cam-bridge University Press, 2011. Kharitonov, E., Vincent, D., Borsos, Z., Marinier, R., Gir-gin, S., Pietquin, O., Sharifi, M., Tagliasacchi, M., and Zeghidour, N. Speak, read and prompt: High-fidelity text-to-speech with minimal supervision. Trans. Assoc. Comput. Linguistics , 11:1703–1718, 2023. Kim, T. and Bengio, Y. Deep directed generative mod-els with energy-based probability estimation. CoRR ,abs/1606.03439, 2016. Kingma, D. P. and Ba, J. Adam: A method for stochastic optimization. In Int. Conf. Learn. Represent. , 2015. Kingma, D. P. and Dhariwal, P. Glow: Generative flow with invertible 1x1 convolutions. In Adv. Neural Inform. Process. Syst. , pp. 10236–10245, 2018. Lee, J., Chung, J. S., and Chung, S. Imaginary voice: Face-styled diffusion model for text-to-speech. In IEEE Conf. Acoust. Speech Signal Process. , pp. 1–5, 2023. Lee, J., Oh, Y., Hwang, I., and Lee, K. Hear your face: Face-based voice conversion with F0 estimation. CoRR ,abs/2408.09802, 2024. Li, X., Cheng, Z., He, J., Peng, X., and Hauptmann, A. G. MM-TTS: A unified framework for multimodal, prompt-induced emotional text-to-speech synthesis. CoRR ,abs/2404.18398, 2024. Li, Y. A., Han, C., Raghavan, V. S., Mischler, G., and Mesgarani, N. StyleTTS 2: Towards human-level text-to-speech through style diffusion and adversarial training with large speech language models. In Adv. Neural Inform. Process. Syst. , 2023. Liu, N., Li, S., Du, Y., Torralba, A., and Tenenbaum, J. B. Compositional visual generation with composable diffu-sion models. In Eur. Conf. Comput. Vis. , volume 13677, pp. 423–439, 2022. Liu, R., Ma, B., Zhang, W., Hu, Z., Fan, C., Lv, T., Ding, Y., and Cheng, X. Towards a simultaneous and granular identity-expression control in personalized face gener-ation. In IEEE Conf. Comput. Vis. Pattern Recog. , pp. 2114–2123, 2024. Livingstone, S. R. and Russo, F. A. The ryerson audio-visual database of emotional speech and song (RAVDESS): A dynamic, multimodal set of facial and vocal expressions in north american english. PLOS ONE , 13(5):e0196391, 2018. Loshchilov, I. and Hutter, F. Decoupled weight decay regu-larization. In Int. Conf. Learn. Represent. , 2019. Lou, A., Meng, C., and Ermon, S. Discrete diffusion mod-eling by estimating the ratios of the data distribution. In 
+
+Int. Conf. on Mach. Learn. , 2024. Ma, Z., Zheng, Z., Ye, J., Li, J., Gao, Z., Zhang, S., and Chen, X. emotion2vec: Self-supervised pre-training for speech emotion representation. In Findings Proc. Annu. Meeting Assoc. Comput. Linguistics , pp. 15747–15760. Association for Computational Linguistics, 2024. Mao, J., Xu, R., Yin, X., Chang, Y., Nie, B., and Huang, A. POSTER V2: A simpler and stronger facial expression recognition network. CoRR , abs/2301.12149, 2023. Mehta, S., Kirkland, A., Lameris, H., Beskow, J., Sz ´ekely, ´E., and Henter, G. E. Overflow: Putting flows on top of neural transducers for better TTS. In Annu. Conf. Int. Speech Commun. Assoc. , pp. 4279–4283, 2023. Meng, C., Choi, K., Song, J., and Ermon, S. Concrete score matching: Generalized score matching for discrete data. In Adv. Neural Inform. Process. Syst. , 2022. Nishimura, Y., Hirose, T., Ohi, M., Nakayama, H., and Inoue, N. HALL-E: hierarchical neural codec language model for minute-long zero-shot text-to-speech synthesis. 
+
+CoRR , abs/2410.04380, 2024. Nisonoff, H., Xiong, J., Allenspach, S., and Listgarten, J. Unlocking guidance for discrete state-space diffusion and flow models. CoRR , abs/2406.01572, 2024. Ou, J., Nie, S., Xue, K., Zhu, F., Sun, J., Li, Z., and Li, C. Your absorbing discrete diffusion secretly mod-els the conditional distributions of clean data. CoRR ,abs/2406.03736, 2024. Paris, T., Kim, J., and Davis, C. Visual form predictions facilitate auditory processing at the n1. Neuroscience ,343:157–164, 2017. Peebles, W. and Xie, S. Scalable diffusion models with transformers. In Int. Conf. Comput. Vis. , pp. 4172–4182, 2023. Pl ¨uster, B., Weber, C., Qu, L., and Wermter, S. Hearing faces: Target speaker text-to-speech synthesis from a face. In IEEE Autom. Speech Recognit. Understanding Worksh. , pp. 757–764, 2021. 11 Emotional Face-to-Speech 
+
+Radford, A., Kim, J. W., Xu, T., Brockman, G., McLeavey, C., and Sutskever, I. Robust speech recognition via large-scale weak supervision. In Int. Conf. on Mach. Learn. ,volume 202, pp. 28492–28518, 2023. Rahaman, N., Baratin, A., Arpit, D., Draxler, F., Lin, M., Hamprecht, F. A., Bengio, Y., and Courville, A. C. On the spectral bias of neural networks. In Int. Conf. on Mach. Learn. , volume 97, pp. 5301–5310, 2019. Ren, Y., Hu, C., Tan, X., Qin, T., Zhao, S., Zhao, Z., and Liu, T. FastSpeech 2: Fast and high-quality end-to-end text to speech. In Int. Conf. Learn. Represent. , 2021. Ruan, L., Ma, Y., Yang, H., He, H., Liu, B., Fu, J., Yuan, N. J., Jin, Q., and Guo, B. MM-diffusion: Learning multi-modal diffusion models for joint audio and video generation. In IEEE Conf. Comput. Vis. Pattern Recog. ,pp. 10219–10228, 2023. Schroff, F., Kalenichenko, D., and Philbin, J. Facenet: A unified embedding for face recognition and clustering. In 
+
+IEEE Conf. Comput. Vis. Pattern Recog. , pp. 815–823, 2015. Shen, K., Ju, Z., Tan, X., Liu, E., Leng, Y., He, L., Qin, T., Zhao, S., and Bian, J. NaturalSpeech 2: Latent diffu-sion models are natural and zero-shot speech and singing synthesizers. In Int. Conf. Learn. Represent. , 2024. Song, J., Meng, C., and Ermon, S. Denoising diffusion implicit models. In Int. Conf. Learn. Represent. , 2021. Su, J., Ahmed, M. H. M., Lu, Y., Pan, S., Bo, W., and Liu, Y. Roformer: Enhanced transformer with rotary position embedding. Neurocomputing , 568:127063, 2024. Subakan, C., Ravanelli, M., Cornell, S., Bronzi, M., and Zhong, J. Attention is all you need in speech separation. In IEEE Conf. Acoust. Speech Signal Process. , pp. 21–25, 2021. Sun, H., Yu, L., Dai, B., Schuurmans, D., and Dai, H. Score-based continuous-time discrete diffusion models. In Int. Conf. Learn. Represent. , 2023. Taitelbaum-Swead, R. and Fostick, L. Auditory and visual information in speech perception: A developmental per-spective. Clinical linguistics & phonetics , 30(7):531–545, 2016. Van der Maaten, L. and Hinton, G. Visualizing data using t-SNE. J. Mach. Learn. Res. , 9(11), 2008. Vasuki, A. and Vanathi, P. A review of vector quantization techniques. IEEE Potentials , 25(4):39–47, 2006. Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., and Polosukhin, I. Attention is all you need. In Adv. Neural Inform. Process. Syst. , pp. 5998–6008, 2017. Wan, L., Wang, Q., Papir, A., and L ´opez-Moreno, I. Gener-alized end-to-end loss for speaker verification. In IEEE Conf. Acoust. Speech Signal Process. , pp. 4879–4883, 2018. Wang, C., Chen, S., Wu, Y., Zhang, Z., Zhou, L., Liu, S., Chen, Z., Liu, Y., Wang, H., Li, J., He, L., Zhao, S., and Wei, F. Neural codec language models are zero-shot text to speech synthesizers. CoRR , abs/2301.02111, 2023. Wang, K., Wu, Q., Song, L., Yang, Z., Wu, W., Qian, C., He, R., Qiao, Y., and Loy, C. C. MEAD: A large-scale audio-visual dataset for emotional talking-face generation. In 
+
+Eur. Conf. Comput. Vis. , volume 12366 of Lecture Notes in Computer Science , pp. 700–717, 2020. Wang, Y., Stanton, D., Zhang, Y., Skerry-Ryan, R. J., Batten-berg, E., Shor, J., Xiao, Y., Jia, Y., Ren, F., and Saurous, R. A. Style tokens: Unsupervised style modeling, control and transfer in end-to-end speech synthesis. In Int. Conf. on Mach. Learn. , volume 80, pp. 5167–5176, 2018. Wang, Y., Zhan, H., Liu, L., Zeng, R., Guo, H., Zheng, J., Zhang, Q., Zhang, S., and Wu, Z. MaskGCT: Zero-shot text-to-speech with masked generative codec transformer. 
+
+CoRR , abs/2409.00750, 2024. Wen, X., Ye, J., Luo, Y., Xu, Y., Wang, X., Wu, C., and Liu, K. Ctl-mtnet: A novel capsnet and transfer learning-based mixed task net for single-corpus and cross-corpus speech emotion recognition. In Int. Joint Conf. Artif. Intell. , pp. 2305–2311, 2022. Wen, X., Liu, K., Luo, Y., Ye, J., and Chen, L. Twacapsnet: a capsule network with two-way attention mechanism for speech emotion recognition. Soft Comput. , 28(15-16): 8701–8713, 2024. Wu, Z., Li, Q., Liu, S., and Yang, Q. DCTTS: discrete dif-fusion model with contrastive learning for text-to-speech generation. In IEEE Conf. Acoust. Speech Signal Process. ,pp. 11336–11340. IEEE, 2024. Xue, R., Liu, Y., He, L., Tan, X., Liu, L., Lin, E., and Zhao, S. Foundationtts: Text-to-speech for ASR customization with generative language model. CoRR , abs/2303.02939, 2023. Yang, D., Yu, J., Wang, H., Wang, W., Weng, C., Zou, Y., and Yu, D. Diffsound: Discrete diffusion model for text-to-sound generation. IEEE ACM Trans. Audio Speech Lang. Process. , 31:1720–1733, 2023. 12 Emotional Face-to-Speech 
+
+Ye, J. and Shan, H. Shushing! let’s imagine an authentic speech from the silent video. CoRR , abs/2503.14928, 2025. Ye, J., Wen, X., Wang, X., Xu, Y., Luo, Y., Wu, C., Chen, L., and Liu, K. Gm-tcnet: Gated multi-scale temporal convolutional network using emotion causality for speech emotion recognition. Speech Commun. , 145:21–35, 2022. Ye, J., Wei, Y., Wen, X., Ma, C., Huang, Z., Liu, K., and Shan, H. Emo-dna: Emotion decoupling and alignment learning for cross-corpus speech emotion recognition. In 
+
+ACM Int. Conf. Multimedia , pp. 5956–5965, 2023a. Ye, J., Wen, X., Wei, Y., Xu, Y., Liu, K., and Shan, H. Tem-poral modeling matters: A novel temporal emotional mod-eling approach for speech emotion recognition. In IEEE Conf. Acoust. Speech Signal Process. , pp. 1–5, 2023b. Zeghidour, N., Luebs, A., Omran, A., Skoglund, J., and Tagliasacchi, M. SoundStream: An end-to-end neural audio codec. IEEE ACM Trans. Audio Speech Lang. Process. , 30:495–507, 2022. Zhang, X., Zhang, D., Li, S., Zhou, Y., and Qiu, X. Speech-Tokenizer: Unified speech tokenizer for speech language models. In Int. Conf. Pattern Recog. , 2024. Zheng, Y., Tu, W., Xiao, L., and Xu, X. Srcodec: Split-residual vector quantization for neural speech codec. In 
+
+IEEE Conf. Acoust. Speech Signal Process. , pp. 451–455, 2024. 13 Emotional Face-to-Speech 
+
+Appendix 
+
+This appendix provides the following extra contents: • Appendix A shows detailed notations and definitions; • Appendix B provides a preliminary of the discrete diffusion model; • Appendix C presents a detailed derivation of enhanced predictor-free guidance; • Appendix D includes the statics of datasets used in this paper; • Appendix E supplements the experimental details of our DEmoFace and each baseline method; • Appendix F contains extra experimental results; and • Appendix G incorporates the details of subjective evaluation. 
+
+A. Detailed Notations and Definitions 
+
+Tab. A-1 provides the notations and definitions of variables used in the paper. 
+
+Notation Definition 
+
+x Vector variables representing a sequence of tokens. 
+
+xi, ˆx, x it, ˆxit Scalar variables representing token or state in discrete diffusion process. 
+
+X d State space {1, . . . , n }d of token sequence length d and token dimension n.
+
+Qt Diffusion forward matrix ( i.e. transition rate matrix) at t time. 
+
+¯Qt Diffusion reverse matrix at t time. 
+
+Qtok Token-level transition rate matrix filled with absorbing state [MASK] .
+
+δxˆx Kronecker delta function of two variables x, ˆx, which is 1 if the variables are equal, and 0 otherwise. 
+
+p Probability distribution of the forward diffusion process characterized by Qt.
+
+qθ Probability distribution of the reverse diffusion process characterized by score model sθ .
+
+Pt|0 Transition probability matrix from time 0 to time t.
+
+sθ Score network to estimate the ratio ( i.e. concrete score) p(xit−∆t) 
+
+> p(xit)
+
+.
+
+cˆxtxt Concrete score p(ˆ xt|x0) 
+
+> p(xt|x0)
+
+.N(c) Normalizing constant function of denoising score entropy loss. 
+
+ri i-th level of RVQ tokens, where 1 ≤ i ≤ 12 . rl denotes the current max level during our curriculum training. 
+
+Ccode Codebook size. 
+
+dtok Length of the token sequence. 
+
+c Condition set including cid , cemo , ctext .
+
+α1, γ 1, β 1 Scale and shift parameters for the adaptive layer normalization. Table A-1: Detailed Notations and Definitions 
+
+B. Preliminary: Discrete Diffusion Models 
+
+Continuous Diffusion Models (CDM) have been one of the most prominent and active areas in generative model-ing (Blattmann et al., 2023; Li et al., 2023; Ruan et al., 2023) , which has shown state-of-the-art performance in various fields. However, for speech generation, the high-dimensional speech features and excessive diffusion steps lead to high resource usage and inefficient inference, frustrating practical application. The fundamental way lies in compressing the speech feature space, such as a discrete space. In recent years, Discrete diffusion models (DDM) have shown promise in language modeling (Austin et al., 2021; Meng et al., 2022; Lou et al., 2024; Ou et al., 2024), which are characterized by a forward and reverse process like continuous diffusion models (Song et al., 2021; Ho et al., 2020). Nevertheless, DDM has yet to be explored in speech generation. In 14 Emotional Face-to-Speech 
+
+this study, we introduce the DDM for speech token generation. Below, we outline the forward and reverse processes, along with the training objective. 
+
+Forward diffusion process. Given a sequence of tokens x = x1 . . . x d from a state space of length d like X d = {1, . . . , n }d.The continuous-time discrete Markov chain at time t is characterized by the diffusion matrix Qt ∈ Rnd×nd
+
+(i.e. transition rate matrix), as follows: 
+
+p(xit+∆ t|xit) = δxit+∆ txit + Qt(xit+∆ t, x it)∆ t + o(∆ t), (A-1) where xit denotes i-th element of xt, Qt(xit+∆ t, x it) is the (xit+∆ t, x it) element of Qt, denoting the transition rate from state 
+
+xit to state xit+∆ t at time t, and δ is the Kronecker delta. Since the exponential size of Qt, existing works (Lou et al., 2024; Ou et al., 2024) propose to assume dimensional independence, conducting a one-dimensional diffusion process for each dimension with the same token-level diffusion matrix Qtok  
+
+> t
+
+= σ(t)Qtok ∈ Rn×n, where σ(t) is the noise schedule and Qtok 
+
+is designed to diffuse towards an absorbing state [MASK] in this study. Then the forward equation is formulated as follows: 
+
+P (xit, x i
+
+> 0
+
+) = exp  ¯σ(t)Qtok (xit, x i
+
+> 0
+
+) , (A-2) where transition probability matrix P (xit, x i
+
+> 0
+
+) := p(xit|x0), and cumulative noise ¯σ(t) = R t 
+
+> 0
+
+σ(s)ds . There are two probabilities in the Pt|0: 1 − e−¯σ(t) for replacing the current tokens with [MASK] , e−¯σ(t) for keeping it unchanged, where the diffusion transition rate matrix Qtok is defined as: 
+
+Qtok =
+
+
+
+−1 0 · · · 0 10 −1 · · · 0 1
+
+... ... . . . ... ...
+
+0 0 · · · −1 10 0 · · · 0 0
+
+
+
+. (A-3) Therefore, we can parallel sample the corrupted sequence xt directly from x0 in one step. During the inference, we start from xT filled with [MASK] tokens and iteratively sample new set of tokens xt−1 from pθ (xt−1|xt).
+
+Reverse denoising process. As the transition rate matrix Qtok  
+
+> t
+
+is known, the reverse process can be given by a reverse transition rate matrix ¯Qt (Sun et al., 2023; Kelly, 2011) , where ¯Qt(xit−∆t, x it) = p(xit−∆t) 
+
+> p(xit)
+
+Qtok  
+
+> t
+
+(xit, x it−∆t) and xit−∆t̸ = xit,or ¯Qt(xit−∆t, x it) = − P 
+
+> z̸=xt
+
+¯Qt(z, x it). The reverse equation is formulated as follows: 
+
+p(xit−∆t|xit) = δxit−∆txit + ¯Qt(xit−∆t, x it)∆ t + o(∆ t), (A-4) where we can estimate the ratio p(xit−∆t) 
+
+> p(xit)
+
+(which is known as the concrete score (Lou et al., 2024; Meng et al., 2022) to measure the transition probability or closeness from a state xi at time t to a state ˆxi at time t − ∆t) of ¯Qt by a score network 
+
+sθ (xit, t )xit−∆t ≈ [ p(xit−∆t) 
+
+> p(xit)
+
+]xit̸ =xit−∆t . So that the reverse matrix is parameterized to model the reverse process qθ (xit−∆t|xit)
+
+(i.e. parameterize the concrete score). 
+
+Training objective. Denoising score entropy (DSE) (Lou et al., 2024) is introduced to train the score network sθ :
+
+Z T
+
+> 0
+
+Ext∼p(xt|x0)
+
+X 
+
+> ˆxt̸=xt
+
+Qt
+
+ ˆxit, x it
+
+ h
+
+sθ
+
+ xit, t 
+
+> ˆxit
+
+− cˆxitxit log sθ
+
+ xit, t 
+
+> ˆxit
+
++ N(cˆxitxit )
+
+i
+
+dt, (A-5) where the concrete score cˆxitxit = p(ˆxit|xi
+
+> 0
+
+)
+
+> p
+
+(xit|xi
+
+> 0
+
+) and a normalizing constant function N(c) := c log c − c that ensures loss non-negative. After training, we can replace the concrete score with the trained score network on Equation (A-4), conducting the sampling process. 15 Emotional Face-to-Speech 
+
+C. Derivation of Enhanced Predictor-free Guidance 
+
+For the discrete diffusion model, given the random variable value xt = x1 
+
+> t
+
+. . . x dt from a state space of length d with the absorbing state [MASK] at time t, the unconditional probability distribution p(xit−∆t|xit) = δxit−∆txit + ¯Qt(xit−∆t, x it)∆ t +
+
+o(∆ t) during sampling as Equation (A-4) shown. For the conditional probability distribution p(xit−∆t|xit, c), the key is to obtain the conditional transition rate matrix ¯Qt(xit−∆t, x it|c).Firstly, following (Nisonoff et al., 2024) to simplify the notation, we define xit as xt and utilize the properties of the Kronecker delta δ (i.e. the function is 1 if the variables are equal, and 0 otherwise) to derive another form of the unconditional probability distribution p(xt−∆t = ˆ x|xt = x):
+
+p(xt−∆t = ˆ x|xt = x) = δxt−∆t=ˆ x,x t=x + ¯Qt(xt−∆t = ˆ x, x t = x)∆ t + o(∆ t)= δˆx,x + δˆx,x ¯Qt(ˆ x, x )∆ t + (1 − δˆx,x ) ¯Qt(ˆ x, x )∆ t + o(∆ t)= δˆx,x 
+
+ 1 + ¯Qt(x, x )∆ t + (1 − δˆx,x ) ¯Qt(ˆ x, x )∆ t + o(∆ t).
+
+(A-6) Then, we utilize the formulation in Equation (A-6) and the Bayes rule to build the conditional probability distribution 
+
+p(xt−∆t = ˆ x|xt = x, c), combining predictive distribution p(c|x) and unconditional distribution p(xt−∆t = ˆ x|xt = x) as: 
+
+p(xt−∆t = ˆ x|xt = x, c) = p(c|xt−∆t = ˆ x, x t = x)p(xt−∆t = ˆ x|xt = x)
+
+p(c|xt = x)= p(c|xt−∆t = ˆ x, x t = x)p(xt−∆t = ˆ x|xt = x)
+
+P
+
+> x′
+
+p(c|xt−∆t = x′, x t = x)p(xt−∆t = x′|xt = x)=
+
+> p(c|xt−∆t=ˆ x,x t=x)
+> p(c|xt−∆t=x,x t=x)
+
+δˆx,x 
+
+ 1 + ¯Qt(x, x )∆ t + (1 − δˆx,x ) ¯Qt(ˆ x, x )∆ t + o(∆ t)P
+
+> x′
+> p(c|xt−∆t=x′,x t=x)
+> p(c|xt−∆t=x,x t=x)
+
+δˆx,x 
+
+ 1 + ¯Qt(x, x )∆ t + (1 − δx′,x ) ¯Qt(x′, x )∆ t + o(∆ t) ,
+
+(A-7) where we use Equation (A-6) to replace p(xt−∆t = ˆ x|xt = x) in A-7 and define pc(ˆ x, x ) ≡ p(c|xt−∆t = ˆ x, x t = x). We further simplify the formulation: 
+
+p(xt−∆t = ˆ x|xt = x, c) = 
+
+> pc(ˆ x,x )
+> pc(x,x )
+
+δˆx,x 
+
+ 1 + ¯Qt(x, x )∆ t + (1 − δˆx,x ) ¯Qt(ˆ x, x )∆ t + o(∆ t)P
+
+> x′
+> pc(x′,x )
+> pc(x,x )
+
+δˆx,x 
+
+ 1 + ¯Qt(x, x )∆ t + (1 − δx′,x ) ¯Qt(x′, x )∆ t + o(∆ t)
+
+= δˆx,x 
+
+ 1 + ¯Qt(x, x )∆ t + pc(ˆ x,x ) 
+
+> pc(x,x )
+
+(1 − δˆx,x ) ¯Qt(ˆ x, x )∆ t + o(∆ t)
+
+ 1 + ¯Qt(x, x )∆ t + P  
+
+> x′̸=xpc(x′,x )
+> pc(x,x )
+
+¯Qt(x′, x )∆ t + o(∆ t)= δˆx,x 
+
+ 1 + ¯Qt(x, x )∆ t + pc(ˆ x,x ) 
+
+> pc(x,x )
+
+(1 − δˆx,x ) ¯Qt(ˆ x, x )∆ t + o(∆ t)1 + f (∆ t, x, x ′) ,
+
+(A-8) where f is a function of ∆t, and as ∆t → 0 we can use Taylor expansion of 11+ f (∆ t,x,x ′) ≈ 1 − f (∆ t, x, x ′) + o(∆ t2):
+
+p(xt−∆t = ˆ x|xt = x, c) =[ δˆx,x 
+
+ 1 + ¯Qt(x, x )∆ t + pc(ˆ x, x )
+
+pc(x, x ) (1 − δˆx,x ) ¯Qt(ˆ x, x )∆ t + o(∆ t)] 
+
+× [1 − ¯Qt(x, x )∆ t − X 
+
+> x′̸=x
+
+pc(x′, x )
+
+pc(x, x ) ¯Qt(x′, x )∆ t + o(∆ t)] =δˆx,x 
+
+1 − X 
+
+> x′̸=x
+
+pc(x′, x )
+
+pc(x, x ) ¯Qt(x′, x )∆ t
+
+ + (1 − δˆx,x ) pc(ˆ x, x )
+
+pc(x, x ) ¯Qt(ˆ x, x )∆ t + o(∆ t).
+
+(A-9) From the expression in Equation (A-6) and property of the ¯Q (i.e. ¯Qt(x, x ) + P  
+
+> x′̸=x
+
+¯Qt(x′, x ) = 0 ) (Lou et al., 2024), we can derive our conditional transition rate matrix: 
+
+¯Qt(ˆ x, x |c) = pc(ˆ x, x )
+
+pc(x, x ) ¯Qt(ˆ x, x ), (A-10) 16 Emotional Face-to-Speech 
+
+where can be deduced that the matrix also satisfies the same property ¯Qt(x, x |c) + P  
+
+> x′̸=x
+
+¯Qt(x′, x |c) = 0 . Therefore, we can rewrite Equation (A-9) as: 
+
+p(xt−∆t = ˆ x|xt = x, c) = δˆx,x 
+
+ 1 + ¯Qt(x, x |c)∆ t + (1 − δˆx,x ) ¯Qt(ˆ x, x |c)∆ t + o(∆ t)= δˆx,x + ¯Qt(ˆ x, x |c)∆ t + o(∆ t). (A-11) Furthermore, to achieve predictor-free guidance (Ho & Salimans, 2021; Nisonoff et al., 2024), we use the Bayes rule to relive the dependence on any predictor/classifier: 
+
+¯Qt(ˆ x, x |c) = p(c|xt−∆t = ˆ x, x t = x)
+
+p(c|xt−∆t = x, x t = x) ¯Qt(ˆ x, x )= p(xt−∆t = ˆ x|xt = x, c)XXXX XXp(c|xt = x)
+
+p(xt−∆t = ˆ x|xt = x)
+
+p(xt−∆t = x|xt = x)
+
+p(xt−∆t = x|xt = x, c)XXX XXXp(c|xt = x)¯Qt(ˆ x, x )= p(xt−∆t = ˆ x|xt = x, c)
+
+p(xt−∆t = x|xt = x, c)
+
+p(xt−∆t = x|xt = x)
+
+p(xt−∆t = ˆ x|xt = x) ¯Qt(ˆ x, x )
+
+≈ sθ (x, t, c)ˆx
+
+sθ (x, t )ˆx
+
+¯Qt(ˆ x, x ),
+
+(A-12) where we utilize the concrete score sθ (x, t, c)ˆx in Equation (2) to estimate the ratio like p(xt−∆t=ˆ x|xt=x, c) 
+
+> p(xt−∆t=x|xt=x, c)
+
+. Similar to previous methods, we can introduce a guidance scale w (i.e. guidance strength) as: 
+
+¯Qt(ˆ x, x |c) ≈ swθ (x, t, c)ˆx
+
+swθ (x, t )ˆx
+
+¯Qt(ˆ x, x ) = swθ (x, t, c)ˆx
+
+swθ (x, t )ˆx
+
+ sθ (x, t )ˆx ¯Qtok  
+
+> t
+
+(ˆ x, x ) = swθ (x, t, c)ˆx
+
+sw−1 
+
+> θ
+
+(x, t )ˆx
+
+Qtok  
+
+> t
+
+(ˆ x, x ) (A-13) where Qtok is the fixed diffusion transition rate matrix in Equation (A-3). Since c = {c1, . . . , ck} contains k independent conditions, we can rewrite Equation (A-12) into multi-conditional form as: 
+
+¯Qt(ˆ x, x |c1, . . . , ck) = ¯Qt(ˆ x, x )
+
+> k
+
+Y
+
+> i=1
+
+p(ci|xt−∆t = ˆ x, x t = x)
+
+p(ci|xt−∆t = x, x t = x)= ¯Qt(ˆ x, x )
+
+> k
+
+Y
+
+> i=1
+
+p(xt−∆t = ˆ x|xt = x, ci)
+
+p(xt−∆t = x|xt = x, ci)
+
+p(xt−∆t = x|xt = x)
+
+p(xt−∆t = ˆ x|xt = x)
+
+≈ ¯Qt(ˆ x, x )
+
+> k
+
+Y
+
+> i=1
+
+swi 
+
+> θ
+
+(x, t, ci)ˆx
+
+swi 
+
+> θ
+
+(x, t )ˆx
+
+=
+
+"
+
+sθ (x, t )ˆxkY
+
+> i=1
+
+swi 
+
+> θ
+
+(x, t, ci)ˆx
+
+swi 
+
+> θ
+
+(x, t )ˆx
+
+#
+
+Qtok  
+
+> t
+
+(ˆ x, x ).
+
+(A-14) Energy-Based Models (EBMs) (Guo et al., 2023a; Geng et al., 2024; Liu et al., 2022) are a class of generative models and also known as non-normalized probabilistic models. Given speech token sequence x and a learnable neural network fθ , the probability distribution of EBM can be formulated as: 
+
+pθ (x) = efθ (x)
+
+Z , (A-15) where Z = P 
+
+> x∈X
+
+efθ (x) is a normalizing constant, and fθ is the energy function. Inspired by the formulation of the EBM, the score can also be formulated as ˆsθ (x)ˆx ≈ pθ (ˆ x)  
+
+> pθ(x)
+
+= efθ (ˆ x)/Z efθ (x)/Z = efθ (ˆ x)  
+
+> efθ(x)
+
+, where x = xt, ˆx = xt−∆t, Z is the normalizing constant, and fθ is the energy function. As we typically define the energy function as a sum of multiple terms (Kim & Bengio, 2016), we can associate each term with the joint and compositional ones, and the final probability distribution is expressed as a product of both. Hence, we can obtain the modulated score ˆsθ (x, t )ˆx by multiplying the compositional score and joint score ( i.e. sum up the energy functions): 
+
+ˆs(w) 
+
+> θ
+
+(x, t )ˆx = sθ (x, t )ˆxKY   
+
+> k=1
+> swiθ(x,t, ck)ˆx
+> swiθ(x,t )ˆx
+
+| {z }
+
+> Compositional
+
+· sw0  
+
+> θ(x,t, c)ˆx
+> sw0−1
+> θ(x,t )ˆx
+
+| {z }
+
+> Joint
+
+, (A-16) 17 Emotional Face-to-Speech 
+
+where c = {cid , cemo , ctext }, w0 controls the scale of guidance strength for the joint injection of all conditions, while wi for 
+
+1 ≤ i ≤ k is assigned to each independent attribute ( i.e. identity, emotion, and semantics with k = 3 ). Therefore, we can rewrite Equation (A-11) as: 
+
+p(xt−∆t = ˆ x|xt = x, c) = δˆx,x + ¯Qt(ˆ x, x |c)∆ t + o(∆ t)
+
+≈ δˆx,x + ˆ s(w) 
+
+> θ
+
+(x, t )ˆx Qtok  
+
+> t
+
+(ˆ x, x )∆ t + o(∆ t) (A-17) 
+
+D. Datasets 
+
+D.1. Dataset Statistics 
+
+All our models are pre-trained on three datasets with pairs of face video and speech: RAVDESS (Livingstone & Russo, 2018), MEAD (Wang et al., 2020; Gan et al., 2023), and MELD-FAIR (Carneiro et al., 2023). The RAVDESS contains 1,440 English utterances voiced by 12 male and 12 female actors with eight different emotions. The MEAD is a talking-face video corpus featuring 60 actors and actresses talking with eight different emotions at three different intensity levels. The MELD-FAIR introduces a novel pre-processing pipeline to fix noisy alignment issues of the MEAD (Wang et al., 2020) consisting of text-audio-video pairs extracted from the Friends TV series. Then, for the training, we train all our models using a combination of all three datasets. The RAVDESS and MEAD of the combined one are randomly segmented into training, validation, and test sets without any speaker overlap. In contrast, we follow the original splits of the MELD-FAIR dataset with speaker overlap. Additionally, these datasets lack sufficient semantic units in real-world environments, making it challenging to train a TTS model. We incorporate a 10-hour subset from LRS3 (Afouras et al., 2018) for pre-training, allowing the model to be comparable to Face-TTS trained on 400 hours of LRS3. Finally, the combined dataset comprises 31.33 hours of audio recordings and 26,767 utterances across 7 basic emotions ( i.e. angry, disgust, fear, happy, neutral, sad, and surprised) and 953 speakers. 
+
+D.2. Data Preprocessing Details 
+
+For data pre-processing, considering the presence of non-primary speakers and background noise such as audience interactions in the recordings, we first resample the audio to a single-channel 16-bit at 16 kHz format, then apply Sep-Former (Subakan et al., 2021), a state-of-the-art model in speech separation, to isolate the primary speaker’s audio and reduce noise from other voices. Then, we introduce an automatic speech recognition model Whisper (Radford et al., 2023) to filter non-aligned text-speech pairs ( i.e. WER higher than 10%). 
+
+E. Model Details 
+
+E.1. Implementation Details of DEmoFace 
+
+Table A-2 shows more details about our DEmoFace. Firstly, for our multimodal diffusion transformer, it contains 12 MM-DiT blocks, with channel numbers 768, attention heads 12 for each block. We train the model using the AdamW optimizer (Loshchilov & Hutter, 2019) with β1 = 0 .9, β2 = 0 .999 , a learning rate of 1e-4, batch size 32, and a 24GB NVIDIA RTX 4090 GPU. The total number of iterations is 300k. For a fair comparison, we do not perform any pre-training or fine-tuning on the test set. During inference, we use the Euler sampler with 96 steps following (Lou et al., 2024). Secondly, we train our identity encoder achiving face-speech alignment on a 24GB NVIDIA 4090 GPU, with a total batch size of 12 samples. We use the AdamW optimizer (Loshchilov & Hutter, 2019) with β1 = 0 .9, β2 = 0 .999 , ϵ = 10 e-9 . It takes 80k steps for training until convergence. Lastly, we design frame-level duration predictor to predict the target speech duration during inference, which obtains the total duration of the target speech through summing up the phoneme-level inputs. We directly estimate the total target speech duration instead of the phoneme-level durations. The duration predictor has three convolution layers and a MLP architecture to predict duration from the frozen SpeechT5 (Ao et al., 2022) encoder. The predictor is trained using the AdamW optimizer with 0.9 and 0.999. The initial learning rate is set to 1e-4 with a learning rate decay of 0.999. We use a total batch size of 32 and train the model with 1 NVIDIA 4090 GPUs at least 100k steps. 18 Emotional Face-to-Speech 
+
+Model Configuration Parameter 
+
+Multimodal Diffusion Transformer In / Out Channels 1 / 1 Number of Transformer Blocks 12 Hidden Channel 768 Attention Heads 12 
+
+cid Identity Embedding Dimension 256 
+
+cemo Emotion Embedding Dimension 128 
+
+ctext Text Embedding Dimension 768 Activate Function SiLU Dropout 0.1 Speech Codec Input Waveform Sampling Rate 24kHz Hopsize 480 Number of RVQ Blocks 12 Codebook size 1024 Coodbook Dimension 8Decoder Hidden Dimension 512 Decoder Kernel Size 12 Number of Decoder Blocks 30 Identity Encoder ArcFace-Net Output Dimension 512 FaceNet Output Dimension 512 MLP Channels (512, 512, 256, 256) Activate Function GeLU Duration Predictor Input SpeechT5 Text Embedding Conv Channel 256 Conv Kernel 5MLP Channels (256, 1) Activate Function ReLU Table A-2: Implementation details about our DEmoFace. 
+
+E.2. Implementation Details of Baselines EmoSpeech. Accroding to EmoSpeech (Diatlova & Shutov, 2023) official code 1, we reproduce training process on our pre-training dataset. EmoSpeech introduces a conditioning mechanism that captures the relationship between speech intonation and the emotional intensity assigned to each token in the sequence. Then we train EmoSpeech following the original setting of its paper. We use the Adam optimizer (Kingma & Ba, 2015) with β1 = 0.5, β2 = 0.9, ϵ = 10 −9 and follow the same learning rate schedule in vanilla transformer (Vaswani et al., 2017). It takes 300k steps with batch size 64 for training until convergence in a single GPU. In the inference process, the output mel-spectrograms of the EmoSPeech are also transformed into speech samples using the pre-trained vocoder 2.
+
+FastSpeech 2. Since FastSpeech 2 (Ren et al., 2021) is not open source and emotion-awareness, we reproduce its method on our pre-training dataset based on the code 3 and its emotion-aware version on V2C-Net (Cong et al., 2023). To model the emotion-awareness in FastSpeech 2, following previous methods (Chen et al., 2022; Cong et al., 2023), we utilize emotion embeddings from an emotion encoder I3D (Carreira & Zisserman, 2017) and speaker embeddings extracted via a generalized end-to-end speaker verification model (Wan et al., 2018) as additional inputs. These embeddings are projected and added to hidden embeddings before the variance adaptor. Then we train FastSpeech 2 following the original setting of its paper. We use the Adam optimizer (Kingma & Ba, 2015) with β1 = 0.9, β2 = 0.98, ϵ = 10 −9 and follow the same 
+
+> 1https://github.com/deepvk/emospeech
+> 2https://github.com/jik876/hifi-gan
+> 3https://github.com/ming024/FastSpeech2
+
+19 Emotional Face-to-Speech 
+
+learning rate schedule in vanilla transformer (Vaswani et al., 2017). It takes 300k steps with batch size 48 for training until convergence. In the inference process, the output mel-spectrograms of the FastSpeech 2 are also transformed into speech samples using the pre-trained vocoder. 
+
+V2C-Net. The V2C-Net (Chen et al., 2022) is not open source, so we reproduce its method based on its original paper and project 4. To exploit the emotion from the reference video, it utilizes an emotion encoder I3D (Carreira & Zisserman, 2017) to calculate the emotion embedding and proposes a speaker encoder comprising 3 LSTM layers and a linear layer to explore the voice characteristics of different speakers. Then we train V2C-Net on our pre-training dataset according to the setup outlined in the original paper. The Adam optimizer (Kingma & Ba, 2015) is employed with hyperparameters set to 
+
+β1 = 0 .9, and β2 = 0 .98 . The learning rate schedule followed the approach used in the vanilla transformer (Vaswani et al., 2017). It takes 300k steps with a batch size of 48. During inference, the generated mel-spectrogram is converted into speech using the pre-trained vocoder. 
+
+HPM. According to HPM (Cong et al., 2023) official code 5, we reproduce training process on our pre-training dataset. It utilizes an emotion face-alignment network (EmoFAN) ( ?) to capture the valence and arousal information from facial expressions and also utilizes an emotion encoder I3D (Carreira & Zisserman, 2017) to calculate the emotion embedding. For training, we use Adam (Kingma & Ba, 2015) with learning rate 10 −5, β1 = 0.9, β2 = 0.98, ϵ = 10 −9 to optimize the HPM. It takes 500k steps with batch size 16. During inference, the generated mel-spectrogram is converted into speech using the pre-trained vocoder. 
+
+StyleDubber. According to StyleDubber (Cong et al., 2024b) official code 6, we reproduce training process on our dataset CMC-TED. StyleDubber introduces the cross-attention to enhance the relevance between textual phonemes of the script and the reference audio as well as visual emotion. For training, we use Adam (Kingma & Ba, 2015) with learning rate 0.00625 ,
+
+β1 = 0.9, β2 = 0.98, ϵ = 10 −9 to optimize the model. It takes 300k steps with batch size 64. During inference, the generated mel-spectrogram is converted into speech using the pre-trained vocoder. 
+
+Face-TTS. We use the official-released pre-trained model 7 of the Face-TTS (Lee et al., 2023), which is pre-trained on multiple large-scale TTS datasets (such as LRS3 (Afouras et al., 2018), VoxCeleb2 (Chung et al., 2018), and LJSpeech (Ito & Johnson, 2017), etc.). Following its original inference pipeline, the input face image is resized into 224 ×224 pixels and embeds onto 512-dimensional vector. The output speech is decoded from their released vocoder in 16kHz sampling rate. 
+
+F. Additional Results 
+
+We conduct extra experiments under our acoustic-guided version DEmoFace ∗, as shown in Fig. A-1, from mel-spectrograms in the second row, the other baselines show severe over-smoothing issues, resulting quality degradation. Furthermore, from the F0 curve in the second row, the other baselines exhibit distinct F0 contours showing different pitch, emotion, and intonation with the GT. Our results are closer to the GT with those acoustic-guided methods. 
+
+For More audio samples please refer to our supplementary material. 
+
+> 4https://github.com/chenqi008/V2C
+> 5https://github.com/GalaxyCong/HPMDubbing
+> 6https://github.com/GalaxyCong/StyleDubber
+> 7https://github.com/naver-ai/facetts
+
+20 Emotional Face-to-Speech (a) Ours Ground Truth (b) Face-TTS (c) EmoSpeech (d) V2C-Net    
+
+> with ‘Fear‛
+> Mel Bins F0 (Hz) Speech Prompt
+> with ‘Happy‛
+> Mel Bins F0 (Hz)
+> with ‘Angry‛
+> Mel Bins F0 (Hz)
+> Speech Prompt Speech Prompt
+> (e) StyleDubber
+
+Figure A-1: Speech qualitative results on acoustic-guided version DEmoFace ∗. The red rectangles highlight key regions with acoustic differences or over-smoothing issues, and the red dotted circle shows similar F0 contours with ground truth. 
+
+G. User Evaluation 
+
+We further conduct the subjective evaluation with 50 participants, to compare our DEmoFace with SOTA methods (Diatlova & Shutov, 2023; Lee et al., 2023). Specifically, we introduce three metrics based on five mean opinion scores (MOS), each rated on a scale from 1 to 5 in 0.5 increments. Among them, MOS nat evaluates speech naturalness and generation quality, while MOS id , and MOS emo assess the perceived similarity of timbre and emotional prosody, respectively. We randomly generate 15 utterances from the test set for subjective evaluation. We conduct the subjective evaluation with 15 participants, to compare our DEmoFace with SOTA methods. Specifically, we introduce five mean opinion scores (MOS) with rating scores from 1 to 5 in 0.5 increments, including MOS nat , MOS con for speech naturalness ( i.e. quality) and consistency ( i.e. emotion and speaker similarity). We randomly generate 10 samples from the test set. Here, we give definitions of both MOS scores on Tables A-3. 
+
+Level Value MOS nat Description MOS id Description MOS emo Description 
+
+Excellent 5 Natural, fluent, and clear speech with no rhythm or semantic is-sues. High intelligibility and quality. Timbre strongly reflects the speaker identity as inferred from the facial cues, including gender and age. Emotion expression closely matches the expression cues in the image. 
+
+Good 4 Mostly clear speech with minor rhythm issues. Acceptable over-all quality. Timbre generally aligns with the imagined identity, with slight de-viations in age or gender cues. Emotion is largely consistent with the facial expression, with slight differences. 
+
+Fair 3 Noticeable unnaturalness and er-rors; speech requires effort to un-derstand. Moderate quality. Timbre partially corresponds to the visual identity cues but with evident inconsistencies. Emotion partially matches facial cues but with evident inconsis-tencies. 
+
+Bad 2 Disfluent speech with abnormal rhythm and unclear articulation. Low intelligibility and quality. Timbre poorly aligns with the inferred identity, showing signif-icant mismatch. Emotion poorly aligned with fa-cial expression. 
+
+Poor 1 Unintelligible, highly disfluent, and unclear speech. Unaccept-able quality. Timbre shows no meaningful re-lation to the imagined speaker identity. Emotion completely inconsis-tent with visual cues. 
+
+Table A-3: MOS nat , MOS id , and MOS emo descriptions. 21
