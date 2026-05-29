@@ -1,0 +1,1180 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-05-29T21:58:58.629552+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 26,
+    "deep_cap": 7,
+    "deep_selected": 15,
+    "quick_candidates": 24,
+    "quick_skim_target": 12,
+    "quick_selected": 12
+  },
+  "deep_dive": [
+    {
+      "id": "2605.24892v1",
+      "source": "arxiv",
+      "title": "X-Foresight: A Joint Vision-Action Causal Forecasting Network via Predictive World Modeling",
+      "abstract": "Physical world knowledge resides mainly in videos. Equipping Vision-Language-Action (VLA) models with such knowledge is fundamental for safe and generalizable planning. Predictive world modeling enables VLA to internalize physical dynamics and long-term causality by predicting future video from past observations. However, naive next-frame prediction faces two challenges: 1) unlike semantically distinct text tokens, video tokens are low-entropy and redundant, causing prediction to degenerate into trivial extrapolation. 2) world modeling poses a temporal dilemma: dense prediction captures instantaneous dynamics, but cannot efficiently model long-horizon causality.   To learn world knowledge effectively, we introduce X-Foresight, a predictive world model integrated directly into the VLA architecture to jointly learn world modeling and real-time action control. At its core lies a long-horizon chunk-wise auto-regressive strategy that addresses both challenges: by predicting semantically distant chunks rather than adjacent frames, it escapes trivial extrapolation, while preserving dense intra-chunk frames for instantaneous dynamics and sparse inter-chunk transitions for long-term causality. A curriculum learning schedule progressively extends prediction horizons and stabilizes long-horizon training. To capture long-term causality effectively, we present temporal importance sampling, which concentrates supervision on safety-critical chunks identified by ego-motion and behavioral signals. We further delegate photorealistic synthesis to a diffusion-based multi-view renderer, improving photorealistic appearance.   Comprehensive experiments demonstrate that X-Foresight significantly outperforms VLA baselines in planning performance while maintaining strong generative fidelity, establishing a robust paradigm for world-knowledge-driven autonomous systems.",
+      "authors": [
+        "Baolu Li",
+        "Jingyu Qian",
+        "Rui Guo",
+        "Yilun Chen",
+        "Hanpeng Liu",
+        "Yuan Lin",
+        "Junhong Zhou",
+        "Ruixin Liu",
+        "Willow Yang",
+        "Yutong Zheng",
+        "Zhenli Zhang",
+        "Tenglong",
+        "Gu",
+        "Zhuangzhuang Ding",
+        "Pengkun Zheng",
+        "Yu Zhang",
+        "Xianming Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-24T06:37:04+00:00",
+      "link": "https://arxiv.org/pdf/2605.24892v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "joint vision-action causal forecasting via predictive world modeling for VLA",
+      "llm_evidence_cn": "通过预测性世界建模实现视觉-动作联合因果预测，用于VLA模型",
+      "llm_evidence": "通过预测性世界建模实现视觉-动作联合因果预测，用于VLA模型",
+      "canonical_evidence": "通过预测性世界建模实现视觉-动作联合因果预测，用于VLA模型",
+      "llm_tldr_en": "X-Foresight introduces a joint vision-action forecasting network with predictive world modeling to learn physical dynamics for VLA agents.",
+      "llm_tldr_cn": "本文提出X-Foresight，一种联合视觉-动作因果预测网络，通过预测性世界建模使VLA模型内化物理动态和长期因果关系，解决视频预测中低熵冗余和长时因果建模困难，实现安全泛化规划。",
+      "llm_tldr": "本文提出X-Foresight，一种联合视觉-动作因果预测网络，通过预测性世界建模使VLA模型内化物理动态和长期因果关系，解决视频预测中低熵冗余和长时因果建模困难，实现安全泛化规划。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "Search for papers that combine world models with vision language action models for embodied AI",
+      "matched_requirement_id": "req-13",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.30280v1",
+      "source": "arxiv",
+      "title": "Qwen-VLA: Unifying Vision-Language-Action Modeling across Tasks, Environments, and Robot Embodiments",
+      "abstract": "Embodied intelligence is often studied through specialized models for individual tasks such as manipulation or navigation, resulting in fragmented capabilities and limited generalization across tasks, environments, and robot embodiments. In this work, we study whether heterogeneous embodied decision-making problems can be unified within a single vision-language-action model. We present Qwen-VLA, a unified embodied foundation model that extends Qwen's vision-language modeling stack from perception, understanding, and reasoning to continuous action and trajectory generation through a DiT-based action decoder. Qwen-VLA is trained with a large-scale joint pretraining recipe over diverse data sources, including robotics manipulation trajectories, human egocentric demonstrations, synthetic simulation data, vision-and-language navigation data, trajectory-centric supervision, and auxiliary vision-language data. To support multiple robot platforms, we introduce embodiment-aware prompt conditioning, where robot-specific textual descriptions specify the current embodiment and control convention. We further cast manipulation, navigation, and trajectory prediction into a unified action-and-trajectory prediction framework, enabling transferable visual grounding, spatial reasoning, and continuous action generation across robot morphologies, task families, and environments. Experiments on manipulation, navigation, and trajectory-centric benchmarks show consistent multi-task performance and out-of-distribution generalization under variations in scene layout, background, lighting, object configuration, and robot embodiment. Qwen-VLA-Instruct achieves 97.9% on LIBERO, 73.7% on Simpler-WidowX, 86.1%/87.2% on RoboTwin-Easy/Hard, 69.0% OSR on R2R, 59.6% SR on RxR, 76.9% average OOD success in real-world ALOHA experiments, and 26.6% zero-shot success on DOMINO dynamic manipulation.",
+      "authors": [
+        "Qiuyue Wang",
+        "Mingsheng Li",
+        "Jian Guan",
+        "Jinhui Ye",
+        "Sicheng Xie",
+        "Yitao Liu",
+        "Junhao Chen",
+        "Zhixuan Liang",
+        "Jie Zhang",
+        "Xintong Hu",
+        "Xuhong Huang",
+        "Pei Lin",
+        "Junyang Lin",
+        "Dayiheng Liu",
+        "Shuai Bai",
+        "Jingren Zhou",
+        "Jiazhao Zhang",
+        "Haoqi Yuan",
+        "Gengze Zhou",
+        "Hang Yin",
+        "Ye Wang",
+        "Yiyang Huang",
+        "Zixing Lei",
+        "Wujian Peng",
+        "Delin Chen",
+        "Yingming Zheng",
+        "Jingyang Fan",
+        "Xianwei Zhuang",
+        "Xin Zhou",
+        "Haoyang Li",
+        "Anzhe Chen",
+        "Tong Zhang",
+        "Xuejing Liu",
+        "Yuchong Sun",
+        "Ruizhe Chen",
+        "Zhaohai Li",
+        "Chenxu Lü",
+        "Zhibo Yang",
+        "Tao Yu",
+        "Xionghui Chen"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-05-28T17:36:31+00:00",
+      "link": "https://arxiv.org/pdf/2605.30280v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Unified VLA foundation model for robotics",
+      "llm_evidence_cn": "统一VLA基础模型，用于机器人",
+      "llm_evidence": "统一VLA基础模型，用于机器人",
+      "canonical_evidence": "统一VLA基础模型，用于机器人",
+      "llm_tldr_en": "Qwen-VLA extends Qwen vision-language stack with a DiT-based action decoder, unifying manipulation, navigation, and other embodied tasks across diverse robots via joint pretraining.",
+      "llm_tldr_cn": "具身智能常被分解为操纵、导航等独立任务，缺乏泛化能力。Qwen-VLA将Qwen的视觉语言建模拓展到连续动作生成，通过基于DiT的动作解码器和大规模联合预训练，在同一模型内统一了不同任务、环境和机器人形态，展现出跨任务零样本迁移能力，为通用具身智能奠定了基础。",
+      "llm_tldr": "具身智能常被分解为操纵、导航等独立任务，缺乏泛化能力。Qwen-VLA将Qwen的视觉语言建模拓展到连续动作生成，通过基于DiT的动作解码器和大规模联合预训练，在同一模型内统一了不同任务、环境和机器人形态，展现出跨任务零样本迁移能力，为通用具身智能奠定了基础。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.22283v1",
+      "source": "arxiv",
+      "title": "Spatial Memory for Out-of-Vision Manipulation in Vision-Language-Action",
+      "abstract": "We introduce SOMA, the Spatial Memory framework for Out-of-Vision Manipulation in Vision-Language-Action (VLA) models. Most existing VLAs implicitly assume that task-relevant objects are always visible, leading to brittle and reactive behaviors when targets fall outside the camera's field of view. SOMA addresses this limitation by equipping VLAs with a persistent spatial memory constructed from multi-view observations acquired via a movable head camera, enabling reasoning beyond the current visual frustum. The framework consists of three components: Spatial Memory Construction, which aggregates angular-wise observations into a unified spatial-semantic representation through scanning; Dynamic Memory Refinement, which maintains global consistency over time; and Contextual Memory Retrieval, which activates instruction-relevant spatial cues during manipulation. We evaluate SOMA on five challenging real-world out-of-vision manipulation tasks, including multi-step and dual-arm scenarios where target objects are initially invisible. Experimental results show that SOMA not only improves task success rates, but also induces qualitatively different manipulation behaviors, with faster target localization, reduced viewpoint search, and near one-shot grasping under partial observability. Additional experiments on RoboCasa GR1 and SimplerEnv further validate the effectiveness of SOMA's memory design under conventional fully observable settings. Code will be released soon.",
+      "authors": [
+        "Pengteng Li",
+        "Weiyu Guo",
+        "He Zhang",
+        "Tiefu Cai",
+        "Xiao He",
+        "Yandong Guo",
+        "Hui Xiong"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-05-21T10:32:53+00:00",
+      "link": "https://arxiv.org/pdf/2605.22283v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "spatial memory for VLA out-of-vision manipulation",
+      "llm_evidence_cn": "面向VLA视野外操作的空间记忆",
+      "llm_evidence": "面向VLA视野外操作的空间记忆",
+      "canonical_evidence": "面向VLA视野外操作的空间记忆",
+      "llm_tldr_en": "SOMA equips VLA models with persistent spatial memory from multi-view head camera observations for out-of-vision object manipulation, overcoming the limitation of relying on visible targets.",
+      "llm_tldr_cn": "现有视觉-语言-动作（VLA）模型默认任务相关物体始终可见，导致目标出视野时行为脆弱。本文提出SOMA，为VLA配备持久空间记忆框架，通过可动头部摄像头采集多视角观测构建统一空间语义表示，并包含动态记忆精化策略保持全局一致性。在真实机器人操作任务中，SOMA成功实现了视野外抓取和放置，显著提升了VLA在部分可观测环境中的鲁棒性。",
+      "llm_tldr": "现有视觉-语言-动作（VLA）模型默认任务相关物体始终可见，导致目标出视野时行为脆弱。本文提出SOMA，为VLA配备持久空间记忆框架，通过可动头部摄像头采集多视角观测构建统一空间语义表示，并包含动态记忆精化策略保持全局一致性。在真实机器人操作任务中，SOMA成功实现了视野外抓取和放置，显著提升了VLA在部分可观测环境中的鲁棒性。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.24578v1",
+      "source": "arxiv",
+      "title": "World Models as Group Actions",
+      "abstract": "Video world models have achieved strong visual realism, but this does not ensure that their dynamics are truly governed by actions. In this work, we argue that action faithfulness should be understood through the compositional structure of actions, which in many embodied settings follows a group structure (e.g., SE(2) for navigation). Based on this insight, we formalize action-conditioned world modeling as realizing a group action on the state space, providing a principled criterion for evaluating dynamics beyond visual quality. To operationalize this framework, we propose a unified approach that enforces identity, inverse, and composition consistency via latent-space regularization with synthesized supervision, avoiding additional data collection. We further introduce two metrics: Group-Action Consistency (GAC) and Group-Action Robustness (GAR), to evaluate structural correctness and rollout stability. Extensive experimental results show that our method consistently improves both GAC and GAR in state-of-the-art video world models without degrading perceptual quality.",
+      "authors": [
+        "Zijie Wang",
+        "Wei Zhang",
+        "Weiming Zhang",
+        "Fanqi Zhang",
+        "Xiao Tan",
+        "Yipeng Qin",
+        "Guanbin Li"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-23T13:42:35+00:00",
+      "link": "https://arxiv.org/pdf/2605.24578v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "world models formalized as group actions for action faithfulness",
+      "llm_evidence_cn": "将世界模型形式化为群体动作以实现动作忠实性",
+      "llm_evidence": "将世界模型形式化为群体动作以实现动作忠实性",
+      "canonical_evidence": "将世界模型形式化为群体动作以实现动作忠实性",
+      "llm_tldr_en": "This paper formalizes action-conditioned world modeling as group actions, enforcing identity, inverse, and composition consistency via latent regularization, and proposes new metrics.",
+      "llm_tldr_cn": "视频世界模型虽视觉逼真，但动作忠实性无保障。本文从群论角度将动作条件的世界建模形式化为状态空间上的群作用，提供原则性评估标准。通过潜空间正则化强制恒等、逆和组合一致性，无需额外数据。所提Group-Action指标与下游控制质量高度相关，为世界模型提供了新的构建和评估范式。",
+      "llm_tldr": "视频世界模型虽视觉逼真，但动作忠实性无保障。本文从群论角度将动作条件的世界建模形式化为状态空间上的群作用，提供原则性评估标准。通过潜空间正则化强制恒等、逆和组合一致性，无需额外数据。所提Group-Action指标与下游控制质量高度相关，为世界模型提供了新的构建和评估范式。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "world model for reinforcement learning and planning",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.24761v1",
+      "source": "arxiv",
+      "title": "Drift-Resistant Navigation World Model with Anchored Epipolar Guidance",
+      "abstract": "We propose Drift-Resistant Navigation World Model, a generative model that mitigates both perceptual drift and geometric drift in conventional rollout-based navigation world models. Existing methods recursively feed generated content into subsequent steps, causing noise accumulation and degraded predictions, i.e., perceptual drift. Meanwhile, their predictions often deviate from the agent's motion, resulting in geometry drift. We address both types of drift by redesigning world-model prediction as an anchor-guided rollout. Instead of rolling out every frame sequentially, we first predict sparse future anchors that serve as stable long-range targets, and then generate intermediate frames within each chunk conditioned on both past context and future anchors. Importantly, these sparse anchors also provide geometric constraints, supported by bidirectional epipolar geometry, to localize where corresponding content should appear in the intermediate frames. Experiments on four benchmarks demonstrate consistent improvements over strong baselines in long-horizon visual quality, geometric consistency, and multi-view coherence. These gains further translate into improved downstream planning performance under the same planners, highlighting the importance of drift-resistant, geometry-aware prediction for reliable navigation world models.",
+      "authors": [
+        "Po-Chien Luan",
+        "Zimin Xia",
+        "Wuyang Li",
+        "Yang Gao",
+        "Alexandre Alahi"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published": "2026-05-23T22:47:33+00:00",
+      "link": "https://arxiv.org/pdf/2605.24761v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Drift-resistant navigation world model for planning",
+      "llm_evidence_cn": "用于规划的抗漂移导航世界模型",
+      "llm_evidence": "用于规划的抗漂移导航世界模型",
+      "canonical_evidence": "用于规划的抗漂移导航世界模型",
+      "llm_tldr_en": "Proposes a drift-resistant navigation world model using anchor-guided rollout to mitigate perceptual and geometric drift, improving long-horizon prediction for autonomous agents.",
+      "llm_tldr_cn": "传统导航世界模型在递归生成时存在感知漂移和几何漂移。本文提出抗漂移导航世界模型，通过锚定引导的展开方式先预测稀疏未来锚点再生成中间帧，有效抑制漂移，提升了长时间预测的准确性，适用于自主导航与规划。",
+      "llm_tldr": "传统导航世界模型在递归生成时存在感知漂移和几何漂移。本文提出抗漂移导航世界模型，通过锚定引导的展开方式先预测稀疏未来锚点再生成中间帧，有效抑制漂移，提升了长时间预测的准确性，适用于自主导航与规划。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "world model for reinforcement learning and planning",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.24890v1",
+      "source": "arxiv",
+      "title": "QuoVLA: Quotient Space for Vision-Language-Action Models",
+      "abstract": "Vision-Language-Action (VLA) models commonly adapt pretrained Vision-Language Models (VLMs) to robot control by mapping visual observations and language instructions to continuous actions. Existing approaches typically take an action-insufficiency view, assuming that pretrained VLM latents either lack directly usable action information or should be shielded from action-learning signals. Against this view, our \\textit{Quotient Theory for VLA} shows that pretrained VLM latents are not action-insufficient but action-sufficient: they already contain the information needed for control, yet remain overcomplete by distinguishing prompt-level variations that induce the same optimal action behavior. To operationalize this theory, we propose QuoVLA, a quotient-space framework for VLA that compresses pretrained VLM latents into action-sufficient representations. Specifically, QuoVLA instantiates this principle with a quantization module and a dual-branch design with relative temporal-complexity regularization, preserving action-relevant information while removing prompt-level redundancy. Extensive experiments across multiple benchmarks demonstrate that QuoVLA achieves strong performance, with particularly notable improvements in generalization under visual, linguistic, and environmental distribution shifts. Our code will be made publicly available.",
+      "authors": [
+        "Xuan Wang",
+        "Yinan Wu",
+        "Haoran Duan",
+        "Jungong Han"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-24T06:28:53+00:00",
+      "link": "https://arxiv.org/pdf/2605.24890v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Quotient-space framework for VLA models",
+      "llm_evidence_cn": "视觉语言动作模型的商空间框架",
+      "llm_evidence": "视觉语言动作模型的商空间框架",
+      "canonical_evidence": "视觉语言动作模型的商空间框架",
+      "llm_tldr_en": "QuoVLA proposes a quotient-space framework showing pretrained VLM latents are action-sufficient but overcomplete, removing prompt-level variations for better robot control.",
+      "llm_tldr_cn": "现有VLA模型认为预训练VLM潜在表示缺乏动作信息。本文提出商空间理论证明其动作充足但过完备，通过商空间框架去除提示级变异，直接利用VLM潜在表示进行机器人控制。实验验证了该方法的有效性。",
+      "llm_tldr": "现有VLA模型认为预训练VLM潜在表示缺乏动作信息。本文提出商空间理论证明其动作充足但过完备，通过商空间框架去除提示级变异，直接利用VLM潜在表示进行机器人控制。实验验证了该方法的有效性。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.25930v1",
+      "source": "arxiv",
+      "title": "CosyEdit2: Speech-Editing-Oriented Reinforcement Learning Unlocks Better Zero-Shot TTS",
+      "abstract": "Speech editing and zero-shot Text-to-Speech (TTS) share a similar generative foundation conditioned on speech prompts, yet speech editing demands far stricter local acoustic consistency with surrounding unedited content. While prior work has shown that Supervised Fine-Tuning (SFT) enables TTS models to acquire functional editing capability, this approach remains fundamentally bottlenecked by imperfect paired editing data and coarse-grained optimization signals. To address these limitations, we propose CosyEdit2, a speech editing model built on a two-stage post-training framework that progresses from supervised editing initialization to editing-oriented Group Relative Policy Optimization (GRPO) over target-speech-free data. Extensive experiments demonstrate that CosyEdit2 not only substantially advances speech editing performance, but also unlocks better zero-shot TTS capability, revealing a deeper mutual relationship between the two tasks. Audio samples are available at https://cjy1018.github.io/CosyEdit2.",
+      "authors": [
+        "Junyang Chen",
+        "Yuhang Jia",
+        "Hui Wang",
+        "Jiaming Zhou",
+        "Yongchang Gan",
+        "Yong Qin"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD"
+      ],
+      "published": "2026-05-25T15:12:56+00:00",
+      "link": "https://arxiv.org/pdf/2605.25930v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "speech editing and zero-shot TTS with reinforcement learning for better expressiveness",
+      "llm_evidence_cn": "使用强化学习的语音编辑和零样本TTS，提升表现力",
+      "llm_evidence": "使用强化学习的语音编辑和零样本TTS，提升表现力",
+      "canonical_evidence": "使用强化学习的语音编辑和零样本TTS，提升表现力",
+      "llm_tldr_en": "CosyEdit2 uses a two-stage post-training framework with editing-oriented GRPO to improve zero-shot TTS and speech editing, overcoming data bottlenecks.",
+      "llm_tldr_cn": "针对语音编辑中监督微调受限于配对数据和粗粒度优化信号的问题，提出CosyEdit2，采用两阶段后训练框架，从监督编辑初始化过渡到编辑导向的GRPO，无需目标语音数据即可优化模型，显著提升零样本TTS的表现力和局部声学一致性。实验表明该方法在编辑质量和自然度上超越先前工作。",
+      "llm_tldr": "针对语音编辑中监督微调受限于配对数据和粗粒度优化信号的问题，提出CosyEdit2，采用两阶段后训练框架，从监督编辑初始化过渡到编辑导向的GRPO，无需目标语音数据即可优化模型，显著提升零样本TTS的表现力和局部声学一致性。实验表明该方法在编辑质量和自然度上超越先前工作。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech synthesis",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.26672v1",
+      "source": "arxiv",
+      "title": "Can We Hear from Events? Generating Speech from Event Camera",
+      "abstract": "Traditional RGB-based speech generation faces Temporal Granularity Mismatch since fixed camera exposure times inevitably blur the high-frequency articulatory transients essential for rendering emotional speech. To break this ceiling, we propose EventSpeech as a novel text-conditioned framework pioneering the use of neuromorphic events for expressive speech generation, since these microsecond-precise events naturally align with acoustic waveform dynamics. Our architecture integrates a dedicated Event Encoder to model sparse neuromorphic events alongside a multi-scale Audio Encoder featuring a Hierarchical Wavelet Contextualizer (HWC). A bidirectional alignment mechanism seamlessly synchronizes linguistic content and visual dynamics with dense acoustic features. Furthermore, we construct EVT-SPK as the first benchmark comprising large-scale synthetic data and real-world recordings from specialized neuromorphic hardware. Extensive evaluations demonstrate that EventSpeech significantly outperforms current baselines by preserving fine-grained emotions and resisting motion blur to establish a new paradigm for multimodal speech generation. Code and demo are available at https://xrfang-0102.github.io/EventSpeechWeb/.",
+      "authors": [
+        "Jingping Fang",
+        "Lin Chen",
+        "Chenyang Xu",
+        "Tong Zhao",
+        "Weidong Cai",
+        "Xiaoming Chen"
+      ],
+      "primary_category": "cs.MM",
+      "categories": [
+        "cs.MM",
+        "cs.SD"
+      ],
+      "published": "2026-05-26T08:11:27+00:00",
+      "link": "https://arxiv.org/pdf/2605.26672v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "expressive speech generation from events",
+      "llm_evidence_cn": "基于事件相机的表现力语音生成",
+      "llm_evidence": "基于事件相机的表现力语音生成",
+      "canonical_evidence": "基于事件相机的表现力语音生成",
+      "llm_tldr_en": "Proposes EventSpeech, using neuromorphic event cameras for expressive speech generation, capturing high-frequency articulatory details lost in RGB video.",
+      "llm_tldr_cn": "传统RGB视频帧率有限，难以捕捉发音时的高速运动细节，导致表现力语音生成受限。本文提出EventSpeech，首次利用神经形态事件相机微秒级精度的事件流来表达情感语音生成，通过事件编码器和层级小波上下文器同步语言内容与声学特征。实验表明该方法生成的语音在情感表现力上显著优于RGB基线。",
+      "llm_tldr": "传统RGB视频帧率有限，难以捕捉发音时的高速运动细节，导致表现力语音生成受限。本文提出EventSpeech，首次利用神经形态事件相机微秒级精度的事件流来表达情感语音生成，通过事件编码器和层级小波上下文器同步语言内容与声学特征。实验表明该方法生成的语音在情感表现力上显著优于RGB基线。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech generation research",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.27258v1",
+      "source": "arxiv",
+      "title": "PilotTTS: A Disciplined Modular Recipe for Competitive Speech Synthesis",
+      "abstract": "Building state-of-the-art text-to-speech (TTS) systems typically demands millions of hours of proprietary data and complex multi-stage architectures, creating substantial barriers for resource-constrained research teams. In this report, we present PilotTTS, a lightweight autoregressive TTS system that achieves competitive performance through minimalist architecture and rigorous data engineering. PilotTTS is trained on only 200K hours of data processed entirely with open-source tools. Specifically, our contributions are: (1) a reproducible multi-stage data processing pipeline covering quality assessment, label annotation, and filtering, and (2) a compact model architecture that employs Q-Former-based conditioning to decouple speaker identity from speaking style via cross-sample paired training. Within a unified framework, PilotTTS supports zero-shot voice cloning, emotion synthesis (11 categories), paralinguistic synthesis (4 categories), and Chinese dialect synthesis (14 dialects). On the Seed-TTS Eval benchmark, PilotTTS achieves the lowest WER of 1.50% on test-en, a CER of 0.87% on test-zh, and the highest speaker similarity on both test sets (0.862 and 0.815), outperforming systems trained on significantly larger datasets. We release the complete data pipeline recipe, pretrained weights, and code at https://github.com/AMAPVOICE/PilotTTS.",
+      "authors": [
+        "Bowen Li",
+        "Shaotong Guo",
+        "Zhen Wang",
+        "Yang Xiang",
+        "Mingli Jin",
+        "Yihang Lin",
+        "Jiahui Zhao",
+        "Weibo Xiong",
+        "Dongrui Li",
+        "Keming Chen",
+        "Yunze Gao",
+        "Yuze Zhou",
+        "Zeyang Lin",
+        "Yue Liu"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.AI"
+      ],
+      "published": "2026-05-26T16:36:56+00:00",
+      "link": "https://arxiv.org/pdf/2605.27258v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Lightweight autoregressive TTS system with competitive performance, advances expressive speech synthesis",
+      "llm_evidence_cn": "轻量级自回归TTS系统，推进表现力语音合成",
+      "llm_evidence": "轻量级自回归TTS系统，推进表现力语音合成",
+      "canonical_evidence": "轻量级自回归TTS系统，推进表现力语音合成",
+      "llm_tldr_en": "PilotTTS is a lightweight autoregressive TTS system trained on only 200K hours of open-source data, achieving competitive performance through minimalist architecture and rigorous data engineering.",
+      "llm_tldr_cn": "构建最先进文本到语音系统通常需要数百万小时专有数据和复杂架构。本文提出PilotTTS，一种轻量自回归TTS系统，仅用200K小时全开源数据处理训练。其贡献包括：可复现的多阶段数据处理流水线（质量评估、标注、过滤），以及采用Q-Former条件化的紧凑模型架构，将说话人身份与说话内容解耦合。在资源受限条件下达到有竞争力的合成质量。",
+      "llm_tldr": "构建最先进文本到语音系统通常需要数百万小时专有数据和复杂架构。本文提出PilotTTS，一种轻量自回归TTS系统，仅用200K小时全开源数据处理训练。其贡献包括：可复现的多阶段数据处理流水线（质量评估、标注、过滤），以及采用Q-Former条件化的紧凑模型架构，将说话人身份与说话内容解耦合。在资源受限条件下达到有竞争力的合成质量。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech synthesis",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.28227v1",
+      "source": "arxiv",
+      "title": "Why We Need Speech to Evaluate Speech Translation",
+      "abstract": "Speech translation models are increasingly capable of preserving speech-specific information (e.g., speaker gender, prosody, and emphasis), yet evaluation metrics remain blind to such phenomena. We meta-evaluate both text- and speech-based quality estimation metrics on two contrastive datasets targeting gender agreement and prosody, and find that both fall short, even when given direct access to the speech signal. We then train SpeechCOMET, a family of quality estimation models with speech encoders, and evaluate a state-of-the-art SpeechLLM as a judge. Both match or exceed text-based COMET on standard quality estimation, but neither consistently assesses speech-specific phenomena. We identify three causes: (1) speech-specific features are not reliably preserved in current encoders, (2) models tend to ignore the speech source signal, and (3) quality estimation training data contains too few relevant examples. We release all models and code, and argue that progress requires dedicated speech-specific training data and models that genuinely condition on speech.",
+      "authors": [
+        "Maike Züfle",
+        "Danni Liu",
+        "Vilém Zouhar",
+        "Jan Niehues"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-05-27T09:41:22+00:00",
+      "link": "https://arxiv.org/pdf/2605.28227v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "evaluation of speech translation metrics, highlighting need for speech-specific assessment",
+      "llm_evidence_cn": "语音翻译评估指标研究，强调语音特有信息评估的必要性",
+      "llm_evidence": "语音翻译评估指标研究，强调语音特有信息评估的必要性",
+      "canonical_evidence": "语音翻译评估指标研究，强调语音特有信息评估的必要性",
+      "llm_tldr_en": "Meta-evaluates text and speech metrics for speech translation, finding both inadequate for speech-specific phenomena; proposes SpeechCOMET models.",
+      "llm_tldr_cn": "该论文指出当前语音翻译评估指标对语音特有信息（如说话人性别、韵律和强调）的评估不足。通过元评估文本和基于语音的质量估计指标，发现即使直接访问语音信号，两者均无法一致地评估这些现象。为此训练了名为SpeechCOMET的包含语音编码器的质量估计模型，并评估了最先进的SpeechLLM作为评判者，揭示了语音特征在现有指标中未能稳健保留的三大原因。",
+      "llm_tldr": "该论文指出当前语音翻译评估指标对语音特有信息（如说话人性别、韵律和强调）的评估不足。通过元评估文本和基于语音的质量估计指标，发现即使直接访问语音信号，两者均无法一致地评估这些现象。为此训练了名为SpeechCOMET的包含语音编码器的质量估计模型，并评估了最先进的SpeechLLM作为评判者，揭示了语音特征在现有指标中未能稳健保留的三大原因。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.28618v1",
+      "source": "arxiv",
+      "title": "Comprehensive Benchmarking of Long-Form Speech Generation in Diverse Scenarios",
+      "abstract": "Recent advances in speech generation have enabled high-fidelity synthesis, yet systematic evaluation of models under long-context conditions remains largely underexplored. A comprehensive evaluation benchmark for long-form speech is indispensable for two reasons: 1) existing test scenarios are often confined to limited domains, creating a significant gap with the diverse downstream applications; 2) existing metrics overlook critical long-text factors such as consistency and coherence, failing to generalize reliably. To this end, we propose Swanbench-Speech, a comprehensive benchmark that decomposes long-form speech quality into specific, disentangled dimensions. SwanBench-Speech has three key properties. 1) Rich speech scenarios: Focusing on long-form speech generation and dialog generation, SwanBench-Speech covers acoustics, semantics, and expressiveness challenges, and consists of 1,101 samples spanning 17 common speech scenarios; 2) Comprehensive evaluation dimensions: Along the acoustics, semantics, and expressiveness axes, SwanBench-Speech defines an automated evaluation protocol with seven metrics to provide a comprehensive, accurate, and standardized assessment; 3) Valuable Insights: Through extensive experiments, we reveal that current models still struggle in highly expressive scenarios and exhibit a notable gap in consistency and hierarchy compared to real recordings.",
+      "authors": [
+        "Changhao Pan",
+        "Rui Yang",
+        "Han Wang",
+        "Zhuan Zhou",
+        "Xuming He",
+        "Wenxiang Guo",
+        "Ziyue Jiang",
+        "Ruiqi Li",
+        "Yu Zhang",
+        "Chenyuhao Wen",
+        "Ke Lei",
+        "Xiang Yin",
+        "Jingyu Lu",
+        "Zhiyuan Zhu",
+        "Zhou Zhao"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS"
+      ],
+      "published": "2026-05-27T15:28:15+00:00",
+      "link": "https://arxiv.org/pdf/2605.28618v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "benchmark for long-form speech generation in diverse scenarios",
+      "llm_evidence_cn": "面向多样化场景的长文本语音生成综合基准",
+      "llm_evidence": "面向多样化场景的长文本语音生成综合基准",
+      "canonical_evidence": "面向多样化场景的长文本语音生成综合基准",
+      "llm_tldr_en": "Swanbench-Speech provides a comprehensive benchmark for evaluating long-form speech generation, focusing on consistency and coherence.",
+      "llm_tldr_cn": "本文提出Swanbench-Speech，一个面向长文本语音生成的综合评测基准，将语音质量分解为多个维度，覆盖多样场景和长文本一致性指标，填补了现有评测的空白。",
+      "llm_tldr": "本文提出Swanbench-Speech，一个面向长文本语音生成的综合评测基准，将语音质量分解为多个维度，覆盖多样场景和长文本一致性指标，填补了现有评测的空白。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech synthesis",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.29209v1",
+      "source": "arxiv",
+      "title": "The WER Trap: Shattering the Illusion of Unified Tokens in Speech Language Models",
+      "abstract": "The pursuit of a \"unified\" discrete token for both speech understanding and generation has led the Speech Language Model (SLM) community to heavily rely on Word Error Rate (WER) -- the core metric for Whisper-style tokenizers -- as the definitive proxy for representation quality. This fosters the assumption that low-WER tokens inherently preserve the information necessary for intelligible acoustic synthesis. We argue this is fundamentally deceptive. While high-frequency tokens succeed in generation tasks due to implicit information leakage, isolating pure semantic information at ultra-low frame rates strips away the finegrained articulation and micro-dynamics essential for ODE-based generation. Empirically validating this requires extreme compression without sacrificing WER -- a methodological bottleneck, as standard fixed-stride downsampling arbitrarily truncates phonetic boundaries. To overcome this, we develop a dynamic compression tokenizer that intelligently aligns representations with semantic boundaries, achieving ultra-low frame rates with exceptionally low WER. Using these isolated \"pure\" semantic tokens, we expose the WER trap: when conditioning generative models -- even with oracle duration alignments -- the reconstructed speech suffers from severe articulation blur and is rendered acoustically unintelligible. Our findings demonstrate that semantic categorization rewarded by low WER is inherently orthogonal to the continuous phonetic trajectories required for synthesis, shattering the illusion of the unified token and advocating for explicitly decoupled speech representations.",
+      "authors": [
+        "Xiangyu Zhang",
+        "Yuxin Li",
+        "Haoyang Zhang",
+        "Shiqi Han",
+        "Hexin Liu",
+        "Qiquan Zhang",
+        "Beena Ahmed",
+        "Julien Epps"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS"
+      ],
+      "published": "2026-05-28T00:42:45+00:00",
+      "link": "https://arxiv.org/pdf/2605.29209v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "critically examines unified tokens for speech language models",
+      "llm_evidence_cn": "批判性分析语音语言模型中统一标记的概念",
+      "llm_evidence": "批判性分析语音语言模型中统一标记的概念",
+      "canonical_evidence": "批判性分析语音语言模型中统一标记的概念",
+      "llm_tldr_en": "This paper argues that low-WER tokens are insufficient for speech generation, challenging the unified token assumption in speech language models.",
+      "llm_tldr_cn": "本文揭示语音语言模型中依赖字错误率（WER）评估统一标记质量的陷阱，指出低WER标记可能缺失细粒度发音信息，不适合基于ODE的生成，而高频标记通过信息泄露才能在生成任务中成功，对统一标记假设提出根本性质疑。",
+      "llm_tldr": "本文揭示语音语言模型中依赖字错误率（WER）评估统一标记质量的陷阱，指出低WER标记可能缺失细粒度发音信息，不适合基于ODE的生成，而高频标记通过信息泄露才能在生成任务中成功，对统一标记假设提出根本性质疑。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.29438v1",
+      "source": "arxiv",
+      "title": "ElegantVLA: Learning When to Think for Efficient Vision-Language-Action Models",
+      "abstract": "Vision-Language-Action (VLA) models are a powerful paradigm for generalist robotic control. However, their high computational cost and limited control frequency hinder real-time robotic manipulation, especially when large vision-language backbones and iterative action heads run at every control step. Existing VLA acceleration methods often optimize individual components or rely on fixed acceleration rules, treating different control steps with largely fixed computation and overlooking the non-uniform reasoning demands of sequential embodied control. Inspired by human motor control, where cognitive and feedback resources concentrate on goal-sensitive stages, we argue that VLA models should learn when to invest full computation and when to reuse prior computation. We propose ElegantVLA, a plug-in phase-adaptive inference framework that accelerates VLA models through intra-model dynamic compute scheduling. ElegantVLA introduces a lightweight scheduler that observes temporal representation similarity, robot-motion cues, and episode progress to jointly allocate computation across the vision encoder, LLM, and action head. For perception-language reasoning, the scheduler selects a five-level Vision-LLM compute mode, from full recomputation to multi-step temporal reuse, based on visual-language representation stability. For action generation, it selects a three-level denoising mode, reusing intermediate denoising states during stable motion while preserving full refinement for goal-sensitive stages. By coordinating these decisions, ElegantVLA offers a general acceleration framework for modern VLA pipelines with explicit action-generation modules, without modifying or retraining the base model. Experiments on GR00T and CogACT achieve up to 2.55x and 3.77x speedup, and on six real-world GR00T tasks ElegantVLA cuts computation by 2.18x while raising control frequency from 13.8 Hz to 26.3 Hz.",
+      "authors": [
+        "Ye Li",
+        "Huanan Liu",
+        "Kangye Ji",
+        "Yuan Meng",
+        "Jiajun Fan",
+        "Yuansong Wang",
+        "Shiyu Qin",
+        "Chenglei Wu",
+        "Shu-Tao Xia",
+        "Zhi Wang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-05-28T06:33:05+00:00",
+      "link": "https://arxiv.org/pdf/2605.29438v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "efficient VLA model for robotic control",
+      "llm_evidence_cn": "面向机器人控制的VLA模型效率优化",
+      "llm_evidence": "面向机器人控制的VLA模型效率优化",
+      "canonical_evidence": "面向机器人控制的VLA模型效率优化",
+      "llm_tldr_en": "ElegantVLA proposes learning when to think in VLA models, dynamically allocating computation per control step to improve efficiency while maintaining performance, inspired by human motor control.",
+      "llm_tldr_cn": "VLA模型在机器人控制中计算成本高，限制了实时性能。ElegantVLA受人类运动控制启发，提出让VLA模型学习何时投入完全计算、何时复用历史表示，从而实现动态计算分配。实验表明该方法在保持任务性能的同时显著降低推理延迟，为VLA在实际机器人部署中提供了高效解决方案。",
+      "llm_tldr": "VLA模型在机器人控制中计算成本高，限制了实时性能。ElegantVLA受人类运动控制启发，提出让VLA模型学习何时投入完全计算、何时复用历史表示，从而实现动态计算分配。实验表明该方法在保持任务性能的同时显著降低推理延迟，为VLA在实际机器人部署中提供了高效解决方案。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.29577v1",
+      "source": "arxiv",
+      "title": "Mitigating State Aliasing in Vision-Language-Action Models via Inverse Dynamics Learning",
+      "abstract": "Vision-Language-Action (VLA) models have emerged as a promising framework that unifies perception, reasoning, and control for robot manipulation by adapting pretrained vision-language models (VLMs) to action prediction. However, VLM-derived representations are often insensitive to subtle visual distinctions required for low-level control, causing state aliasing between visually similar states that require substantially different actions. Prior VLA studies improve visual understanding by generating visual or reasoning outputs, such as future frames, 2D grounding points or traces, or intermediate spatial reasoning steps, but these objectives typically shape the vision encoder only indirectly through end-to-end prediction and do not explicitly analyze state aliasing in the learned visual feature space. To mitigate state aliasing, we introduce inverse dynamics learning as an auxiliary objective that directly supervises the VLA vision encoder. By predicting the action between current and future observations, our objective encourages the encoder to capture fine-grained visual distinctions that determine low-level actions. We further use pseudo-reversed supervision to expose the encoder to a broader range of action directions and improve generalization under limited robot demonstrations. Our method applies to diverse VLA baselines, uses only standard observation-action pairs without additional annotations, and preserves the original inference pipeline at test time. Experiments on CALVIN ABC-D and SimplerEnv show consistent gains across diverse VLA baselines. Frozen-encoder probing and state-feature alignment analyses further show that our method learns state-discriminative visual representations that reduce state aliasing and better align with robot state changes.",
+      "authors": [
+        "Kyujin Lee",
+        "Injae Kim",
+        "Jihwan Park",
+        "Yejun Ju",
+        "Minseok Joo",
+        "Hyunwoo J. Kim"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-28T08:22:49+00:00",
+      "link": "https://arxiv.org/pdf/2605.29577v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "mitigates state aliasing in VLA models via inverse dynamics learning for robot manipulation",
+      "llm_evidence_cn": "通过逆动力学学习缓解VLA模型中的状态别名问题，用于机器人操作",
+      "llm_evidence": "通过逆动力学学习缓解VLA模型中的状态别名问题，用于机器人操作",
+      "canonical_evidence": "通过逆动力学学习缓解VLA模型中的状态别名问题，用于机器人操作",
+      "llm_tldr_en": "Proposes inverse dynamics learning to mitigate state aliasing in VLA models, improving sensitivity to subtle visual distinctions for better robotic manipulation.",
+      "llm_tldr_cn": "针对VLA模型因视觉表示对细微差异不敏感导致状态别名的问题，提出通过逆动力学学习显式加强视觉编码器对动作相关特征的敏感性，在不增加推理负担的情况下提升VLA模型在低层控制中的表现，实验证明该方法能有效缓解状态别名并提高操作成功率。",
+      "llm_tldr": "针对VLA模型因视觉表示对细微差异不敏感导致状态别名的问题，提出通过逆动力学学习显式加强视觉编码器对动作相关特征的敏感性，在不增加推理负担的情况下提升VLA模型在低层控制中的表现，实验证明该方法能有效缓解状态别名并提高操作成功率。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.29859v1",
+      "source": "arxiv",
+      "title": "MELD: Mel-Spectrogram-Based Speech Language Modeling with Discrete Latent Variables",
+      "abstract": "Recent speech language models rely on encoders that are optimized separately from autoregressive models. Since these encoders are unaware of the downstream objectives, the extracted representations may not be optimal for downstream tasks. To address this limitation, we introduce a discrete latent variable model on mel spectrograms that jointly optimizes the encoder and the speech language model. Joint optimization not only brings improvements over codec-based and other mel-spectrogram-based baselines on zero-shot Text-to-Speech (TTS) and Speech-to-Text (STT) tasks, but also effectively alleviates common issues in autoregressive mel-spectrogram modeling, such as prolonged silence generation and word omissions.",
+      "authors": [
+        "Sung-Lin Yeh",
+        "Wei Zhou",
+        "Gil Keren",
+        "Duc Le",
+        "Zhong Meng",
+        "Hao Tang",
+        "Jay Mahadeokar",
+        "Ozlem Kalinli",
+        "Alexandre Mourachko"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.CL"
+      ],
+      "published": "2026-05-28T12:39:36+00:00",
+      "link": "https://arxiv.org/pdf/2605.29859v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "mel-spectrogram-based speech language model jointly optimizing encoder and LM for TTS and STT",
+      "llm_evidence_cn": "基于梅尔频谱的语音语言模型，联合优化编码器和语言模型实现文本到语音和语音到文本",
+      "llm_evidence": "基于梅尔频谱的语音语言模型，联合优化编码器和语言模型实现文本到语音和语音到文本",
+      "canonical_evidence": "基于梅尔频谱的语音语言模型，联合优化编码器和语言模型实现文本到语音和语音到文本",
+      "llm_tldr_en": "Proposes MELD, a discrete latent variable model on mel spectrograms that jointly optimizes encoder and autoregressive speech LM, improving zero-shot TTS and STT, mitigating silence and word omission issues.",
+      "llm_tldr_cn": "针对现有语音语言模型编码器与自回归模型独立优化导致表示不优的问题，提出MELD模型，在梅尔频谱上引入离散潜变量，联合训练编码器和语音语言模型。在零样本文本到语音和语音到文本任务上优于基于编解码器的基线，有效缓解了长时间静音和词遗漏等自回归建模常见问题。该工作为实现统一的语音生成与理解模型提供了新范式。",
+      "llm_tldr": "针对现有语音语言模型编码器与自回归模型独立优化导致表示不优的问题，提出MELD模型，在梅尔频谱上引入离散潜变量，联合训练编码器和语音语言模型。在零样本文本到语音和语音到文本任务上优于基于编解码器的基线，有效缓解了长时间静音和词遗漏等自回归建模常见问题。该工作为实现统一的语音生成与理解模型提供了新范式。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.22816v1",
+      "source": "arxiv",
+      "title": "AwareVLN: Reasoning with Self-awareness for Vision-Language Navigation",
+      "abstract": "Vision-and-Language Navigation (VLN) requires an agent to ground language instructions to its own movement within a visual environment. While state-of-the-art methods leverage the reasoning capabilities of Vision-Language Models (VLMs) for end-to-end action prediction, they often lack an explicit and explainable understanding of the relationships between the agent, the instruction, and the scene. Conversely, explicitly building a scene map for heuristic planning is intuitively appealing but relies on additional 3D sensors and hinders large-scale vision-language pre-training. To bridge this gap, we propose AwareVLN, a novel framework that equips the navigation model with a self-aware reasoning mechanism, enabling it to understand the agent's state and task progress in a fully end-to-end and data-driven manner. Our approach features two key innovations: (1) a structural reasoning module that fosters spatial and task-oriented self-awareness, and (2) an automatic data engine with progress division for effective training. Extensive experiments on various datasets in Habitat simulator show our AwareVLN significantly outperforms previous state-of-the-art vision-language navigation methods. Project page: https://gwxuan.github.io/AwareVLN/.",
+      "authors": [
+        "Wenxuan Guo",
+        "Xiuwei Xu",
+        "Yichen Liu",
+        "Xiangyu Li",
+        "Hang Yin",
+        "Huangxing Chen",
+        "Wenzhao Zheng",
+        "Jianjiang Feng",
+        "Jie Zhou",
+        "Jiwen Lu"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-05-21T17:58:26+00:00",
+      "link": "https://arxiv.org/pdf/2605.22816v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "self-aware reasoning for vision-language navigation",
+      "llm_evidence_cn": "用于视觉语言导航的自我感知推理",
+      "llm_evidence": "用于视觉语言导航的自我感知推理",
+      "canonical_evidence": "用于视觉语言导航的自我感知推理",
+      "llm_tldr_en": "AwareVLN introduces self-aware reasoning in vision-language navigation by equipping the model with explicit understanding of agent-state, instruction, and scene relationships.",
+      "llm_tldr_cn": "视觉语言导航（VLN）中，现有方法缺乏对智能体、指令和场景关系的显式可解释理解。本文提出AwareVLN，通过自我感知推理机制使模型理解自身状态并跟踪指令进度，结合场景图动态规划。在多个VLN基准上，AwareVLN显著提升了导航成功率，并提供了可解释的决策过程。",
+      "llm_tldr": "视觉语言导航（VLN）中，现有方法缺乏对智能体、指令和场景关系的显式可解释理解。本文提出AwareVLN，通过自我感知推理机制使模型理解自身状态并跟踪指令进度，结合场景图动态规划。在多个VLN基准上，AwareVLN显著提升了导航成功率，并提供了可解释的决策过程。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.24642v1",
+      "source": "arxiv",
+      "title": "Understanding the Impact of Geometric Foundation Models on Vision-Language-Action Models",
+      "abstract": "Recent work explores new opportunities at the intersection of vision-language-action models (VLAs) and geometric foundation models (GFMs) for 3D reconstruction, such as VGGT. While the resulting geometric VLAs often show improved performance, it remains unclear (i) if modern VLAs already have sufficient geometric understanding to start with, (ii) what is the best architecture to inject geometric understanding into a VLA, and (iii) what is the effect of other design choices that affect geometric VLAs. In this paper we provide a rigorous experimental analysis to shed light on these questions, for a specific choice of VLA (GR00T-N1.5) and GFM (VGGT). Our first contribution is to formalize prior work's intuition that current VLAs lack geometric understanding, by providing a rigorous analysis based on linear probing. The analysis quantifies, for the first time, the \"geometric gap\" between VLAs and GFMs. Our second contribution is to identify and compare different strategies to bridge GFMs with VLAs. We implement three different architectures, which differ in the way they inject geometry in the VLA, while keeping low-level implementation details as similar as possible, to ensure a fair comparison. Finally, we analyze the impact of non-architectural choices (e.g., training data, number of cameras, reconstruction quality) on the performance of the geometric VLAs.",
+      "authors": [
+        "Yurou Yang",
+        "Muyuan Lin",
+        "Roberto Martin-Martin",
+        "Martin Labrie",
+        "Shreekant Gayaka",
+        "Cheng-Hao Kuo",
+        "Luca Carlone"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published": "2026-05-23T16:18:41+00:00",
+      "link": "https://arxiv.org/pdf/2605.24642v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "analyzes impact of geometric foundation models on VLA performance",
+      "llm_evidence_cn": "分析几何基础模型对VLA性能的影响",
+      "llm_evidence": "分析几何基础模型对VLA性能的影响",
+      "canonical_evidence": "分析几何基础模型对VLA性能的影响",
+      "llm_tldr_en": "This paper provides a rigorous analysis of how geometric foundation models (VGGT) improve VLA (GR00T-N1.5) performance, identifying key architectural choices and limitations.",
+      "llm_tldr_cn": "VLA模型通常缺乏几何理解，几何基础模型（如VGGT）可增强其空间能力。本文通过系统实验分析VGGT对GR00T-N1.5 VLA的影响，揭示现有VLA已具备一定几何能力但不足，并探讨最佳注入架构，发现将几何特征作为额外输入可带来显著提升，为VLA模型设计提供重要指导。",
+      "llm_tldr": "VLA模型通常缺乏几何理解，几何基础模型（如VGGT）可增强其空间能力。本文通过系统实验分析VGGT对GR00T-N1.5 VLA的影响，揭示现有VLA已具备一定几何能力但不足，并探讨最佳注入架构，发现将几何特征作为额外输入可带来显著提升，为VLA模型设计提供重要指导。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.24622v1",
+      "source": "arxiv",
+      "title": "PoseRefer: Pathway-Local Parameters for Semantically Grounded Reference Resolution",
+      "abstract": "A robot resolving ``put the cup on that one'' must fuse gesture, language, and scene geometry, yet 3D grounding benchmarks only partially capture this regime: descriptions are written post-hoc, gestures are templated, or pointing is staged for the camera. MM-Conv captures natural co-speech gesture from dyadic VR interaction alongside full-body motion capture and 3D scene graphs. We use it to evaluate pose-language fusion with a decoupled late-fusion architecture in which pose and text pathways share no learned parameters. The two choices together make category, pose, and text contributions easier to isolate through controlled ablations. Fusion with frozen MiniLM category embeddings exceeds pose alone and the best text-only pathway on every reference type, reaching 31.9% top-1. The learned scalar gate flips between opposing policies depending on whether the text pathway has category access. This is a reliability diagnostic: fusion-accuracy claims for semantic grounding systems are indistinguishable from category-representation artifacts unless pathways are architecturally decoupled.",
+      "authors": [
+        "Anna Deichler"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-05-23T15:20:04+00:00",
+      "link": "https://arxiv.org/pdf/2605.24622v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Robot reference resolution fusing gesture, language, and scene geometry, relevant to VLA",
+      "llm_evidence_cn": "机器人引用解析融合手势、语言和场景几何，与VLA相关",
+      "llm_evidence": "机器人引用解析融合手势、语言和场景几何，与VLA相关",
+      "canonical_evidence": "机器人引用解析融合手势、语言和场景几何，与VLA相关",
+      "llm_tldr_en": "PoseRefer introduces MM-Conv dataset and a decoupled late-fusion architecture for pose-language fusion in semantically grounded reference resolution, improving robot understanding of multimodal commands.",
+      "llm_tldr_cn": "机器人解决自然语言引用（如“把杯子放在那个上面”）需要融合手势、语言和场景几何，现有基准未能捕捉真实交互。本文提出MM-Conv数据集，包含VR交互中的自然共语手势、全身运动捕捉和3D场景图。并设计解耦后期融合架构，将姿态和文本路径分离，通过受控消融实验表明迷你LM类别嵌入的融合在所有指标上超过纯姿态或纯文本基线。",
+      "llm_tldr": "机器人解决自然语言引用（如“把杯子放在那个上面”）需要融合手势、语言和场景几何，现有基准未能捕捉真实交互。本文提出MM-Conv数据集，包含VR交互中的自然共语手势、全身运动捕捉和3D场景图。并设计解耦后期融合架构，将姿态和文本路径分离，通过受控消融实验表明迷你LM类别嵌入的融合在所有指标上超过纯姿态或纯文本基线。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.23261v1",
+      "source": "arxiv",
+      "title": "UniSRM: A Unified Speech Reward Model for Reasoning-Based Fine-grained Assessment",
+      "abstract": "Evaluating speech generation still relies heavily on human judgments, such as Mean Opinion Score (MOS), which are expensive, subjective, and difficult to reproduce at scale. While a few recent studies have begun to explore AudioLLM-based judge models, existing efforts typically target only a narrow set of scenarios (e.g., utterance-level quality or single-turn dialogue) and provide limited coverage of diverse speech generation tasks and evaluation dimensions. In this work, we propose UniSRM, a unified speech reward model that can support multi-dimensional, interpretable reward signals with reliable reasoning. To support training and evaluation, we introduce UniSRM-Data and UniSRM-Bench, covering speech evaluation tasks from utterance-level quality to context-level coherence. Based on this dataset, we present the unified speech reward model, UniSRM, with a two-stage pipeline that enables reasoning-based fine-grained assessment. Furthermore, we introduce Reasoning-Consistent Rewards to improve the reliability of the reasoning process. Experiments show that UniSRM delivers more reliable and human-aligned judgments across a broad range of speech evaluation tasks, offering a practical foundation for scalable and unified evaluation of speech quality.",
+      "authors": [
+        "Yuanyuan Wang",
+        "Dongchao Yang",
+        "Yayue Deng",
+        "Zhiyong Wu",
+        "Yiwen Guo",
+        "Helen Meng",
+        "Xixin Wu"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.SD"
+      ],
+      "published": "2026-05-22T06:02:09+00:00",
+      "link": "https://arxiv.org/pdf/2605.23261v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "unified speech reward model for evaluating speech generation quality across multiple scenarios",
+      "llm_evidence_cn": "统一的语音奖励模型，用于跨多场景的语音生成质量评估",
+      "llm_evidence": "统一的语音奖励模型，用于跨多场景的语音生成质量评估",
+      "canonical_evidence": "统一的语音奖励模型，用于跨多场景的语音生成质量评估",
+      "llm_tldr_en": "Proposes UniSRM, a unified speech reward model that provides multi-dimensional, interpretable reward signals with reasoning, supporting diverse speech generation evaluation. Introduces UniSRM-Data and UniSRM-Bench for training and evaluation.",
+      "llm_tldr_cn": "针对语音生成评价依赖人工MOS评分成本高且主观性强的问题，提出UniSRM统一语音奖励模型，能够支持多维度、可解释的奖励信号并附带可靠推理。同时构建了涵盖从话语级质量到多轮对话等场景的评估数据和基准。该模型有望替代人工评估，推动语音生成研究的自动化评价。",
+      "llm_tldr": "针对语音生成评价依赖人工MOS评分成本高且主观性强的问题，提出UniSRM统一语音奖励模型，能够支持多维度、可解释的奖励信号并附带可靠推理。同时构建了涵盖从话语级质量到多轮对话等场景的评估数据和基准。该模型有望替代人工评估，推动语音生成研究的自动化评价。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech generation research",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.26978v1",
+      "source": "arxiv",
+      "title": "PashtoTTS-Bench: automated screening for low-resource non-Latin-script text-to-speech",
+      "abstract": "Text-to-speech (TTS) evaluation for low-resource non-Latin-script languages can fail when it relies on a single ASR round-trip word error rate (WER). A system may produce no audio, speak a neighbouring language, preserve target script text only in an ASR transcript, or sound unnatural to native listeners. We introduce INSV (Intelligibility, Naturalness, Script fidelity, and Verification), a reporting framework that separates these cases. This paper reports INSV-A, the automated screening subset: synthesis completion, ASR WER/CER, transcript Script Fidelity Rate, and audio language identification. Native MOS and phonetic annotation are specified but not claimed in this release. We instantiate INSV-A as PashtoTTS-Bench, a dated benchmark for Pashto TTS. The April-May 2026 run evaluates Edge GulNawaz, Edge Latifa, OmniVoice clone, OmniVoice auto, and an Urdu negative control on 200 FLEURS and 200 filtered Common Voice 24 prompts. Under the independent omniASR_CTC_300M_v2, OmniVoice auto has the lowest WER (24.1% FLEURS, 27.4% CV24), followed by Edge GulNawaz (32.8%, 39.5%), Edge Latifa (35.6%, 47.7%), and OmniVoice clone (45.4%, 34.8%). WER below the natural-speech baseline reflects clean synthetic audio and should not be read as better than native speech. Whisper Large V3 returns 0.0% Pashto labels on checked Pashto TTS audio, while MMS-LID-4017 and SpeechBrain VoxLingua107 separate Pashto outputs from the Urdu control. The release provides provider metadata, per-sentence scores, LID audits, failure logs, and scripts for adding systems.",
+      "authors": [
+        "Hanif Rahman"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.SD"
+      ],
+      "published": "2026-05-26T13:03:20+00:00",
+      "link": "https://arxiv.org/pdf/2605.26978v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "evaluation benchmark for TTS, includes naturalness and intelligibility",
+      "llm_evidence_cn": "文本到语音合成评估基准，涵盖自然度和可懂度",
+      "llm_evidence": "文本到语音合成评估基准，涵盖自然度和可懂度",
+      "canonical_evidence": "文本到语音合成评估基准，涵盖自然度和可懂度",
+      "llm_tldr_en": "Introduces INSV-A, an automated screening framework for low-resource TTS evaluation, applied to Pashto, focusing on synthesis completion, ASR WER/CER, script fidelity, and language ID.",
+      "llm_tldr_cn": "该论文针对低资源非拉丁字母文本到语音合成评估的缺陷，提出了INSV（可懂度、自然度、脚本保真度和验证）报告框架。本文发布了自动化筛查子集INSV-A，包括合成完成率、ASR词错误率/字符错误率、转录脚本保真率以及音频语言识别。以普什图语为实例构建了PashtoTTS-Bench基准，为低资源语音合成评估提供了更全面的自动筛查工具。",
+      "llm_tldr": "该论文针对低资源非拉丁字母文本到语音合成评估的缺陷，提出了INSV（可懂度、自然度、脚本保真度和验证）报告框架。本文发布了自动化筛查子集INSV-A，包括合成完成率、ASR词错误率/字符错误率、转录脚本保真率以及音频语言识别。以普什图语为实例构建了PashtoTTS-Bench基准，为低资源语音合成评估提供了更全面的自动筛查工具。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech generation research",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.26256v1",
+      "source": "arxiv",
+      "title": "Personalizing Embodied Multimodal Large Language Model Agents over Long-term User Interactions",
+      "abstract": "Multimodal large language model (MLLM)-based embodied agents have shown strong potential for solving complex tasks in physical environments. However, personalized assistance requires more than following generic instruction or recognizing object categories. In real-world scenarios, the intended target is often specified only implicitly through prior interactions, requiring agents to leverage personalized context accumulated over time. In this work, we propose POLAR, a multiomodal memory-augmented framework for personalized embodied agents over long-term user interactions. POLAR organizes prior interactions into a multimodal knowledge graph that captures semantic memory for personalized context and visual concepts, and episodic memory for embodied experiences such as agent trajectories. To execute embodied tasks, POLAR retrieves relevant memories to interpret the current request and guide task execution. We evaluate POLAR across multiple MLLM backbones and diverse evaluation scenarios to study the role of memory in long-term personalization. Results show that the proposed memory mechanism consistently improves performance by enabling more effective use of information accumulated over prior interactions. The gains are especially pronounced when the agents are required to reason across multiple interactions, perform multi-hop inference, or tracking updates in user-specific context over time.",
+      "authors": [
+        "Jeongeun Lee",
+        "Chanyoung Park",
+        "Dongha Lee"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-05-25T18:27:27+00:00",
+      "link": "https://arxiv.org/pdf/2605.26256v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Personalized embodied MLLM agent with multimodal memory, relevant to VLA",
+      "llm_evidence_cn": "个性化具身多模态LLM代理，与VLA相关",
+      "llm_evidence": "个性化具身多模态LLM代理，与VLA相关",
+      "canonical_evidence": "个性化具身多模态LLM代理，与VLA相关",
+      "llm_tldr_en": "POLAR augments embodied MLLM agents with a multimodal knowledge graph for long-term personalized context, enabling better task completion through accumulated user interactions.",
+      "llm_tldr_cn": "具身多模态大语言模型代理在物理环境中执行复杂任务时，需要利用长期用户交互中的个性化上下文。本文提出POLAR，一个多模态记忆增强框架，将先验交互组织为多模态知识图，捕获语义记忆和情景记忆。该框架使代理能够隐式理解用户意图，在长期用户交互场景中显著提升个性化任务完成率。",
+      "llm_tldr": "具身多模态大语言模型代理在物理环境中执行复杂任务时，需要利用长期用户交互中的个性化上下文。本文提出POLAR，一个多模态记忆增强框架，将先验交互组织为多模态知识图，捕获语义记忆和情景记忆。该框架使代理能够隐式理解用户意图，在长期用户交互场景中显著提升个性化任务完成率。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.23859v1",
+      "source": "arxiv",
+      "title": "Natural Yet Challenging to Detect: Robust In-the-Wild TTS through EMA and Dual-Scoring Prompt Selection -- Submission for WildSpoof 2026 TTS Track",
+      "abstract": "In this technical report, we describe our submission for the WildSpoof Challenge TTS Track: Text-to-Speech with In-the-Wild Data. We introduce F5-TTS-DPS, a model built upon the F5-TTS architecture. Our approach integrates Exponential Moving Average (EMA) into supervised fine-tuning to stabilize training and improve generalization. To enhance synthesis fidelity, we leverage large language models (LLMs) and large audio language models (LALMs) for dual-scoring prompt selection, filtering reference audio and text prompts to ensure quality while addressing alignment issues in noisy datasets.   Experimental evaluation demonstrates that F5-TTS-DPS achieves strong performance with UTMOS of 3.20 and speaker similarity of 0.51 on the development set. More importantly, our model achieves the best a-DCF scores of 0.1582, 0.5233, and 0.2562 across three advanced SASV systems among all submissions, indicating our synthesized speech is the most difficult to detect and exhibits the highest degree of naturalness and authenticity. Combined with competitive WER performance, these results validate the effectiveness of our approach in generating natural-sounding speech with strong spoofing capabilities.",
+      "authors": [
+        "Renhe Sun",
+        "Jiayi Zhou",
+        "Haolin He",
+        "Yueying Feng",
+        "Jian Liu"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS"
+      ],
+      "published": "2026-05-22T17:18:50+00:00",
+      "link": "https://arxiv.org/pdf/2605.23859v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Robust TTS system with EMA and dual-scoring prompt selection, advances expressive speech synthesis",
+      "llm_evidence_cn": "采用EMA和双评分提示选择的鲁棒TTS系统，推进表现力语音合成",
+      "llm_evidence": "采用EMA和双评分提示选择的鲁棒TTS系统，推进表现力语音合成",
+      "canonical_evidence": "采用EMA和双评分提示选择的鲁棒TTS系统，推进表现力语音合成",
+      "llm_tldr_en": "F5-TTS-DPS enhances text-to-speech robustness in noisy environments using EMA stabilization and LLM/LALM-based dual-scoring prompt selection, achieving strong performance on WildSpoof challenge.",
+      "llm_tldr_cn": "针对野外数据中文本到语音合成的挑战，提出F5-TTS-DPS模型。在F5-TTS架构基础上集成指数移动平均(EMA)进行监督微调以稳定训练并提升泛化能力。同时利用大语言模型和大型音频语言模型进行双评分提示选择，筛选参考音频和文本提示以解决噪声数据中的对齐问题。实验在WildSpoof挑战中取得优异性能。",
+      "llm_tldr": "针对野外数据中文本到语音合成的挑战，提出F5-TTS-DPS模型。在F5-TTS架构基础上集成指数移动平均(EMA)进行监督微调以稳定训练并提升泛化能力。同时利用大语言模型和大型音频语言模型进行双评分提示选择，筛选参考音频和文本提示以解决噪声数据中的对齐问题。实验在WildSpoof挑战中取得优异性能。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech synthesis",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.27190v1",
+      "source": "arxiv",
+      "title": "Learning When to Think While Listening in Large Audio-Language Models",
+      "abstract": "Recent advances in Large Audio-Language Models (LALMs) have made real-time, streaming spoken interaction increasingly practical. In this setting, reasoning quality and responsiveness are tightly coupled: delaying reasoning until the speech endpoint can improve answer quality but moves deliberation into user-visible response delay, while answering too early risks committing before decisive evidence arrives. We introduce a learnable wait-think-answer control formulation for LALMs. Motivated by the incremental nature of human conversation, the controller decides under partial audio evidence when to wait, when to externalize a compact reasoning update, and when to answer. Using Qwen2.5-Omni-7B as the base model, we construct aligned wait-think-answer traces from spoken reasoning data, train the controller with supervised fine-tuning (SFT), and then apply Decoupled Clip and Dynamic Sampling Policy Optimization (DAPO). The reward combines answer correctness, action validity, update timing, latency synchronization, reasoning quality, and chain consistency, optimizing the complete wait-think-answer trajectory and not the final answer alone. On a six-task synthetic spoken reasoning question answering (SRQA) benchmark, the six-reward DAPO controller improves the row-weighted accuracy from 67.6% to 70.3% while reducing post-endpoint final-think length by 14% under the same Qwen deployment harness. On a 186-item human-recorded Real Audio Bench, a transfer check beyond text-to-speech (TTS)-rendered speech, the controller family remains functional: SFT achieves the strongest accuracy, while the six-reward DAPO controller is the only learned variant whose final-think length falls below the base. These results suggest that a streaming model should learn when to make intermediate reasoning explicit during the audio stream.",
+      "authors": [
+        "Zhiyuan Song",
+        "Weici Zhao",
+        "Yang Xiao",
+        "Suhao Yu",
+        "Cheng Zhu",
+        "Jiatao Gu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.LG",
+        "cs.SD"
+      ],
+      "published": "2026-05-26T15:43:11+00:00",
+      "link": "https://arxiv.org/pdf/2605.27190v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "learnable control for when to think in large audio-language models for streaming interaction",
+      "llm_evidence_cn": "大型音频语言模型中可学习的思考时机控制，用于流式交互",
+      "llm_evidence": "大型音频语言模型中可学习的思考时机控制，用于流式交互",
+      "canonical_evidence": "大型音频语言模型中可学习的思考时机控制，用于流式交互",
+      "llm_tldr_en": "Proposes a learnable wait-think-answer controller for LALMs that decides under partial audio when to wait, reason, or answer, improving streaming spoken interaction.",
+      "llm_tldr_cn": "该论文针对大型音频语言模型在实时流式语音交互中推理质量与响应速度的权衡问题，提出了一种可学习的等待-思考-回答控制公式。控制器基于部分音频证据动态决定何时等待、何时输出紧凑推理更新以及何时给出最终答案。基于Qwen2.5-Omni-7B构建了对齐的等待-思考-回答轨迹，实现了更自然的流式对话交互。",
+      "llm_tldr": "该论文针对大型音频语言模型在实时流式语音交互中推理质量与响应速度的权衡问题，提出了一种可学习的等待-思考-回答控制公式。控制器基于部分音频证据动态决定何时等待、何时输出紧凑推理更新以及何时给出最终答案。基于Qwen2.5-Omni-7B构建了对齐的等待-思考-回答轨迹，实现了更自然的流式对话交互。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.27741v1",
+      "source": "arxiv",
+      "title": "Escape the Language Prior: Mitigating Late-Stage Modality Collapse in Audio Reasoning via Modality-Aware Policy Optimization",
+      "abstract": "Audio and omni-modal large language models exhibit impressive cross-modal reasoning capabilities. However, applying standard reinforcement learning post-training algorithms to these models exposes a critical structural vulnerability: methods like GRPO apply uniform policy gradients across all tokens, ignoring their unequal dependence on the non-text source modality. This exacerbates late-stage modality collapse during extended chain-of-thought generation, where models progressively abandon the primary source signal in favor of compressed textual priors, leading to confident but ungrounded hallucinations. To address this, we introduce Modality-Aware Policy Optimization (MAPO), a novel dual-branch reinforcement learning framework. First, MAPO dynamically concentrates the policy gradient on modality-critical tokens using a modality relevance mask, which is derived from the cross-modal differential entropy between an audio-ablated reference and the multimodal policy. Second, it integrates an auxiliary attention loss branch that applies a targeted, temporally scaled penalty to the model's internal attention distributions. This ensures the model actively sustains cross-modal grounding deep into the reasoning trace. Evaluations on complex audio reasoning benchmarks demonstrate that MAPO substantially improves long-horizon reasoning fidelity and multimodal instruction following, achieving highly competitive performance and setting new state-of-the-art results on several key benchmarks among open-weight models. By relying strictly on native statistical signals rather than domain-specific inductive biases, MAPO offers a promising foundation for mitigating epistemic collapse across diverse multimodal systems.",
+      "authors": [
+        "Cihan Xiao",
+        "Yiwen Shao",
+        "Chenxing Li",
+        "Xiang He",
+        "Zhenwen Liang",
+        "Steve Yves",
+        "Sanjeev Khudanpur",
+        "Liefeng Bo"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-05-26T22:34:03+00:00",
+      "link": "https://arxiv.org/pdf/2605.27741v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "audio reasoning with policy optimization to prevent modality collapse",
+      "llm_evidence_cn": "音频推理中防止模态崩溃的策略优化方法",
+      "llm_evidence": "音频推理中防止模态崩溃的策略优化方法",
+      "canonical_evidence": "音频推理中防止模态崩溃的策略优化方法",
+      "llm_tldr_en": "MAPO introduces Modality-Aware Policy Optimization, a dual-branch RL method that prevents late-stage modality collapse in audio reasoning models by applying token-level modality-aware gradients.",
+      "llm_tldr_cn": "音频大模型在推理时会出现后期模态崩溃，逐渐放弃音频信号转而依赖文本先验。MAPO提出模态感知策略优化，通过双分支强化学习对不同模态依赖性进行差异化梯度更新，有效缓解了模型在长链推理中的幻觉现象，提升了音频推理任务的准确性和可靠性，为统一语音理解与生成提供了更鲁棒推理机制。",
+      "llm_tldr": "音频大模型在推理时会出现后期模态崩溃，逐渐放弃音频信号转而依赖文本先验。MAPO提出模态感知策略优化，通过双分支强化学习对不同模态依赖性进行差异化梯度更新，有效缓解了模型在长链推理中的幻觉现象，提升了音频推理任务的准确性和可靠性，为统一语音理解与生成提供了更鲁棒推理机制。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.24337v1",
+      "source": "arxiv",
+      "title": "Me, Myself, and My Voice: Exploring Cultural and Linguistic Identity in AAC AI-generated Voices",
+      "abstract": "Voice is a central element of identity. We recognize people by their voice, and we uniquely express who we are with it. For people who rely on augmentative and alternative communication~(AAC) systems, such as speech-generating devices~(SGD), the device's voice becomes an identity marker others associate with them. Yet, it is hard to find a voice that truly aligns with one's identity both linguistically and culturally. Although modern AI-generated voices can reproduce diverse accents and speaking styles, AAC users still lack accessible ways to articulate how they want an identity-aligned voice to sound like. We first conducted a survey of AAC users (across eight countries) to characterize current voice representation, finding that non-binary, transgender, and non-US-born respondents rated their current voice support identity alignment consistently lower than other respondents. To examine how AAC users respond to voices designed to reflect their cultural identity, we built a tool that elicits cultural markers through guided questions and generates personalized voice candidates for participants to hear and reflect on. After participants heard the voices, we interviewed them to examine what it means for a voice to feel culturally representative, how they interpreted voices with cultural connotations, and how these voices shaped their sense of identity and agency. Our findings show that cultural voice alignment runs deeper than accent or language alone; it touches on belonging, self-recognition, and what it means to be heard as who you are.",
+      "authors": [
+        "Tobias Weinberg",
+        "Aaleyah Lewis",
+        "Ricardo E. Gonzalez Penuela",
+        "Weicong Hong",
+        "Jennifer Mankoff",
+        "Thijs Roumen"
+      ],
+      "primary_category": "cs.HC",
+      "categories": [
+        "cs.HC"
+      ],
+      "published": "2026-05-23T01:46:00+00:00",
+      "link": "https://arxiv.org/pdf/2605.24337v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "expressive voice generation for AAC users",
+      "llm_evidence_cn": "面向辅助沟通用户的表达性语音生成",
+      "llm_evidence": "面向辅助沟通用户的表达性语音生成",
+      "canonical_evidence": "面向辅助沟通用户的表达性语音生成",
+      "llm_tldr_en": "Explores cultural and linguistic identity in AI-generated voices for AAC devices, revealing user needs for identity-aligned expressive speech.",
+      "llm_tldr_cn": "本文通过多国调查揭示辅助沟通用户对AI生成语音的身份认同需求，发现现有语音难以体现文化和语言多样性。用户期望语音能表达个人身份特征，如口音和说话风格。研究为开发更具表现力、身份对齐的语音合成系统提供了需求指南。",
+      "llm_tldr": "本文通过多国调查揭示辅助沟通用户对AI生成语音的身份认同需求，发现现有语音难以体现文化和语言多样性。用户期望语音能表达个人身份特征，如口音和说话风格。研究为开发更具表现力、身份对齐的语音合成系统提供了需求指南。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech generation research",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.27976v1",
+      "source": "arxiv",
+      "title": "VoiceGiraffe: A Benchmark for Extreme Long-Context Audio-Language Understanding",
+      "abstract": "While large audio language models (LALMs) have achieved remarkable progress in audio processing at the second- or minute-level scale, understanding hour-level audio remains a fundamental bottleneck. Existing benchmarks predominantly rely on short clips or artificially concatenated segments, failing to faithfully assess LALM capacity for long-range information comprehension in real-world scenarios such as podcasts and lengthy speeches. To address this gap, we introduce VoiceGiraffe, a novel benchmark designed to rigorously evaluate LALMs across diverse real-world scenarios, modalities, and languages under long-context settings. It comprises 1500 curated triplets structured into a dual-level taxonomy of single-hop perception and multi-hop reasoning. We evaluate a broad suite of open-source and proprietary LALMs against human performance. Results underscore three fundamental findings. First, VoiceGiraffe remains highly challenging and far from saturation. Second, we show that no single inference paradigm universally dominates. The E2E inference benefits models with native long-context audio understanding, cascaded caption aggregation stabilizes small models overwhelmed by hour-scale audio, and reasoning-enhanced cascading with external LLM helps weaker models but can bottleneck stronger proprietary systems. Third, we reveal long-range memory persistence as a key bottleneck. LALMs are better at answering questions that require connecting salient causal cues than those requiring sustained tracking of sparse events across long audio, whereas humans show the opposite pattern. These findings position VoiceGiraffe as a challenging and diagnostic testbed for long-form audio understanding, highlighting the need for LALMs with persistent memory and robust long-range aggregation.",
+      "authors": [
+        "Jashin Ye",
+        "Dongxiao Wang",
+        "Yixuan Ye",
+        "Sashuai Zhou",
+        "Weihuang Lin",
+        "Mingyang Han",
+        "Kunpeng Wang",
+        "Zeyu Yuan",
+        "Boyu Li",
+        "Haoxiang Shi",
+        "Jingchen Shu",
+        "Jun Song",
+        "Bo Zheng"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD"
+      ],
+      "published": "2026-05-27T05:15:14+00:00",
+      "link": "https://arxiv.org/pdf/2605.27976v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "benchmark for long-context audio-language understanding",
+      "llm_evidence_cn": "长上下文音频语言理解基准",
+      "llm_evidence": "长上下文音频语言理解基准",
+      "canonical_evidence": "长上下文音频语言理解基准",
+      "llm_tldr_en": "VoiceGiraffe is a benchmark for extreme long-context audio-language understanding, evaluating LALMs on hour-level scenarios like podcasts and speeches with 1500 curated triplets across single-hop and multi-hop reasoning.",
+      "llm_tldr_cn": "VoiceGiraffe提出了一个极端长上下文音频语言理解基准，包含1500个精心设计的三元组，覆盖真实世界的播客、长演讲等场景。它通过单跳感知和多跳推理的双层分类法评估大型音频语言模型，弥补了现有基准仅依赖短片段或人工拼接的不足，对语音理解与生成统一模型的发展具有重要推动作用。",
+      "llm_tldr": "VoiceGiraffe提出了一个极端长上下文音频语言理解基准，包含1500个精心设计的三元组，覆盖真实世界的播客、长演讲等场景。它通过单跳感知和多跳推理的双层分类法评估大型音频语言模型，弥补了现有基准仅依赖短片段或人工拼接的不足，对语音理解与生成统一模型的发展具有重要推动作用。",
+      "llm_tags": [
+        "query:speech-model:composite"
+      ],
+      "matched_query_tag": "query:speech-model:composite",
+      "matched_query_text": "Papers central to 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文, especially work that connects or combines: voice translation; speech translation; expressive speech synthesis; unified speech generation and understanding; speech to speech translation; speech to speech translation papers; expressive speech generation research; unified speech generation and understanding models.",
+      "matched_requirement_id": "req-composite-speech-model",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.28139v1",
+      "source": "arxiv",
+      "title": "Data-Efficient On-Policy Distillation for Automatic Speech Recognition",
+      "abstract": "Building competitive automatic speech recognition (ASR) models usually requires large-scale au- dio supervision, which makes reproduction and specialization expensive. We study Ark-ASR, a 0.6B- parameter audio-conditioned language model trained with 100k hours of speech, and examine whether a strong Qwen-ASR teacher can transfer additional recognition capability through on-policy distillation. Across Mandarin and English ASR benchmarks, the proposed training recipe consistently improves over supervised fine-tuning alone and outperforms the same-scale Qwen3-ASR-0.6B baseline on four of five evaluation sets. This is achieved with only 100k hours of speech, compared with the 20M hours of super- vised audio reported for the Qwen3-Omni AuT encoder. The larger Qwen3-ASR-1.7B remains stronger, but the results show that teacher-guided on-policy training can substantially close the gap for compact ASR models under a much smaller audio budget. A support-overlap diagnostic further suggests that the teacher-data stage improves local student-teacher compatibility, matching recent analyses of when on-policy distillation is effective.",
+      "authors": [
+        "Yu Lin",
+        "Yiming Wang",
+        "Runyuan Cai",
+        "Xiaodong Zeng"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-05-27T08:22:47+00:00",
+      "link": "https://arxiv.org/pdf/2605.28139v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "data-efficient distillation for ASR, supports speech translation",
+      "llm_evidence_cn": "数据高效的ASR蒸馏，可用于语音翻译前端",
+      "llm_evidence": "数据高效的ASR蒸馏，可用于语音翻译前端",
+      "canonical_evidence": "数据高效的ASR蒸馏，可用于语音翻译前端",
+      "llm_tldr_en": "Proposes on-policy distillation to improve ASR performance with limited data, achieving competitive results on Mandarin and English benchmarks.",
+      "llm_tldr_cn": "大规模ASR模型训练成本高昂。本文提出在线策略蒸馏方法，利用强教师模型将识别能力迁移至学生模型，仅需10万小时语音数据即可达到甚至超越同规模基线。在中文和英文基准上验证了方法的有效性，为语音翻译等下游任务提供了高效的语音识别前端。",
+      "llm_tldr": "大规模ASR模型训练成本高昂。本文提出在线策略蒸馏方法，利用强教师模型将识别能力迁移至学生模型，仅需10万小时语音数据即可达到甚至超越同规模基线。在中文和英文基准上验证了方法的有效性，为语音翻译等下游任务提供了高效的语音识别前端。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
