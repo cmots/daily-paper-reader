@@ -1,0 +1,87 @@
+{
+  "version": 2,
+  "extractor": "papercropper",
+  "tables": [
+    {
+      "url": "assets/tables/openreview/openreview-neurips-2025-4iehxi36qg/table-001.webp",
+      "caption": "",
+      "page": 0,
+      "index": 1,
+      "width": 1450,
+      "height": 440,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/openreview/openreview-neurips-2025-4iehxi36qg/table-002.webp",
+      "caption": "",
+      "page": 0,
+      "index": 2,
+      "width": 1443,
+      "height": 345,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/openreview/openreview-neurips-2025-4iehxi36qg/table-003.webp",
+      "caption": "",
+      "page": 0,
+      "index": 3,
+      "width": 1181,
+      "height": 668,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/openreview/openreview-neurips-2025-4iehxi36qg/table-004.webp",
+      "caption": "",
+      "page": 0,
+      "index": 4,
+      "width": 1445,
+      "height": 215,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/openreview/openreview-neurips-2025-4iehxi36qg/table-005.webp",
+      "caption": "",
+      "page": 0,
+      "index": 5,
+      "width": 1443,
+      "height": 395,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/openreview/openreview-neurips-2025-4iehxi36qg/table-006.webp",
+      "caption": "",
+      "page": 0,
+      "index": 6,
+      "width": 1035,
+      "height": 328,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/openreview/openreview-neurips-2025-4iehxi36qg/table-007.webp",
+      "caption": "",
+      "page": 0,
+      "index": 7,
+      "width": 1449,
+      "height": 291,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/openreview/openreview-neurips-2025-4iehxi36qg/table-008.webp",
+      "caption": "",
+      "page": 0,
+      "index": 8,
+      "width": 1448,
+      "height": 176,
+      "label": "Table"
+    },
+    {
+      "url": "assets/tables/openreview/openreview-neurips-2025-4iehxi36qg/table-009.webp",
+      "caption": "",
+      "page": 0,
+      "index": 9,
+      "width": 1475,
+      "height": 428,
+      "label": "Table"
+    }
+  ]
+}

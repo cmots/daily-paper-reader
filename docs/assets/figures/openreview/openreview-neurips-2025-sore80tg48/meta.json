@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "extractor": "papercropper",
+  "figures": [
+    {
+      "url": "assets/figures/openreview/openreview-neurips-2025-sore80tg48/fig-001.webp",
+      "caption": "",
+      "page": 0,
+      "index": 1,
+      "width": 1421,
+      "height": 466,
+      "label": "Figure"
+    },
+    {
+      "url": "assets/figures/openreview/openreview-neurips-2025-sore80tg48/fig-002.webp",
+      "caption": "",
+      "page": 0,
+      "index": 2,
+      "width": 641,
+      "height": 1012,
+      "label": "Figure"
+    }
+  ]
+}

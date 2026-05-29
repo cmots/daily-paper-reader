@@ -1,0 +1,1680 @@
+Title: 19513_Hear_you_are_Teaching_LL.pdf
+
+URL Source: https://openreview.net/pdf?id=b6s1jIHj6o
+
+Number of Pages: 19
+
+Markdown Content:
+# Hear you are: Teaching LLMs Spatial Reasoning with Vision and Spatial Sound 
+
+Anonymous Author(s) 
+
+Affiliation Address 
+
+email I have a  
+
+> question!
+> Hmm, someone
+> over there asked
+> a question...
+> Where's my phone?
+> Could you call it for me? Ah,
+> it's in my bag!
+
+Figure 1: Audio-Visual Spatial Reasoning. (Left) A phone rings out of sight inside a bag; although the sound’s semantic cue (“ring tone”) is present, spatial reasoning is required to locate the true source among visually silent objects. (Right) In a classroom, several students share the same semantic cue (“speech”), so the teacher must rely on spatial audio to identify which student asked the question. These examples illustrate that accurate audio-visual understanding demands not only semantic alignment but also spatial comprehension. 
+
+## Abstract 
+
+Many audio-visual learning methods have focused on aligning audio and visual 1
+
+information, either through semantic or temporal correspondence. However, most 2
+
+of these works have utilized monaural audio, which does not contain information 3
+
+about the spatial location of the sound source. In contrast, humans and other 4
+
+animals utilize binaural hearing to perceive this spatial information. Combining 5
+
+spatial sound and visual perception enables powerful high-level reasoning: for 6
+
+example, a person looking for their phone may hear the ringing sound coming 7
+
+from a backpack sitting on a table, and quickly infer that the missing phone is 8
+
+inside the backpack. In this paper, we investigate the problem of Audio-Visual 9
+
+Spatial Reasoning . We design a spatial audio-visual question answering dataset to 10 
+
+cover scenarios where semantic correspondence between audio and visual signals 11 
+
+is absent but spatial alignment exists, as well as cases with multiple audio-visual 12 
+
+semantic correspondences that require spatial reasoning to disambiguate. We 13 
+
+propose a model that learns spatial comprehension across the audio and vision 14 
+
+modalities by connecting them with a large language model and experimentally 15 
+
+demonstrate that spatial sound perception is an essential part of our task. 16 17 
+
+Submitted to 39th Conference on Neural Information Processing Systems (NeurIPS 2025). Do not distribute. 1 Introduction 18 
+
+We live in a world full of sights and sounds, naturally associating what we hear with what we see. 19 
+
+Several cues help us connect the two, such as the visual appearance and audible characteristics of 20 
+
+an object, the synchronization between an action or event and its corresponding sound, and the 21 
+
+direction from which the sound arrives, through binaural hearing. We rely on these audio-visual cues 22 
+
+to locate a missing mobile device, or to know when an emergency vehicle is approaching as we are 23 
+
+driving. This natural ability to connect auditory and visual information has motivated advancements 24 
+
+in audio-visual machine learning, such as sound source localization (object detection based on audio 25 
+
+queries) [ 7 , 21 , 33 , 27 , 30 , 23 , 29 ], source separation [ 3, 14 , 16 , 48 , 46 , 15 , 45 ], and audio-visual 26 
+
+synchronization [ 12 , 6, 32 ]. However, most of these studies, which commonly use monaural audio, 27 
+
+focus on the semantic correspondence between a sound and the visual appearance of the object that 28 
+
+made the sound, or the audio-visual temporal alignment between an event and the sound it creates. 29 
+
+These past approaches often overlook spatial cues that provide information about where a sound is 30 
+
+coming from. 31 
+
+Binaural audio becomes essential when semantic matching is ambiguous or misleading. Figure 1 32 
+
+illustrates two scenarios where spatial reasoning is necessary. For instance, understanding that 33 
+
+a ringtone sound is emanating from a backpack requires spatial reasoning, as the backpack does 34 
+
+not semantically match the sound. Another example is when a single sound (e.g., speech) could 35 
+
+correspond to multiple visual objects (e.g., several students in a classroom), where spatial cues 36 
+
+help pinpoint the actual source. These examples highlight the limitations of previous methods, 37 
+
+emphasizing the need to address spatial reasoning beyond basic perception. 38 
+
+Previous studies in spatial audio reasoning have primarily focused on audio-only approaches, exclud-39 
+
+ing visual information while incorporating language as a modality for spatial interpretation. [13 ]40 
+
+aligns audio and text embeddings for spatial tasks, while [ 52 ] leverages large language models for 41 
+
+spatial audio question answering. While spatial audio itself provides rich information for spatial 42 
+
+reasoning, integrating visual information into these tasks is a natural extension, as visual signals 43 
+
+inherently convey spatial context. This combination not only enhances spatial perception and local-44 
+
+ization capabilities, but also enables more sophisticated spatial reasoning, such as handling scenarios 45 
+
+involving sounding sources and nearby visual objects. 46 
+
+In this paper, we address the problem of Audio-Visual Spatial Reasoning , which involves under-47 
+
+standing the spatial relationship between a sound and the visual context. This task goes beyond 48 
+
+simply perceiving and localizing a sound source, as it requires reasoning about spatial cues to infer 49 
+
+relationships and interactions between objects. To support research on this problem, we construct 50 
+
+a large-scale dataset of 1 million question-answer pairs, specifically designed to serve as both 51 
+
+the training and evaluation set for spatial audio-visual reasoning in diverse scenarios. The vision 52 
+
+and spatial audio is rendered using SoundSpaces 2.0 [ 4 ], with source audio clips sampled from 53 
+
+VGGSound[ 8]. 3D objects associated with these sounds are generated using Stable Diffusion 3[ 35 ]54 
+
+and InstantMesh [ 49 ], and then are placed within the virtual environments. This dataset serves as 55 
+
+a comprehensive benchmark for spatially intricate settings, providing questions that assess spatial 56 
+
+alignment between modalities, relative locations between sounding and non-sounding objects, and 57 
+
+localization of sound sources among multiple visual objects of the same category as the query audio. 58 
+
+Furthermore, we propose a multi-modal framework, Hear You Are LLM, which leverages spatial 59 
+
+audio and visual encoders to integrate spatial information. The model is trained to handle all the 60 
+
+spatial reasoning tasks from our dataset, enabling it to address scenarios where semantic alignment 61 
+
+alone is insufficient. We experimentally demonstrate that our proposed method effectively addresses 62 
+
+the audio-visual spatial reasoning problem, outperforming existing baseline models including a 63 
+
+state-of-the-art monaural sound source localization method [ 39 , 40 ] and a large language model-64 
+
+based audio-visual model that lacks spatial understanding. These results highlight the importance of 65 
+
+incorporating spatial audio-visual knowledge to achieve robust multi-modal reasoning. To summarize, 66 
+
+our main contributions are as follows: 67 
+
+• We define a new task, audio-visual spatial reasoning, focusing on understanding spatial relationships 68 
+
+between sound and visual context, going beyond basic semantic perception such as sound source 69 
+
+localization (object detection based on audio queries) and audio-visual segmentation. 70 
+
+• We propose Hear You Are LLM , a multi-modal modeling framework that integrates spatial audio 71 
+
+and visual encoders with a large language model to handle complex spatial reasoning tasks. 72 
+
+2• We construct Hear You Are QA , the first large-scale dataset specifically designed for audio-visual 73 
+
+spatial reasoning, consisting of 1 million question-answer pairs across diverse spatial scenarios for 74 
+
+training and evaluation. We will open source both the dataset and the training code. 75 
+
+## 2 Related Work 76 
+
+2.1 Audio-Visual Sound Source Localization 77 
+
+Audio-visual sound source localization is the task of detecting the object or area that corresponds to the 78 
+
+query audio in the visual scene. Following the development of deep learning, Senocak et al. [ 37 , 38 ]79 
+
+suggested a semantic alignment-based approach by proposing a cross-modal attention mechanism 80 
+
+with contrastive learning. The field has advanced in the direction of better cross-modal alignment by 81 
+
+leveraging negative-free self-supervised learning [ 42 ], intra-modality similarity learning [ 43 ], and the 82 
+
+use of multiple positive learning [ 39 ], aligning with representation learning methods. However, these 83 
+
+methods rely on monaural audio and are limited to audio-visual semantic correspondence without 84 
+
+spatial understanding. 85 
+
+Different approaches have focused more on spatial audio for sound source localization. Anoopcherian 86 
+
+et al. [ 20 ] proposed a 3D sound source localization method trained on a dataset with four-channel 87 
+
+audio and multi-view visual scenes synthesized using SoundSpaces 2.0. Their approach localizes 88 
+
+sound within the visual scene, but the visual counterpart of the sound is not visible in their setting, 89 
+
+as they only localize the area of the sound source. Shimada et al. [ 41 ] constructed an audio-visual 90 
+
+sound source localization and detection dataset in which audio-visual alignment is guaranteed. In 91 
+
+their framework, the visual signal serves as an auxiliary modality to improve sound localization and 92 
+
+detection. In contrast, we present an audio-visual scene that includes both sound-producing and silent 93 
+
+objects, allowing the model to learn a broader range of spatial reasoning tasks that require contextual 94 
+
+understanding beyond basic localization. 95 
+
+2.2 Spatial Audio Reasoning 96 
+
+Following recent advancements in audio understanding [ 18 , 1 , 24 ] and reasoning [ 19 , 36 ], several 97 
+
+approaches have been proposed to address spatial audio reasoning. [ 52 ] synthesize the spatial sound 98 
+
+question answering dataset with the SoundSpaces 2.0 simulator and train a spatial audio encoder and 99 
+
+a large language model for spatial audio understanding and reasoning. This framework handles tasks 100 
+
+such as sound event detection, direction and distance estimation, and spatial reasoning, for example, 101 
+
+“What is the sound on the left side of the sound of the dog barking?” Another line of research explores 102 
+
+spatial audio reasoning through contrastive language-audio pretraining, with synthetic first-order 103 
+
+ambisonics [ 13 ]. However, these approaches do not incorporate the vision modality, which opens 104 
+
+another dimension for reasoning. 105 
+
+2.3 Audio-Visual LLMs 106 
+
+Inspired by the advancements of Large Language Models (LLMs), recent studies have extended these 107 
+
+models to Multimodal Large Language Models (MLLMs) to tackle a wider range of multimodal 108 
+
+tasks. In the audio-visual domain, GroundingGPT [ 26 ] introduces multimodal grounding for audio, 109 
+
+image, and video data using LLMs. Meerkat [ 10 ] aligns audio-visual features using optimal transport 110 
+
+and attention consistency, and CAT [ 51 ] aggregates question-related clues in audio-visual scenarios. 111 
+
+From a benchmarking standpoint, AVHBench, AVTRUSTBENCH, and AV-Odyssey Bench [ 11 ,112 
+
+44 , 17 ] provide comprehensive benchmarks targeting hallucination detection [ 44 ], reliability and 113 
+
+robustness [ 11 ], and both foundational capabilities and high-level reasoning [ 17 ]. While recent 114 
+
+studies have advanced multimodal learning, they primarily rely on monaural audio, limiting their 115 
+
+ability to handle spatial reasoning. As spatial reasoning enables a broader range of tasks and more 116 
+
+closely reflects real-world scenarios, it must be addressed to achieve comprehensive audio-visual 117 
+
+understanding. We propose a new dataset and model specifically designed for spatial reasoning in 118 
+
+audio-visual tasks. 119 
+
+## 3 Creation of Hear You Are QA Dataset 120 
+
+Our goal is to train a model to learn both semantic and spatial reasoning, for audio-visual inputs. To 121 
+
+this end, we introduce the Hear You Are QA Dataset. Constructing large-scale audio-visual scene data 122 
+
+3Figure 2: Image sample from Hear You Are QA dataset. The dataset consists of diverse indoor scenes captured in 360° panoramic views, featuring various object arrangements and providing a comprehensive range of spatial contexts for analysis. Table 1: Spatial audio visual question types and base prompts/answers                               
+
+> Q1. Spatial Correspondence Q: What is the sound class category? Where is the sound coming from? A: phone ringing; cupboard
+> Q2-4. Relative Location (Distance) Q: Is the sound source of the siren closer to the agent than it is to the cat? A: Yes
+> (Direction) Q: Can you estimate the distance from the accordion sound to the dog, and the relative location of the accordion from the dog?
+> A: right; behind; upper; 2.3 m
+> (Angle) Q: Can you estimate the distance from the accordion sound to the dog, and the angle between the agent’s gaze directions toward the accordion and the dog? A: 30; 10; 2.3 m
+> Q5. Spatial & Semantic Correspondence (One visual object semantically matches the audio) Q: What is the object in the scene located at ( −30 ,−12 ), 2.549 m? Is it making a sound?
+> A: bird squawking; making sound
+> Q6. Spatial & Semantic Correspondence (Multiple visual objects semantically match the audio) Q: What is the object in the scene located at (150, −14 ), 1.735 m? Is it making a sound?
+> A: canary calling; making sound
+> Q7. Spatial & Semantic Correspondence (One visual object semantically matches the audio) Q: Given multiple visual objects, which one is making a sound, and where is it located?
+> A: bird squawking; −30 ;−12 ; 2.549 m
+> Q8. Spatial & Semantic Correspondence (Multiple visual objects semantically match the audio) Q: Could you determine the sound class category, and which object of that category in the scene is making the sound?
+> A: canary calling; 150; −14 ; 1.735 m
+> Q9. Semantic Co-occurrence Q: What is the sound class category? Is the sound source visible in the scene? A: cat; not visible
+> Q: What is the sound class category? Is the sound source visible in the scene? A: fox; visible
+
+with real-world spatial audio is time-consuming and challenging, requiring specialized equipment 123 
+
+such as ambisonic or dummy head microphones. To efficiently build a diverse dataset with various 124 
+
+objects and sound events, we adopt a simulation-based approach to generate both the scenes and 125 
+
+spatial audio. 126 
+
+Spatial Audio Simulator. We employ the SoundSpaces 2.0 simulator [ 4], which renders geometry-127 
+
+based acoustics, adding realistic reverberation for any source–receiver pair. Users can freely vary 128 
+
+wall materials, object properties, and microphone-array geometry, letting us create a rich, controllable 129 
+
+dataset while retaining exact ground-truth parameters, e.g., every source’s 3D position and orientation. 130 
+
+Scene meshes come from Matterport3D [ 2 ], a collection of 90 fully scanned buildings averaging 131 
+
+24.5 rooms across 2.61 floors and 517.34 m² of floor space. We use 72 scenes for training, 9 for 132 
+
+validation and 9 for testing. Given a source location, monaural signal, receiver position, and heading, 133 
+
+the observed signal is obtained by convolving the monaural signal with the environment’s room 134 
+
+impulse response. We configure the receiver to record a binaural audio signal with the default Head 135 
+
+Related Transfer Function (HRTF) provided by SoundSpaces2.0. 136 
+
+Sound Sources. Previous spatial audio datasets include either a limited number of class cate-137 
+
+gories [ 41 ] or classes that are not guaranteed to be visually observable [ 52 , 20 ]. To construct a 138 
+
+large-scale audio-visual dataset, we adopt VGGSound [ 8], which contains 200,000 in-the-wild 10-139 
+
+second YouTube clips, each annotated with one of 309 audio event classes. However, some of these 140 
+
+classes correspond to events that typically occur outdoors or are difficult to associate with a single 141 
+
+visual object (e.g., “Airplane Flyby”, “People Marching”). To enhance the visual reliability and 142 
+
+realism of our dataset, we manually exclude categories typically occur outdoors, or are visually 143 
+
+4ambiguous. We follow the original testing splits provided by VGGSound, and create a validation set 144 
+
+of the same size as the testing set by sampling clips from the VGGSound training split. 145 
+
+Visual Objects. Due to the limited number of sound-emitting categories in existing 3D object 146 
+
+datasets, we generate our own 3D objects to be placed within the Matterport3D environments, either 147 
+
+as sounding objects or as distractor objects. Specifically, we first select 150 class categories from 148 
+
+VGGSound and 40 from ImageNet, and generate 2D images for each category using Stable Diffusion 149 
+
+3. After manually filtering out low-quality or unrealistic generations, we select 40 visually plausible 150 
+
+images per category. These 2D images are then lifted into 3D object meshes using the method 151 
+
+from [ 49 ]. For each sounding object category, we reserve 32 images for training, 4 for validation and 152 
+
+4 for testing. 153 
+
+Audio-Visual Scene Construction. Each audio-visual scene consists of a 360 ◦ panoramic image as 154 
+
+Figure 2 and corresponding binaural audio. We stitch 18 images, each with a horizontal FoV of 20 155 
+
+degrees as in [ 5], to form a 360 ◦ view. The final image resolution is set to 224×812, and the center of 156 
+
+the image is aligned with the front-facing direction of the observing agent in SoundSpaces 2.0. 157 
+
+We inject the aforementioned sound source and 3D objects into random locations within the scene, 158 
+
+excluding placements where objects are occluded by walls or located in a different room. Each scene 159 
+
+includes one sound source. The sound source, depending on the question scenario, is assigned to 160 
+
+either a semantically matching object from a VGGSound category, a random object from a different 161 
+
+category (VGGSound or ImageNet), or a random empty location within the scene. 162 
+
+One potential concern is that rendering artifacts, such as visible seams between injected objects and 163 
+
+the original scene, could serve as shortcuts for the model. To mitigate this and increase the visual 164 
+
+complexity of the scene, we randomly insert up to three random objects sampled from categories 165 
+
+distinct from the main visual objects in the scene. 166 
+
+Crafting Questions. We manually defined nine different “base” questions that require spatial 167 
+
+audio-visual understanding, summarized in Table 1. When filling a question template, we use 168 
+
+handcrafted rules to automatically populate the missing fields in the question and answer using the 169 
+
+scene construction parameters. The questions cover four main categories: spatial correspondence 170 
+
+(Q1), relative location (Q2, Q3, Q4), spatial and semantic correspondence (Q5, Q6, Q7, Q8), and 171 
+
+semantic co-occurrence (Q9). Spatial Correspondence questions aim to evaluate whether the model 172 
+
+can correctly associate an audio signal with its spatially aligned visual source. To assess the model’s 173 
+
+robustness, we include counterfactual examples in which semantically mismatched visual objects 174 
+
+and sounds (e.g., a piano and dog barking) are placed at the same location. This setting discourages 175 
+
+reliance on semantic priors and encourages the model to learn true spatial correspondence between 176 
+
+audio and visual modalities without hallucination. Relative Location questions assess the model’s 177 
+
+ability to understand the spatial relationship between audio and visual information. These include 178 
+
+determining whether a sound source is located to the left, right, front, or behind the agent, as well as 179 
+
+reasoning about vertical position (e.g., above or below), angular direction, and relative distance with 180 
+
+respect to a visual reference. Spatial and Semantic Correspondence questions evaluate whether 181 
+
+the model can jointly associate the correct object class (semantic) and its location (spatial) based on 182 
+
+the audio signal. Semantic Co-occurrence questions focus on learning spatial audio understanding 183 
+
+regardless of whether the corresponding visual object is explicitly visible, encouraging the model not 184 
+
+to solely rely on an object’s appearance. To diversify the question set and improve naturalness, we 185 
+
+utilize ChatGPT-4o to paraphrase and expand each base question into multiple human-like variations. 186 
+
+## 4 Method 187 
+
+Our aim is to construct a model that can answer the questions in our proposed dataset by leveraging 188 
+
+both visual and spatial audio inputs. To this end, we design and train a multi-modal large language 189 
+
+model with both visual and binaural audio inputs. The overall architecture is illustrated in Figure 3. 190 
+
+Audio and Visual Encoders with Projector. Given an image v and its corresponding audio a, our 191 
+
+backbone networks extract features from each modality. The vision encoder fv processes a panoramic 192 
+
+image frame and outputs a sequence of spatially aligned visual tokens, v ∈ RNv ×Cv , where Nv is 193 
+
+the number of visual tokens and Cv is the feature dimension of each token. We preserve the full 194 
+
+spatial layout of patch tokens without pooling. The audio encoder fa takes the input spectrogram 195 
+
+of a and produces a set of audio tokens, a ∈ RNa×Ca , where Na is the number of audio tokens 196 
+
+and Ca is the corresponding feature dimension. Each modality-specific encoder is followed by a 197 
+
+5Visual  
+
+> Encoder
+> Audio
+> Encoder
+> Spatial
+> Audio
+> Image
+> Large Language Models
+> Visual
+> Projector
+> Audio
+> Projector Embedding
+> Question
+> Answer
+
+Datasets  
+
+> ❄
+> "
+> ""
+> "
+
+Figure 3: The pipeline of our framework: feature extraction, projection, and multimodal reasoning. We extract spatial audio and visual features using pre-trained encoders, project them into a shared embedding space, and integrate the embeddings with the question embedding to generate the answer. projector that maps the extracted features into the hidden dimension of the language model. The 198 
+
+visual projector attends to the spatial visual features to generate NV projected tokens, and the audio 199 
+
+projector similarly produces NA tokens from the audio features. These projected tokens are then 200 
+
+passed to the large language model for multi-modal reasoning. 201 
+
+Large Language Model. To bridge the audio and visual encoders, we utilize a large language 202 
+
+model that takes as input the projected audio and image tokens along with the embedded question 203 
+
+text. During fine-tuning, the model is optimized to generate the correct answer based on the given 204 
+
+question and the corresponding multimodal inputs. Training is performed using the standard language 205 
+
+modeling objective function that maximizes the likelihood of the target sequence using a cross-entropy 206 
+
+loss applied at each token position. 207 
+
+Warm Start of the Encoders. To ensure the effectiveness of each modality-specific representation, 208 
+
+the audio and visual encoders, along with their respective projectors, are pretrained in a unimodal 209 
+
+setting using a large language model. We utilize the panorama image and binaural audio from our 210 
+
+dataset and construct two types of auxiliary questions for each modality: classification and localization 211 
+
+tasks. For the visual encoder, the classification task involves identifying visual objects at specific 212 
+
+coordinates, phrased as “What visual objects did you detect at ({azimuth}, {elevation}), 213 
+
+{distance} meters?”, and the localization task asks for the predicted azimuth, elevation, and 214 
+
+distance to a specified object class, stated as “What are the predicted azimuth and elevation angles, and 215 
+
+the distance to the {class category} ?”. The audio encoder is trained with analogous tasks: the 216 
+
+classification task asks “What sound did you detect?”, while the localization task prompts for spatial 217 
+
+coordinates of the sound source with the question “What are the predicted azimuth and elevation 218 
+
+angles, and the distance to the sound source?”. The visual encoder adopts a progressive training 219 
+
+scheme, first focusing on classification to learn semantic representations and then incorporating 220 
+
+spatial grounding through a combined classification and localization task. The audio encoder is 221 
+
+trained on both tasks jointly from the beginning. 222 
+
+## 5 Experiments 223 
+
+5.1 Implementation Details 224 
+
+Image Encoder fv . We use a SigLIP2 [ 47 ] vision encoder with the NaFLEX setting, which supports 225 
+
+flexible image resolutions and aspect ratios. The encoder processes a panoramic image and outputs a 226 
+
+sequence of patch tokens. We apply LoRA [ 22 ] to fine-tune the patch embedding and attention layers 227 
+
+of the encoder during both the uni-modal training and the audio-visual end-to-end training. 228 
+
+Audio Encoder fa. We use the pretrained Spatial-AST binaural audio encoder from [ 52 ]. The model 229 
+
+takes binaural audio spectrograms as input and generates a sequence of audio tokens that preserve 230 
+
+spatial acoustic cues. The encoder was pretrained using the same audio event classification and 231 
+
+localization tasks proposed in [ 52 ]. This encoder is kept frozen throughout the entire training process. 232 
+
+Modality-specific Projectors and Large Language Model We adopt the Q-Former architecture 233 
+
+as the projector for both modalities. The audio-side projector is based on the implementation and 234 
+
+pretrained weights from BAT [ 52 ], while the visual-side projector is adapted from BLIP-2 [ 25 ], using 235 
+
+only the first two attention layers and their corresponding pretrained weights. The number of query 236 
+
+6Table 2: Evaluation of baseline models on sound source localization that requires spatial understanding. R, B, M, Q refer to RGB Image, Binaural Audio, Monaural Audio, and Question (Text) in this table.                                                 
+
+> Method Modality Q1 (class) Q1 (aligned) Q1 (non-matching) Q7 (class) Q7 (DoA) Q8 (class) Q8 (DoA)
+> Question Only Q3.50 3.00 2.44 2.56 7.89 0.78 7.61 ISSL [39, 40] R+M 26.97 28.83 12.94 28.46 23.18 26.94 21.0 ACL-SSL [31] R+M 40.56 32.83 10.61 40.41 30.68 41.11 24.33 VideoLLaMA2 [9] R+M+Q 51.01 77.44 50.75 70.88 68.57 75.33 46.37 Ours R+B+Q 52.69 77.61 61.67 75.44 73.21 70.27 64.27
+
+tokens is set to N1 = 64 for audio and N2 = 128 for vision. All projector parameters are fully 237 
+
+trainable. We adopt Qwen2-7B-Instruct [50] as our LLM backbone. 238 
+
+Training Setup and Input Preprocessing. Inputs to our model consist of a single 224 × 812 239 
+
+panoramic image and a 10-second audio binaural waveform sampled at 32 kHz. We preprocess the 240 
+
+image input following [ 47 ] and the audio input following [ 52 ]. Our full model is trained for 3 epochs 241 
+
+on 8 A5000 GPUs with an effective batch size of 128, using a LoRA rank of 16 for the image encoder 242 
+
+and LLM backbone. The training takes three days. Additional training details are provided in the 243 
+
+supplementary material. 244 
+
+Baselines. Since no existing method directly addresses our proposed task, we introduce three baselines 245 
+
+adapted from related domains. The first two baselines are audio-visual sound source localization 246 
+
+approaches. Specifically, we adopt the framework proposed in [ 39 , 40 ], which has demonstrated 247 
+
+strong performance on synthetic benchmarks and exhibits robustness with multiple visual objects. 248 
+
+[ 31 ] learns audio-driven embeddings compatible with the text encoder of CLIP[ 34 ] and leverages 249 
+
+the CLIP-based segmentation network [ 28 ] to achieve tight localization results. Although they do 250 
+
+not handle language understanding, we evaluate them using cross-modal retrieval and localization 251 
+
+metrics. Implementation details are provided in the supplementary material. The third baseline is 252 
+
+the VideoLLaMA2[ 9], multi-modal large language model (MLLM), the closest prior work to ours 253 
+
+in terms of multimodal reasoning. For a fair comparison, we replace its original vision and audio 254 
+
+encoders with the same encoders used in our method, Spatial AST[ 52 ] and SigLIP2 NaFLEX [ 47 ], 255 
+
+and fine-tune the model on our proposed dataset using the same LLM backbone. Notably, the baseline 256 
+
+uses monaural audio input, whereas our method leverages binaural cues. Since the sound source 257 
+
+localization approaches are not designed for reasoning tasks (e.g., Q2, Q3, Q4, Q5, Q6, Q9), we 258 
+
+evaluate them only on tasks that do not require language processing. The metrics in Table 2 cover 259 
+
+classification and direction of arrival (DoA). Q1 (aligned) and Q1 (non-matching) indicate sound 260 
+
+source localization task where the source is semantically aligned and non-aligned with the audio, 261 
+
+respectively. 262 
+
+5.2 Main Results 263 
+
+We present our results in Table 2, showing that only our model effectively addresses spatial reasoning 264 
+
+scenarios. For sound classification tasks (Q1, Q7, Q8), sound source localization approaches 265 
+
+outperform the Question Only setting, which serves as a random baseline. VideoLLaMA2 shows 266 
+
+comparable performance to our model, particularly in Q1 (aligned) and Q7 (DoA), where semantic 267 
+
+cues are sufficient for localization due to the presence of a single matching visual object with audio. 268 
+
+Monaural audio is sufficient to localize the sound source, allowing baseline models to perform 269 
+
+consistently without spatial audio cues. However, in Q1 (non-matching) and Q8 (DoA), spatial 270 
+
+reasoning is essential for different reasons. In Q1 (non-matching), the visual object at the sound 271 
+
+source is semantically unrelated to the audio, requiring spatial cues to correctly associate the sound 272 
+
+with the aligned object. In Q8 (DoA), multiple objects share the same sound category, making it 273 
+
+necessary to differentiate between them using spatial cues. In both cases, baseline models perform 274 
+
+significantly worse. VideoLLaMA2, which shares the same architecture as ours but lacks binaural 275 
+
+audio, achieves approximately 50% accuracy in Q8 (DoA), indicating its inability to distinguish 276 
+
+between visually similar objects that semantically match the audio. Since all baseline models use 277 
+
+only monaural audio, they lack spatial information, making spatial reasoning impossible. 278 
+
+7Table 3: Ablation study on modality settings for audio-visual spatial reasoning tasks. R, B, M, Q refer to RGB Image, Binaural Audio, Monaural Audio, and Question (Text) in this table.   
+
+> Trained and tested on Trained on R+B+Q, tested on Random Chance
+
+metric R+B+Q R+M+Q B+Q M+Q R+Q R+M+Q B+Q Q
+
+Q1 
+
+sound accuracy ↑ 52.69 51.01 52.53 51.40 27.28 54.03 46.86 3.50 coming-from accuracy ↑ 69.64 64.10 26.40 26.40 56.22 61.92 23.39 2.72 
+
+Q2 (Yes or No) ↑ 84.74 83.77 55.63 50.87 85.28 83.55 54.11 50.11 
+
+Q3 
+
+3-field accuracy ↑ 69.73 66.52 32.40 18.67 74.46 66.42 24.57 18.56 Avg. distance error (m) ↓ 0.39 0.41 1.20 1.31 0.36 0.47 1.37 1.34 
+
+Q4 
+
+DoA accuracy ↑ 65.68 59.03 12.86 12.43 58.06 56.14 11.38 9.80 Avg. DoA error (°) ↓ 15.41 20.21 81.18 87.38 18.59 23.55 86.49 85.48 Avg. distance error (m) ↓ 0.38 0.47 1.10 1.21 0.38 0.51 1.32 1.21 
+
+Q2-invisible audio ↑ 72.46 70.40 57.14 48.00 73.03 70.51 52.91 50.63 
+
+Q3-invisible audio 
+
+3-field accuracy ↑ 59.52 47.29 34.14 18.45 41.64 45.56 25.49 18.22 Avg. distance error (m) ↓ 0.75 0.98 1.20 1.33 1.02 1.12 1.39 1.38 
+
+Q4-invisible audio 
+
+DoA accuracy ↑ 41.18 16.71 11.18 11.76 13.53 16.47 11.29 9.88 Avg. DoA error (°) ↓ 39.81 69.25 80.51 84.56 77.15 75.39 85.24 84.81 Avg. distance error (m) ↓ 0.71 1.08 1.13 1.21 1.16 1.04 1.32 1.23 
+
+Q5 
+
+class accuracy ↑ 72.43 74.26 25.79 25.63 74.87 72.82 22.18 2.78 sounding accuracy ↑ 75.60 64.54 59.48 37.72 36.63 65.93 75.93 41.36 
+
+Q6 
+
+class accuracy ↑ 81.06 81.61 51.78 50.47 83.78 80.72 42.72 3.72 sounding accuracy ↑ 72.33 52.33 59.33 38.67 31.94 49.28 75.67 41.67 
+
+Q7 
+
+class accuracy ↑ 75.44 70.88 51.64 53.62 37.35 73.53 51.68 2.56 DoA accuracy ↑ 73.21 68.57 47.30 7.80 37.52 64.04 48.38 7.89 Avg. DoA error (°) ↓ 14.75 22.41 33.02 88.31 56.66 24.55 35.25 90.92 Avg. distance error (m) ↓ 0.30 0.33 0.50 0.53 0.44 0.36 0.79 0.53 
+
+Q8 
+
+class accuracy ↑ 70.27 75.33 48.42 48.02 69.89 71.90 32.51 0.78 DoA accuracy ↑ 64.27 46.37 47.69 8.46 43.72 39.76 49.41 7.61 Avg. DoA error (°) ↓ 23.78 50.80 32.32 89.93 51.90 52.46 32.45 89.40 Avg. distance error (m) ↓ 0.36 0.44 0.48 0.51 0.42 0.46 0.85 0.52 
+
+Q9 
+
+sound accuracy ↑ 54.00 51.14 51.14 52.20 27.17 55.57 47.25 2.81 visiblity accuracy ↑ 75.22 72.94 38.99 39.79 33.31 76.35 49.42 42.31 
+
+5.3 Ablation Studies 279 
+
+Table 3 shows that both image (R: RGB) and binaural audio (B) inputs are crucial for spatial reasoning. 280 
+
+It compares R+B+Q, R+M+Q (M: monaural), B+Q, M+Q, and R+Q (Q: question), highlighting that 281 
+
+binaural audio provides spatial cues while monaural lacks directional information. The following is 282 
+
+an analysis of the performance for each question type. 283 
+
+Question 1 involves sound and visual object classification, with half of the samples containing a 284 
+
+non-matching visual object at the sound source. Both R+B+Q and R+M+Q show similar sound 285 
+
+classification accuracy (52.69% and 51.01%), suggesting comparable semantic cues from monaural 286 
+
+and binaural audio. However, in coming-from accuracy, R+B+Q (69.64%) outperforms R+M+Q 287 
+
+(64.10%), highlighting the spatial advantage of binaural audio. 288 
+
+Questions 2, 3, and 4 assess distance and relative location between the sound source and visual 289 
+
+objects, requiring spatial reasoning across modalities. For visible audio, R+M+Q achieves 66.52% 290 
+
+in Q3 and 59.03% in Q4, performing similarly to R+B+Q (69.73% and 65.68%). When the sound 291 
+
+source is invisible, R+B+Q shows a clear advantage, outperforming R+M+Q in Q3 (59.52% vs. 292 
+
+47.29%) and Q4 (41.18% vs. 16.71%). This highlights the role of binaural audio in capturing spatial 293 
+
+cues that monaural audio with visual input cannot provide. 294 
+
+Questions 5 and 6 both involve identifying the sound-producing object but differ in complexity 295 
+
+8based on the number of visual objects that match the sound. In Q5, with only one matching object, 296 
+
+visual context alone provides sufficient spatial information for localization. R+M+Q leverages visual 297 
+
+cues effectively, achieving a sounding accuracy of 64.54%. With no visual ambiguity, the model can 298 
+
+reliably associate the sound with the correct object using spatial information from the visual signal. 299 
+
+In Q6, two visually similar objects match the sound, introducing ambiguity. R+M+Q’s performance 300 
+
+drops to 52.33%, as visual context alone is no longer sufficient to distinguish between the two objects, 301 
+
+leading to random guessing. In contrast, B+Q and R+B+Q maintain consistent performance across 302 
+
+both questions. In Q5, they achieve 59.48% and 75.60%, respectively, and in Q6, their performance 303 
+
+remains stable at 59.33% and 72.33%. This stability is due to binaural audio, which provides explicit 304 
+
+spatial cues, enabling the model to localize the sound source based solely on directional information, 305 
+
+unaffected by visual similarity. These results indicate that when there is only one matching object 306 
+
+(Q5), R+M+Q can effectively use visual spatial information. However, when multiple visually similar 307 
+
+objects are present (Q6), spatial audio cues become essential, allowing B+Q and R+B+Q to maintain 308 
+
+stable performance regardless of visual similarity. These results highlight the importance of binaural 309 
+
+audio in resolving ambiguity in complex visual scenes. 310 
+
+Questions 7 and 8 both involve sound classification and localization but differ in the number of visual 311 
+
+objects that correspond to the audio, with two in Q8 and one in Q7. In Q8, two visually similar objects 312 
+
+correspond to the audio, making it difficult for the model to distinguish between them using visual 313 
+
+information alone. R+M+Q and B+Q show similar DoA accuracy (46.37% and 47.69%), but their 314 
+
+Avg. DoA errors differ, with R+M+Q at 50.80° and B+Q at 32.32°. R+M+Q relies on visual context 315 
+
+for spatial cues, but semantic ambiguity between the two objects complicates localization, leading 316 
+
+to random selection and higher error. In contrast, B+Q, using binaural audio, focuses solely on 317 
+
+directional information, perceiving only one sound source without considering object-level ambiguity, 318 
+
+resulting in a lower error. R+B+Q achieves the lowest error (23.78°) by combining spatial audio and 319 
+
+visual inputs. In Q7, the audio corresponds to a single object, eliminating semantic ambiguity. In this 320 
+
+case, the performance of R+M+Q and B+Q reverses from Q8. R+M+Q records a lower error (22.41°) 321 
+
+than B+Q (33.02°), indicating that when only one object is present, visual spatial information can 322 
+
+effectively guide localization without semantic confusion. These results support the findings in Q5 323 
+
+and Q6, emphasizing the role of spatial audio in disambiguating visually similar objects. 324 
+
+Question 9 involves sound classification and localization while also requiring the model to determine 325 
+
+whether the object is visually present at the sound source. This task demands both audio and visual 326 
+
+semantic understanding. Both multi-modal settings (R+B+Q, R+M+Q) successfully address this 327 
+
+question. 328 
+
+Modality Setting Cross-Evaluation. To assess the impact of vision signals and binaural audio during 329 
+
+training, we evaluate the model trained on R+B+Q under R+M+Q and B+Q settings. While Q7 and 330 
+
+Q8 show minimal change, Q5 and Q6 exhibit noticeable gaps in sounding accuracy. This might come 331 
+
+from Q5 and Q6 only requiring yes/no responses given a location, without the detailed localization 332 
+
+required in Q7 and Q8. Consequently, the model in the B+Q setting may not effectively leverage 333 
+
+spatial reasoning for these tasks. However, with visual signals, the model gains implicit spatial cues 334 
+
+that align audio locations with the visual scene, potentially enhancing spatial audio understanding. 335 
+
+Thus, the presence of visual information may be beneficial even for learning spatial audio cues. 336 
+
+## 6 Conclusion 337 
+
+We introduce a new task, audio-visual spatial reasoning, along with the Hear You Are LLM and QA 338 
+
+dataset. Unlike prior work that focuses on semantic or temporal alignment, our approach emphasizes 339 
+
+spatial reasoning by integrating binaural audio and visual inputs. We build a large-scale dataset 340 
+
+covering diverse spatial scenarios and propose a multimodal framework combining spatial encoders 341 
+
+with a large language model. Experiments show that monaural audio with vision or unimodal binaural 342 
+
+methods lack the capacity for spatial reasoning. These results underscore the importance of spatial 343 
+
+reasoning in robust multimodal understanding and set a new benchmark in audio-visual learning. 344 
+
+## 7 Limitations and Future Directions 345 
+
+While our framework effectively addresses spatial reasoning by integrating binaural audio and visual 346 
+
+context, several real-world scenarios remain unaddressed. Specifically, our approach does not consider 347 
+
+moving sound sources, actions associated with visual objects, or occluded objects positioned behind 348 
+
+walls or in separate rooms. These aspects are critical for capturing dynamic spatial interactions. 349 
+
+Future work will focus on extending the dataset to incorporate these complexities, enabling more 350 
+
+comprehensive audio-visual reasoning in realistic settings. 351 
+
+9References 352 
+
+[1] A. Baade, P. Peng, and D. Harwath. Mae-ast: Masked autoencoding audio spectrogram transformer. In 353 
+
+INTERSPEECH , 2022. 354 
+
+[2] A. Chang, A. Dai, T. Funkhouser, M. Halber, M. Niessner, et al. Matterport3D: Learning from RGB-D 355 
+
+data in indoor environments. In 3DV , 2017. 356 
+
+[3] M. Chatterjee, J. Le Roux, N. Ahuja, and A. Cherian. Visual scene graphs for audio source separation. In 357 
+
+ICCV , 2021. 358 
+
+[4] C. Chen, C. Schissler, S. Garg, P. Kobernik, A. Clegg, P. Calamia, D. Batra, P. Robinson, and K. Grauman. 359 
+
+Soundspaces 2.0: A simulation platform for visual-acoustic learning. NeurIPS , 2022. 360 
+
+[5] C. Chen, W. Sun, D. Harwath, and K. Grauman. Learning audio-visual dereverberation. arXiv preprint 361 
+
+arXiv:2106.07732 , 2021. 362 
+
+[6] H. Chen, W. Xie, T. Afouras, A. Nagrani, A. Vedaldi, and A. Zisserman. Audio-visual synchronisation in 363 
+
+the wild. In BMVC , 2021. 364 
+
+[7] H. Chen, W. Xie, T. Afouras, A. Nagrani, A. Vedaldi, and A. Zisserman. Localizing visual sounds the hard 365 
+
+way. In CVPR , 2021. 366 
+
+[8] H. Chen, W. Xie, A. Vedaldi, and A. Zisserman. Vggsound: A large-scale audio-visual dataset. In ICASSP ,367 
+
+2020. 368 
+
+[9] Z. Cheng, S. Leng, H. Zhang, Y. Xin, X. Li, G. Chen, Y. Zhu, W. Zhang, Z. Luo, D. Zhao, and L. Bing. 369 
+
+Videollama 2: Advancing spatial-temporal modeling and audio understanding in video-llms. arXiv preprint 370 
+
+arXiv:2406.07476 , 2024. 371 
+
+[10] S. Chowdhury, S. Nag, S. Dasgupta, J. Chen, M. Elhoseiny, R. Gao, and D. Manocha. Meerkat: Audio-372 
+
+visual large language model for grounding in space and time. In ECCV , 2024. 373 
+
+[11] S. Chowdhury, S. Nag, S. Dasgupta, Y. Wang, M. Elhoseiny, R. Gao, and D. Manocha. Avtrustbench: 374 
+
+Assessing and enhancing reliability and robustness in audio-visual llms. arXiv preprint arXiv:2501.02135 ,375 
+
+2025. 376 
+
+[12] J. S. Chung and A. Zisserman. Out of time: automated lip sync in the wild. In ACCV , 2017. 377 
+
+[13] B. Devnani, S. Seto, Z. Aldeneh, A. Toso, E. Menyaylenko, B.-J. Theobald, J. Sheaffer, and M. Sarabia. 378 
+
+Learning spatially-aware language and audio embeddings. In NeurIPS , 2024. 379 
+
+[14] C. Gan, D. Huang, H. Zhao, J. B. Tenenbaum, and A. Torralba. Music gesture for visual sound separation. 380 
+
+In CVPR , 2020. 381 
+
+[15] R. Gao and K. Grauman. Co-separating sounds of visual objects. In ICCV , 2019. 382 
+
+[16] R. Gao and K. Grauman. Visualvoice: Audio-visual speech separation with cross-modal consistency. In 383 
+
+CVPR , 2021. 384 
+
+[17] K. Gong, K. Feng, B. Li, Y. Wang, M. Cheng, S. Yang, J. Han, B. Wang, Y. Bai, Z. Yang, et al. Av-385 
+
+odyssey bench: Can your multimodal llms really understand audio-visual information? arXiv preprint 386 
+
+arXiv:2412.02611 , 2024. 387 
+
+[18] Y. Gong, Y.-A. Chung, and J. Glass. Ast: Audio spectrogram transformer. In INTERSPEECH , 2021. 388 
+
+[19] Y. Gong, H. Luo, A. H. Liu, L. Karlinsky, and J. R. Glass. Listen, think, and understand. In ICLR , 2024. 389 
+
+[20] Y. He, S. Shin, A. Cherian, N. Trigoni, and A. Markham. Soundloc3d: Invisible 3d sound source 390 
+
+localization and classification using a multimodal rgb-d acoustic camera. In WACV , 2025. 391 
+
+[21] D. Hu, R. Qian, M. Jiang, X. Tan, S. Wen, E. Ding, W. Lin, and D. Dou. Discriminative sounding objects 392 
+
+localization via self-supervised audiovisual matching. NeurIPS , 2020. 393 
+
+[22] E. J. Hu, Y. Shen, P. Wallis, Z. Allen-Zhu, Y. Li, S. Wang, L. Wang, and W. Chen. Lora: Low-rank 394 
+
+adaptation of large language models. arXiv preprint arXiv:2106.09685 , 2021. 395 
+
+[23] X. Hu, Z. Chen, and A. Owens. Mix and localize: Localizing sound sources in mixtures. In CVPR , 2022. 396 
+
+[24] P.-Y. Huang, H. Xu, J. Li, A. Baevski, M. Auli, W. Galuba, F. Metze, and C. Feichtenhofer. Masked 397 
+
+autoencoders that listen. In NeurIPS , 2022. 398 
+
+10 [25] J. Li, D. Li, S. Savarese, and S. Hoi. Blip-2: Bootstrapping language-image pre-training with frozen image 399 
+
+encoders and large language models. In International conference on machine learning . PMLR, 2023. 400 
+
+[26] Z. Li, Q. Xu, D. Zhang, H. Song, Y. Cai, Q. Qi, R. Zhou, J. Pan, Z. Li, V. Tu, et al. Groundinggpt: 401 
+
+Language enhanced multi-modal grounding model. In ACL , 2024. 402 
+
+[27] J. Liu, C. Ju, W. Xie, and Y. Zhang. Exploiting transformation invariance and equivariance for self-403 
+
+supervised sound localisation. In ACM MM , 2022. 404 
+
+[28] T. Lüddecke and A. Ecker. Image segmentation using text and image prompts. In CVPR , 2022. 405 
+
+[29] S. Mo and P. Morgado. A closer look at weakly-supervised audio-visual source localization. In NeurIPS ,406 
+
+2022. 407 
+
+[30] S. Mo and Y. Tian. Audio-visual grouping network for sound localization from mixtures. In CVPR , 2023. 408 
+
+[31] S. Park, A. Senocak, and J. S. Chung. Can clip help sound source localization? In WACV , 2024. 409 
+
+[32] S. J. Park, M. Kim, J. Hong, J. Choi, and Y. M. Ro. Synctalkface: Talking face generation with precise 410 
+
+lip-syncing via audio-lip memory. In AAAI , 2022. 411 
+
+[33] R. Qian, D. Hu, H. Dinkel, M. Wu, N. Xu, and W. Lin. Multiple sound sources localization from coarse to 412 
+
+fine. In ECCV , 2020. 413 
+
+[34] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, 414 
+
+J. Clark, et al. Learning transferable visual models from natural language supervision. In ICML , 2021. 415 
+
+[35] R. Rombach, A. Blattmann, D. Lorenz, P. Esser, and B. Ommer. High-resolution image synthesis with 416 
+
+latent diffusion models. In CVPR , 2022. 417 
+
+[36] S. Sakshi, U. Tyagi, S. Kumar, A. Seth, R. Selvakumar, O. Nieto, R. Duraiswami, S. Ghosh, and 418 
+
+D. Manocha. Mmau: A massive multi-task audio understanding and reasoning benchmark. In ICLR , 2024. 419 
+
+[37] A. Senocak, T.-H. Oh, J. Kim, M.-H. Yang, and I. S. Kweon. Learning to localize sound source in visual 420 
+
+scenes. In CVPR , 2018. 421 
+
+[38] A. Senocak, T.-H. Oh, J. Kim, M.-H. Yang, and I. S. Kweon. Learning to localize sound sources in visual 422 
+
+scenes: Analysis and applications. IEEE TPAMI , 2021. 423 
+
+[39] A. Senocak, H. Ryu, J. Kim, T.-H. Oh, H. Pfister, and J. S. Chung. Sound source localization is all about 424 
+
+cross-modal alignment. In ICCV , 2023. 425 
+
+[40] A. Senocak, H. Ryu, J. Kim, T.-H. Oh, H. Pfister, and J. S. Chung. Aligning sight and sound: Advanced 426 
+
+sound source localization through audio-visual alignment. arXiv preprint arXiv:2407.13676 , 2024. 427 
+
+[41] K. Shimada, A. Politis, P. Sudarsanam, D. A. Krause, K. Uchida, S. Adavanne, A. Hakala, Y. Koyama, 428 
+
+N. Takahashi, S. Takahashi, et al. Starss23: An audio-visual dataset of spatial recordings of real scenes 429 
+
+with spatiotemporal annotations of sound events. In NeurIPS , 2023. 430 
+
+[42] Z. Song, Y. Wang, J. Fan, T. Tan, and Z. Zhang. Self-supervised predictive learning: A negative-free 431 
+
+method for sound source localization in visual scenes. In CVPR , 2022. 432 
+
+[43] W. Sun, J. Zhang, J. Wang, Z. Liu, Y. Zhong, T. Feng, Y. Guo, Y. Zhang, and N. Barnes. Learning 433 
+
+audio-visual source localization via false negative aware contrastive learning. In CVPR , 2023. 434 
+
+[44] K. Sung-Bin, O. Hyun-Bin, J. Lee, A. Senocak, J. S. Chung, and T.-H. Oh. Avhbench: A cross-modal 435 
+
+hallucination benchmark for audio-visual large language models. arXiv preprint arXiv:2410.18325 , 2024. 436 
+
+[45] R. Tan, A. Ray, A. Burns, B. A. Plummer, J. Salamon, O. Nieto, B. Russell, and K. Saenko. Language-437 
+
+guided audio-visual source separation via trimodal consistency. In CVPR , 2023. 438 
+
+[46] Y. Tian, D. Hu, and C. Xu. Cyclic co-learning of sounding object visual grounding and sound separation. 439 
+
+In CVPR , 2021. 440 
+
+[47] M. Tschannen, A. Gritsenko, X. Wang, M. F. Naeem, I. Alabdulmohsin, N. Parthasarathy, T. Evans, 441 
+
+L. Beyer, Y. Xia, B. Mustafa, et al. Siglip 2: Multilingual vision-language encoders with improved 442 
+
+semantic understanding, localization, and dense features. arXiv preprint arXiv:2502.14786 , 2025. 443 
+
+[48] E. Tzinis, S. Wisdom, A. Jansen, S. Hershey, T. Remez, D. P. Ellis, and J. R. Hershey. Into the wild with 444 
+
+audioscope: Unsupervised audio-visual separation of on-screen sounds. In ICLR , 2020. 445 
+
+11 [49] J. Xu, W. Cheng, Y. Gao, X. Wang, S. Gao, and Y. Shan. Instantmesh: Efficient 3d mesh generation from a 446 
+
+single image with sparse-view large reconstruction models. arXiv preprint arXiv:2404.07191 , 2024. 447 
+
+[50] A. Yang, B. Yang, B. Hui, B. Zheng, B. Yu, C. Zhou, C. Li, C. Li, D. Liu, F. Huang, et al. Qwen2 technical 448 
+
+report, 2024. arXiv preprint arXiv:2407.10671 , 2024. 449 
+
+[51] Q. Ye, Z. Yu, R. Shao, X. Xie, P. Torr, and X. Cao. Cat: Enhancing multimodal large language model to 450 
+
+answer questions in dynamic audio-visual scenarios. In ECCV , 2024. 451 
+
+[52] Z. Zheng, P. Peng, Z. Ma, X. Chen, E. Choi, and D. Harwath. Bat: Learning to reason about spatial sounds 452 
+
+with large language models. In ICLR , 2024. 453 
+
+12 NeurIPS Paper Checklist 454 
+
+1. Claims 455 
+
+Question: Do the main claims made in the abstract and introduction accurately reflect the 456 
+
+paper’s contributions and scope? 457 
+
+Answer: [Yes] 458 
+
+Justification: We address audio-visual spatial reasoning by introducing a dataset that empha-459 
+
+sizes spatial alignment over semantic correspondence and propose a model that integrates 460 
+
+spatial sound cues with visual perception for enhanced multimodal reasoning. 461 
+
+Guidelines: 462 
+
+• The answer NA means that the abstract and introduction do not include the claims 463 
+
+made in the paper. 464 
+
+• The abstract and/or introduction should clearly state the claims made, including the 465 
+
+contributions made in the paper and important assumptions and limitations. A No or 466 
+
+NA answer to this question will not be perceived well by the reviewers. 467 
+
+• The claims made should match theoretical and experimental results, and reflect how 468 
+
+much the results can be expected to generalize to other settings. 469 
+
+• It is fine to include aspirational goals as motivation as long as it is clear that these goals 470 
+
+are not attained by the paper. 471 
+
+2. Limitations 472 
+
+Question: Does the paper discuss the limitations of the work performed by the authors? 473 
+
+Answer: [Yes] 474 
+
+Justification: The limitations are addressed in Sec. 7. 475 
+
+Guidelines: 476 
+
+• The answer NA means that the paper has no limitation while the answer No means that 477 
+
+the paper has limitations, but those are not discussed in the paper. 478 
+
+• The authors are encouraged to create a separate "Limitations" section in their paper. 479 
+
+• The paper should point out any strong assumptions and how robust the results are to 480 
+
+violations of these assumptions (e.g., independence assumptions, noiseless settings, 481 
+
+model well-specification, asymptotic approximations only holding locally). The authors 482 
+
+should reflect on how these assumptions might be violated in practice and what the 483 
+
+implications would be. 484 
+
+• The authors should reflect on the scope of the claims made, e.g., if the approach was 485 
+
+only tested on a few datasets or with a few runs. In general, empirical results often 486 
+
+depend on implicit assumptions, which should be articulated. 487 
+
+• The authors should reflect on the factors that influence the performance of the approach. 488 
+
+For example, a facial recognition algorithm may perform poorly when image resolution 489 
+
+is low or images are taken in low lighting. Or a speech-to-text system might not be 490 
+
+used reliably to provide closed captions for online lectures because it fails to handle 491 
+
+technical jargon. 492 
+
+• The authors should discuss the computational efficiency of the proposed algorithms 493 
+
+and how they scale with dataset size. 494 
+
+• If applicable, the authors should discuss possible limitations of their approach to 495 
+
+address problems of privacy and fairness. 496 
+
+• While the authors might fear that complete honesty about limitations might be used by 497 
+
+reviewers as grounds for rejection, a worse outcome might be that reviewers discover 498 
+
+limitations that aren’t acknowledged in the paper. The authors should use their best 499 
+
+judgment and recognize that individual actions in favor of transparency play an impor-500 
+
+tant role in developing norms that preserve the integrity of the community. Reviewers 501 
+
+will be specifically instructed to not penalize honesty concerning limitations. 502 
+
+3. Theory assumptions and proofs 503 
+
+Question: For each theoretical result, does the paper provide the full set of assumptions and 504 
+
+a complete (and correct) proof? 505 
+
+13 Answer: [NA] . 506 
+
+Justification: This work focuses on empirical evaluations rather than theoretical formulations 507 
+
+or proofs. 508 
+
+Guidelines: 509 
+
+• The answer NA means that the paper does not include theoretical results. 510 
+
+• All the theorems, formulas, and proofs in the paper should be numbered and cross-511 
+
+referenced. 512 
+
+• All assumptions should be clearly stated or referenced in the statement of any theorems. 513 
+
+• The proofs can either appear in the main paper or the supplemental material, but if 514 
+
+they appear in the supplemental material, the authors are encouraged to provide a short 515 
+
+proof sketch to provide intuition. 516 
+
+• Inversely, any informal proof provided in the core of the paper should be complemented 517 
+
+by formal proofs provided in appendix or supplemental material. 518 
+
+• Theorems and Lemmas that the proof relies upon should be properly referenced. 519 
+
+4. Experimental result reproducibility 520 
+
+Question: Does the paper fully disclose all the information needed to reproduce the main ex-521 
+
+perimental results of the paper to the extent that it affects the main claims and/or conclusions 522 
+
+of the paper (regardless of whether the code and data are provided or not)? 523 
+
+Answer: [Yes] 524 
+
+Justification: We provide all implementation details in Sec. 5.1 and Appendix A.1, and the 525 
+
+data and code will be released upon paper acceptance. 526 
+
+Guidelines: 527 
+
+• The answer NA means that the paper does not include experiments. 528 
+
+• If the paper includes experiments, a No answer to this question will not be perceived 529 
+
+well by the reviewers: Making the paper reproducible is important, regardless of 530 
+
+whether the code and data are provided or not. 531 
+
+• If the contribution is a dataset and/or model, the authors should describe the steps taken 532 
+
+to make their results reproducible or verifiable. 533 
+
+• Depending on the contribution, reproducibility can be accomplished in various ways. 534 
+
+For example, if the contribution is a novel architecture, describing the architecture fully 535 
+
+might suffice, or if the contribution is a specific model and empirical evaluation, it may 536 
+
+be necessary to either make it possible for others to replicate the model with the same 537 
+
+dataset, or provide access to the model. In general. releasing code and data is often 538 
+
+one good way to accomplish this, but reproducibility can also be provided via detailed 539 
+
+instructions for how to replicate the results, access to a hosted model (e.g., in the case 540 
+
+of a large language model), releasing of a model checkpoint, or other means that are 541 
+
+appropriate to the research performed. 542 
+
+• While NeurIPS does not require releasing code, the conference does require all submis-543 
+
+sions to provide some reasonable avenue for reproducibility, which may depend on the 544 
+
+nature of the contribution. For example 545 
+
+(a) If the contribution is primarily a new algorithm, the paper should make it clear how 546 
+
+to reproduce that algorithm. 547 
+
+(b) If the contribution is primarily a new model architecture, the paper should describe 548 
+
+the architecture clearly and fully. 549 
+
+(c) If the contribution is a new model (e.g., a large language model), then there should 550 
+
+either be a way to access this model for reproducing the results or a way to reproduce 551 
+
+the model (e.g., with an open-source dataset or instructions for how to construct 552 
+
+the dataset). 553 
+
+(d) We recognize that reproducibility may be tricky in some cases, in which case 554 
+
+authors are welcome to describe the particular way they provide for reproducibility. 555 
+
+In the case of closed-source models, it may be that access to the model is limited in 556 
+
+some way (e.g., to registered users), but it should be possible for other researchers 557 
+
+to have some path to reproducing or verifying the results. 558 
+
+5. Open access to data and code 559 
+
+14 Question: Does the paper provide open access to the data and code, with sufficient instruc-560 
+
+tions to faithfully reproduce the main experimental results, as described in supplemental 561 
+
+material? 562 
+
+Answer: [Yes] 563 
+
+Justification: After acceptance, we will publish the code, data, and model for public use. 564 
+
+Guidelines: 565 
+
+• The answer NA means that paper does not include experiments requiring code. 566 
+
+• Please see the NeurIPS code and data submission guidelines ( https://nips.cc/ 567 
+
+public/guides/CodeSubmissionPolicy ) for more details. 568 
+
+• While we encourage the release of code and data, we understand that this might not be 569 
+
+possible, so “No” is an acceptable answer. Papers cannot be rejected simply for not 570 
+
+including code, unless this is central to the contribution (e.g., for a new open-source 571 
+
+benchmark). 572 
+
+• The instructions should contain the exact command and environment needed to run to 573 
+
+reproduce the results. See the NeurIPS code and data submission guidelines ( https: 574 
+
+//nips.cc/public/guides/CodeSubmissionPolicy ) for more details. 575 
+
+• The authors should provide instructions on data access and preparation, including how 576 
+
+to access the raw data, preprocessed data, intermediate data, and generated data, etc. 577 
+
+• The authors should provide scripts to reproduce all experimental results for the new 578 
+
+proposed method and baselines. If only a subset of experiments are reproducible, they 579 
+
+should state which ones are omitted from the script and why. 580 
+
+• At submission time, to preserve anonymity, the authors should release anonymized 581 
+
+versions (if applicable). 582 
+
+• Providing as much information as possible in supplemental material (appended to the 583 
+
+paper) is recommended, but including URLs to data and code is permitted. 584 
+
+6. Experimental setting/details 585 
+
+Question: Does the paper specify all the training and test details (e.g., data splits, hyper-586 
+
+parameters, how they were chosen, type of optimizer, etc.) necessary to understand the 587 
+
+results? 588 
+
+Answer:[Yes] 589 
+
+Justification: We provide all training and test details in Sec. 5.1 and Appendix A.1. 590 
+
+Guidelines: 591 
+
+• The answer NA means that the paper does not include experiments. 592 
+
+• The experimental setting should be presented in the core of the paper to a level of detail 593 
+
+that is necessary to appreciate the results and make sense of them. 594 
+
+• The full details can be provided either with the code, in appendix, or as supplemental 595 
+
+material. 596 
+
+7. Experiment statistical significance 597 
+
+Question: Does the paper report error bars suitably and correctly defined or other appropriate 598 
+
+information about the statistical significance of the experiments? 599 
+
+Answer: [No] 600 
+
+Justification: We did not include error bars as we were unable to run sufficient experiments 601 
+
+due to resource limitations. The model was tuned using the validation set and the final 602 
+
+performance was reported on the test set. 603 
+
+Guidelines: 604 
+
+• The answer NA means that the paper does not include experiments. 605 
+
+• The authors should answer "Yes" if the results are accompanied by error bars, confi-606 
+
+dence intervals, or statistical significance tests, at least for the experiments that support 607 
+
+the main claims of the paper. 608 
+
+• The factors of variability that the error bars are capturing should be clearly stated (for 609 
+
+example, train/test split, initialization, random drawing of some parameter, or overall 610 
+
+run with given experimental conditions). 611 
+
+15 • The method for calculating the error bars should be explained (closed form formula, 612 
+
+call to a library function, bootstrap, etc.) 613 
+
+• The assumptions made should be given (e.g., Normally distributed errors). 614 
+
+• It should be clear whether the error bar is the standard deviation or the standard error 615 
+
+of the mean. 616 
+
+• It is OK to report 1-sigma error bars, but one should state it. The authors should 617 
+
+preferably report a 2-sigma error bar than state that they have a 96% CI, if the hypothesis 618 
+
+of Normality of errors is not verified. 619 
+
+• For asymmetric distributions, the authors should be careful not to show in tables or 620 
+
+figures symmetric error bars that would yield results that are out of range (e.g. negative 621 
+
+error rates). 622 
+
+• If error bars are reported in tables or plots, The authors should explain in the text how 623 
+
+they were calculated and reference the corresponding figures or tables in the text. 624 
+
+8. Experiments compute resources 625 
+
+Question: For each experiment, does the paper provide sufficient information on the com-626 
+
+puter resources (type of compute workers, memory, time of execution) needed to reproduce 627 
+
+the experiments? 628 
+
+Answer: [Yes] 629 
+
+Justification: We provide the regarding information in Sec. 5.1. 630 
+
+Guidelines: 631 
+
+• The answer NA means that the paper does not include experiments. 632 
+
+• The paper should indicate the type of compute workers CPU or GPU, internal cluster, 633 
+
+or cloud provider, including relevant memory and storage. 634 
+
+• The paper should provide the amount of compute required for each of the individual 635 
+
+experimental runs as well as estimate the total compute. 636 
+
+• The paper should disclose whether the full research project required more compute 637 
+
+than the experiments reported in the paper (e.g., preliminary or failed experiments that 638 
+
+didn’t make it into the paper). 639 
+
+9. Code of ethics 640 
+
+Question: Does the research conducted in the paper conform, in every respect, with the 641 
+
+NeurIPS Code of Ethics https://neurips.cc/public/EthicsGuidelines ?642 
+
+Answer: [Yes] 643 
+
+Justification: Yes, our work aligns with the ethical guidelines set by NeurIPS. 644 
+
+Guidelines: 645 
+
+• The answer NA means that the authors have not reviewed the NeurIPS Code of Ethics. 646 
+
+• If the authors answer No, they should explain the special circumstances that require a 647 
+
+deviation from the Code of Ethics. 648 
+
+• The authors should make sure to preserve anonymity (e.g., if there is a special consid-649 
+
+eration due to laws or regulations in their jurisdiction). 650 
+
+10. Broader impacts 651 
+
+Question: Does the paper discuss both potential positive societal impacts and negative 652 
+
+societal impacts of the work performed? 653 
+
+Answer: [Yes] 654 
+
+Justification: We provide the regarding information in Appendix A.3. 655 
+
+Guidelines: 656 
+
+• The answer NA means that there is no societal impact of the work performed. 657 
+
+• If the authors answer NA or No, they should explain why their work has no societal 658 
+
+impact or why the paper does not address societal impact. 659 
+
+• Examples of negative societal impacts include potential malicious or unintended uses 660 
+
+(e.g., disinformation, generating fake profiles, surveillance), fairness considerations 661 
+
+(e.g., deployment of technologies that could make decisions that unfairly impact specific 662 
+
+groups), privacy considerations, and security considerations. 663 
+
+16 • The conference expects that many papers will be foundational research and not tied 664 
+
+to particular applications, let alone deployments. However, if there is a direct path to 665 
+
+any negative applications, the authors should point it out. For example, it is legitimate 666 
+
+to point out that an improvement in the quality of generative models could be used to 667 
+
+generate deepfakes for disinformation. On the other hand, it is not needed to point out 668 
+
+that a generic algorithm for optimizing neural networks could enable people to train 669 
+
+models that generate Deepfakes faster. 670 
+
+• The authors should consider possible harms that could arise when the technology is 671 
+
+being used as intended and functioning correctly, harms that could arise when the 672 
+
+technology is being used as intended but gives incorrect results, and harms following 673 
+
+from (intentional or unintentional) misuse of the technology. 674 
+
+• If there are negative societal impacts, the authors could also discuss possible mitigation 675 
+
+strategies (e.g., gated release of models, providing defenses in addition to attacks, 676 
+
+mechanisms for monitoring misuse, mechanisms to monitor how a system learns from 677 
+
+feedback over time, improving the efficiency and accessibility of ML). 678 
+
+11. Safeguards 679 
+
+Question: Does the paper describe safeguards that have been put in place for responsible 680 
+
+release of data or models that have a high risk for misuse (e.g., pretrained language models, 681 
+
+image generators, or scraped datasets)? 682 
+
+Answer: [Yes] 683 
+
+Justification: Our study itself does not present significant risks. We employ publicly 684 
+
+accessible diffusion models known to have certain risks, and we refer readers to their model 685 
+
+cards for safeguard information. 686 
+
+Guidelines: 687 
+
+• The answer NA means that the paper poses no such risks. 688 
+
+• Released models that have a high risk for misuse or dual-use should be released with 689 
+
+necessary safeguards to allow for controlled use of the model, for example by requiring 690 
+
+that users adhere to usage guidelines or restrictions to access the model or implementing 691 
+
+safety filters. 692 
+
+• Datasets that have been scraped from the Internet could pose safety risks. The authors 693 
+
+should describe how they avoided releasing unsafe images. 694 
+
+• We recognize that providing effective safeguards is challenging, and many papers do 695 
+
+not require this, but we encourage authors to take this into account and make a best 696 
+
+faith effort. 697 
+
+12. Licenses for existing assets 698 
+
+Question: Are the creators or original owners of assets (e.g., code, data, models), used in 699 
+
+the paper, properly credited and are the license and terms of use explicitly mentioned and 700 
+
+properly respected? 701 
+
+Answer: [Yes] 702 
+
+Justification: We provide the regarding information in Appendix A.4. 703 
+
+Guidelines: 704 
+
+• The answer NA means that the paper does not use existing assets. 705 
+
+• The authors should cite the original paper that produced the code package or dataset. 706 
+
+• The authors should state which version of the asset is used and, if possible, include a 707 
+
+URL. 708 
+
+• The name of the license (e.g., CC-BY 4.0) should be included for each asset. 709 
+
+• For scraped data from a particular source (e.g., website), the copyright and terms of 710 
+
+service of that source should be provided. 711 
+
+• If assets are released, the license, copyright information, and terms of use in the package 712 
+
+should be provided. For popular datasets, paperswithcode.com/datasets has 713 
+
+curated licenses for some datasets. Their licensing guide can help determine the license 714 
+
+of a dataset. 715 
+
+17 • For existing datasets that are re-packaged, both the original license and the license of 716 
+
+the derived asset (if it has changed) should be provided. 717 
+
+• If this information is not available online, the authors are encouraged to reach out to 718 
+
+the asset’s creators. 719 
+
+13. New assets 720 
+
+Question: Are new assets introduced in the paper well documented and is the documentation 721 
+
+provided alongside the assets? 722 
+
+Answer: [Yes] 723 
+
+Justification: We provide the detail about the dataset in Appendix A.2. 724 
+
+Guidelines: 725 
+
+• The answer NA means that the paper does not release new assets. 726 
+
+• Researchers should communicate the details of the dataset/code/model as part of their 727 
+
+submissions via structured templates. This includes details about training, license, 728 
+
+limitations, etc. 729 
+
+• The paper should discuss whether and how consent was obtained from people whose 730 
+
+asset is used. 731 
+
+• At submission time, remember to anonymize your assets (if applicable). You can either 732 
+
+create an anonymized URL or include an anonymized zip file. 733 
+
+14. Crowdsourcing and research with human subjects 734 
+
+Question: For crowdsourcing experiments and research with human subjects, does the paper 735 
+
+include the full text of instructions given to participants and screenshots, if applicable, as 736 
+
+well as details about compensation (if any)? 737 
+
+Answer: [NA] 738 
+
+Justification: The study does not include crowdsourcing or human subject research. 739 
+
+Guidelines: 740 
+
+• The answer NA means that the paper does not involve crowdsourcing nor research with 741 
+
+human subjects. 742 
+
+• Including this information in the supplemental material is fine, but if the main contribu-743 
+
+tion of the paper involves human subjects, then as much detail as possible should be 744 
+
+included in the main paper. 745 
+
+• According to the NeurIPS Code of Ethics, workers involved in data collection, curation, 746 
+
+or other labor should be paid at least the minimum wage in the country of the data 747 
+
+collector. 748 
+
+15. Institutional review board (IRB) approvals or equivalent for research with human 749 
+
+subjects 750 
+
+Question: Does the paper describe potential risks incurred by study participants, whether 751 
+
+such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) 752 
+
+approvals (or an equivalent approval/review based on the requirements of your country or 753 
+
+institution) were obtained? 754 
+
+Answer: [NA] . 755 
+
+Justification: The study does not include crowdsourcing or human subject research. 756 
+
+Guidelines: 757 
+
+• The answer NA means that the paper does not involve crowdsourcing nor research with 758 
+
+human subjects. 759 
+
+• Depending on the country in which research is conducted, IRB approval (or equivalent) 760 
+
+may be required for any human subjects research. If you obtained IRB approval, you 761 
+
+should clearly state this in the paper. 762 
+
+• We recognize that the procedures for this may vary significantly between institutions 763 
+
+and locations, and we expect authors to adhere to the NeurIPS Code of Ethics and the 764 
+
+guidelines for their institution. 765 
+
+• For initial submissions, do not include any information that would break anonymity (if 766 
+
+applicable), such as the institution conducting the review. 767 
+
+18 16. Declaration of LLM usage 768 
+
+Question: Does the paper describe the usage of LLMs if it is an important, original, or 769 
+
+non-standard component of the core methods in this research? Note that if the LLM is used 770 
+
+only for writing, editing, or formatting purposes and does not impact the core methodology, 771 
+
+scientific rigorousness, or originality of the research, declaration is not required. 772 
+
+Answer: [Yes] 773 
+
+Justification: We provide the regarding information in Appendix A.5. 774 
+
+Guidelines: 775 
+
+• The answer NA means that the core method development in this research does not 776 
+
+involve LLMs as any important, original, or non-standard components. 777 
+
+• Please refer to our LLM policy ( https://neurips.cc/Conferences/2025/ 778 
+
+LLM ) for what should or should not be described. 779 
+
+19

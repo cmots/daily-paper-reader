@@ -1,0 +1,2554 @@
+Title: 16855_HybridVLA_Collaborative_.pdf
+
+URL Source: https://openreview.net/pdf?id=8VyjwyLuSl
+
+Number of Pages: 29
+
+Markdown Content:
+# HybridVLA: Collaborative Autoregression and Diffusion in a Unified Vision-Language-Action Model 
+
+Anonymous Author(s) 
+
+Affiliation Address 
+
+email 
+
+## Abstract 
+
+A fundamental objective of manipulation policy design is to endow robots to com-1
+
+prehend human instructions, reason about scene cues, and execute generalized 2
+
+actions in dynamic environments. Recent autoregressive vision-language-action 3
+
+(VLA) methods inherit common-sense reasoning capabilities from vision-language 4
+
+models (VLMs) for next action-token prediction. However, these methods quantize 5
+
+actions into discrete bins, which disrupts the continuity required for precise con-6
+
+trol. In contrast, existing diffusion-based VLA methods incorporate an additional 7
+
+diffusion head to predict continuous actions solely conditioned on feature repre-8
+
+sentations extracted by the VLM, without fully leveraging the VLM’s pretrained 9
+
+reasoning capabilities through token-level generation. To address these limitations, 10 
+
+we introduce HybridVLA, a unified framework that absorbs the continuous nature 11 
+
+of diffusion-based actions and the contextual reasoning of autoregression within a 12 
+
+single large language model. To mitigate interference between the two generation 13 
+
+paradigms, we propose a collaborative training recipe that seamlessly incorporates 14 
+
+diffusion denoising into the next-token prediction process. With this recipe, we 15 
+
+find these two action prediction methods not only reinforce each other but also 16 
+
+exhibit varying strength across different tasks. Therefore, we design a collaborative 17 
+
+action ensemble mechanism that adaptively fuses both predictions, leading to more 18 
+
+robust control. HybridVLA outperforms previous state-of-the-art VLA methods by 19 
+
+14% and 19% in mean success rate on simulation and real-world tasks, respectively, 20 
+
+while demonstrating stable manipulation in unseen configurations. 21 
+
+## 1 Introduction 22 
+
+Developing human-like robots capable of performing manipulation tasks demands intelligent poli-23 
+
+cies [ 1, 2 , 3 ]. In dynamic and unstructured real-world environments, such policies need to interpret 24 
+
+human instructions and generalize across a wide range of complex tasks [ 4]. Recently, vision-language 25 
+
+models (VLMs) [ 5 , 6 , 7, 8] have brought forth dramatic breakthroughs in instruction following and 26 
+
+common-sense reasoning, driven by pretraining on internet-scale image-text pairs. Building on this 27 
+
+success, several studies have extended VLMs into vision-language-action (VLA) models, enabling 28 
+
+them to predict low-level action poses for robotic manipulation [ 9, 10 , 11 ]. This paradigm outlines a 29 
+
+promising roadmap for building foundation models to facilitate generalist robots. 30 
+
+On the one hand, autoregressive VLA methods [ 9, 11 , 10 , 15 ] emulate the reasoning paradigm of 31 
+
+VLMs for next token prediction, effectively leveraging their large-scale pretrained knowledge and 32 
+
+reasoning capabilities. While such methods enable generalized manipulation skills [ 10 ], they quantize 33 
+
+continuous actions into discrete bins by adding new embeddings into the vocabulary in large language 34 
+
+models (LLMs), which disrupts the continuity of action pose and hinders precise control [ 16 ]. On 35 
+
+the other hand, building on the success of diffusion models in content generation [ 17 , 18 , 19 , 20 ], 36 
+
+Submitted to 39th Conference on Neural Information Processing Systems (NeurIPS 2025). Do not distribute. Large Language Model                        
+
+> Vision Encoder
+> Diffusion
+> noise
+> Tokenizer
+> Text
+> prompts
+> MLP
+> Autoregressive
+> actions
+> Diffusion
+> actions
+> Large Language Model
+> Vision Encoder
+> Diffusion
+> noise
+> Tokenizer
+> Text
+> prompts
+> Diffusion
+> Policy head
+> Actions
+> (a) Previous diffusion -based VLA (b) Our proposed HybridVLA
+> Large -scale robot data Downstream self -collected data
+> Pre -train Fine -tune
+> : Without next token prediction 66
+> 55
+> 0
+> 20
+> 40
+> 60
+> 80
+> 80
+> 61
+> 45
+> 0
+> 20
+> 40
+> 60
+> 80 74
+> 60 55
+> 0
+> 20
+> 40
+> 60
+> 80
+> RLBench Simulation Real -world dual arm
+> :HybridVLA (7B) :CogAct (7B) :!!#.%&
+> 71
+> 55
+> 0
+> 20
+> 40
+> 60
+> 80
+> 83
+> 61
+> 45
+> 0
+> 20
+> 40
+> 60
+> 80
+> Real -world single arm
+
+Figure 1: (a) Unlike recent diffusion-based VLA methods [ 12 , 13 , 14 ] that attach a separate diffusion head after VLMs, (b) HybridVLA innovatively integrates diffusion and autoregressive action predic-tion within a single LLM, fully leveraging the continuity of diffusion and the reasoning capabilities of autoregressive modeling. It is pretrained on large, diverse, cross-embodiment real-world robot datasets and further fine-tuned on downstream, self-collected data. HybridVLA achieves remarkable performance across various tasks involving both single-arm and dual-arm robots. diffusion policies have been introduced in robotic imitation learning [ 21 , 22 , 23 , 24 , 25 , 26 ]. Recent 37 
+
+diffusion-based VLA methods [ 13 , 14 , 16 , 12 ] incorporate a diffusion head after the VLM, leveraging 38 
+
+probabilistic noise-denoising for action prediction. While these methods enable precise manipulation, 39 
+
+the diffusion head operates independently of the VLM and lacks internet-scale pretraining. Moreover, 40 
+
+since the head relies solely on VLM-extracted feature representations as input conditions, these 41 
+
+methods fail to fully leverage the VLM’s pretrained reasoning capabilities through next-token 42 
+
+prediction. Given these advantages and limitations, a question arises: “ How can we elegantly 43 
+
+construct a unified VLA model that seamlessly integrates the strengths of both autoregressive and 44 
+
+diffusion policies, rather than simply concatenating them? "45 
+
+To this end, we propose HybridVLA, a unified framework that equips VLMs with both diffusion and 46 
+
+autoregressive action prediction capabilities, enabling mutual reinforcement between them to facilitate 47 
+
+robust execution across diverse tasks. As shown in Figure 1, unlike previous diffusion-based VLA 48 
+
+methods [ 13 , 14 ] that append an independent diffusion head after the LLM (Figure 1 (a)), we introduce 49 
+
+a collaborative training recipe that seamlessly integrates diffusion denoising into the autoregressive 50 
+
+next-token prediction process within a single LLM backbone (Figure 1 (b)). Specifically, since 51 
+
+the token representations of discrete autoregressive tokens and continuous diffusion latents are 52 
+
+inconsistent, a token sequence formulation is designed to systematically organize multimodal inputs, 53 
+
+diffusion tokens, and autoregressive tokens, which are linked through specialized marker tokens. 54 
+
+Under our proposed collaborative optimization, as both generation methods share the LLM backbone, 55 
+
+HybridVLA explicitly captures the continuous action representations from diffusion modeling along 56 
+
+with the pretrained semantic reasoning of autoregressive generation, allowing the two paradigms 57 
+
+to reinforce each other. Meanwhile, we observe that diffusion generation excels in intricate tasks, 58 
+
+while autoregression performs better in tasks requiring rich semantic understanding. Therefore, a 59 
+
+collaborative action ensemble mechanism is proposed, where the two predictions are adaptively fused 60 
+
+based on autoregressive action token confidence, improving robustness in manipulation. 61 
+
+To enhance generalization capability, we initialize HybridVLA with an internet-scale pretrained 62 
+
+VLM [ 27 ], and design a step-by-step training approach [ 13 , 10 ]. As shown in Figure 1, our model 63 
+
+undergoes further pretraining on large, diverse, cross-embodiment robotic datasets, including Open 64 
+
+X-Embodiment [ 28 ], DROID [ 29 ], and ROBOMIND [ 30 ], covering 760K trajectories and over 10K 65 
+
+A800 GPU training hours. Subsequently, HybridVLA is fine-tuned on self-collected simulation 66 
+
+data [ 31 ] and real-world data, achieving state-of-the-art (SOTA) manipulation performance across a 67 
+
+variety of tasks with both single-arm and dual-arm robots. Meanwhile, HybridVLA demonstrates 68 
+
+sufficient generalization capabilities to unseen manipulated objects, backgrounds, spatial positions, 69 
+
+and lighting conditions during real-world testing, highlighting the effectiveness of our collaborative 70 
+
+model design and training recipe. To optimize inference speed, we also introduce the HybridVLA-dif 71 
+
+(7B) variant, which integrates diffusion and autoregressive generation during training but relies 72 
+
+exclusively on diffusion-based actions for inference at 9.4 Hz. Our contributions are as follows: 73 
+
+• We propose HybridVLA, a unified model that seamlessly integrates diffusion and autoregres-74 
+
+sive action generation within a single LLM, effectively absorbing the continuous nature of 75 
+
+diffusion-based actions and the contextual reasoning of autoregressive generation, thereby 76 
+
+enabling mutual reinforcement and improving manipulation robustness. 77 
+
+2• We introduce a collaborative training recipe that bridges the gap between the two action 78 
+
+generation approaches, enabling mutual reinforcement through a shared LLM backbone. 79 
+
+Additionally, we propose a collaborative action ensemble mechanism that adaptively fuses 80 
+
+diffusion- and autoregressive-based actions, enhancing manipulation robustness. 81 
+
+• Our proposed method achieves SOTA performance across diverse tasks while demonstrating 82 
+
+strong generalization to several unseen configurations. 83 
+
+## 2 Related Work 84 
+
+Traditional robotic manipulation primarily relies on state-based reinforcement learning [ 32 , 33 , 34 ,85 
+
+35 ], whereas recent approaches [ 36 , 37 , 38 , 21 ] integrate visual observations for imitation learning. 86 
+
+Building on the strong reasoning capabilities of vision-language models (VLMs) [ 5 , 6, 7 , 39 ], recent 87 
+
+research has integrated them into robotic manipulation [40, 41, 42, 43]. 88 
+
+Vision-language-action (VLA) models. Some studies [ 2, 1, 3 , 44 ] enable robots to interpret both 89 
+
+language and visual observations, automatically generating task plans. Meanwhile, vision-language-90 
+
+action (VLA) models leverage the inherent reasoning abilities of VLMs to predict low-level SE(3) 91 
+
+poses. Specifically, RT2[ 9] quantizes 7-DoF actions into discrete bins for autoregressive pose predic-92 
+
+tion. Building on this, ManipLLM[ 11 ] incorporates affordance priors through chain-of-thought rea-93 
+
+soning, while OpenVLA[ 10 ] performs large-scale pretraining on the Open X-Embodiment dataset[ 28 ]. 94 
+
+FAST [ 15 ] applies the discrete cosine transform to enable fast and scalable training of autoregressive-95 
+
+based VLA models. To support continuous action prediction, some VLA approaches [ 45 , 46 , 47 , 48 ]96 
+
+incorporate a policy head, such as an MLP or LSTM [ 49 ], and use regression loss for imitation 97 
+
+learning. However, quantization in autoregressive methods disrupts action continuity, while regressive 98 
+
+methods fail to incorporate probabilistic action representations. 99 
+
+Diffusion models in robotics. Building on the success of diffusion models in content generation [ 17 ,100 
+
+18 , 19 , 20 ], diffusion policies have been applied in robotics, including reinforcement learning [ 50 , 51 ], 101 
+
+imitation learning [ 21 , 52 , 53 , 25 , 26 ], grasping [ 54 , 55 , 56 ], and motion planning [ 57 , 58 ]. Following 102 
+
+this, 3D Diffusion Actor [ 23 ] and DP3 [ 21 ] employ diffusion models to interpret point cloud data. 103 
+
+Octo [59] and RDT-1B [60] augment a transformer with a diffusion head to predict flexible actions. 104 
+
+Diffusion-based VLA models. To integrate diffusion with VLMs, π0 [ 13 ] adds a diffusion expert 105 
+
+head that generates actions through flow matching, while TinyVLA [ 61 ] incorporates a simple 106 
+
+diffusion head after the lightweight VLM. CogACT [ 14 ] and DiVLA [ 16 ] decouple reasoning 107 
+
+and action prediction into the VLM and an injected diffusion head, respectively. Following this 108 
+
+architecture, some works [ 12 , 62 , 63 ] introduce a dual-system design to enable control at different 109 
+
+frequencies. However, in these methods, the diffusion head operates as a separate module and treats 110 
+
+the VLM as a multimodal feature extractor, limiting its ability to fully exploit pretrained reasoning 111 
+
+capabilities through next-token prediction. In general scenarios, some works [ 64 , 65 , 66 , 67 ] jointly 112 
+
+tackle multimodal understanding and generation, while others [ 68 , 69 , 70 ] integrate diffusion into 113 
+
+autoregressive transformers. Unlike prior methods focused on image and language generation quality, 114 
+
+HybridVLA introduces a robotics-specific collaborative training strategy that integrates diffusion 115 
+
+action generation into next-token prediction within a single LLM, enabling mutual enhancement. 116 
+
+## 3 HybridVLA Method 117 
+
+Overview. Existing diffusion-based VLA methods [ 13 , 16 , 14 ] append a separate diffusion head 118 
+
+after the VLM. However, these methods overlook the LLM’s core contextual reasoning mechanism 119 
+
+(next-token prediction) acquired through internet-scale pretraining, since the head relies solely on 120 
+
+VLM-extracted multimodal features from a single forward pass as diffusion conditions. In contrast, 121 
+
+HybridVLA injects diffusion denoising into the next-token prediction process, equipping a single 122 
+
+LLM with both diffusion and autoregressive action generation capabilities. To construct HybridVLA, 123 
+
+we first describe the model architecture in Section 3.1. Since simply merging the two generation 124 
+
+methods could cause inconsistency, we introduce a collaborative training recipe in Section 3.2. To 125 
+
+further enhance robustness, we propose a collaborative action ensemble mechanism in Section 3.3. 126 
+
+Problem Statement. At time t, each demonstration consists of image observations ot, language 127 
+
+description lt, and the current robot state rt. Our model π aims to predict action a to control 128 
+
+the robot arms, which can be formulated as: π : ( ot, l t, r t) → at+1 . Following [ 10 , 14 ], the 129 
+
+3Large Language Model (Diffusion & Autoregressive )                         
+
+> Tokenizer
+> “Question: What action
+> should the robot take to
+> {Open drawer and place
+> inside}?”
+> MLP Vision Encoder
+> Robot
+> state
+> MLP
+> Diffusion
+> noise
+> Denoise
+> Step i+
+> Multi -view images
+> <BOD> <EOD>
+> MLP Det okenizer
+> Next token prediction
+> If 𝒄 𝒕 "𝟏
+> 𝒂𝒓 >𝜽 ∶
+> Diffusion + Autoregression
+> at+1 =(𝒂 𝒕 "𝟏
+> 𝒅 +𝒂 𝒕 "𝟏
+> 𝒂𝒓 )/𝟐
+> If 𝒄 𝒕 "𝟏
+> 𝒂𝒓 <𝜽 ∶
+> Diffusion
+> at+1 =𝒂 𝒕 "𝟏
+> 𝒅
+> Collaborative action ensemble
+> : Frozen
+> : Fine -tune
+> Execution 𝒂 𝒕 "𝟏
+> 𝒂𝒓 𝒄 𝒕 "𝟏
+> 𝒂𝒓 𝒂 𝒕 "𝟏
+> 𝒅 Output
+> : Special token
+> Denoising
+> Autoregression Diffusion
+> : Noised action
+> : Denoised action
+
+Figure 2: HybridVLA Framework. All multimodal inputs are encoded into tokens and subsequently organized into our designed token sequence formulation within the LLM’s embedding space. For dif-fusion tokens, HybridVLA simultaneously projects the denoising timestep and noise into continuous vector representations. During inference, we adopt DDIM [ 71 ] with four sampling steps, where the corresponding noisy samples are iteratively fed into the LLM to predict the noise at each step. The marker tokens, <BOD > (Beginning of Diffusion) and <EOD > (End of Diffusion), are introduced to bridge the two generation paradigms. Subsequently, autoregressive actions are generated via standard next action-token prediction, explicitly conditioned on the preceding tokens. Our collaborative training recipe integrates knowledge from both generation paradigms into the shared LLM, enabling them to reinforce each other and be adaptively ensembled for robot arm control. action a represents the end-effector pose, which uses 7-DOF and 14-DOF for single-arm and 130 
+
+dual-arm control, respectively. Each 7-DOF action includes 3-DOF for relative translation offsets 131 
+
+([∆ x, ∆y, ∆z] ∈ R3), 3-DOF for rotation (Euler angles ∈ R3), and 1-DOF for the gripper state 132 
+
+(open/closed ∈ R1). The ground truth (GT) and the model-predicted action are in SE(3), formulated 133 
+
+as: a = [∆ x, ∆y, ∆z, Roll, P itch, Y aw, 0/1] .134 
+
+3.1 HybridVLA Architecture 135 
+
+Pretrained VLM base. This section presents the architecture and workflow of HybridVLA, available 136 
+
+in two model sizes, using 7B and 2.7B large language models (LLMs). Following [ 10 ], both 137 
+
+HybridVLA(7B) and HybridVLA(2.7B) inherit the base architecture from Prismatic VLMs [ 27 ], 138 
+
+initializing with the corresponding large-scale pretrained VLM parameters. We first introduce the 139 
+
+two basic components, vision encoders and the LLM, as shown in Figure 2. 140 
+
+Vision encoders. HybridVLA leverages powerful vision encoder combinations, such as DINOv2 [ 72 ]141 
+
+and SigLIP [ 73 ], to capture rich semantic features fd ∈ RB×Nv ×1024 and fs ∈ RB×Nv ×1152 . B and 142 
+
+N represent batch size and token sequence length, respectively. These features are concatenated 143 
+
+along the channel dimension to form fv ∈ RB×Nv ×2176 , which is subsequently projected into the 144 
+
+LLM’s word embedding via a projection layer. HybridVLA(2.7B) uses only the CLIP [ 74 ] model as 145 
+
+its vision encoder. When processing multi-view images, a shared vision encoder extracts features, 146 
+
+which are then concatenated along the token dimension. 147 
+
+LLM. HybridVLA adopts 7B LLAMA-2 [ 75 ] as LLM, responsible for multimodal understanding 148 
+
+and reasoning. Language prompts are encoded into embedding space fl ∈ RB×Nl×4096 using the 149 
+
+pre-trained tokenizer, then concatenated with visual tokens and input into LLM. The other specially 150 
+
+designed LLM inputs (e.g., diffusion noise) are presented in the next section, and the output tokens are 151 
+
+processed in two ways. First, diffusion-based action ( adt+1 ) generation through a denoising process, 152 
+
+where an MLP maps the tokens into the action space. Second, autoregressive-based action generation 153 
+
+(aar t+1 ) is performed using a detokenizer [ 10 ], which also computes the mean confidence ( car t+1 ) of the 154 
+
+predicted tokens, serving as a guiding factor for the collaborative action ensemble. For HybridVLA 155 
+
+(2.7B), the workflow remains the same as that of HybridVLA (7B) but utilizes the 2.7B Phi-2 [ 76 ] as 156 
+
+the LLM. In the next section, we introduce how to simultaneously equip a single LLM with diffusion 157 
+
+and autoregressive action generation capabilities. 158 
+
+43.2 Collaborative Training Recipe 159 
+
+Combining continuous diffusion and discrete autoregressive action generation within a single LLM 160 
+
+presents challenges such as instability and inconsistency in the next-token prediction process. To 161 
+
+address this, we propose a collaborative training recipe that includes a token sequence formulation, 162 
+
+hybrid objectives, and structured training stages. 163 
+
+Token sequence formulation design. As shown in Figure 2, this design aims to organize multi-164 
+
+modal tokens, such as robot state, diffusion noise, and autoregressive tokens, within the LLM’s 165 
+
+embedding space into a unified and ordered token sequence, enabling coordination between the 166 
+
+two generation paradigms during the next-token prediction process. For the robot state , we inte-167 
+
+grate it into the LLM to enhance temporal consistency in action generation. Instead of discretiz-168 
+
+ing the robot state and merging it with the language query [ 11 ] (Type 3 of Table 1), we employ 169 
+
+a learnable MLP to map the robot state directly into the embedding space, fr ∈ RB×1×4096 .170 
+
+Table 1: Token sequence formulations. All mod-els are trained with both generation methods. Dif and AR denote evaluations using only diffusion-generated or autoregressive-generated actions, re-spectively, across 10 RLBench tasks. Large Language Model                          
+
+> Type 1(Ours)
+> Large Language Model
+> Type 2
+> Type 3
+> Large Language Model
+> Type 4
+> : Diffusion token : Autoregressive token : Robot state embedding
+> : Special tokens (<BOD> & <EOD>) : Discreate robot state bins
+> Large Language Model
+> Paradigm Type1(Ours) Type2 Type3 Type4 Dif 0.66 0.56 0.61 0.57 AR 0.62 0.54 0.59 0.60
+
+The motivation is that diffusion action tokens are 171 
+
+generated using all preceding tokens as condi-172 
+
+tions. Introducing discrete robot states could 173 
+
+negatively impact the diffusion prediction of 174 
+
+continuous actions. For diffusion-based ac-175 
+
+tions , we predict them through a diffusion de-176 
+
+noising process. During training, the denois-177 
+
+ing step i and noisy actions ait are projected 178 
+
+into the LLM’s word embeddings through an 179 
+
+MLP, represented as continuous vectors. To 180 
+
+seamlessly connect previous multimodal tokens, 181 
+
+diffusion tokens, and subsequent discrete to-182 
+
+kens within a sequence, we introduce special 183 
+
+beginning-of-diffusion ( <BOD >) and end-of-184 
+
+diffusion ( <EOD >) tokens to encapsulate the 185 
+
+diffusion tokens. This design not only clarifies 186 
+
+the boundaries between diffusion and autore-187 
+
+gressive generation but also prevents confusion 188 
+
+in the next-token prediction process, such as 189 
+
+avoiding diffusion tokens directly predicting masked discrete tokens (Type 2 of Table 1). For au-190 
+
+toregressive actions , we quantize the end-effector pose into discrete bins and replace part of the 191 
+
+vocabulary in the LLM [ 10 ], which is then tokenized into a sequence of discrete tokens. Due to 192 
+
+the autoregressive nature of LLMs [ 77 ], both the question and the answer, including the discrete 193 
+
+action ground truth (GT), are provided during training, whereas only the question is available during 194 
+
+inference. Therefore, placing autoregression before the diffusion tokens may cause action GT leakage 195 
+
+(Type 4 in Table 1), as all preceding tokens (which contain GT during training) serve as conditions in 196 
+
+diffusion modeling. To avoid this, we position diffusion tokens before autoregression to explicitly 197 
+
+provide continuous latent conditions for subsequent token prediction. Moreover, since diffusion 198 
+
+operates on noise, it naturally circumvents the risk of information leakage. 199 
+
+Hybrid objectives. To simultaneously train diffusion and autoregressive action generation, we 200 
+
+require two distinct loss functions. For the diffusion part, following previous diffusion policies [ 21 ], 201 
+
+we minimize the mean squared error between the predicted noise ( ϵπ ) from the VLA model and 202 
+
+the GT noise ( ϵ). The loss function is defined as follows: Ldif = Ea,i,c || ϵ − ϵπ (ait, i, c )|| 2, where 203 
+
+ϵ ∼ N (0 , 1) and c denote the condition. Additionally, classifier-free guidance [ 78 ] is not used in order 204 
+
+to ensure stable robot arm behavior [ 60 ]. For the autoregressive part, the cross-entropy loss ( Lce )205 
+
+is adopted to supervise the discrete output. With our designed token sequence formulation, the two 206 
+
+losses can be seamlessly combined for collaborative penalization, defined as: Lhybrid = Ldif + Lce .207 
+
+Since Ldif and Lce penalize a shared LLM backbone, their gradients are jointly backpropagated, 208 
+
+allowing the model to effectively absorb both the continuous characteristics of diffusion-based actions 209 
+
+and the semantic reasoning representations derived from autoregressive generation, thereby enabling 210 
+
+mutual reinforcement between the two paradigms. 211 
+
+Structured training stage. After loading the pretrained VLM parameters, HybridVLA undergoes 212 
+
+two training stages with hybrid objectives: large-scale pretraining on open-source robotic data and 213 
+
+fine-tuning on self-collected data. During pretraining, we train HybridVLA for 5 epochs on 35 214 
+
+datasets [ 28 , 29 , 29 ]. The pretrain datasets contain 760k robot trajectories, comprising 33m frames. 215 
+
+5Due to dataset differences, pretraining relies solely on single 2D observations, whereas fine-tuning 216 
+
+relies on either single or multi-view observations, depending on the downstream task. The details of 217 
+
+the pretraining dataset are provided in Appendix A.1. 218 
+
+3.3 Collaborative Action Ensemble 219 
+
+During inference, HybridVLA takes visual, language, and robot state inputs to concurrently generate 220 
+
+actions via both diffusion and autoregressive methods, and ensembles them for execution. 221 
+
+Autoregressive actions. As shown in Figure 2, the autoregressive generation begins after the 222 
+
+special token <EOD >. Unlike previous autoregressive VLA methods [ 10 , 11 ], HybridVLA’s 223 
+
+autoregressive generation additionally conditions on continuous action representations derived from 224 
+
+the latent features of diffusion tokens. This results in superior manipulation performance compared 225 
+
+to independent autoregressive discrete generation paradigms that lack explicit continuous latent 226 
+
+conditioning, as demonstrated in the ablation study. 227 
+
+Diffusion actions. When generating diffusion actions, we append the special token <BOD > after the 228 
+
+previous condition tokens to indicate that the model should perform the denoising process. We employ 229 
+
+DDIM [ 71 ] with n sampling steps. In HybridVLA, we observe that the number of inference denoising 230 
+
+steps can be reduced to 4 without causing any performance degradation. As illustrated in the denoising 231 
+
+process of Figure 2, we repeat the process for 4 DDIM steps by feeding the noisy sample from the 232 
+
+previous step into the LLM to predict the noise token for the current step, thereby fully leveraging the 233 
+
+LLM’s contextual reasoning capabilities. In this way, we effectively inherit the LLM’s pretrained 234 
+
+knowledge and seamlessly integrate diffusion generation into the next-token prediction process. 235 
+
+Moreover, since we deliberately place the diffusion action tokens before the autoregressive tokens, 236 
+
+the autoregressive predictions cannot be directly used as diffusion conditions. However, as discussed 237 
+
+in the previous section, both generation methods share the same LLM backbone, which is jointly 238 
+
+trained with hybrid objectives. As a result, the LLM is able to absorb the unique knowledge from 239 
+
+each generation paradigm, thereby enhancing its overall representation. To accelerate the sampling 240 
+
+process, we introduce the KV cache before the diffusion tokens, forwarding conditional information, 241 
+
+the denoising timestep, and pure noise only during the initial sampling step. In subsequent steps, the 242 
+
+cached keys and values from the first pass are reused, while only the timestep and noise are iteratively 243 
+
+forwarded. This strategy eliminates redundant computations and improves inference speed. 244 
+
+Ensembled actions. After obtaining the two types of actions under our collaborative training recipe, 245 
+
+we empirically observe two phenomena. 1) Different action types demonstrate varying performance 246 
+
+across tasks. Diffusion-based predictions excel in precise manipulation tasks, such as Phone on base 247 
+
+and Close laptop lid , while autoregressive predictions perform better in tasks requiring scene semantic 248 
+
+reasoning, such as Water plants and Frame off hanger . 2) The confidence of autoregressive tokens 249 
+
+serves as a reliable indicator of action quality. In over 80% of successfully completed test samples, 250 
+
+the average confidence of autoregressive action tokens exceeds 0.96. Quantitative evaluations are 251 
+
+provided in Appendix B.1 and B.2. Therefore, as shown in Figure 2, we use the mean confidence of 252 
+
+autoregressive tokens ( car t+1 ) to guide the action ensemble. If the confidence exceeds θ (θ = 0 .96 ), we 253 
+
+consider the autoregressive action ( aar t+1 ) sufficiently accurate and perform an average operation with 254 
+
+the diffusion action ( adt+1 ). Otherwise, we rely solely on the diffusion action to control the robot. 255 
+
+## 4 Experiment 256 
+
+In Section 4.1, we compare the manipulation ability and inference speed of HybridVLA with previous 257 
+
+VLA methods in simulation environments. The effectiveness of each component is validated in 258 
+
+Section 4.2 and Appendix B. In Section 4.3, we present both quantitative and qualitative manipulation 259 
+
+results of HybridVLA in real-world scenarios, including single-arm and dual-arm robot tasks. The 260 
+
+generalization capabilities of HybridVLA are examined in Section 4.4, testing on unseen manipulated 261 
+
+instances, background, spatial positions, and lighting conditions. 262 
+
+4.1 Simulation Experiment 263 
+
+Simulation benchmark. To systematically evaluate, we select the RLBench [31] benchmark in the 264 
+
+CoppeliaSim simulator, which contains 10 different tabletop tasks. These tasks, performed using 265 
+
+a Franka Panda robot and a front-view camera, include Close box , Close Laptop , Toilet seat down ,266 
+
+6Table 2: Comparison of HybridVLA and baselines on RLBench. We train all methods in the Multi-task setting [ 79 ] and report the success rates (S.R.). The success condition follows the definition in RLBench. (7B), (2.7B), and (2.6B) refer to the sizes of the LLM used in the VLA model.                                                                                                                    
+
+> Close Close Toilet Sweep Close Phone Umbrella Frame Wine at Water Mean Infer. Models box laptop lid seat down to dustpan fridge on base out off hanger rack plants S.R. & Var speed ManipLLM (7B) [11] 0.50 0.80 0.40 0.20 0.80 0.35 0.10 0.25 0.15 0.20 0.38 ±0.042 2.2 Hz OpenVLA (7B) [10] 0.65 0.40 0.75 0.60 0.80 0.20 0.35 0.15 0.10 0.10 0.41 ±0.038 6.3 Hz
+> π0(2.6B) [13] 0.90 0.60 1.00 0.30 0.90 0.25 0.35 0.75 0.05 0.45 0.55 ±0.035 13.8 Hz CogACT (7B) [14] 0.80 0.85 0.90 0.65 0.90 0.50 0.60 0.35 0.25 0.25 0.60 ±0.041 9.8 Hz HybridVLA-dif (7B) 0.85 0.75 1.00 0.80 0.95 0.50 0.50 0.30 0.70 0.25 0.66 ±0.040 9.4 Hz HybridVLA (2.7B) 1.00 0.80 0.90 0.80 0.90 0.25 0.20 0.45 0.25 0.25 0.58 ±0.031 12.3 Hz HybridVLA (7B) 0.85 0.95 1.00 0.90 1.00 0.50 0.50 0.70 0.50 0.50 0.74 ±0.037 6.1 Hz
+
+Sweep to dustpan , Close fridge , Phone on base , Take umbrella out , Frame off hanger , Wine at rack ,267 
+
+and Water plants . The data are collected using pre-defined waypoints and the Open Motion Planning 268 
+
+Library [ 80 ]. Following the frame-sampling method used in previous works [ 79 , 81 , 82 ], we construct 269 
+
+the training dataset, with each task consisting of 100 trajectories. 270 
+
+Training and Evaluation Details. We compare our method with four previous SOTA VLA models, 271 
+
+including autoregressive-based approaches such as ManipLLM [ 11 ] and OpenVLA [ 10 ], as well as 272 
+
+diffusion-based methods like π0 [13 ] and CogAct [ 14 ] with a DiT-base action head. Meanwhile, we 273 
+
+categorize our method into three modes: HybridVLA (7B), HybridVLA (2.7B), and HybridVLA-274 
+
+dif (7B). All modes are jointly trained using our proposed collaborative training recipe; however, 275 
+
+HybridVLA-dif relies solely on diffusion-based action generation during inference. To ensure a fair 276 
+
+comparison, we load the official pretrained parameters provided by each method, adhering to their 277 
+
+respective training settings. For HybridVLA, the single-view RGB input is resized to 224 × 224 ,278 
+
+and the robot state is consistent with predicted actions (7-DOF end-effector poses). During training, 279 
+
+we use the AdamW optimizer with a fixed learning rate of 2e-5 to update both the LLM and the 280 
+
+injected MLP parameters. Our models are trained for 300 epochs on 8 NVIDIA A800 GPUs with 281 
+
+mixed-precision training. For evaluation, we follow [ 10 , 14 ] and test all methods using 20 rollouts 282 
+
+from the latest epoch checkpoint. Since RLBench employs a sampling-based motion planner [ 83 ], 283 
+
+we evaluate each model three times per task and report the mean success rate along with its variance. 284 
+
+Quantitative Results. As shown in Table 2, HybridVLA(7B) achieves an average success rate of 74% 285 
+
+across 10 distinct tasks, outperforming the previous SOTA autoregressive-based VLA (OpenVLA) 286 
+
+and diffusion-based VLA (CogACT) by 33% and 14%, respectively. These results demonstrate that 287 
+
+our method effectively combines the two generation approaches within a shared LLM backbone, 288 
+
+simultaneously capturing the continuous characteristics of diffusion-based actions and the pretrained 289 
+
+semantic reasoning capabilities learned through autoregression. Remarkably, compared to CogACT 290 
+
+and π0, HybridVLA-dif also achieves performance improvements of 6% and 11%, respectively. 291 
+
+These results highlight that, unlike previous approaches which attach the diffusion head after the 292 
+
+VLM, our method more effectively leverages the VLM’s pretrained knowledge to fully unlock the 293 
+
+potential of diffusion prediction. Finally, HybridVLA(2.7B) delivers satisfactory results, confirming 294 
+
+our method’s effectiveness in enhancing VLM manipulation capabilities across different model sizes. 295 
+
+Inference Speed. In Table 2, when tested on an NVIDIA 4090D GPU, HybridVLA-dif (7B) and 296 
+
+HybridVLA (2.7B) achieve satisfactory control frequencies comparable to CogACT (7B) and π0297 
+
+(2.6B), thanks to the reduced DDIM denoising steps and the use of KV cache in HybridVLA. Note 298 
+
+that all models are run with bfloat16 precision during inference, without employing action chunking. 299 
+
+4.2 Ablation Study 300 
+
+We conduct ablation experiments on 10 RLBench tasks, using the same training and evaluation set-301 
+
+tings as in the simulation experiments. To evaluate the effectiveness of the Collaborative Training 302 
+
+recipe (CTR), we compare Ex1 with Ex2 and Ex3 with Ex4, as shown in Table 3. HybridVLA-dif 303 
+
+(Ex1) and HybridVLA-ar (Ex3) are both trained under our proposed CTR that integrates diffu-304 
+
+sion and autoregressive action generation. Since diffusion tokens precede autoregressive tokens, 305 
+
+HybridVLA-dif (Ex1) is evaluated solely on diffusion generation, while HybridVLA-ar (Ex3) per-306 
+
+forms diffusion denoising followed by autoregressive generation, but is tested only on autoregressive 307 
+
+actions. Compared to Ex2 and Ex4, which are trained solely on individual generation methods, both 308 
+
+HybridVLA-dif (Ex1) and HybridVLA-ar (Ex3) demonstrate improved manipulation performance. 309 
+
+These results validate that our proposed CTR not only avoids negative interference between the 310 
+
+two generation paradigms, but also effectively captures the continuous action representations from 311 
+
+diffusion-based generation and the pretrained reasoning capabilities from autoregressive generation, 312 
+
+7Table 3: Impact of each component. AR and Dif represent autoregressive and diffusion-based ac-tion generation, respectively. LSP denotes large-scale pretraining on assembled robotic datasets, while RSE refers to the injected robot state embed-ding. CTR and CAE represent our proposed col-laborative training recipe with hybrid objectives and the collaborative action ensemble method.                                                        
+
+> AR Dif LSP RSE CTR( LHybrid )CAE Mean ↑
+> Ex0 ✓✓✓✓✓✓0.74 Ex1 -✓✓✓✓-0.66 Ex2 -✓✓✓--0.60 Ex3 ✓-✓✓✓-0.62 Ex4 ✓-✓✓--0.57 Ex5 ✓✓-✓✓✓0.22 Ex6 ✓✓✓-✓✓0.68
+
+Table 4: Generalization. “Object", “Back-ground", “Height", and “Lighting" denote un-seen manipulated objects, backgrounds, spatial positions, and lighting conditions, respectively. The image above depicts the unseen test scenar-ios, with red boxes marking the key differences. Object Background Height Lighting                         
+
+> Task Pick and place(single arm) Lift ball and place(dual arm) Scenario HybridVLA Cogact HybridVLA π0
+> Original 0.90 0.80 0.80 0.65 Object 0.60(-33%) 0.45(-43%) 0.75(-6%) 0.60(-8%) Background 0.80(-11%) 0.50(-37%) 0.60(-25%) 0.50(-23%) Height 0.75(-17%) 0.50(-37%) 0.60(-25%) 0.45(-31%) Lightning 0.70(-22%) 0.60(-25%) 0.75(-6%) 0.55(-15%)
+
+enabling mutual reinforcement. The various token formulation designs used in our training recipe are 313 
+
+explored in Table 1 and Section 3.2. For large-scale pretraining (LSP), we compare Ex5 with Ex0. 314 
+
+Although Ex5 is initialized with pretrained VLM parameters, it suffers from a significant drop in 315 
+
+accuracy, highlighting the essential role of large-scale pretraining on robot datasets in ensuring stable 316 
+
+control. For robot state embedding (RSE), by comparing Ex6 with Ex1, we observe that injecting 317 
+
+robot state information enhances the model’s temporal consistency during action prediction. Due to 318 
+
+space limitations, Appendix B.2 provides additional ablation studies on: (1) confidence thresholds in 319 
+
+the collaborative action ensemble, (2) the influence of the KV cache on inference speed, and (3) the 320 
+
+impact of DDIM sampling steps on performance. 321 
+
+4.3 Real-World Experiment 322 
+
+Self-collected Data. For single-arm tasks, we use a Franka Research 3 robot with a static front-view 323 
+
+and a wrist-view camera. We perform 5 tasks: 1) Pick and place , 2) Unplug charger , 3) Open drawer 324 
+
+and place inside , 4) Pour water , 5) Wipe blackboard . For each task, 100 demonstrations are collected 325 
+
+via teleoperation using a SpaceMouse device. For dual-arm tasks, we use an AgileX dual-arm robot 326 
+
+equipped with a static exterior view, a right-wrist view, and a left-wrist view camera. We conduct 5 327 
+
+coordinated dual-arm tasks: 1) Pick and place , 2) Lift ball and place , 3) place two bottles at rack ,328 
+
+4) Wipe blackboard , 5) Fold shorts . Similarly, 100 demonstrations are collected for each task using 329 
+
+master-puppet teleoperation. Additional details are provided in Appendix A.2. 330 
+
+Training and Evaluation Details. We evaluate HybridVLA (7B) and HybridVLA-dif (7B) against 331 
+
+previous VLA methods, π0 [13 ] and CogAct [ 14 ]. The implementation details remain consistent with 332 
+
+our simulation experiments, except for using two-view inputs for single-arm tasks and three-view 333 
+
+inputs for dual-arm tasks. For evaluation, we use the checkpoint from the latest epoch to perform 20 334 
+
+rollouts across diverse tabletop positions. 335 
+
+Quantitative and Qualitative Results. In Table 5, HybridVLA and HybridVLA-dif achieve out-336 
+
+standing performance across single-arm tasks. For Pick and place and Unplug charger , HybridVLA 337 
+
+achieves success rates of 90% and 95%, respectively, demonstrating accurate object position predic-338 
+
+tion. For Pour water , HybridVLA and HybridVLA-dif outperform the previous SOTA method by 339 
+
+35% and 30%, respectively, showcasing their ability to comprehend object relationships and predict 340 
+
+precise rotations. The superior performance on Wipe blackboard and Open drawer and place inside 341 
+
+further underscores the robustness of our method in long-horizon tasks. For dual-arm tasks, we 342 
+
+extend the action dimensions of both diffusion and autoregressive tokens to 14-DOF, representing 343 
+
+the 7-DOF end-effector poses for both the right and left arms. Our method consistently outperforms 344 
+
+previous VLA approaches across five distinct tasks, highlighting HybridVLA’s ability to effectively 345 
+
+leverage VLMs’ reasoning capabilities for dual-arm coordination in complex scenarios. Furthermore, 346 
+
+in the lower part of Table 5, we present visualizations of the manipulation processes performed by our 347 
+
+method, which accurately predicts actions across various task demands, including precise positioning 348 
+
+and rotation, dual-arm coordination, and scene understanding. Additional qualitative results and 349 
+
+failure case analyses are provided in Appendix C and Appendix D, respectively, and execution 350 
+
+videos are available in the supplementary materials. 351 
+
+8Table 5: Real-world experiments. All methods are trained in a single-task setting [ 22 ], with success determined by human evaluation. Since CogAct lacks support for multi-view images, which are crucial for dual-arm tasks [13, 37], we conduct our dual-arm comparison solely with π0.                                                                             
+
+> Franka single-arm robot AgileX dual-arm robot Models Pick Unplug Pour Wipe Open drawer Mean. Pick Lift ball Place bottles Wipe Fold Mean. and place charger water blackboard and place inside S.R. ↑and place and place at rack blackboard shorts S.R. ↑
+> π0(2.6B) [13] 0.50 0.35 0.45 0.35 0.60 0.45 0.75 0.65 0.40 0.30 0.65 0.55 CogACT (7B) [14] 0.80 0.70 0.40 0.65 0.50 0.61 ------HybridVLA-dif(7B) 0.85 0.95 0.75 0.85 0.60 0.80 0.80 0.75 0.60 0.45 0.70 0.66
+> HybridVLA(7B) 0.90 0.95 0.80 0.85 0.65 0.83 0.90 0.80 0.60 0.55 0.70 0.71 Pour water
+> Open drawer
+> and place inside
+> Place bottles at
+> rack
+> Wipe blackboard
+> Task Progress
+> Dual -arm real -world tasks Single -arm real -world tasks
+> Task Progress
+> Lift ball and
+> place inside
+> Wipe blackboard
+
+4.4 Generalization Experiment 352 
+
+Since CogAct and π0 excel in single-arm and dual-arm tasks, respectively, we design four common 353 
+
+generalization experiments, comparing our HybridVLA with CogAct on the single-arm Pick and place 354 
+
+task and with π0 on the dual-arm Lift ball and place task. 1) Unseen manipulated objects. In this 355 
+
+scenario, we replace the training manipulated objects with a series of unseen objects, e.g., replacing 356 
+
+the red block with a charger. As shown in the “Object" row of Table 4, our method demonstrates the 357 
+
+smallest accuracy drop. These results indicate that, unlike previous diffusion-based VLA methods, 358 
+
+HybridVLA effectively integrates diffusion into the autoregressive next-token prediction process, not 359 
+
+only capturing the continuous characteristics of diffusion-based generation, but also preserving the 360 
+
+object-level semantic reasoning capabilities of autoregressive generation. 2) Unseen background. In 361 
+
+this scenario, cluttered backgrounds are introduced during testing, such as adding unseen flowers 362 
+
+around the manipulated object. HybridVLA still shows satisfactory results, further demonstrating 363 
+
+that our collaborative training recipe effectively inherits the VLM’s scene-level reasoning capabilities, 364 
+
+enhancing robustness to environmental variations. 3) Unseen Spatial position. Unlike position shifts 365 
+
+within the same plane, we introduce height variations during testing, further challenging the model’s 366 
+
+spatial comprehension. As shown in the “Height" row of Table 4, HybridVLA consistently achieves 367 
+
+precise manipulation even when encountering objects in previously unseen spatial positions. These 368 
+
+results highlight that HybridVLA exhibits strong trajectory generalization capabilities through the 369 
+
+ensemble of two action generation methods. 4) Unseen lighting conditions. Finally, we introduce 370 
+
+variations in lighting conditions, a common challenge in real-world environments. All methods 371 
+
+maintain satisfactory performance, demonstrating that large-scale pretraining on robotic datasets 372 
+
+enhances their generalization across diverse data distributions. 373 
+
+## 5 Conclusion and Limitation 374 
+
+In this paper, we introduce HybridVLA, a unified Vision-Language-Action (VLA) framework that 375 
+
+equips a single LLM with both diffusion-based and autoregressive action generation capabilities. 376 
+
+To bridge the gap between these two paradigms, we propose a collaborative training recipe that 377 
+
+integrates diffusion denoising into the next-token prediction process, enabling mutual reinforce-378 
+
+ment and improving manipulation robustness. By effectively absorbing the continuous nature of 379 
+
+diffusion-based action generation and the semantic reasoning capabilities of autoregressive methods, 380 
+
+HybridVLA achieves outstanding performance and strong generalization across both simulation and 381 
+
+real-world tasks. One limitation of HybridVLA is that its inference speed is constrained by the slower 382 
+
+autoregressive generation, similar to prior autoregressive VLA methods [ 10 , 9, 11 ]. However, our 383 
+
+collaborative training enables mutual reinforcement between the two generation methods, allowing 384 
+
+inference using only the diffusion process (HybridVLA-dif), achieving a 9.4 Hz inference speed. 385 
+
+Finally, we state the broader impact of our work in Appendix E. 386 
+
+9References 387 
+
+[1] Danny Driess, Fei Xia, Mehdi SM Sajjadi, Corey Lynch, Aakanksha Chowdhery, Brian Ichter, Ayzaan 388 
+
+Wahid, Jonathan Tompson, Quan Vuong, Tianhe Yu, et al. Palm-e: An embodied multimodal language 389 
+
+model. arXiv preprint arXiv:2303.03378 , 2023. 390 
+
+[2] Michael Ahn, Anthony Brohan, Noah Brown, Yevgen Chebotar, Omar Cortes, Byron David, Chelsea 391 
+
+Finn, Chuyuan Fu, Keerthana Gopalakrishnan, Karol Hausman, et al. Do as i can, not as i say: Grounding 392 
+
+language in robotic affordances. arXiv preprint arXiv:2204.01691 , 2022. 393 
+
+[3] Wenlong Huang, Chen Wang, Ruohan Zhang, Yunzhu Li, Jiajun Wu, and Li Fei-Fei. Voxposer: Compos-394 
+
+able 3d value maps for robotic manipulation with language models. arXiv preprint arXiv:2307.05973 ,395 
+
+2023. 396 
+
+[4] Xinghang Li, Peiyan Li, Minghuan Liu, Dong Wang, Jirong Liu, Bingyi Kang, Xiao Ma, Tao Kong, 397 
+
+Hanbo Zhang, and Huaping Liu. Towards generalist robot policies: What matters in building vision-398 
+
+language-action models. arXiv preprint arXiv:2412.14058 , 2024. 399 
+
+[5] Haotian Liu, Chunyuan Li, Qingyang Wu, and Yong Jae Lee. Visual instruction tuning. Advances in 400 
+
+neural information processing systems , 36, 2024. 401 
+
+[6] Jean-Baptiste Alayrac, Jeff Donahue, Pauline Luc, Antoine Miech, Iain Barr, Yana Hasson, Karel Lenc, 402 
+
+Arthur Mensch, Katherine Millican, Malcolm Reynolds, et al. Flamingo: a visual language model for 403 
+
+few-shot learning. Advances in Neural Information Processing Systems , 35:23716–23736, 2022. 404 
+
+[7] Junnan Li, Dongxu Li, Silvio Savarese, and Steven Hoi. Blip-2: Bootstrapping language-image pre-405 
+
+training with frozen image encoders and large language models. In International conference on machine 406 
+
+learning , pages 19730–19742. PMLR, 2023. 407 
+
+[8] Renrui Zhang, Jiaming Han, Chris Liu, Peng Gao, Aojun Zhou, Xiangfei Hu, Shilin Yan, Pan Lu, 408 
+
+Hongsheng Li, and Yu Qiao. Llama-adapter: Efficient fine-tuning of language models with zero-init 409 
+
+attention. arXiv preprint arXiv:2303.16199 , 2023. 410 
+
+[9] Anthony Brohan, Noah Brown, Justice Carbajal, Yevgen Chebotar, Xi Chen, Krzysztof Choromanski, 411 
+
+Tianli Ding, Danny Driess, Avinava Dubey, Chelsea Finn, et al. Rt-2: Vision-language-action models 412 
+
+transfer web knowledge to robotic control. arXiv preprint arXiv:2307.15818 , 2023. 413 
+
+[10] Moo Jin Kim, Karl Pertsch, Siddharth Karamcheti, Ted Xiao, Ashwin Balakrishna, Suraj Nair, Rafael 414 
+
+Rafailov, Ethan Foster, Grace Lam, Pannag Sanketi, et al. Openvla: An open-source vision-language-415 
+
+action model. arXiv preprint arXiv:2406.09246 , 2024. 416 
+
+[11] Xiaoqi Li, Mingxu Zhang, Yiran Geng, Haoran Geng, Yuxing Long, Yan Shen, Renrui Zhang, Jiaming 417 
+
+Liu, and Hao Dong. Manipllm: Embodied multimodal large language model for object-centric robotic 418 
+
+manipulation. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,419 
+
+pages 18061–18070, 2024. 420 
+
+[12] Johan Bjorck, Fernando Castañeda, Nikita Cherniadev, Xingye Da, Runyu Ding, Linxi Fan, Yu Fang, 421 
+
+Dieter Fox, Fengyuan Hu, Spencer Huang, et al. Gr00t n1: An open foundation model for generalist 422 
+
+humanoid robots. arXiv preprint arXiv:2503.14734 , 2025. 423 
+
+[13] Kevin Black, Noah Brown, Danny Driess, Adnan Esmail, Michael Equi, Chelsea Finn, Niccolo Fusai, 424 
+
+Lachy Groom, Karol Hausman, Brian Ichter, et al. pi0: A vision-language-action flow model for general 425 
+
+robot control. arXiv preprint arXiv:2410.24164 , 2024. 426 
+
+[14] Qixiu Li, Yaobo Liang, Zeyu Wang, Lin Luo, Xi Chen, Mozheng Liao, Fangyun Wei, Yu Deng, Sicheng 427 
+
+Xu, Yizhong Zhang, et al. Cogact: A foundational vision-language-action model for synergizing cognition 428 
+
+and action in robotic manipulation. arXiv preprint arXiv:2411.19650 , 2024. 429 
+
+[15] Karl Pertsch, Kyle Stachowicz, Brian Ichter, Danny Driess, Suraj Nair, Quan Vuong, Oier Mees, Chelsea 430 
+
+Finn, and Sergey Levine. Fast: Efficient action tokenization for vision-language-action models. arXiv 431 
+
+preprint arXiv:2501.09747 , 2025. 432 
+
+[16] Junjie Wen, Minjie Zhu, Yichen Zhu, Zhibin Tang, Jinming Li, Zhongyi Zhou, Chengmeng Li, Xiaoyu 433 
+
+Liu, Yaxin Peng, Chaomin Shen, et al. Diffusion-vla: Scaling robot foundation models via unified 434 
+
+diffusion and autoregression. arXiv preprint arXiv:2412.03293 , 2024. 435 
+
+[17] Jonathan Ho, Ajay Jain, and Pieter Abbeel. Denoising diffusion probabilistic models. Advances in neural 436 
+
+information processing systems , 33:6840–6851, 2020. 437 
+
+10 [18] Jonathan Ho, Tim Salimans, Alexey Gritsenko, William Chan, Mohammad Norouzi, and David J Fleet. 438 
+
+Video diffusion models. Advances in Neural Information Processing Systems , 35:8633–8646, 2022. 439 
+
+[19] William Peebles and Saining Xie. Scalable diffusion models with transformers. In Proceedings of the 440 
+
+IEEE/CVF International Conference on Computer Vision , pages 4195–4205, 2023. 441 
+
+[20] Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Björn Ommer. High-resolution 442 
+
+image synthesis with latent diffusion models. In Proceedings of the IEEE/CVF conference on computer 443 
+
+vision and pattern recognition , pages 10684–10695, 2022. 444 
+
+[21] Cheng Chi, Zhenjia Xu, Siyuan Feng, Eric Cousineau, Yilun Du, Benjamin Burchfiel, Russ Tedrake, 445 
+
+and Shuran Song. Diffusion policy: Visuomotor policy learning via action diffusion. The International 446 
+
+Journal of Robotics Research , page 02783649241273668, 2023. 447 
+
+[22] Yanjie Ze, Gu Zhang, Kangning Zhang, Chenyuan Hu, Muhan Wang, and Huazhe Xu. 3d diffusion policy. 448 
+
+arXiv preprint arXiv:2403.03954 , 2024. 449 
+
+[23] Tsung-Wei Ke, Nikolaos Gkanatsios, and Katerina Fragkiadaki. 3d diffuser actor: Policy diffusion with 450 
+
+3d scene representations. arXiv preprint arXiv:2402.10885 , 2024. 451 
+
+[24] Tim Pearce, Tabish Rashid, Anssi Kanervisto, Dave Bignell, Mingfei Sun, Raluca Georgescu, Sergio Val-452 
+
+carcel Macua, Shan Zheng Tan, Ida Momennejad, Katja Hofmann, et al. Imitating human behaviour with 453 
+
+diffusion models. In The Eleventh International Conference on Learning Representations .454 
+
+[25] Moritz Reuss, Maximilian Li, Xiaogang Jia, and Rudolf Lioutikov. Goal-conditioned imitation learning 455 
+
+using score-based diffusion policies. arXiv preprint arXiv:2304.02532 , 2023. 456 
+
+[26] Zhou Xian, Nikolaos Gkanatsios, Theophile Gervet, Tsung-Wei Ke, and Katerina Fragkiadaki. Chained-457 
+
+diffuser: Unifying trajectory diffusion and keypose prediction for robotic manipulation. In 7th Annual 458 
+
+Conference on Robot Learning , 2023. 459 
+
+[27] Siddharth Karamcheti, Suraj Nair, Ashwin Balakrishna, Percy Liang, Thomas Kollar, and Dorsa Sadigh. 460 
+
+Prismatic vlms: Investigating the design space of visually-conditioned language models. arXiv preprint 461 
+
+arXiv:2402.07865 , 2024. 462 
+
+[28] Abby O’Neill, Abdul Rehman, Abhinav Gupta, Abhiram Maddukuri, Abhishek Gupta, Abhishek Padalkar, 463 
+
+Abraham Lee, Acorn Pooley, Agrim Gupta, Ajay Mandlekar, et al. Open x-embodiment: Robotic learning 464 
+
+datasets and rt-x models. arXiv preprint arXiv:2310.08864 , 2023. 465 
+
+[29] Alexander Khazatsky, Karl Pertsch, Suraj Nair, Ashwin Balakrishna, Sudeep Dasari, Siddharth Karam-466 
+
+cheti, Soroush Nasiriany, Mohan Kumar Srirama, Lawrence Yunliang Chen, Kirsty Ellis, Peter David 467 
+
+Fagan, Joey Hejna, Masha Itkina, Marion Lepert, Yecheng Jason Ma, Patrick Tree Miller, Jimmy Wu, 468 
+
+Suneel Belkhale, Shivin Dass, Huy Ha, Arhan Jain, Abraham Lee, Youngwoon Lee, Marius Memmel, 469 
+
+Sungjae Park, Ilija Radosavovic, Kaiyuan Wang, Albert Zhan, Kevin Black, Cheng Chi, Kyle Beltran 470 
+
+Hatch, Shan Lin, Jingpei Lu, Jean Mercat, Abdul Rehman, Pannag R Sanketi, Archit Sharma, Cody 471 
+
+Simpson, Quan Vuong, Homer Rich Walke, Blake Wulfe, Ted Xiao, Jonathan Heewon Yang, Arefeh 472 
+
+Yavary, Tony Z. Zhao, Christopher Agia, Rohan Baijal, Mateo Guaman Castro, Daphne Chen, Qiuyu 473 
+
+Chen, Trinity Chung, Jaimyn Drake, Ethan Paul Foster, Jensen Gao, David Antonio Herrera, Minho Heo, 474 
+
+Kyle Hsu, Jiaheng Hu, Donovon Jackson, Charlotte Le, Yunshuang Li, Kevin Lin, Roy Lin, Zehan Ma, 475 
+
+Abhiram Maddukuri, Suvir Mirchandani, Daniel Morton, Tony Nguyen, Abigail O’Neill, Rosario Scalise, 476 
+
+Derick Seale, Victor Son, Stephen Tian, Emi Tran, Andrew E. Wang, Yilin Wu, Annie Xie, Jingyun Yang, 477 
+
+Patrick Yin, Yunchu Zhang, Osbert Bastani, Glen Berseth, Jeannette Bohg, Ken Goldberg, Abhinav Gupta, 478 
+
+Abhishek Gupta, Dinesh Jayaraman, Joseph J Lim, Jitendra Malik, Roberto Martín-Martín, Subramanian 479 
+
+Ramamoorthy, Dorsa Sadigh, Shuran Song, Jiajun Wu, Michael C. Yip, Yuke Zhu, Thomas Kollar, Sergey 480 
+
+Levine, and Chelsea Finn. Droid: A large-scale in-the-wild robot manipulation dataset. 2024. 481 
+
+[30] Kun Wu, Chengkai Hou, Jiaming Liu, Zhengping Che, Xiaozhu Ju, Zhuqin Yang, Meng Li, Yinuo Zhao, 482 
+
+Zhiyuan Xu, Guang Yang, et al. Robomind: Benchmark on multi-embodiment intelligence normative 483 
+
+data for robot manipulation. arXiv preprint arXiv:2412.13877 , 2024. 484 
+
+[31] Stephen James, Zicong Ma, David Rovick Arrojo, and Andrew J Davison. Rlbench: The robot learning 485 
+
+benchmark & learning environment. IEEE Robotics and Automation Letters , 5(2):3019–3026, 2020. 486 
+
+[32] OpenAI: Marcin Andrychowicz, Bowen Baker, Maciek Chociej, Rafal Jozefowicz, Bob McGrew, Jakub 487 
+
+Pachocki, Arthur Petron, Matthias Plappert, Glenn Powell, Alex Ray, et al. Learning dexterous in-hand 488 
+
+manipulation. The International Journal of Robotics Research , 39(1):3–20, 2020. 489 
+
+11 [33] Yiran Geng, Boshi An, Haoran Geng, Yuanpei Chen, Yaodong Yang, and Hao Dong. End-to-end 490 
+
+affordance learning for robotic manipulation. In International Conference on Robotics and Automation 491 
+
+(ICRA) , 2023. 492 
+
+[34] Shirin Joshi, Sulabh Kumra, and Ferat Sahin. Robotic grasping using deep reinforcement learning. 493 
+
+In 2020 IEEE 16th International Conference on Automation Science and Engineering (CASE) , pages 494 
+
+1461–1466. IEEE, 2020. 495 
+
+[35] Denis Yarats, Rob Fergus, Alessandro Lazaric, and Lerrel Pinto. Mastering visual continuous control: 496 
+
+Improved data-augmented reinforcement learning. arXiv preprint arXiv:2107.09645 , 2021. 497 
+
+[36] Faraz Torabi, Garrett Warnell, and Peter Stone. Behavioral cloning from observation. arXiv preprint 498 
+
+arXiv:1805.01954 , 2018. 499 
+
+[37] Zipeng Fu, Tony Z Zhao, and Chelsea Finn. Mobile aloha: Learning bimanual mobile manipulation with 500 
+
+low-cost whole-body teleoperation. arXiv preprint arXiv:2401.02117 , 2024. 501 
+
+[38] Anthony Brohan, Noah Brown, Justice Carbajal, Yevgen Chebotar, Joseph Dabis, Chelsea Finn, Keerthana 502 
+
+Gopalakrishnan, Karol Hausman, Alex Herzog, Jasmine Hsu, et al. Rt-1: Robotics transformer for real-503 
+
+world control at scale. arXiv preprint arXiv:2212.06817 , 2022. 504 
+
+[39] Feng Li, Renrui Zhang, Hao Zhang, Yuanhan Zhang, Bo Li, Wei Li, Zejun Ma, and Chunyuan Li. 505 
+
+Llava-next-interleave: Tackling multi-image, video, and 3d in large multimodal models. ICLR 2025 506 
+
+Spotlight , 2024. 507 
+
+[40] Xiaoqi Li, Lingyun Xu, Jiaming Liu, Mingxu Zhang, Jiahui Xu, Siyuan Huang, Iaroslav Ponomarenko, 508 
+
+Yan Shen, Shanghang Zhang, and Hao Dong. Crayonrobo: Toward generic robot manipulation via crayon 509 
+
+visual prompting. 510 
+
+[41] Chuyan Xiong, Chengyu Shen, Xiaoqi Li, Kaichen Zhou, Jiaming Liu, Ruiping Wang, and Hao Dong. 511 
+
+Autonomous interactive correction mllm for robust robotic manipulation. In 8th Annual Conference on 512 
+
+Robot Learning , 2024. 513 
+
+[42] Ran Xu, Yan Shen, Xiaoqi Li, Ruihai Wu, and Hao Dong. Naturalvlm: Leveraging fine-grained natural 514 
+
+language for affordance-guided visual manipulation. arXiv preprint arXiv:2403.08355 , 2024. 515 
+
+[43] Jiaming Liu, Chenxuan Li, Guanqun Wang, Lily Lee, Kaichen Zhou, Sixiang Chen, Chuyan Xiong, 516 
+
+Jiaxin Ge, Renrui Zhang, and Shanghang Zhang. Self-corrected multimodal large language model for 517 
+
+end-to-end robot manipulation. arXiv preprint arXiv:2405.17418 , 2024. 518 
+
+[44] Wenlong Huang, Chen Wang, Yunzhu Li, Ruohan Zhang, and Li Fei-Fei. Rekep: Spatio-temporal 519 
+
+reasoning of relational keypoint constraints for robotic manipulation. arXiv preprint arXiv:2409.01652 ,520 
+
+2024. 521 
+
+[45] Jiaming Liu, Mengzhen Liu, Zhenyu Wang, Lily Lee, Kaichen Zhou, Pengju An, Senqiao Yang, Renrui 522 
+
+Zhang, Yandong Guo, and Shanghang Zhang. Robomamba: Multimodal state space model for efficient 523 
+
+robot reasoning and manipulation. arXiv preprint arXiv:2406.04339 , 2024. 524 
+
+[46] Siyuan Huang, Iaroslav Ponomarenko, Zhengkai Jiang, Xiaoqi Li, Xiaobin Hu, Peng Gao, Hongsheng 525 
+
+Li, and Hao Dong. Manipvqa: Injecting robotic affordance and physically grounded information into 526 
+
+multi-modal large language models. arXiv preprint arXiv:2403.11289 , 2024. 527 
+
+[47] Xinghang Li, Minghuan Liu, Hanbo Zhang, Cunjun Yu, Jie Xu, Hongtao Wu, Chilam Cheang, Ya Jing, 528 
+
+Weinan Zhang, Huaping Liu, et al. Vision-language foundation models as effective robot imitators. arXiv 529 
+
+preprint arXiv:2311.01378 , 2023. 530 
+
+[48] Hongtao Wu, Ya Jing, Chilam Cheang, Guangzeng Chen, Jiafeng Xu, Xinghang Li, Minghuan Liu, Hang 531 
+
+Li, and Tao Kong. Unleashing large-scale video generative pre-training for visual robot manipulation. 532 
+
+arXiv preprint arXiv:2312.13139 , 2023. 533 
+
+[49] Alex Graves and Alex Graves. Long short-term memory. Supervised sequence labelling with recurrent 534 
+
+neural networks , pages 37–45, 2012. 535 
+
+[50] Anurag Ajay, Yilun Du, Abhi Gupta, Joshua Tenenbaum, Tommi Jaakkola, and Pulkit Agrawal. Is 536 
+
+conditional generative modeling all you need for decision-making? arXiv preprint arXiv:2211.15657 ,537 
+
+2022. 538 
+
+[51] Zhendong Wang, Jonathan J Hunt, and Mingyuan Zhou. Diffusion policies as an expressive policy class 539 
+
+for offline reinforcement learning. arXiv preprint arXiv:2208.06193 , 2022. 540 
+
+12 [52] Tim Pearce, Tabish Rashid, Anssi Kanervisto, Dave Bignell, Mingfei Sun, Raluca Georgescu, Sergio Val-541 
+
+carcel Macua, Shan Zheng Tan, Ida Momennejad, Katja Hofmann, et al. Imitating human behaviour with 542 
+
+diffusion models. arXiv preprint arXiv:2301.10677 , 2023. 543 
+
+[53] Aaditya Prasad, Kevin Lin, Jimmy Wu, Linqi Zhou, and Jeannette Bohg. Consistency policy: Accelerated 544 
+
+visuomotor policies via consistency distillation. arXiv preprint arXiv:2405.07503 , 2024. 545 
+
+[54] Anthony Simeonov, Ankit Goyal, Lucas Manuelli, Lin Yen-Chen, Alina Sarmiento, Alberto Rodriguez, 546 
+
+Pulkit Agrawal, and Dieter Fox. Shelving, stacking, hanging: Relational pose diffusion for multi-modal 547 
+
+rearrangement. arXiv preprint arXiv:2307.04751 , 2023. 548 
+
+[55] Julen Urain, Niklas Funk, Jan Peters, and Georgia Chalvatzaki. Se (3)-diffusionfields: Learning smooth 549 
+
+cost functions for joint grasp and motion optimization through diffusion. In 2023 IEEE International 550 
+
+Conference on Robotics and Automation (ICRA) , pages 5923–5930. IEEE, 2023. 551 
+
+[56] Tianhao Wu, Mingdong Wu, Jiyao Zhang, Yunchong Gan, and Hao Dong. Learning score-based grasping 552 
+
+primitive for human-assisting dexterous grasping. Advances in Neural Information Processing Systems ,553 
+
+36:22132–22150, 2023. 554 
+
+[57] Michael Janner, Yilun Du, Joshua B Tenenbaum, and Sergey Levine. Planning with diffusion for flexible 555 
+
+behavior synthesis. arXiv preprint arXiv:2205.09991 , 2022. 556 
+
+[58] Kallol Saha, Vishal Mandadi, Jayaram Reddy, Ajit Srikanth, Aditya Agarwal, Bipasha Sen, Arun Singh, 557 
+
+and Madhava Krishna. Edmp: Ensemble-of-costs-guided diffusion for motion planning. In 2024 IEEE 558 
+
+International Conference on Robotics and Automation (ICRA) , pages 10351–10358. IEEE, 2024. 559 
+
+[59] Octo Model Team, Dibya Ghosh, Homer Walke, Karl Pertsch, Kevin Black, Oier Mees, Sudeep Dasari, 560 
+
+Joey Hejna, Tobias Kreiman, Charles Xu, et al. Octo: An open-source generalist robot policy. arXiv 561 
+
+preprint arXiv:2405.12213 , 2024. 562 
+
+[60] Songming Liu, Lingxuan Wu, Bangguo Li, Hengkai Tan, Huayu Chen, Zhengyi Wang, Ke Xu, Hang 563 
+
+Su, and Jun Zhu. Rdt-1b: a diffusion foundation model for bimanual manipulation. arXiv preprint 564 
+
+arXiv:2410.07864 , 2024. 565 
+
+[61] Junjie Wen, Yichen Zhu, Jinming Li, Minjie Zhu, Kun Wu, Zhiyuan Xu, Ning Liu, Ran Cheng, Chaomin 566 
+
+Shen, Yaxin Peng, et al. Tinyvla: Towards fast, data-efficient vision-language-action models for robotic 567 
+
+manipulation. arXiv preprint arXiv:2409.12514 , 2024. 568 
+
+[62] Qingwen Bu, Jisong Cai, Li Chen, Xiuqi Cui, Yan Ding, Siyuan Feng, Shenyuan Gao, Xindong He, 569 
+
+Xu Huang, Shu Jiang, et al. Agibot world colosseo: A large-scale manipulation platform for scalable and 570 
+
+intelligent embodied systems. arXiv preprint arXiv:2503.06669 , 2025. 571 
+
+[63] figureai. Helix: A vision-language-action model for generalist humanoid control. https://www.figure. 572 
+
+ai/news/helix . Accessed 2025.5.7. 573 
+
+[64] Yuying Ge, Sijie Zhao, Jinguo Zhu, Yixiao Ge, Kun Yi, Lin Song, Chen Li, Xiaohan Ding, and Ying 574 
+
+Shan. Seed-x: Multimodal models with unified multi-granularity comprehension and generation. arXiv 575 
+
+preprint arXiv:2404.14396 , 2024. 576 
+
+[65] Chengyue Wu, Xiaokang Chen, Zhiyu Wu, Yiyang Ma, Xingchao Liu, Zizheng Pan, Wen Liu, Zhenda Xie, 577 
+
+Xingkai Yu, Chong Ruan, et al. Janus: Decoupling visual encoding for unified multimodal understanding 578 
+
+and generation. arXiv preprint arXiv:2410.13848 , 2024. 579 
+
+[66] Yecheng Wu, Zhuoyang Zhang, Junyu Chen, Haotian Tang, Dacheng Li, Yunhao Fang, Ligeng Zhu, Enze 580 
+
+Xie, Hongxu Yin, Li Yi, et al. Vila-u: a unified foundation model integrating visual understanding and 581 
+
+generation. arXiv preprint arXiv:2409.04429 , 2024. 582 
+
+[67] Jinheng Xie, Weijia Mao, Zechen Bai, David Junhao Zhang, Weihao Wang, Kevin Qinghong Lin, Yuchao 583 
+
+Gu, Zhijie Chen, Zhenheng Yang, and Mike Zheng Shou. Show-o: One single transformer to unify 584 
+
+multimodal understanding and generation. arXiv preprint arXiv:2408.12528 , 2024. 585 
+
+[68] Chuyang Zhao, Yuxing Song, Wenhao Wang, Haocheng Feng, Errui Ding, Yifan Sun, Xinyan Xiao, and 586 
+
+Jingdong Wang. Monoformer: One transformer for both diffusion and autoregression. arXiv preprint 587 
+
+arXiv:2409.16280 , 2024. 588 
+
+[69] Boyuan Chen, Diego Martí Monsó, Yilun Du, Max Simchowitz, Russ Tedrake, and Vincent Sitzmann. 589 
+
+Diffusion forcing: Next-token prediction meets full-sequence diffusion. Advances in Neural Information 590 
+
+Processing Systems , 37:24081–24125, 2024. 591 
+
+13 [70] Chunting Zhou, Lili Yu, Arun Babu, Kushal Tirumala, Michihiro Yasunaga, Leonid Shamis, Jacob Kahn, 592 
+
+Xuezhe Ma, Luke Zettlemoyer, and Omer Levy. Transfusion: Predict the next token and diffuse images 593 
+
+with one multi-modal model. arXiv preprint arXiv:2408.11039 , 2024. 594 
+
+[71] Jiaming Song, Chenlin Meng, and Stefano Ermon. Denoising diffusion implicit models. arXiv preprint 595 
+
+arXiv:2010.02502 , 2020. 596 
+
+[72] Maxime Oquab, Timothée Darcet, Théo Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov, Pierre 597 
+
+Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, et al. Dinov2: Learning robust visual 598 
+
+features without supervision. arXiv preprint arXiv:2304.07193 , 2023. 599 
+
+[73] Xiaohua Zhai, Basil Mustafa, Alexander Kolesnikov, and Lucas Beyer. Sigmoid loss for language image 600 
+
+pre-training. In Proceedings of the IEEE/CVF International Conference on Computer Vision , pages 601 
+
+11975–11986, 2023. 602 
+
+[74] Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish 603 
+
+Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from 604 
+
+natural language supervision. In International conference on machine learning , pages 8748–8763. PMLR, 605 
+
+2021. 606 
+
+[75] Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, 607 
+
+Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, et al. Llama: Open and efficient foundation 608 
+
+language models. arXiv preprint arXiv:2302.13971 , 2023. 609 
+
+[76] Mojan Javaheripi, Sébastien Bubeck, Marah Abdin, Jyoti Aneja, Sebastien Bubeck, Caio César Teodoro 610 
+
+Mendes, Weizhu Chen, Allie Del Giorno, Ronen Eldan, Sivakanth Gopi, et al. Phi-2: The surprising 611 
+
+power of small language models. Microsoft Research Blog , 1(3):3, 2023. 612 
+
+[77] Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay 613 
+
+Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, et al. Llama 2: Open foundation and 614 
+
+fine-tuned chat models. arXiv preprint arXiv:2307.09288 , 2023. 615 
+
+[78] Jonathan Ho and Tim Salimans. Classifier-free diffusion guidance. arXiv preprint arXiv:2207.12598 ,616 
+
+2022. 617 
+
+[79] Mohit Shridhar, Lucas Manuelli, and Dieter Fox. Perceiver-actor: A multi-task transformer for robotic 618 
+
+manipulation. In Proceedings of the 6th Conference on Robot Learning (CoRL) , 2022. 619 
+
+[80] Ioan A Sucan, Mark Moll, and Lydia E Kavraki. The open motion planning library. IEEE Robotics & 620 
+
+Automation Magazine , 19(4):72–82, 2012. 621 
+
+[81] Ankit Goyal, Jie Xu, Yijie Guo, Valts Blukis, Yu-Wei Chao, and Dieter Fox. Rvt: Robotic view 622 
+
+transformer for 3d object manipulation. In Conference on Robot Learning , pages 694–710. PMLR, 2023. 623 
+
+[82] Yueru Jia, Jiaming Liu, Sixiang Chen, Chenyang Gu, Zhilue Wang, Longzan Luo, Lily Lee, Pengwei 624 
+
+Wang, Zhongyuan Wang, Renrui Zhang, et al. Lift3d foundation policy: Lifting 2d large-scale pretrained 625 
+
+models for robust 3d robotic manipulation. arXiv preprint arXiv:2411.18623 , 2024. 626 
+
+[83] Ankit Goyal, Valts Blukis, Jie Xu, Yijie Guo, Yu-Wei Chao, and Dieter Fox. Rvt-2: Learning precise 627 
+
+manipulation from few demonstrations. arXiv preprint arXiv:2406.08545 , 2024. 628 
+
+[84] Dmitry Kalashnikov, Alex Irpan, Peter Pastor, Julian Ibarz, Alexander Herzog, Eric Jang, Deirdre Quillen, 629 
+
+Ethan Holly, Mrinal Kalakrishnan, Vincent Vanhoucke, et al. QT-Opt: Scalable deep reinforcement 630 
+
+learning for vision-based robotic manipulation. arXiv preprint arXiv:1806.10293 , 2018. 631 
+
+[85] Frederik Ebert, Yanlai Yang, Karl Schmeckpeper, Bernadette Bucher, Georgios Georgakis, Kostas 632 
+
+Daniilidis, Chelsea Finn, and Sergey Levine. Bridge data: Boosting generalization of robotic skills with 633 
+
+cross-domain datasets. arXiv preprint arXiv:2109.13396 , 2021. 634 
+
+[86] Homer Walke, Kevin Black, Abraham Lee, Moo Jin Kim, Max Du, Chongyi Zheng, Tony Zhao, Philippe 635 
+
+Hansen-Estruch, Quan Vuong, Andre He, Vivek Myers, Kuan Fang, Chelsea Finn, and Sergey Levine. 636 
+
+Bridgedata v2: A dataset for robot learning at scale, 2023. 637 
+
+[87] Erick Rosete-Beas, Oier Mees, Gabriel Kalweit, Joschka Boedecker, and Wolfram Burgard. Latent plans 638 
+
+for task agnostic offline reinforcement learning. In Proceedings of the 6th Conference on Robot Learning 639 
+
+(CoRL) , 2022. 640 
+
+[88] Oier Mees, Jessica Borja-Diaz, and Wolfram Burgard. Grounding language with visual affordances over 641 
+
+unstructured data. In Proceedings of the IEEE International Conference on Robotics and Automation 642 
+
+(ICRA) , London, UK, 2023. 643 
+
+14 [89] Shivin Dass, Jullian Yapeter, Jesse Zhang, Jiahui Zhang, Karl Pertsch, Stefanos Nikolaidis, and Joseph J. 644 
+
+Lim. CLVR jaco play dataset, 2023. 645 
+
+[90] Jianlan Luo, Charles Xu, Xinyang Geng, Gilbert Feng, Kuan Fang, Liam Tan, Stefan Schaal, and 646 
+
+Sergey Levine. Multi-stage cable routing through hierarchical imitation learning. arXiv preprint 647 
+
+arXiv:2307.08927 , 2023. 648 
+
+[91] Ajay Mandlekar, Yuke Zhu, Animesh Garg, Jonathan Booher, Max Spero, Albert Tung, Julian Gao, John 649 
+
+Emmons, Anchit Gupta, Emre Orbay, Silvio Savarese, and Li Fei-Fei. RoboTurk: A crowdsourcing 650 
+
+platform for robotic skill learning through imitation. CoRR , abs/1811.02790, 2018. 651 
+
+[92] Yifeng Zhu, Abhishek Joshi, Peter Stone, and Yuke Zhu. Viola: Imitation learning for vision-based 652 
+
+manipulation with object proposal priors, 2023. 653 
+
+[93] Lawrence Yunliang Chen, Simeon Adebola, and Ken Goldberg. Berkeley UR5 demonstration dataset. 654 
+
+https://sites.google.com/view/berkeley-ur5/home .655 
+
+[94] Gaoyue Zhou, Victoria Dean, Mohan Kumar Srirama, Aravind Rajeswaran, Jyothish Pari, Kyle Hatch, 656 
+
+Aryan Jain, Tianhe Yu, Pieter Abbeel, Lerrel Pinto, Chelsea Finn, and Abhinav Gupta. Train offline, test 657 
+
+online: A real robot learning benchmark, 2023. 658 
+
+[95] Corey Lynch, Ayzaan Wahid, Jonathan Tompson, Tianli Ding, James Betker, Robert Baruch, Travis 659 
+
+Armstrong, and Pete Florence. Interactive language: Talking to robots in real time. IEEE Robotics and 660 
+
+Automation Letters , 2023. 661 
+
+[96] Suneel Belkhale, Yuchen Cui, and Dorsa Sadigh. Hydra: Hybrid robot actions for imitation learning. 662 
+
+arxiv , 2023. 663 
+
+[97] Yifeng Zhu, Peter Stone, and Yuke Zhu. Bottom-up skill discovery from unsegmented demonstrations for 664 
+
+long-horizon robot manipulation. IEEE Robotics and Automation Letters , 7(2):4126–4133, 2022. 665 
+
+[98] Zichen Jeff Cui, Yibin Wang, Nur Muhammad Mahi Shafiullah, and Lerrel Pinto. From play to policy: 666 
+
+Conditional behavior generation from uncurated robot data. arXiv preprint arXiv:2210.10047 , 2022. 667 
+
+[99] Minho Heo, Youngwoon Lee, Doohyun Lee, and Joseph J. Lim. Furniturebench: Reproducible real-world 668 
+
+benchmark for long-horizon complex manipulation. In Robotics: Science and Systems , 2023. 669 
+
+[100] Ge Yan, Kris Wu, and Xiaolong Wang. ucsd kitchens Dataset. August 2023. 670 
+
+[101] Soroush Nasiriany, Tian Gao, Ajay Mandlekar, and Yuke Zhu. Learning and retrieval from prior data for 671 
+
+skill-based imitation learning. In Conference on Robot Learning (CoRL) , 2022. 672 
+
+[102] Huihan Liu, Soroush Nasiriany, Lance Zhang, Zhiyao Bao, and Yuke Zhu. Robot learning on the job: 673 
+
+Human-in-the-loop autonomy and learning during deployment. In Robotics: Science and Systems (RSS) ,674 
+
+2023. 675 
+
+[103] Gabriel Quere, Annette Hagengruber, Maged Iskandar, Samuel Bustamante, Daniel Leidner, Freek 676 
+
+Stulp, and Joern Vogel. Shared Control Templates for Assistive Robotics. In 2020 IEEE International 677 
+
+Conference on Robotics and Automation (ICRA) , page 7, Paris, France, 2020. 678 
+
+[104] Saumya Saxena, Mohit Sharma, and Oliver Kroemer. Multi-resolution sensing for real-time control with 679 
+
+vision-language models. In 7th Annual Conference on Robot Learning , 2023. 680 
+
+[105] Rutav Shah, Roberto Martín-Martín, and Yuke Zhu. MUTEX: Learning unified policies from multimodal 681 
+
+task specifications. In 7th Annual Conference on Robot Learning , 2023. 682 
+
+[106] Xinghao Zhu, Ran Tian, Chenfeng Xu, Mingyu Ding, Wei Zhan, and Masayoshi Tomizuka. Fanuc 683 
+
+manipulation: A dataset for learning-based manipulation with fanuc mate 200id robot. 2023. 684 
+
+[107] Russell Mendonca, Shikhar Bahl, and Deepak Pathak. Structured world models from human videos. 685 
+
+CoRL , 2023. 686 
+
+[108] Eric Jang, Alex Irpan, Mohi Khansari, Daniel Kappler, Frederik Ebert, Corey Lynch, Sergey Levine, and 687 
+
+Chelsea Finn. Bc-z: Zero-shot task generalization with robotic imitation learning. In Conference on 688 
+
+Robot Learning , pages 991–1002. PMLR, 2022. 689 
+
+[109] Jianlan Luo, Charles Xu, Fangchen Liu, Liam Tan, Zipeng Lin, Jeffrey Wu, Pieter Abbeel, and Sergey 690 
+
+Levine. Fmb: a functional manipulation benchmark for generalizable robotic learning. arXiv preprint 691 
+
+arXiv:2401.08553 , 2024. 692 
+
+15 [110] Nur Muhammad Mahi Shafiullah, Anant Rai, Haritheja Etukuru, Yiqian Liu, Ishan Misra, Soumith 693 
+
+Chintala, and Lerrel Pinto. On bringing robots home, 2023. 694 
+
+[111] Michelle A. Lee, Yuke Zhu, Krishnan Srinivasan, Parth Shah, Silvio Savarese, Li Fei-Fei, Animesh 695 
+
+Garg, and Jeannette Bohg. Making sense of vision and touch: Self-supervised learning of multimodal 696 
+
+representations for contact-rich tasks, 2019. 697 
+
+[112] Haochen Shi, Huazhe Xu, Samuel Clarke, Yunzhu Li, and Jiajun Wu. Robocook: Long-horizon elasto-698 
+
+plastic object manipulation with diverse tools, 2023. 699 
+
+[113] Jiayuan Gu, Fanbo Xiang, Xuanlin Li, Zhan Ling, Xiqiang Liu, Tongzhou Mu, Yihe Tang, Stone Tao, 700 
+
+Xinyue Wei, Yunchao Yao, Xiaodi Yuan, Pengwei Xie, Zhiao Huang, Rui Chen, and Hao Su. Maniskill2: 701 
+
+A unified benchmark for generalizable manipulation skills, 2023. 702 
+
+[114] Ilija Radosavovic, Tete Xiao, Stephen James, Pieter Abbeel, Jitendra Malik, and Trevor Darrell. Real-703 
+
+world robot learning with masked visual pre-training. In Conference on Robot Learning , pages 416–426. 704 
+
+PMLR, 2023. 705 
+
+[115] Federico Ceola, Lorenzo Natale, Niko Sünderhauf, and Krishan Rana. Lhmanip: A dataset for long-706 
+
+horizon language-grounded manipulation tasks in cluttered tabletop environments. arXiv preprint 707 
+
+arXiv:2312.12036 , 2023. 708 
+
+[116] Vikash Kumar, Rutav Shah, Gaoyue Zhou, Vincent Moens, Vittorio Caggiano, Abhishek Gupta, and 709 
+
+Aravind Rajeswaran. Robohive: A unified framework for robot learning. In Thirty-seventh Conference on 710 
+
+Neural Information Processing Systems Datasets and Benchmarks Track , 2023. 711 
+
+[117] Cheng Chi, Zhenjia Xu, Chuer Pan, Eric Cousineau, Benjamin Burchfiel, Siyuan Feng, Russ Tedrake, and 712 
+
+Shuran Song. Universal manipulation interface: In-the-wild robot teaching without in-the-wild robots. 713 
+
+arXiv preprint arXiv:2402.10329 , 2024. 714 
+
+16 (a) (b)    
+
+> RealSense 515
+> RealSense 435
+> UMI Gripper
+> Franka Arm RealSense 515
+> Orbbec DABAI
+> Orbbec DABAI
+> Agile Dual -arm
+
+Figure 3: Real-World Assets and Experimental Settings. We provide visualizations of the assets used and the experimental settings for single-arm FR3 robot tasks and dual-arm AgileX robot tasks, respectively. 
+
+Appendix A. We begin by detailing the large-scale pretraining and self-collected real-world datasets. 715 
+
+Appendix B. Additional simulation experiments and ablation studies are presented. 716 
+
+Appendix C. We include further visualizations of both single-arm and dual-arm manipulation 717 
+
+processes. 718 
+
+Appendix D. An analysis of failure cases encountered when using HybridVLA to control a robot. 719 
+
+Appendix E. A brief conclusion and hope to our work’s broader impact. 720 
+
+## A Additional Dataset Details 721 
+
+A.1 Large-scale Pretraining Dataset 722 
+
+Our pre-training dataset collection comprises 35 datasets, encompassing a total of 760k trajectories 723 
+
+and 33m frames. Table 6 provides a comprehensive list of our pre-training datasets along with their 724 
+
+respective sampling weights. The number of trajectories and the sampling weights can be automati-725 
+
+cally adjusted during dataset assembly. Following the prior data preprocessing approach [ 10 ], we 726 
+
+reformulate the pre-training datasets to emphasize end-effector sequence control, ensuring alignment 727 
+
+with the specific requirements of our model training. Due to inherent differences among datasets, 728 
+
+only single 2D observations are used during pre-training. However, during fine-tuning, HybridVLA 729 
+
+can accommodate both single- and multi-view observations depending on the task requirements. For 730 
+
+instance, AgileX dual-arm robot tasks require three viewpoints—an ego view and two wrist camera 731 
+
+views—to capture a comprehensive observation of the object while mitigating occlusions caused 732 
+
+by the robot arm. HybridVLA processes multi-view images using a shared vision encode and then 733 
+
+concatenates the visual feature along the token dimension. Notably, the difference in the number 734 
+
+of images used during pre-training and fine-tuning does not impact manipulation performance in 735 
+
+downstream tasks. 736 
+
+A.2 Self-collected Real-world Dataset 737 
+
+The experimental assets and environments for the single-arm and dual-arm setups are shown in 738 
+
+Figure 3 (a) and (b), respectively. For the single-arm setup, a 3D-printed UMI gripper [ 117 ] is 739 
+
+attached to the Franka robot and is used across all baselines. We utilize RealSense 435 and RealSense 740 
+
+515 cameras to capture both wrist and front views. For the dual-arm setup, two Orbbec DABAI 741 
+
+cameras are used to capture the left and right wrist views, while a RealSense 515 is mounted overhead 742 
+
+to capture a static third-person view. We provide a detailed explanation of the real-world tasks and 743 
+
+their success conditions. We begin by describing the single-arm tasks: 744 
+
+1. Pick and place. This task requires the robot to pick up a specifically colored block based on a 745 
+
+language description and place it in a specifically colored bowl. 746 
+
+17 Table 6: The dataset name and sampling weight used in our mixed large-scale pretraining dataset. 
+
+Training Dataset Mixture 
+
+Fractal [38] 9.1% Kuka [84] 27.8% Bridge[85, 86] 4.1% Taco Play [87, 88] 2.1% Jaco Play [89] 0.3% Berkeley Cable Routing [90] 0.2% Roboturk [91] 1.7% Viola [92] 0.7% Berkeley Autolab UR5 [93] 0.9% Toto [94] 1.5% Language Table [95] 3.1% Stanford Hydra Dataset [96] 3.2% Austin Buds Dataset [97] 0.2% NYU Franka Play Dataset [98] 0.6% Furniture Bench Dataset [99] 1.8% UCSD Kitchen Dataset [100] <0.1% Austin Sailor Dataset [101] 1.6% Austin Sirius Dataset [102] 1.2% DLR EDAN Shared Control [103] <0.1% IAMLab CMU Pickup Insert [104] 0.7% UTAustin Mutex [105] 1.6% Berkeley Fanuc Manipulation [106] 0.6% CMU Stretch [107] 0.1% BC-Z [108] 5.4% FMB Dataset [109] 5.0% DobbE [110] 1.0% DROID [29] 7.2% Stanford Kuka Dataset [111] 0.1% Stanford Robocook Dataset [112] 0.1% Maniskill [113] 6.3% Berkeley RPT [114] 0.1% QUT Dexterous Manipulation [115] 0.1% RoboSet [116] 1.8% BridgeData V2 [86] 4.7% RoboMind [30] 5.2% 
+
+2. Unplug charger. The robot needs to grasp the charger at an optimal position and rotation, and then 747 
+
+lift it to a certain height without slipping. 748 
+
+3. Pour water. The robot needs to first pick the bottle, then rotate it to a position slightly above the 749 
+
+cup, and tilt it to perform the pouring action. The task is deemed successful only if the bottle opening 750 
+
+is correctly aligned with the cup. 751 
+
+4. Wipe blackboard. The robot needs to first grasp an eraser and then use it to remove the red 752 
+
+markings from a blackboard placed on the tabletop. The red markings are drawn on an unfixed region, 753 
+
+and the task is considered successful only if they are completely erased. 754 
+
+5. Open drawer and place inside. The robot needs to open the top drawer, pick up the required 755 
+
+objects based on the language description, place them in the opened drawer, and then close it. This 756 
+
+task consists of four sequential sub-tasks: open drawer , pick object , place object , and close drawer .757 
+
+The task is considered complete once all sub-tasks have been successfully executed. 758 
+
+We then describe the details of dual-arm tasks: 759 
+
+1. Pick and place. The robot must use both its left and right arms to pick up two objects based on the 760 
+
+language description and place them in the container. 761 
+
+18 2. Lift ball and place. Both the left and right arms must simultaneously make contact with the ball, 762 
+
+which is secured between the two grippers. The arms coordinate their movements to transport the 763 
+
+ball to the container while ensuring it does not slip. This task highly tests the model’s dual-arm 764 
+
+coordination capabilities. 765 
+
+3. Place bottles at rack. The left and right robot arms need to grasp the bottles placed on their 766 
+
+respective sides and rotate them to position them parallel to the rack. 767 
+
+4. Wipe blackboard. Unlike the single-arm setting, the dual-arm setting requires one arm to hold the 768 
+
+whiteboard while the other picks up the eraser and wipes off the red marker. 769 
+
+5. Fold shorts: This task requires folding a pair of shorts, involving two sequential steps. First, one 770 
+
+pant leg is folded over the other to align them. Then, the pants are folded in half from top to bottom. 771 
+
+Throughout the process, both arms must coordinate their movements. For example, in the first step, 772 
+
+the left arm holds the bottom of the pant leg while the right arm grips the upper part, working together 773 
+
+to complete the folding. 774 
+
+## B Additional Quantitative Results 775 
+
+B.1 Additional Simulation Experiments 776 
+
+In Table 7, we validate the first observed phenomenon mentioned in Section 3.3: different action 777 
+
+types within our proposed framework exhibit varying performance across tasks. Meanwhile, we 778 
+
+categorize our method into three modes: HybridVLA (7B), HybridVLA-ar (7B), and HybridVLA-dif 779 
+
+(7B). All modes undergo joint training using our proposed collaborative training recipe; however, 780 
+
+HybridVLA-ar and HybridVLA-dif rely exclusively on autoregressive-based and diffusion-based 781 
+
+action generation during inference, respectively. The experiments are conducted in the RLBench 782 
+
+simulator across 10 tasks, and evaluated based on success rate. Comparing HybridVLA-ar and 783 
+
+HybridVLA-dif, HybridVLA-ar outperforms in 4 out of 10 tasks, while HybridVLA-dif leads in 784 
+
+the remaining 6 tasks. These results validate our findings that, within the HybridVLA framework, 785 
+
+diffusion-based predictions excel in precise manipulation tasks, such as Phone on base , Toilet seat 786 
+
+down , and Close laptop lid , whereas autoregressive predictions perform better in tasks requiring scene-787 
+
+level semantic reasoning, such as Sweep to dustpan , Water plants , and Frame off hanger . Therefore, 788 
+
+while collaborative training allows diffusion-based and autoregressive-based action generation to 789 
+
+reinforce each other, assembling both methods results in more robust actions. 790 
+
+Table 7: Detailed Simulation Experiments. We validate that different action types within our proposed framework exhibit varying performance across tasks. All models undergo joint training using our proposed collaborative training recipe; however, HybridVLA-ar and HybridVLA-dif rely exclusively on autoregressive-based and diffusion-based action generation during inference, respectively. Underlining indicates the highest score between HybridVLA-ar and HybridVLA-dif.                                                        
+
+> Close Close Toilet Sweep Close Phone Umbrella Frame Wine at Water Mean. Models box laptop lid seat down to dustpan fridge on base out off hanger rack plants S.R. ↑
+> HybridVLA-ar(7B) 0.85 0.70 0.90 0.85 0.95 0.30 0.25 0.40 0.45 0.50 0.62 HybridVLA-dif(7B) 0.85 0.75 1.0 0.80 0.95 0.50 0.50 0.30 0.70 0.25 0.66 HybridVLA(7B) 0.85 0.95 1.0 0.90 1.0 0.50 0.50 0.70 0.50 0.50 0.74
+
+Table 8: Ablation Study. We explore the impact of different confidence thresholds on the performance of ensemble actions. 
+
+Threshold 0.90 0.92 0.94 0.96 0.98 Success rate 0.66 0.64 0.70 0.74 0.69 
+
+B.2 Additional Ablation Study 791 
+
+The impact of confidence threshold in collaborative action ensemble. The proposed collaborative 792 
+
+ensemble strategy determines whether to use the action predicted by diffusion alone or the averaged 793 
+
+output of both diffusion and autoregressive methods, guided by a mean confidence threshold derived 794 
+
+from the autoregressive action token. In this experiment, we investigate the optimal confidence 795 
+
+threshold required to ensure the accuracy of autoregressive actions and enhance the overall precision 796 
+
+19 Figure 4: The impact of denoising steps , where the x-axis and y-axis represent the denoising steps and manipulation success rate. of the ensemble-generated action. Specifically, as shown in Table 8, we vary the threshold from 0.90 797 
+
+to 0.98. We find that when the confidence threshold drops below 0.94, autoregressive predictions 798 
+
+become unreliable, leading to a slight degradation in the performance of the ensemble action. 799 
+
+Conversely, when the threshold reaches 0.98, the number of valid autoregressive actions becomes 800 
+
+too limited, causing the performance of the ensemble action to closely match that of the diffusion-801 
+
+predicted action. Empirically, we conclude that setting the threshold to 0.96 ensures a stable action 802 
+
+ensemble. 803 
+
+The impact of KV cache in inference speed. As described in Section 3.3, we adopt the KV cache 804 
+
+to eliminate redundant computations and improve inference speed. In this experiment, we examine 805 
+
+the extent to which this mechanism accelerates inference. With the KV cache enabled (Table 2806 
+
+of the main paper), HybridVLA-dif achieves an average success rate of 66% across 10 simulation 807 
+
+tasks with an inference speed of 9.4 Hz. Removing it results in a similar average success rate but 808 
+
+reduces the inference speed to 5.0 Hz. Although the KV cache has typically been used in previous 809 
+
+autoregressive VLA methods [ 10 , 11 ], we are the first to integrate it into an LLM’s diffusion-based 810 
+
+action generation. 811 
+
+The impact of denoising steps. In Figure 4, we explore the relationship between manipulation 812 
+
+performance and different denoising steps on HybridVLA-dif. Consistent with the findings of 813 
+
+previous work [ 12 , 60 ], we reduced the number of DDIM denoising steps of inference from 30 to 4 814 
+
+without observing a significant degradation in manipulation performance. To balance inference speed 815 
+
+and accuracy, we set the diffusion denoising steps to 4 in our final implementation. 816 Execution Progress 
+
+> Unplug charger
+> Pour water
+> Pick and place
+> Wipe black -
+> board Open drawer &
+> place inside
+
+Figure 5: Single-arm Execution Visualization . We visualize key frames of the agent’s execution process from the front perspective. 20 Execution Progress 
+
+> Lift ball and
+> place Place bottles
+> at rack
+> Pick and place
+> Wipe black -
+> board
+> Fold shorts
+
+Figure 6: Dual-arm Execution Visualization . We visualize key frames of the agent’s execution process from a static exterior view. 
+
+## C Additional Visualizations 817 
+
+Figure 5 and Figure 6 illustrate keyframes of single-arm and dual-arm real-world execution processes. 818 
+
+Notably, our Franka Research 3 (FR3) operates with controller version 5.6.0, libfranka version 0.13.3, 819 
+
+Franka ROS version 0.10.0, and Ubuntu 20.04 with ROS Noetic. Under these software settings, the 820 
+
+FR3 remains in green light execution mode with the FCI switch set to ‘on’. 821 
+
+These tasks demonstrate HybridVLA’s capability in accurately predicting position and rotation, 822 
+
+as well as determining the precise timing for changing the gripper’s open state. Additionally, the 823 
+
+dual-arm tasks highlight HybridVLA’s ability to coordinate both robotic arms, enabling it to complete 824 
+
+tasks beyond the capability of a single arm, such as transporting a ball to a container. Notably, the 825 
+
+single-arm task ‘open drawer and place’ and the dual-arm tasks ‘wipe whiteboard’ and ‘fold shorts’ 826 
+
+are long-horizon tasks that involve at least three multi-step actions. These results further confirm 827 
+
+that HybridVLA can reliably predict sequential actions, demonstrating the capability to complete 828 
+
+long-horizon tasks. 829 
+
+## D Failure Case Analysis. 830 
+
+Through extensive real-world experiments, we identify three primary failure categories that impact 831 
+
+the performance of HybridVLA. The first category, rotational prediction deviations , is particularly 832 
+
+evident in tasks requiring precise rotation control, such as Pour water and Place bottle at rack . These 833 
+
+failures include accumulated errors in multi-step rotational movements and incorrect rotation angles 834 
+
+when interacting with target objects. The second category pertains to pose predictions that exceed 835 
+
+the robot’s degree of freedom limits . The model sometimes predicts poses beyond the mechanical 836 
+
+constraints of the Fr3 arm or AgileX dual-arm robot, generates target positions that fall outside the 837 
+
+workspace boundaries, or produces kinematically infeasible configurations during complex transitions. 838 
+
+The third category involves failures in dual-arm coordination , where both arms must collaborate to 839 
+
+complete a task. Since the model predicts each arm’s actions based on the current object state, any 840 
+
+interaction by one arm can alter the object’s state, potentially invalidating the previously predicted 841 
+
+action of the other arm. 842 
+
+21 E Broader Impact 843 
+
+Our work proposed a collaborative framework to combine the continuous nature of diffusion-based 844 
+
+action and the contextual reasoning of autoregression within a single LLM. This work focused on 845 
+
+the innovation of the above VLA structure and does not have a direct impact on society. And we 846 
+
+hope that this effort can promote the progress in the field of robot manipulation and open up a new 847 
+
+paradigm for better providing foundation models in the field of embodiment intelligence, so as to 848 
+
+promote the healthy, controllable and sustainable development of the entire field. 849 
+
+22 NeurIPS Paper Checklist 850 
+
+1. Claims 851 
+
+Question: Do the main claims made in the abstract and introduction accurately reflect the 852 
+
+paper’s contributions and scope? 853 
+
+Answer: [Yes] 854 
+
+Justification: The abstract and/or introduction clearly state the claims made, including the 855 
+
+contributions made in the paper and important assumptions and limitations. 856 
+
+Guidelines: 857 
+
+• The answer NA means that the abstract and introduction do not include the claims 858 
+
+made in the paper. 859 
+
+• The abstract and/or introduction should clearly state the claims made, including the 860 
+
+contributions made in the paper and important assumptions and limitations. A No or 861 
+
+NA answer to this question will not be perceived well by the reviewers. 862 
+
+• The claims made should match theoretical and experimental results, and reflect how 863 
+
+much the results can be expected to generalize to other settings. 864 
+
+• It is fine to include aspirational goals as motivation as long as it is clear that these goals 865 
+
+are not attained by the paper. 866 
+
+2. Limitations 867 
+
+Question: Does the paper discuss the limitations of the work performed by the authors? 868 
+
+Answer: [Yes] 869 
+
+Justification: The paper has discussed limitations in the paper. 870 
+
+Guidelines: 871 
+
+• The answer NA means that the paper has no limitation while the answer No means that 872 
+
+the paper has limitations, but those are not discussed in the paper. 873 
+
+• The authors are encouraged to create a separate "Limitations" section in their paper. 874 
+
+• The paper should point out any strong assumptions and how robust the results are to 875 
+
+violations of these assumptions (e.g., independence assumptions, noiseless settings, 876 
+
+model well-specification, asymptotic approximations only holding locally). The authors 877 
+
+should reflect on how these assumptions might be violated in practice and what the 878 
+
+implications would be. 879 
+
+• The authors should reflect on the scope of the claims made, e.g., if the approach was 880 
+
+only tested on a few datasets or with a few runs. In general, empirical results often 881 
+
+depend on implicit assumptions, which should be articulated. 882 
+
+• The authors should reflect on the factors that influence the performance of the approach. 883 
+
+For example, a facial recognition algorithm may perform poorly when image resolution 884 
+
+is low or images are taken in low lighting. Or a speech-to-text system might not be 885 
+
+used reliably to provide closed captions for online lectures because it fails to handle 886 
+
+technical jargon. 887 
+
+• The authors should discuss the computational efficiency of the proposed algorithms 888 
+
+and how they scale with dataset size. 889 
+
+• If applicable, the authors should discuss possible limitations of their approach to 890 
+
+address problems of privacy and fairness. 891 
+
+• While the authors might fear that complete honesty about limitations might be used by 892 
+
+reviewers as grounds for rejection, a worse outcome might be that reviewers discover 893 
+
+limitations that aren’t acknowledged in the paper. The authors should use their best 894 
+
+judgment and recognize that individual actions in favor of transparency play an impor-895 
+
+tant role in developing norms that preserve the integrity of the community. Reviewers 896 
+
+will be specifically instructed to not penalize honesty concerning limitations. 897 
+
+3. Theory assumptions and proofs 898 
+
+Question: For each theoretical result, does the paper provide the full set of assumptions and 899 
+
+a complete (and correct) proof? 900 
+
+Answer: [NA] 901 
+
+23 Justification: The paper does not include theoretical results. 902 
+
+Guidelines: 903 
+
+• The answer NA means that the paper does not include theoretical results. 904 
+
+• All the theorems, formulas, and proofs in the paper should be numbered and cross-905 
+
+referenced. 906 
+
+• All assumptions should be clearly stated or referenced in the statement of any theorems. 907 
+
+• The proofs can either appear in the main paper or the supplemental material, but if 908 
+
+they appear in the supplemental material, the authors are encouraged to provide a short 909 
+
+proof sketch to provide intuition. 910 
+
+• Inversely, any informal proof provided in the core of the paper should be complemented 911 
+
+by formal proofs provided in appendix or supplemental material. 912 
+
+• Theorems and Lemmas that the proof relies upon should be properly referenced. 913 
+
+4. Experimental result reproducibility 914 
+
+Question: Does the paper fully disclose all the information needed to reproduce the main ex-915 
+
+perimental results of the paper to the extent that it affects the main claims and/or conclusions 916 
+
+of the paper (regardless of whether the code and data are provided or not)? 917 
+
+Answer: [Yes] 918 
+
+Justification: The results are reproducible. 919 
+
+Guidelines: 920 
+
+• The answer NA means that the paper does not include experiments. 921 
+
+• If the paper includes experiments, a No answer to this question will not be perceived 922 
+
+well by the reviewers: Making the paper reproducible is important, regardless of 923 
+
+whether the code and data are provided or not. 924 
+
+• If the contribution is a dataset and/or model, the authors should describe the steps taken 925 
+
+to make their results reproducible or verifiable. 926 
+
+• Depending on the contribution, reproducibility can be accomplished in various ways. 927 
+
+For example, if the contribution is a novel architecture, describing the architecture fully 928 
+
+might suffice, or if the contribution is a specific model and empirical evaluation, it may 929 
+
+be necessary to either make it possible for others to replicate the model with the same 930 
+
+dataset, or provide access to the model. In general. releasing code and data is often 931 
+
+one good way to accomplish this, but reproducibility can also be provided via detailed 932 
+
+instructions for how to replicate the results, access to a hosted model (e.g., in the case 933 
+
+of a large language model), releasing of a model checkpoint, or other means that are 934 
+
+appropriate to the research performed. 935 
+
+• While NeurIPS does not require releasing code, the conference does require all submis-936 
+
+sions to provide some reasonable avenue for reproducibility, which may depend on the 937 
+
+nature of the contribution. For example 938 
+
+(a) If the contribution is primarily a new algorithm, the paper should make it clear how 939 
+
+to reproduce that algorithm. 940 
+
+(b) If the contribution is primarily a new model architecture, the paper should describe 941 
+
+the architecture clearly and fully. 942 
+
+(c) If the contribution is a new model (e.g., a large language model), then there should 943 
+
+either be a way to access this model for reproducing the results or a way to reproduce 944 
+
+the model (e.g., with an open-source dataset or instructions for how to construct 945 
+
+the dataset). 946 
+
+(d) We recognize that reproducibility may be tricky in some cases, in which case 947 
+
+authors are welcome to describe the particular way they provide for reproducibility. 948 
+
+In the case of closed-source models, it may be that access to the model is limited in 949 
+
+some way (e.g., to registered users), but it should be possible for other researchers 950 
+
+to have some path to reproducing or verifying the results. 951 
+
+5. Open access to data and code 952 
+
+Question: Does the paper provide open access to the data and code, with sufficient instruc-953 
+
+tions to faithfully reproduce the main experimental results, as described in supplemental 954 
+
+material? 955 
+
+24 Answer: [Yes] 956 
+
+Justification: We have released the code on Github. 957 
+
+Guidelines: 958 
+
+• The answer NA means that paper does not include experiments requiring code. 959 
+
+• Please see the NeurIPS code and data submission guidelines ( https://nips.cc/ 960 
+
+public/guides/CodeSubmissionPolicy ) for more details. 961 
+
+• While we encourage the release of code and data, we understand that this might not be 962 
+
+possible, so “No” is an acceptable answer. Papers cannot be rejected simply for not 963 
+
+including code, unless this is central to the contribution (e.g., for a new open-source 964 
+
+benchmark). 965 
+
+• The instructions should contain the exact command and environment needed to run to 966 
+
+reproduce the results. See the NeurIPS code and data submission guidelines ( https: 967 
+
+//nips.cc/public/guides/CodeSubmissionPolicy ) for more details. 968 
+
+• The authors should provide instructions on data access and preparation, including how 969 
+
+to access the raw data, preprocessed data, intermediate data, and generated data, etc. 970 
+
+• The authors should provide scripts to reproduce all experimental results for the new 971 
+
+proposed method and baselines. If only a subset of experiments are reproducible, they 972 
+
+should state which ones are omitted from the script and why. 973 
+
+• At submission time, to preserve anonymity, the authors should release anonymized 974 
+
+versions (if applicable). 975 
+
+• Providing as much information as possible in supplemental material (appended to the 976 
+
+paper) is recommended, but including URLs to data and code is permitted. 977 
+
+6. Experimental setting/details 978 
+
+Question: Does the paper specify all the training and test details (e.g., data splits, hyper-979 
+
+parameters, how they were chosen, type of optimizer, etc.) necessary to understand the 980 
+
+results? 981 
+
+Answer: [Yes] 982 
+
+Justification: The experimental setting is clearly presented in the paper. 983 
+
+Guidelines: 984 
+
+• The answer NA means that the paper does not include experiments. 985 
+
+• The experimental setting should be presented in the core of the paper to a level of detail 986 
+
+that is necessary to appreciate the results and make sense of them. 987 
+
+• The full details can be provided either with the code, in appendix, or as supplemental 988 
+
+material. 989 
+
+7. Experiment statistical significance 990 
+
+Question: Does the paper report error bars suitably and correctly defined or other appropriate 991 
+
+information about the statistical significance of the experiments? 992 
+
+Answer: [No] 993 
+
+Justification: The existing results can already reflect the performance of method. 994 
+
+Guidelines: 995 
+
+• The answer NA means that the paper does not include experiments. 996 
+
+• The authors should answer "Yes" if the results are accompanied by error bars, confi-997 
+
+dence intervals, or statistical significance tests, at least for the experiments that support 998 
+
+the main claims of the paper. 999 
+
+• The factors of variability that the error bars are capturing should be clearly stated (for 1000 
+
+example, train/test split, initialization, random drawing of some parameter, or overall 1001 
+
+run with given experimental conditions). 1002 
+
+• The method for calculating the error bars should be explained (closed form formula, 1003 
+
+call to a library function, bootstrap, etc.) 1004 
+
+• The assumptions made should be given (e.g., Normally distributed errors). 1005 
+
+• It should be clear whether the error bar is the standard deviation or the standard error 1006 
+
+of the mean. 1007 
+
+25 • It is OK to report 1-sigma error bars, but one should state it. The authors should 1008 
+
+preferably report a 2-sigma error bar than state that they have a 96% CI, if the hypothesis 1009 
+
+of Normality of errors is not verified. 1010 
+
+• For asymmetric distributions, the authors should be careful not to show in tables or 1011 
+
+figures symmetric error bars that would yield results that are out of range (e.g. negative 1012 
+
+error rates). 1013 
+
+• If error bars are reported in tables or plots, The authors should explain in the text how 1014 
+
+they were calculated and reference the corresponding figures or tables in the text. 1015 
+
+8. Experiments compute resources 1016 
+
+Question: For each experiment, does the paper provide sufficient information on the com-1017 
+
+puter resources (type of compute workers, memory, time of execution) needed to reproduce 1018 
+
+the experiments? 1019 
+
+Answer: [Yes] 1020 
+
+Justification: The paper indicates the type of compute workers. 1021 
+
+Guidelines: 1022 
+
+• The answer NA means that the paper does not include experiments. 1023 
+
+• The paper should indicate the type of compute workers CPU or GPU, internal cluster, 1024 
+
+or cloud provider, including relevant memory and storage. 1025 
+
+• The paper should provide the amount of compute required for each of the individual 1026 
+
+experimental runs as well as estimate the total compute. 1027 
+
+• The paper should disclose whether the full research project required more compute 1028 
+
+than the experiments reported in the paper (e.g., preliminary or failed experiments that 1029 
+
+didn’t make it into the paper). 1030 
+
+9. Code of ethics 1031 
+
+Question: Does the research conducted in the paper conform, in every respect, with the 1032 
+
+NeurIPS Code of Ethics https://neurips.cc/public/EthicsGuidelines ?1033 
+
+Answer: [Yes] 1034 
+
+Justification: We follow the NeurIPS Code of Ethics. 1035 
+
+Guidelines: 1036 
+
+• The answer NA means that the authors have not reviewed the NeurIPS Code of Ethics. 1037 
+
+• If the authors answer No, they should explain the special circumstances that require a 1038 
+
+deviation from the Code of Ethics. 1039 
+
+• The authors should make sure to preserve anonymity (e.g., if there is a special consid-1040 
+
+eration due to laws or regulations in their jurisdiction). 1041 
+
+10. Broader impacts 1042 
+
+Question: Does the paper discuss both potential positive societal impacts and negative 1043 
+
+societal impacts of the work performed? 1044 
+
+Answer: [NA] 1045 
+
+Justification: There is no societal impact of the work performed. 1046 
+
+Guidelines: 1047 
+
+• The answer NA means that there is no societal impact of the work performed. 1048 
+
+• If the authors answer NA or No, they should explain why their work has no societal 1049 
+
+impact or why the paper does not address societal impact. 1050 
+
+• Examples of negative societal impacts include potential malicious or unintended uses 1051 
+
+(e.g., disinformation, generating fake profiles, surveillance), fairness considerations 1052 
+
+(e.g., deployment of technologies that could make decisions that unfairly impact specific 1053 
+
+groups), privacy considerations, and security considerations. 1054 
+
+• The conference expects that many papers will be foundational research and not tied 1055 
+
+to particular applications, let alone deployments. However, if there is a direct path to 1056 
+
+any negative applications, the authors should point it out. For example, it is legitimate 1057 
+
+to point out that an improvement in the quality of generative models could be used to 1058 
+
+26 generate deepfakes for disinformation. On the other hand, it is not needed to point out 1059 
+
+that a generic algorithm for optimizing neural networks could enable people to train 1060 
+
+models that generate Deepfakes faster. 1061 
+
+• The authors should consider possible harms that could arise when the technology is 1062 
+
+being used as intended and functioning correctly, harms that could arise when the 1063 
+
+technology is being used as intended but gives incorrect results, and harms following 1064 
+
+from (intentional or unintentional) misuse of the technology. 1065 
+
+• If there are negative societal impacts, the authors could also discuss possible mitigation 1066 
+
+strategies (e.g., gated release of models, providing defenses in addition to attacks, 1067 
+
+mechanisms for monitoring misuse, mechanisms to monitor how a system learns from 1068 
+
+feedback over time, improving the efficiency and accessibility of ML). 1069 
+
+11. Safeguards 1070 
+
+Question: Does the paper describe safeguards that have been put in place for responsible 1071 
+
+release of data or models that have a high risk for misuse (e.g., pretrained language models, 1072 
+
+image generators, or scraped datasets)? 1073 
+
+Answer: [NA] 1074 
+
+Justification: The paper poses no such risks. 1075 
+
+Guidelines: 1076 
+
+• The answer NA means that the paper poses no such risks. 1077 
+
+• Released models that have a high risk for misuse or dual-use should be released with 1078 
+
+necessary safeguards to allow for controlled use of the model, for example by requiring 1079 
+
+that users adhere to usage guidelines or restrictions to access the model or implementing 1080 
+
+safety filters. 1081 
+
+• Datasets that have been scraped from the Internet could pose safety risks. The authors 1082 
+
+should describe how they avoided releasing unsafe images. 1083 
+
+• We recognize that providing effective safeguards is challenging, and many papers do 1084 
+
+not require this, but we encourage authors to take this into account and make a best 1085 
+
+faith effort. 1086 
+
+12. Licenses for existing assets 1087 
+
+Question: Are the creators or original owners of assets (e.g., code, data, models), used in 1088 
+
+the paper, properly credited and are the license and terms of use explicitly mentioned and 1089 
+
+properly respected? 1090 
+
+Answer: [Yes] 1091 
+
+Justification: We have cited the original paper that produced the code package or dataset. 1092 
+
+Guidelines: 1093 
+
+• The answer NA means that the paper does not use existing assets. 1094 
+
+• The authors should cite the original paper that produced the code package or dataset. 1095 
+
+• The authors should state which version of the asset is used and, if possible, include a 1096 
+
+URL. 1097 
+
+• The name of the license (e.g., CC-BY 4.0) should be included for each asset. 1098 
+
+• For scraped data from a particular source (e.g., website), the copyright and terms of 1099 
+
+service of that source should be provided. 1100 
+
+• If assets are released, the license, copyright information, and terms of use in the 1101 
+
+package should be provided. For popular datasets, paperswithcode.com/datasets 1102 
+
+has curated licenses for some datasets. Their licensing guide can help determine the 1103 
+
+license of a dataset. 1104 
+
+• For existing datasets that are re-packaged, both the original license and the license of 1105 
+
+the derived asset (if it has changed) should be provided. 1106 
+
+• If this information is not available online, the authors are encouraged to reach out to 1107 
+
+the asset’s creators. 1108 
+
+13. New assets 1109 
+
+Question: Are new assets introduced in the paper well documented and is the documentation 1110 
+
+provided alongside the assets? 1111 
+
+27 Answer: [NA] 1112 
+
+Justification: The paper does not release new assets. 1113 
+
+Guidelines: 1114 
+
+• The answer NA means that the paper does not release new assets. 1115 
+
+• Researchers should communicate the details of the dataset/code/model as part of their 1116 
+
+submissions via structured templates. This includes details about training, license, 1117 
+
+limitations, etc. 1118 
+
+• The paper should discuss whether and how consent was obtained from people whose 1119 
+
+asset is used. 1120 
+
+• At submission time, remember to anonymize your assets (if applicable). You can either 1121 
+
+create an anonymized URL or include an anonymized zip file. 1122 
+
+14. Crowdsourcing and research with human subjects 1123 
+
+Question: For crowdsourcing experiments and research with human subjects, does the paper 1124 
+
+include the full text of instructions given to participants and screenshots, if applicable, as 1125 
+
+well as details about compensation (if any)? 1126 
+
+Answer: [NA] 1127 
+
+Justification: The paper does not involve crowdsourcing nor research with human subjects. 1128 
+
+Guidelines: 1129 
+
+• The answer NA means that the paper does not involve crowdsourcing nor research with 1130 
+
+human subjects. 1131 
+
+• Including this information in the supplemental material is fine, but if the main contribu-1132 
+
+tion of the paper involves human subjects, then as much detail as possible should be 1133 
+
+included in the main paper. 1134 
+
+• According to the NeurIPS Code of Ethics, workers involved in data collection, curation, 1135 
+
+or other labor should be paid at least the minimum wage in the country of the data 1136 
+
+collector. 1137 
+
+15. Institutional review board (IRB) approvals or equivalent for research with human 1138 
+
+subjects 1139 
+
+Question: Does the paper describe potential risks incurred by study participants, whether 1140 
+
+such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) 1141 
+
+approvals (or an equivalent approval/review based on the requirements of your country or 1142 
+
+institution) were obtained? 1143 
+
+Answer: [NA] 1144 
+
+Justification: The paper does not involve crowdsourcing nor research with human subjects. 1145 
+
+Guidelines: 1146 
+
+• The answer NA means that the paper does not involve crowdsourcing nor research with 1147 
+
+human subjects. 1148 
+
+• Depending on the country in which research is conducted, IRB approval (or equivalent) 1149 
+
+may be required for any human subjects research. If you obtained IRB approval, you 1150 
+
+should clearly state this in the paper. 1151 
+
+• We recognize that the procedures for this may vary significantly between institutions 1152 
+
+and locations, and we expect authors to adhere to the NeurIPS Code of Ethics and the 1153 
+
+guidelines for their institution. 1154 
+
+• For initial submissions, do not include any information that would break anonymity (if 1155 
+
+applicable), such as the institution conducting the review. 1156 
+
+16. Declaration of LLM usage 1157 
+
+Question: Does the paper describe the usage of LLMs if it is an important, original, or 1158 
+
+non-standard component of the core methods in this research? Note that if the LLM is used 1159 
+
+only for writing, editing, or formatting purposes and does not impact the core methodology, 1160 
+
+scientific rigorousness, or originality of the research, declaration is not required. 1161 
+
+Answer: [NA] 1162 
+
+28 Justification: The core method development in this research does not involve LLMs. 1163 
+
+Guidelines: 1164 
+
+• The answer NA means that the core method development in this research does not 1165 
+
+involve LLMs as any important, original, or non-standard components. 1166 
+
+• Please refer to our LLM policy ( https://neurips.cc/Conferences/2025/LLM )1167 
+
+for what should or should not be described. 1168 
+
+29
