@@ -1,0 +1,795 @@
+Title: EigeNet: Geometry-Informed Multi-Modal Learning for Few-shot Novel View RIR Prediction
+
+URL Source: https://arxiv.org/pdf/2605.28101v1
+
+Published Time: Thu, 28 May 2026 00:51:28 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+> 1
+
+# EIGE NET : Geometry-Informed Multi-Modal Learning for Few-shot Novel View RIR Prediction 
+
+Chong Jing, Zitong Lan, Junan Zhang, Zhizheng Wu 
+
+Abstract —Predicting spatially varying Room Impulse Response (RIR) from sparse observations is a critical but highly challenging inverse problem for immersive spatial audio rendering. In this work, we present E IGE NET , a geometry-informed multi-modal framework for few-shot novel view RIR prediction. At its core is a Cross-view Alternate-attention Transformer that iteratively refines local intra-view acoustic structures and global cross-view spatial relationships. We empirically demonstrate that this architecture is capable of making full use of the multi-view multi-modal context while performing spatial-temporal reasoning for RIR prediction. Inspired by acoustic ray tracing, we design a geometry-informed modulation block to formulate the connection between geometric features and RIR power spectrum. In the mean time, an auxiliary loss is introduced to transform the single-target waveform prediction into a multi-task learning framework. Through ablation studies, we demonstrate that this design yields consistent performance gains regardless of the underlying back-bone, thereby confirming its foundational utility and architecture-agnostic generalizability for RIR prediction task. Evaluated on both simulated and real-world benchmarks, E IGE NET achieves both state-of-the-art performance in few-shot novel view RIR prediction and sim-to-real generalization. Codes and checkpoints are available on https://github.com/FEAfeatherTHER/EigeNet. 
+
+Index Terms —Multi-modal learning, Room Impulse Response, Few-shot Novel View RIR Prediction, Alternate-attention 
+
+I. I NTRODUCTIO 
+
+Immersive interactions within spatial computing, such as Augmented/Virtual Reality (AR/VR) [ 1], [ 2] and generative world models [ 3], [ 4 ], fundamentally rely on the seamless integration of both visual and auditory modalities. While novel view prediction for visual environments has reached a highly mature state, the accurate construction of corresponding acoustic fields remains a critical yet underexplored domain. The auditory identity of an environment is essentially encoded within its Room Impulse Response (RIR), which captures complex acoustic phenomena ranging from echoes and spatial reverberation to the overall spatial acoustics of the environ-ment [5], [6], [7]. Physically, the acoustic field of the room functions as a highly complex dynamical system, where the RIR denotes the precise spatio-temporal response at a receiver location to a Dirac impulse applied at a source location. As acoustic waves radiate, they undergo complex reflection, diffraction, scattering, and transmission against the physical boundaries of the room [ 8 ], [9], [ 10 ]. These interactions produce spatially varying acoustic 
+
+Chong Jing, Junan Zhang and Zhizheng Wu are affiliated with The Chinese University of Hong Kong, Shenzhen. e-mail: 225045026g@link.cuhk.edu.cn Zitong Lan is affiliated with University of Pennsylvania. e-mail:ztlan@upenn.edu Zhizheng Wu is the corresponding author. e-mail: wuzhizheng@cuhk.edu.cn 
+
+field throughout the room so people can have distinct auditory experience. Due to the complexity of these interactions, acquiring high-fidelity acoustic fields traditionally demands exhaustive and resource-intensive physical measurements [ 11 ], [12]. To circumvent the data dependency of demanding physical measurements, recent efforts have increasingly turned to deep learning for accurate acoustic field estimation. Researchers have explored various paradigms to reconstruct acoustic patterns of a single room [ 13 ], [ 14 ], [ 15 ], [ 16 ], [ 17 ], [ 18 ], [ 19 ], [ 20 ], [ 21 ], [ 22 ], [ 23 ], [ 24 ]. However, early data-driven approaches typically focus on environment-specific modeling, inherently lacking transferability to novel scenes. Consequently, to enable scalable real-world applications, there is an urgent need to advance toward cross-room few-shot novel view RIR prediction. This paradigm aims to generalize spatially varying acoustic effects to unseen environments using extremely limited refer-ence data and room geometric information. So far, a number of contemporary works follow this paradigm and achieve promising performance [ 25 ], [ 26 ], [ 27 ]. Among these, Few-shot RIR [ 25 ] pioneer on this task by integrating multi-modal inputs within a transformer-based autoencoder, while xRIR [ 26 ]formulates target RIR prediction as a weighted combination of reference-view samples. FLAC [ 27 ] is the first to employ a generative framework for this task. Despite these efforts on generalizing RIR prediction to unseen environments, existing methods still struggle to achieve high-fidelity acoustic field estimation due to inherent constraints in their architectural and optimization designs. Specifically, current methods are fundamentally constrained by two un-resolved bottlenecks. The first challenge is the difficulty in simultaneously capturing the temporal structure within a single RIR and the spatial relationships among reference observations. Existing approaches mostly rely on Self-attention or Cross-attention to implicitly learn these temporal-spatial relationships. However, standard Self-attention and Cross-attention mechanisms are not explicitly designed for multi-view multi-modal contexts [28], [29], [30]. 
+
+Another challenge is that most existing methods treat the task as a black-box mapping. Failing to explicitly model the inherent multi-modal correlations between room geometry and acoustic patterns, existing works often lack physical interpretability and struggle with complex geometric configurations. To overcome these non-trivial challenges, we introduce a novel framework E IGE NET that tackles these bottlenecks. Firstly, we introduce a Cross-view Alternate-attention trans-former (CVAT) , alternating between intra-view (local) and cross-view (global) attention. The efficacy of Alternate-attention has 
+
+> arXiv:2605.28101v1 [cs.SD] 27 May 2026 2
+
+already been well-established in the domain of novel-view image reconstruction [ 28 ], [ 29 ], [ 30 ]. However its application to audio-centric multi-modal learning is still unknown, so we bridge this gap by presenting the first framework that leverages Alternate-attention for novel-view RIR prediction. Beyond demonstrating state-of-the-art performance, we also conduct an in-depth analysis to explore the inner mechanism that drive this success. To tackle with the second challenge, we draw inspiration from the principles of physics-based acoustic ray tracing [ 10 ], [ 31 ] that the multi-octave power spectrum of RIR can be estimated from the room geometry and surface material prop-erties. Leveraging this deterministic relationship as a powerful physical prior, we introduce a geometry-informed modulation block to explicitly modulate acoustic representations using geometric features. Additionally, to maximize the efficacy of this constraint, we incorporate an auxiliary loss on power spectrum, thereby transitioning the conventional single-target prediction into a multi-task learning paradigm. This design significantly enhances the cross-room generalizability of the network while ensuring the physical plausibility of the synthesized RIRs. We conducted extensive experiments to validate the efficacy of these components. We first demonstrate the fundamental distinctions in the inference paradigms between Alternate-attention and other attention mechanisms when attending multi-view multi-modal context. Subsequently, we elucidate that the introduction of the modulation block and corresponding auxiliary loss exhibits strong generalizability, as it yields con-sistent performance gains across various network architectures, regardless of the underlying attention mechanism employed. In summary, our primary contributions are as follows:  
+
+> •
+
+We propose a Cross-view Alternate-attention transformer into few-shot novel view RIR prediction and explain its efficiency over Self-attention and Cross-attention when dealing with multi-view multi-modal context.  
+
+> •
+
+We design a geometry-informed modulation block to strengthen the correlation between geometric and acoustic features.  
+
+> •
+
+We introduce an auxiliary loss, shifting the task from single-target RIR prediction to multi-modal multi-task learning paradigm and empirically validate its effective-ness. Our proposed model achieves state-of-the-art (SOTA) perfor-mance on AcousticRooms and Hearing-Anything-Anywhere datasets, while exhibiting superior robustness even with sparse references. II. R ELATED WORK 
+
+A. Few-shot Novel View RIR Prediction with Multi-Modal Methods 
+
+Few-shot Novel View RIR prediction task tries to learn the room acoustic patterns and predict the target RIR in the same room. In multi-modal learning field, there are three related excellent works. Few-shot RIR [ 25 ] utilizes RGB, depth, RIR and other metadata to predict the log magnitude spectrogram with a cross-modality Unet architecture. xRIR [ 26 ] introduces a geometric module and views the target RIR as the weighted sum of the reference RIRs. FLAC [ 27 ] is built upon the Latent Diffusion Model (LDM) [ 32 ], [ 33 ], [ 34 ] and incorporates the AGREE joint acoustic-geometric embedding like CLIP [ 35 ], which is specifically designed for robust feature extraction across both acoustic and geometric modalities. 
+
+B. Differentiable rendering of Acoustic Field 
+
+Differentiable rendering methods are effective and popular because they combine physical acoustic knowledge with neural networks. Several representative works have emerged along this line. AVR [ 17 ] adopts the idea from NeRF and derives the ren-dering equation in the frequency domain, but it cannot handle cross-room scenarios. Diff-RIR [ 15 ] adopts the image-source method and builds a complete and detailed pipeline; however, it is resource-consuming due to the need to filter out invisible image sources, and it does not model frequency-dependent responses. DAR [ 16 ] is the first to combine ray-tracing results with visual features and achieves strong performance. Although differentiable rendering methods have achieved considerable success in RIR prediction, they still have to rely on physical approximations that may not hold in all situations, which is a theoretical limitation of this paradigm. 
+
+C. Alternate-attention 
+
+Visual Geometry Grounded Transformer (VGGT) first in-troduces Alternate-attention as a 3D feature extractor and evaluates its effectiveness on the downstream tasks like novel view image prediction[ 28 ], [ 36 ], [ 29 ]. An Alternate-attention layer is composed of a frame wise and a global wise Self-attention layer, so the attention will be focused alternately on the frame and global wise context. Alternate-attention is specially designed for multi-view context and VGGT uses experiments to prove its superiority over Cross-attention and Self-attention (Global Self-attention only) structures[ 28 ]. While existing VGGT-style Alternating Attention (Alternate-attention) architectures are exclusively tailored for pure 3D visual tasks, Room Impulse Responses (RIRs) fundamentally consist of 1D temporal signals coupled with cross-view spatial configurations, exhibiting distinct token structures and attention symmetries. To the best of our knowledge, our work represents the first attempt to adapt the Alternate-attention mechanism to such multi-modal multi-view context. III. M ETHOD 
+
+A. Problem Definition 
+
+Following xRIR’s setup [ 26 ], we are given the source and receiver data: position coordinates of sources tx i ∈ R3 and receivers rx i ∈ R3 in the camera coordinate system (setting the receiver as the origin like xRIR). At these reference pairs, we have reference RIRs hi ∈ R1×L (T denotes the sample length in time). We also have a panorama depth map at receiver location from its viewpoint, denoted as D. Given these information, our goal is to estimate the target RIR h0 at novel source position tx 0. We formulate this as follows: 
+
+h0 = F {hi, tx i, rx i}Ni=1 , tx 0, D , (1) where F denotes our model E IGE NET .3x K    
+
+> Alternate -Attention Block
+> Alternate -Attention Block
+> ··· x L
+> Cross -View Alternate -Attention Transformer
+> Linear &
+> DAC
+> Decoder
+> Target
+> RIR
+> Waveform
+> loss
+> Predict
+> Acoustic Tokens
+> Predict
+> RIR
+> Linear
+> Tgt. Source Ref. Source Receiver
+> Ref. Geometric Token
+> Tgt. Geometric Token
+> Ref. Acoustic Token
+> Tgt. Acoustic Token
+> x
+> Spectrum
+> Loss
+> Target
+> Spectrum
+> Predict
+> Spectrum
+> x
+> Local
+> Attention
+> Global
+> Attention
+> ···
+> ···
+> DAC
+> Encoder
+> Ref. RIR
+> Geometric
+> Encoder
+> Panorama Depth
+> Ref.
+> Location Time Sequence
+> [0.0, …, 0.5]
+> SPE&MLP
+> Geometry -Informed
+> Modulation
+> Geometric
+> Encoder
+> Panorama Depth
+> Tgt.
+> Location
+
+Fig. 1: Overview of E IGE NET . Geometric and acoustic tokens of all reference and target views are firstly encoded by Encoders and a modulation block, then jointly processed by the Cross-view Alternate-attention Transformer (CVAT) that interleaves intra-view and cross-view attention to predict the target RIR. 
+
+B. Model Overview 
+
+As shown in Fig 1, we employ a geometric encoder to encode the panoramic depth map and position coordinates into geometric tokens. Then we have two different branches to get the acoustic tokens of the reference and target view respectively. Taking geometric token as the condition, the geometry-informed modulation block modulate the target RIR acoustic tokens and regress those tokens with the multi-octave power spectrum. After that, we concatenate geometric token before its corresponding acoustic tokens for both the reference and target views and pass the tokens into our Cross-view Alternate-attention Transformer (CVAT) backbone. Finally, the target acoustic tokens are decoded into waveform to predict the target RIR. We explain next the details of our model architecture. 
+
+C. Encoders 1) Geometric: We generally follow similar design of xRIR [ 26 ]. Within the camera coordinate system centered at the receiver, we first project the depth map back to 3D pixel coordinates using an isometric mapping. To characterize the sound propagation paths, we compute two tensors by subtracting the source and receiver coordinates from the 3D pixel coordinates, respectively. We concatenate these two tensors into a single 6-channel tensor then patchify into a sequence of patches and convert to tokens with a standard Vision Transformer (ViT) [ 37 ] model. For the coordinates encoding, we apply positional encoding followed by a multi-layer perceptron (MLP) layer. Finally, the resulting components from the coordinates and the depth map are concatenated and projected to match the dimensions of the acoustic tokens. The resulting geometry tokens is Gi ∈ R1×f (i ∈ [0 , ..., N ]) for all the reference views geometry and target view geometry. We keep the feature dimension of the geometric token the same with acoustic tokens so that they can be concatenated and jointly processed by the CVAT backbone. 
+
+2) Acoustic: The Encoders for acoustic tokens are designed with two distinct branches to independently process the reference views and the target view. For reference RIR, we adopt Descript-Audio-Codec [ 38 ], which is a widely adopted tokenizer in the audio domain, capable of reconstructing audio with high fidelity acoustic details. Considering the domain shift from general audio to RIR signal, we empirically test the DAC reconstruction performance by evaluating RIR reconstruction metrics on the AcousticRooms dataset [ 26 ]. We will provide the preliminary reconstruction quality in Sec. IV-E . Given the exceptionally high reconstruction quality, we adopt the pretrained 16 kHz version of DAC without any finetuning. Specifically, we extract the continuous latent representations prior to the vector quantizer [ 39 ] as acoustic tokens Ai ∈ Rn×f , where n and f
+
+are the number of tokens and the dimension of the acoustic features, i ∈ [1 , ..., N ] denotes N reference views. For the target view RIR, we utilize the sinusoidal positional encoding (SPE) [ 40 ] of its time sequence as a proxy and project them into a high-dimensional space T0 ∈ Rn×f with a MLP, where the subscript 0 denotes the index for the target view. T0
+
+will then be modulated by the geometry-informed modulation block to get the acoustic tokens, which we will explain next. 4
+
+D. Geometry-informed Modulation Block. 
+
+Geometry-informed Modulation Block is designed to explic-itly strengthen the correlation between the room geometry and power spectrum of RIR. In ray-tracing algorithms, multi-octave power spectrum can be analytically derived from room geometry and surface acoustic properties. We identify this as an inherent multimodal correlation that has been largely under-explored in prior data-driven methods. Leveraging this insight, we modulate T0 by its corresponding geometric token G0 via a one-layer Diffusion Transformer (DiT) block with adaptive layer normalization[ 41 ], yielding the acoustic tokens A0 ∈ Rn×f for target view. Subsequently, A0 is divided into two streams: one is passed into CVAT backbone, while the other is projected to ˆS0 ∈ Rn×b
+
+through a linear layer to regress the power spectrum. Instead of regressing the original Short-time Fourier Transform (STFT) power spectrum of the targer RIR Z0 ∈ Rn×B , where B
+
+denotes the frequency bins of the spectrum, we choose to regress the multi-octave power spectrum S0 ∈ Rn×b. In our configuration, the number of octave bands is set to b = 7 ,spanning center frequencies from 63 Hz to 4000 Hz according to the ISO standard (i.e., 63 Hz, 125 Hz, 250 Hz, 500 Hz, 1 kHz, 2 kHz, and 4 kHz). To prevent temporal collapse, we adopt a combination of multi-resolution STFT (MRSTFT) loss and energy decay curve (EDC) loss: 
+
+Lspectrum = LMRSTFT ( ˆS0, S0) + LEDC ( ˆS0, S0), (2) 
+
+E. Cross-view Alternate-attention Transformer. 1) Token Organization: We assemble the geometric and acoustic tokens for every viewpoint by concatenating the geometric tokens G before its corresponding acoustic tokens 
+
+A as prefix along the sequence dimension: 
+
+Vi = Concat {Gi, Ai}, (3) where i = 0 , 1, . . . , N . This results in tokens for each view with shape of Vi ∈ R(1+ n)×f . Following the previous definition, we let the subscripts i ∈ { 1, . . . , N } represent the set of reference view tokens, with i = 0 designating the target view tokens. We then stack all view tokens into a unified sequence: 
+
+H(0) = Concat {V 0, V1, . . . , VN }, (4) where H(0) ∈ R(N +1)(1+ n)×f .
+
+2) Alternate-attention for Acoustic Modeling: Each view token Vi contains both geometric and acoustic information, where the acoustic tokens exhibit strong temporal structure within each view, while the target RIR requires aggregating information across different views under varying geometric configurations. To explicitly model these two complementary dependencies, we design a transformer that alternates between 
+
+intra-view (local) and cross-view (global) attention. 
+
+3) Local Attention (Intra-View): Local attention is applied independently within each view token Vi, restricting attention to tokens belonging to the same view. This preserves the temporal structure of acoustic tokens while allowing interaction with the corresponding geometric tokens. Formally, for the ℓ-th layer, we partition H(ℓ−1) into V(ℓ−1)  
+
+> i
+
+and apply multi-head Self-attention within each view: 
+
+˜V(ℓ) 
+
+> i
+
+= MSA local 
+
+
+
+V(ℓ−1) 
+
+> i
+
+
+
++ V(ℓ−1)  
+
+> i
+
+, i ∈ 0, . . . , N . (5) The updated tokens are then concatenated back: 
+
+˜H(ℓ) = Concat { ˜V(ℓ)0 , . . . , ˜V(ℓ) 
+
+> N
+
+}. (6) 
+
+4) Global Attention (Cross-view): Global attention is applied over the entire token sequence, enabling information exchange across all views. This allows the model to aggregate acoustic cues from reference views to infer the target view. 
+
+H(ℓ) = MSA global 
+
+ ˜H(ℓ)
+
++ ˜H(ℓ). (7) 
+
+5) Alternating Structure: We stack multiple Alternate-attention blocks, where each block consists of a local attention layer followed by a global attention layer. This alternating design enables the model to iteratively refine intra-view rep-resentations (capturing local acoustic structure), and integrate cross-view information (capturing spatial relationships). 
+
+F. Prediction Head 
+
+We extract and concatenate the local and global features from the final Alternate-attention block on the feature dimension, and project them back to the hidden space of the DAC latent representation: 
+
+ˆZ0 = ϕproj (A0), (8) where ϕproj denotes a linear projection. Instead of regression in the latent domain, we feed the predicted latent ˆZ0 into the frozen DAC decoder to obtain the reconstructed waveform. 
+
+ˆh0 = Decoder( ˆZ0). (9) This head directly supervises the RIR signal in the waveform domain, enabling the model to capture fine-grained temporal and spectral characteristics. IV. E XPERIMENTS 
+
+A. Dataset. 1) AcousticRooms(AR) [ 26 ]: It is a large high-quality simulated dataset with 300K mono channel RIR in 22050Hz sampling rate computed on Treble 1 platform, featuring 260 rooms across 10 categories and 332 materials across 11 categories. In our experimental setup, we downsample the RIR data to a sampling rate of 16 kHz to match with DAC. 
+
+2) Hearing-Anything-Anywhere (HAA) [ 15 ]: The HAA dataset consists of real-recorded RIRs, each featuring a fixed source and multiple receiver positions. This configuration is opposite to the AR dataset but doesn’t affect the experiment due to the reciprocity of the wave equation. The original RIRs are recorded at 48 kHz and are downsampled to 16 kHz for our experiments. 
+
+> 1https://www.treble.tech/ 5
+
+TABLE I: Reconstruction quality of the pretrained 16 kHz Descript-Audio-Codec (DAC) on the AcousticRooms dataset. Lower is better ( ↓).         
+
+> EDT (s) ↓C50 (dB) ↓T60 ↓
+> DAC 0.004 0.606 4.963
+
+B. Metrics. 
+
+Following prior works [ 26 ], [ 25 ], we use three common metrics:  
+
+> •
+
+EDT. Early Decay Time Error measures the time taken for the initial 5dB decay in the energy curve.  
+
+> •
+
+C50. Clarity measures the ratio of the early energy(50ms) compared to late energy.  
+
+> •
+
+T60. T60 measures the time required for the cumulative energy attenuation of 60 dB after an initial 5 dB drop. Following xRIR [ 26 ], we compare the T60 value of the predicted RIR and the ground-truth RIR. Instead of computing it directly, we estimate T20 and multiply it by a factor of 3 to approximate T60 for numerical stability. To assess the suitability of the Descript-Audio-Codec (DAC) for the downstream task of RIR prediction, we conducted an extensive evaluation across the AR dataset. As shown in Tab. I, the metrics demonstrate the exceptional suitability of DAC as tokenizer for RIR prediction. 
+
+C. Baselines. 
+
+Given the same input configuration, we compare our model with following baselines. Note that FLAC [ 27 ] is a concurrent work to ours, and therefore is not included in our baseline comparisons.  
+
+> •
+
+Random Across Rooms : randomly sampled from the entire dataset.  
+
+> •
+
+Random Same Room : randomly selected from the same room.  
+
+> •
+
+Linear Interp. : linearly interpolates between K reference RIRs based on their distances to the target.  
+
+> •
+
+Nearest Neighbor (KNN) : chooses the RIR among the K reference samples with the closest distance to the target.  
+
+> •
+
+xRIR [ 26 ]: we adopt xRIR as our primary learning-based baseline, as it has been shown to outperform earlier multi-modal approaches (e.g., Few-shot RIR [ 25 ]) by a large margin on both AR and HAA. For a fair comparison, we retrain xRIR on AR dataset at 16 kHz for 10 epochs using its released configuration and scripts.  
+
+> •
+
+Diff-RIR [ 15 ]: it introduces the HAA dataset and is a physics based differentiable rendering method. We only compare with it on HAA. 
+
+D. Implementations. 
+
+In our model, we predict 16 kHz RIR with a length of 8000 samples (results in 0.5s in duration). The DAC tokenizer, operating at a sampling rate of 16 kHz, features a frame rate of 50 Hz. Consequently, each RIR yields 25 acoustic tokens with 1024 dimension, which serve as the latent representation TABLE II: Quantitative comparison on the AcousticRooms dataset under varying numbers of reference views K ∈ { 1, 4, 8}.Metrics are EDT (s), C50 (dB) and T60(%) errors; lower is better ( ↓). The best result in each K block is shown in bold .                                                           
+
+> Method KEDT ↓C50 ↓T60 ↓
+> Random Across Rooms –0.442 7.784 36.420 Random Same Rooms –0.207 5.984 15.374 Nearest Neighbor (KNN) 10.303 4.013 27.583 xRIR [26] 10.076 2.124 12.617
+> Ours 10.052 1.488 10.213
+> Linear Interp. 40.281 4.552 17.583 Nearest Neighbor (KNN) 40.185 3.687 24.194 xRIR [26] 40.054 1.540 10.052
+> Ours 40.047 1.398 8.061
+> Linear Interp. 80.245 4.078 25.713 Nearest Neighbor (KNN) 80.157 3.455 20.562 xRIR [26] 80.050 1.442 9.393
+> Ours 80.041 1.242 7.605
+
+for subsequent processing. Every depth map is projected into a 6 channel tensor with (256 , 512) in size. We then divide this tensor into 16 × 32 patches and input it into a 8-head, 4-layer Vision Transformer with a feature dimension of 512. The coordinates are encoded by a positional embedding module with a hidden dimension of 128 and be projected into 512 dimension by a MLP. Cross-view Alternate-attention Transformer has 6 Alternate-attention blocks with feature dimension of 1024 and 16 heads. The overall architecture comprises 132.54 M parameters. Following the former works [ 26 ], [ 14 ], [ 17 ], we also use MRSTFT loss and EDC loss for waveform supervision. Together with the power spectrum loss, The total loss are: 
+
+Ltotal = LM RST F T + λEDC LEDC + λspectrum Lspectrum 
+
+(10) where we set λEDC = 1 and λspectrum = 0 .01 . The waveform EDC loss and power spectrum loss weights are linearly warmed up from 0 to their final values over the first 2000 training steps. We train our model for 10 epochs on 8 H100 Nvidia GPUs with a batchsize of 48 with Adam Optimizer[42]. 
+
+E. Experimental Results and Analysis 
+
+To mitigate the impact of stochastic variations, we perform three independent trials, each initialized with a different random seed, and report the average across trials for all results below. 
+
+1) Performance on AcousticRooms Dataset: As shown in Tab II, our method consistently outperforms both learning-based (xRIR) and classical interpolation baselines across all metrics and K ∈ { 1, 4, 8}. Even in the extremely sparse setting ( K=1 ), our model achieves the lowest error, indicating strong generalization with very limited observations. Classical baselines such as linear interpolation degrade significantly under sparse settings and remain suboptimal even with more references, highlighting their inability to capture complex acoustic propagation. A detailed analysis of how performance scales with K is deferred to Sec. IV-E3. Fig. 2 further provides a qualitative illustration on one challenging Cafe scene. In the waveform red bounding box, the 6Ground Truth EigeNet 
+
+> EDT:0.069 / C50:0.192 / T60:11.695
+
+xRIR  
+
+> EDT:0.164 / C50:2.163 / T60:14.647 Source Receiver
+
+Cafe 
+
+Fig. 2: Qualitative results on a complex Cafe scene from AcousticRooms: Red and yellow bounding boxes highlight the regions selected for direct comparison: the early-reflection region in the waveform and the high-frequency portion of the late tail in the STFT. DampenedBase Ground Truth EigeNet xRIR 
+
+Fig. 3: Spatial C50 distribution on the dampenedBase scene from Hear-Anything-Anywhere dataset, together with its RGB image. peak locations and relative amplitudes of the early reflections produced by E IGE NET closely track the ground truth, whereas xRIR smears the onset and misplaces several early peaks. In the STFT yellow bounding box (late tail, high-frequency region), our prediction preserves a clean decay structure with markedly fewer high-frequency artifacts. These observations show that E IGE NET produces outputs that are visually and structurally consistent with the ground truth across the whole time–frequency domain, which is in line with the quantitative gains observed in Tab II. 
+
+2) Sim-to-real Performance on Hear-Anything-Anywhere (HAA): To evaluate the sim-to-real ability, we also finetune EIGE NET on HAA as former works. Following the exper-imental setup in xRIR, four distinct acoustic environments are selected: classroomBase, hallwayBase, complexBase, and dampenedBase. All four environments are partitioned into train and test splits with an 8:2 ratio. Both the retrained xRIR and EIGE NET are finetuned for 10 epochs for fair comparison. The metrics are shown in Tab III, and the way metrics evolve as the reference count K grows is also discussed in Sec. IV-E3. Our model consistently outperforms all baselines across all four rooms and reference settings (except for Classroom with 
+
+4 reference views), showing that the sim-to-real advantage of E IGE NET is not specific to any single room but reflects a more accurate modeling of real-world clarity and energy decay. Compared to Diff-RIR, our model achieves much better performance without requiring such constraints, highlighting its flexibility and general applicability. We pay particular attention to the strongly absorptive 
+
+dampenedBase room, which exhibits substantially longer reverberation times and therefore poses a more challenging scene. In this setting, xRIR’s T60 estimates remain excessively large error (around 191 ∼ 254% ) across all reference counts, indicating poor robustness under challenging configurations. In contrast, our model produces significantly more stable and physically plausible T60 estimates ( 46 ∼ 49% ), while also achieving superior C50 and EDT. To provide a more intuitive view of this challenging scene, Fig. 3 visualizes the spatial C50 distribution over the dampened-Base room. In contrast, EigeNet simultaneously preserves better both global and local consistency, ensuring a more coherent reconstruction of the RIR across the scene. 
+
+3) Scaling Behavior with Reference Count K: A central practical question for few-shot novel view RIR prediction is how the performance scales with the number of reference views K. We revisit this question jointly on AR (simulated data) and HAA (real recordings) test splits in Fig. 4a and Fig. 4b. For both AR and HAA, we average across rooms to obtain a scene-averaged curve per model. 1 4 8            
+
+> K
+> 0.04
+> 0.06
+> EDT
+> 148
+> K
+> 1.5
+> 2.0
+> C50
+> 148
+> K
+> 8
+> 10
+> 12
+> T60
+> xRIR Ours
+> (a) AcousticRooms dataset 148
+> K
+> 0.030
+> 0.035
+> EDT
+> 148
+> K
+> 1.0
+> 1.5
+> C50
+> 148
+> K
+> 25
+> 50
+> T60
+> xRIR Ours
+> (b) HAA dataset
+
+Fig. 4: Scaling of EDT (s), C50 (dB) and T60 (%) errors as a function of the number of reference views K ∈ { 1, 4, 8} (lower is better). 7
+
+TABLE III: Sim-to-real performance on the HAA dataset across all four acoustic environments. All scenes are partitioned into train and test splits with an 8:2 ratio. Results are reported under varying reference counts K ∈ { 1, 4, 8}, alongside the physics-based Diff-RIR baseline at K=12 . Metrics include EDT(s), C50(dB), and T60(%) errors (lower is better, ↓). The best value in each column within a K block is highlighted in bold .
+
+Method K
+
+All Rooms Classroom Hallway Complex Dampened 
+
+EDT ↓ C50 ↓ T60 ↓ EDT ↓ C50 ↓ T60 ↓ EDT ↓ C50 ↓ T60 ↓ EDT ↓ C50 ↓ T60 ↓
+
+Random Across Room – 0.355 6.842 32.150 0.412 7.205 35.660 0.450 8.120 40.230 0.521 9.243 255.407 Random Same Room – 0.185 5.237 14.800 0.205 5.850 16.207 0.240 6.554 18.904 0.285 7.153 122.823 KNN 1 0.137 3.522 25.100 0.185 3.782 26.814 0.185 4.152 28.543 0.125 4.851 52.532 xRIR 1 0.045 0.994 12.067 0.043 0.942 2.829 0.032 0.801 12.581 0.047 4.771 193.582 
+
+Ours 1 0.039 0.782 3.066 0.042 0.576 2.516 0.024 0.547 2.620 0.026 1.935 49.090 
+
+Linear Interp. 4 0.233 3.792 23.026 0.311 4.149 25.062 0.388 5.021 27.896 0.310 5.628 52.596 KNN 4 0.156 3.413 20.596 0.162 3.749 22.087 0.174 3.980 24.506 0.184 4.872 48.169 xRIR 4 0.034 0.798 3.031 0.042 0.964 3.113 0.034 1.027 12.247 0.044 4.699 191.347 
+
+Ours 4 0.038 0.816 3.227 0.038 0.557 2.537 0.022 0.527 2.717 0.026 1.925 46.072 
+
+Linear Interp. 8 0.214 3.856 22.437 0.235 4.124 24.511 0.264 4.883 27.941 0.295 5.506 46.623 KNN 8 0.145 3.212 19.798 0.155 3.352 21.206 0.171 3.652 23.422 0.180 4.233 34.413 
+
+xRIR 8 0.047 1.058 12.195 0.038 0.840 3.088 0.033 0.947 12.480 0.043 4.656 191.392 
+
+Ours 8 0.037 0.842 3.463 0.036 0.519 2.440 0.023 0.562 2.764 0.025 2.002 49.261 Diff-RIR 12 0.065 2.155 15.396 0.062 1.951 14.234 0.058 2.451 16.826 0.085 4.253 85.314 1 4 8       
+
+> K
+> 0.05
+> 0.10
+> 0.15
+> EDT
+> 148
+> K
+> 2
+> 4
+> C50
+> 148
+> K
+> 10.0
+> 12.5
+> 15.0 T60
+> Location-only Depth-only AA w/o mod
+
+Fig. 5: Geometric-Inputs ablation on the unseen split of AcousticRooms: broadband EDT (s), C50 (dB) and T60 (%) errors as a function of reference count K ∈ { 1, 4, 8} (lower is better). On AR test split (Fig. 4a), E IGE NET outperforms xRIR across all reference counts. Further more, E IGE NET already starts from a markedly lower error at K=1 and the gap over xRIR persists or widens as K decreases. On HAA (Fig. 4b), the advantages of E IGE NET over xRIR hold still. However, the expected monotonic improvement as K increases weakens. We attribute this trend to potential dataset bias. 
+
+F. Ablation Study 
+
+To evaluate the individual contributions of each component within our proposed framework, we conduct three sets of ablation experiments. Specifically, the first set investigates the impact of utilizing different combinations of geometric inputs on the reconstruction performance. The second set explores the advantages of the proposed Alternate-attention mechanism over conventional Self-attention and Cross-attention architectures. The third set verifies the necessity of the proposed geometry-informed modulation block. To provide a comprehensive analysis of the ablation config-urations, we further conduct a multi-octave band evaluation by calculating the corresponding EDT, C50, and T60 errors on 1     
+
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 0.1
+> 0.2
+> EDT error (s)
+> K= 1
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 0.1
+> 0.2
+> K= 4
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 0.1
+> 0.2
+> K= 8
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 4
+> 6
+> C50 error (dB)
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 2
+> 4
+> 6
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 2
+> 4
+> 6
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> Octave band
+> 20
+> 40
+> 60
+> T60 error (%)
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> Octave band
+> 20
+> 40
+> 60
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> Octave band
+> 20
+> 40
+> 60
+> Location-only Depth-only AA w/o mod
+
+Fig. 6: Geometric-Inputs ablation on the unseen split of AcousticRooms: multi-octave EDT (s), C50 (dB) and T60 (%) errors across octave bands at K ∈ { 1, 4, 8} (lower is better). the test split of the AR dataset. The multi-octave bands span from the band centered at 63 Hz up to 4 kHz. 
+
+1) Influence of the Geometric Inputs: Firstly, we investigate the necessity of providing comprehensive geometric context by training models with isolated geometric input, specifically using either only panoramic depth maps ( Depth-only ) or only coordinate locations ( Location-only ). To ensure a fair compari-son and strictly isolate the impact of the geometric inputs, both of these variants are trained while bypassing the modulation block and directly using the T0 as the acoustic tokens for the 81 4 8       
+
+> K
+> 0.05
+> 0.10
+> EDT
+> 148
+> K
+> 2
+> 3
+> 4C50
+> 148
+> K
+> 9
+> 10
+> 11
+> T60
+> CA w/o mod SA w/o mod AA w/o mod
+
+Fig. 7: Attention-Mechanism ablation on the unseen split of AcousticRooms: broadband EDT (s), C50 (dB) and T60 (%) errors as a function of reference count K ∈ { 1, 4, 8} (lower is better). 1     
+
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 0.1
+> 0.2
+> EDT error (s)
+> K= 1
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 0.1
+> 0.2
+> K= 4
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 0.1
+> 0.2
+> K= 8
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 4
+> 6
+> C50 error (dB)
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 2
+> 4
+> 6
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 2
+> 4
+> 6
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> Octave band
+> 10
+> 20
+> 30
+> 40
+> T60 error (%)
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> Octave band
+> 10
+> 20
+> 30
+> 40
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> Octave band
+> 10
+> 20
+> 30
+> 40
+> CA w/o mod SA w/o mod AA w/o mod
+
+Fig. 8: Attention-Mechanism ablation on the unseen split of AcousticRooms: multi-octave EDT, C50, and T60 errors across octave bands at K ∈ { 1, 4, 8}.target view in stead. Therefore, their performances are directly compared against the AA w/o mod baseline. As observed in Fig 5, omitting either geometric modality leads to severe performance degradation on broadband metrics across all reference counts. These degradations are particularly pronounced in the EDT and C50, which is consistent with the findings reported in FLAC [ 27 ]. The multi-octave band analysis in Fig. 6 further validate the necessity of the compressive geometric inputs. 
+
+2) Impact of Different Attention Mechanisms: We compare 
+
+Alternate-attention (AA w/o mod ) against two standard atten-tion mechanisms: (i) Cross-attention (CA w/o mod) , where references serve as keys and values for the target view, and (ii) 
+
+Self-attention (SA w/o mod ) , where all tokens are flattened into a single sequence and all the tokens can attend to each other. All the variants are trained without the modulation block. To ensure a fair and rigorous comparison, we keep all training configuration the same with the sole exception of the attention mechanism. Specifically, both the Self-attention and Cross-attention configurations are implemented with 12 Transformer layers and the same number of attention heads as our 6 Alternate-attention block backbone (which also amounts to 12 attention layers in total). 0 1 4      
+
+> ngeo
+> 0.05
+> 0.10
+> 0.15
+> EDT
+> 014
+> ngeo
+> 2
+> 4
+> C50
+> 014
+> ngeo
+> 8
+> 10
+> T60
+> CA w/o mod SA w/o mod AA w/o mod
+
+(a) Geometric-token masking probe on AcousticRooms. All 8 reference acoustic tokens are always kept; only the first ngeo reference geometric tokens are kept, the rest are attention-masked. 0 1 4       
+
+> nac
+> 0.0
+> 0.5
+> 1.0
+> EDT
+> 014
+> nac
+> 5
+> 10
+> C50
+> 014
+> nac
+> 10
+> 20
+> 30 T60
+> CA w/o mod SA w/o mod AA w/o mod
+
+(b) Acoustic-token masking probe on AcousticRooms. All 8 reference geometric tokens are always kept; only the first nac reference acoustic tokens are kept, the rest are attention-masked. 
+
+Fig. 9: Acoustic and geometric token masking probes on AcousticRooms. As shown in Fig 7, Cross-attention yields the most significant performance degradation across all metrics. While both Self-attention and Alternate-attention maintain a highly comparable EDT, Alternate-attention demonstrates clear better performance on C50 and T60. Fig 8 shows that Alternate-attention exhibits minor advan-tages to Self-attention and far exceeds Cross-attention on EDT; consistently outperforms on all octave bands across C50; slight advantages within the mid-to-high octave bands on T60. Because the broadband performance gap between Alternate-attention and Self-attention is moderate, we conduct a deeper experiment to explore the differenct multi-view multi-modal reasoning patterns among Cross-attention, Self-attention and Alternate-attention while predicting the target RIR. The experi-ment includes two inference-time probes on the Cross-attention, Self-attention and Alternate-attention. For the first one, we feed eight reference views and keep only the first ngeo ∈ { 0, 1, 4} reference views’ geometric tokens visible, while the remaining views’ geometric tokens are masked in the attention calculation. The acoustic tokens of all reference views and all tokens of target view (geometric and acoustic tokens) are always visible. The second setting takes the opposite approach—masking the first nac ∈ { 0, 1, 4} reference views’ acoustic tokens while keeping the geometric tokens visible. By doing this, we can directly evaluate how the model reacts to the absence of certain modality. We also show the metrics of normal inference (all geometric and acoustic tokens are visible for all views) with K references as a comparison. 9
+
+TABLE IV: Masking probe on the unseen split of AcousticRooms. 
+
+(a) Masking Geometric Tokens: we feed all 8 reference acoustic tokens but keep only the first ngeo ∈ { 0, 1, 4} reference views’ geometric tokens visible, attention-masking the rest. The acoustic tokens of all reference views and all tokens of target view (geometric and acoustic tokens) are visible.                                                
+
+> CA w/o mod SA w/o mod AA w/o mod
+> ngeo EDT(s) ↓C50(dB) ↓T60(%) ↓EDT(s) ↓C50(dB) ↓T60(%) ↓EDT(s) ↓C50(dB) ↓T60(%) ↓
+> 00.11 3.444 9.908 0.051 1.710 8.429 0.153 4.712 11.577 10.106 3.381 9.855 0.050 1.667 8.370 0.059 1.730 8.422 40.105 3.354 9.769 0.048 1.574 8.526 0.053 1.547 8.098
+
+(b) Masking Acoustic Tokens: we feed all 8 reference acoustic tokens but keep only the first nac ∈ { 0, 1, 4} reference views’ geometric tokens visible, attention-masking the rest. The geometric tokens of all reference views and all tokens of target view (geometric and acoustic tokens) are visible.                                                
+
+> CA w/o mod SA w/o mod AA w/o mod
+> nac EDT(s) ↓C50(dB) ↓T60(%) ↓EDT(s) ↓C50(dB) ↓T60(%) ↓EDT(s) ↓C50(dB) ↓T60(%) ↓
+> 01.398 13.416 25.023 1.342 12.768 29.440 1.318 11.533 28.817 10.115 3.465 10.898 0.119 2.676 16.785 0.121 2.684 17.012 40.106 3.35 9.671 0.058 1.637 9.850 0.060 1.562 9.989
+
+(c) Complere Context: all geometric and acoustic tokens are visible for all views. Results are reported under varying reference counts 
+
+K ∈ { 1, 4, 8}.                                               
+
+> CA w/o mod SA w/o mod AA w/o mod
+> KEDT(s) ↓C50(dB) ↓T60(%) ↓EDT(s) ↓C50(dB) ↓T60(%) ↓EDT(s) ↓C50(dB) ↓T60(%) ↓
+> 10.128 3.924 11.444 0.057 1.755 11.641 0.057 1.567 11.063 40.124 3.833 10.064 0.052 1.679 9.291 0.053 1.532 8.795 80.104 3.332 9.677 0.047 1.476 8.731 0.048 1.374 8.443
+
+The trends of the evaluation metrics are illustrated as a function of ngeo and nac in Fig. 9 and the specific metrics are reported in Tab. IV. From the two probes, we discover the different nature between Cross-attention,Self-attention and Alternate-attention. 
+
+1. Cross-attention and Self-attention’s reasoning ability depends on interpolating over reference acoustic tokens. We conclude that from three observations:  
+
+> •
+
+The improvement is marginal with the growth of ngeo but remarkable with the growth of nac ; 
+
+> •
+
+The metrics on ngeo =0 are not collapsed compared to that on K = 8 ; 
+
+> •
+
+Comparing ngeo =1 /4 with K = 1 /4, we find that the metrics are even better. The first two observations collectively suggest that Cross-attention and Self-attention exhibits a minimal dependence on geometric tokens, while being heavily reliant on acoustic tokens. Our third observation further suggests that: when ngeo =K,because both have access to an identical complete set of geometric and acoustic tokens from reference views, the extra acoustic tokens cause the final improvement on the metrics. These observations together confirms either Cross-attention or Self-attention is fundamentally a soft interpolator over acoustic tokens. 
+
+2. Alternate-attention’s reasoning ability depends on multi-view multi-modal context. We conclude that from three obser-vations:  
+
+> •
+
+metrics maintain continuous improvement with more complete context of reference views;  
+
+> •
+
+the metrics are all collapsed when ngeo =0 and nac =0 ; 
+
+> •
+
+the metrics on ngeo =1 /4 are worse than on K = 1 /4.The first two observations preliminarily establish that Alternate-attention cannot work properly by relying solely on geometric or acoustic tokens; instead, it necessitates a comprehensive multi-view multi-modal context to achieve optimal performance. This perspective is further substantiated by the third observation, which confirms that Alternate-attention does not operate as a mere soft interpolator, because the extra acoustic tokens do no help to the overall metrics. It’s worth mentioning that T60 alone breaks this pattern and Cross-attention, Self-attention and Alternate-attention depend mostly on acoustic tokens when regressing T60. We propose a plausible explanation for this phenomenon. Due to the physical structure of the RIR — T60 is a diffuse-field quantity and can be estimated roughly by Sabine Equation [31]: 
+
+T60 ∝ V / (c ¯α S ) (11) where V is the room volume, c is the speed of sound, ¯α is the average absorption coefficient, and S is the total surface area. T60 is weakly position-dependent, so the model can just leverage the existing reference acoustic tokens to infer the T60 of the novel view RIR. 
+
+3) Impact of the Modulation Block: Firstly, we investigate the influence of different power spectrum targets on RIR prediction. Considering our proposed target being the 7-band multi-octave power spectrum, this ablation study evaluates two alternative variants: (1) omitting the power spectrum loss (denoted by “Var.1”), and (2) a variant employing the Short-Time Fourier Transform power spectrum (denoted by “Var.2”) 10 
+
+TABLE V: Ablation study on different target choices for the modulation block on the unseen split of AcousticRooms under K ∈ { 1, 4, 8}. We compare our proposed 7-band multi-octave power spectrum mapping against variants without power spectrum loss ( “Var.1”) and the full STFT power spectrum (“Var.2”). The best result in each K block is bold . The metrics of “AA w/o mod” is also listed as a comparison.                                                        
+
+> Method KEDT (s) ↓C50 (dB) ↓T60 ↓
+> AA w/o mod 10.057 1.567 11.063 Var.1 10.053 1.605 10.958 Var.2 10.054 1.515 12.079
+> Ours 10.052 1.488 10.213
+> AA w/o mod 40.053 1.532 8.795 Var.1 40.049 1.540 8.759 Var.2 40.049 1.419 9.777
+> Ours 40.047 1.398 8.061
+> AA w/o mod 80.048 1.374 8.443 Var.1 80.044 1.357 8.512 Var.2 80.043 1.260 9.902
+> Ours 80.041 1.242 7.605
+
+TABLE VI: Generalization of the modulation block across attention mechanisms on the unseen split of AcousticRooms. For each attention type Alternate-Attention/Self-attention/Cross-attention (AA/SA/CA), we report “w/ mod” and “w/o mod” variants under K ∈ { 1, 4, 8} (Ours model is AA w/ mod). The best result in each K block is bold .
+
+Method K EDT (s) ↓ C50 (dB) ↓ T60 ↓
+
+CA w/o mod 1 0.128 3.924 11.444 CA w/ mod 1 0.060 1.595 11.154 SA w/o mod 1 0.057 1.755 11.641 SA w/ mod 1 0.053 1.567 12.037 AA w/o mod 1 0.057 1.567 11.063 
+
+AA w/ mod 1 0.052 1.488 10.213 
+
+CA w/o mod 4 0.124 3.833 10.064 CA w/ mod 4 0.049 1.424 8.904 SA w/o mod 4 0.052 1.679 9.291 SA w/ mod 4 0.048 1.498 9.388 AA w/o mod 4 0.053 1.532 8.795 
+
+AA w/ mod 4 0.047 1.398 8.061 
+
+CA w/o mod 8 0.104 3.332 9.677 CA w/ mod 8 0.044 1.302 8.513 SA w/o mod 8 0.047 1.476 8.731 SA w/ mod 8 0.042 1.283 8.902 AA w/o mod 8 0.048 1.374 8.443 
+
+AA w/ mod 8 0.041 1.242 7.605 
+
+computed with a 1024-sample window, yielding 513 frequency bins. The results are illustrated in Tab. V. First, the similar performance between Var.1 and AA w/o mod demonstrates that mere modulation block without the power spectrum loss as the explicit task-specific supervision fails to yield meaningful geometric-acoustic representation gains. Second, employing the full STFT spectrum (Var.2) improves EDT and C50 but weaken the T60, as the dense 513 frequency bins contains excessive acoustic details being a hard target to regress, whereas 1 4 8                    
+
+> K
+> 0.045
+> 0.050
+> 0.055
+> EDT
+> 148
+> K
+> 1.3
+> 1.4
+> 1.5
+> C50
+> AA w/o mod AA w/ mod
+> 148
+> K
+> 8
+> 10
+> T60
+> 148
+> K
+> 0.045
+> 0.050
+> 0.055
+> EDT
+> 148
+> K
+> 1.4
+> 1.6
+> C50
+> SA w/o mod SA w/ mod
+> 148
+> K
+> 10
+> 12
+> T60
+> 148
+> K
+> 0.05
+> 0.10
+> EDT
+> 148
+> K
+> 2
+> 3
+> 4C50
+> CA w/o mod CA w/ mod
+> 148
+> K
+> 9
+> 10
+> 11
+> T60
+
+Fig. 10: Per-metric comparison of all six variants across K ∈{1, 4, 8}. Rows group attention types (AA/SA/CA); columns show EDT, C50, and T60 errors. our 7-band multi-octave reduction provides a cleaner, physics-informed signal. Furthermore, to validate the fundamental and generalizable utility of the modulation block in RIR prediction, we evaluate it across three attention designs: our proposed Alternate-attention (AA), standard Self-attention (SA), and Cross-attention (CA). For each design, we train two variants—with and without the modulation block—under identical training configurations. The quantitative results in Tab. VI and the visual comparison in Fig. 10 together reveal two key findings. 
+
+1. The modulation block provides a consistent and substantial gain across all attention mechanisms. Within every attention pair (AA, SA, CA) and across all K, the variant with modulation block uniformly outperforms its counterpart. The improvement is most dramatic for CA, bringing the previously worst-performing attention design to a competitive level. For SA, the modulation block also yields clear gains, confirming that the benefit is not exclusive to AA. 
+
+2. Ours (Alternate-attention + modulation block) achieves the best overall performance. While the modulation block universally improves all attention types, the combination of Alternate-attention and modulation block consistently achieves the lowest errors across all metrics and reference counts. V. C ONCLUSIONS 
+
+In this paper, we proposed E IGE NET for few-shot novel view RIR prediction that integrates data-driven modeling with geometry-informed physical priors. To capture the complex spatial-temporal dependencies of RIRs, we introduced a Cross-view Alternate-attention Transformer. Furthermore, inspired by acoustic ray tracing, we designed a geometry-informed modu-lation block under a multi-task learning paradigm. Extensive 11 
+
+experiments demonstrate that E IGE NET achieves state-of-the-art performance across both simulated and real-world datasets. Beyond benchmark performance, we design a series of exper-iments to provide empirical evidence for the interpretability and necessity of our proposed design, aiming to uncover the underlying mechanisms that drive the observed performance gains. REFERENCES [1] B. Mildenhall, P. P. Srinivasan, M. Tancik, J. T. Barron, R. Ramamoorthi, and R. Ng, “Nerf: Representing scenes as neural radiance fields for view synthesis,” Communications of the ACM , vol. 65, no. 1, pp. 99–106, 2021. [2] B. Kerbl, G. Kopanas, T. Leimkühler, and G. Drettakis, “3d gaussian splatting for real-time radiance field rendering.” ACM Trans. Graph. ,vol. 42, no. 4, pp. 139–1, 2023. [3] R. Team, Z. Gao, Q. Wang, Y. Zeng, J. Zhu, K. L. Cheng, Y. Li, H. Wang, Y. Xu, S. Ma et al. , “Advancing open-source world models,” 
+
+arXiv preprint arXiv:2601.20540 , 2026. [4] J. Bruce, M. D. Dennis, A. Edwards, J. Parker-Holder, Y. Shi, E. Hughes, M. Lai, A. Mavalankar, R. Steigerwald, C. Apps et al. , “Genie: Generative interactive environments,” in Forty-first International Conference on Machine Learning , 2024. [5] S. Bilbao and B. Hamilton, “Wave-based room acoustics simulation: Explicit/implicit finite volume modeling of viscothermal losses and frequency-dependent boundaries,” Journal of the Audio Engineering Society , vol. 65, no. 1/2, pp. 78–89, 2017. [6] B. Hamilton and S. Bilbao, “Fdtd methods for 3-d room acoustics simulation with high-order accuracy in space and time,” IEEE/ACM Transactions on Audio, Speech, and Language Processing , vol. 25, no. 11, pp. 2112–2124, 2017. [7] B. E. Treeby and B. T. Cox, “k-wave: Matlab toolbox for the simulation and reconstruction of photoacoustic wave fields,” Journal of biomedical optics , vol. 15, no. 2, pp. 021 314–021 314, 2010. [8] C. Cao, Z. Ren, C. Schissler, D. Manocha, and K. Zhou, “Interactive sound propagation with bidirectional path tracing,” ACM Transactions on Graphics (TOG) , vol. 35, no. 6, pp. 1–11, 2016. [9] C. Schissler and D. Manocha, “Interactive sound propagation and rendering for large multi-source scenes,” ACM Transactions on Graphics (TOG) , vol. 36, no. 4, p. 1, 2016. [10] D. Schröder, Physically based real-time auralization of interactive virtual environments . Logos Verlag Berlin GmbH, 2011, vol. 11. [11] A. Ratnarajah, Z. Tang, and D. Manocha, “Ir-gan: Room impulse response generator for far-field speech recognition,” 2021. [Online]. Available: https://arxiv.org/abs/2010.13219 [12] Z. Chen, I. D. Gebru, C. Richardt, A. Kumar, W. Laney, A. Owens, and A. Richard, “Real acoustic fields: An audio-visual room acoustics dataset and benchmark,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2024, pp. 21 886–21 896. [13] A. Luo, Y. Du, M. Tarr, J. Tenenbaum, A. Torralba, and C. Gan, “Learning neural acoustic fields,” Advances in Neural Information Processing Systems , vol. 35, pp. 3165–3177, 2022. [14] K. Su, M. Chen, and E. Shlizerman, “Inras: Implicit neural representation for audio scenes,” Advances in Neural Information Processing Systems ,vol. 35, pp. 8144–8158, 2022. [15] M. Wang, R. Sawata, S. Clarke, R. Gao, S. Wu, and J. Wu, “Hearing anything anywhere,” 2024. [Online]. Available: https: //arxiv.org/abs/2406.07532 [16] D. Jin and R. Gao, “Differentiable room acoustic rendering with multi-view vision priors,” arXiv preprint arXiv:2504.21847 , 2025. [17] Z. Lan, C. Zheng, Z. Zheng, and M. Zhao, “Acoustic volume rendering for neural impulse response fields,” Advances in Neural Information Processing Systems , vol. 37, pp. 44 600–44 623, 2024. [18] Z. Lan, Y. Hao, and M. Zhao, “Resounding acoustic fields with reci-procity,” in The Thirty-ninth Annual Conference on Neural Information Processing Systems .[19] Y. Masuyama, F. G. Germain, G. Wichern, C. Ick, and J. Le Roux, “Physics-informed direction-aware neural acoustic fields,” in 2025 IEEE Workshop on Applications of Signal Processing to Audio and Acoustics (WASPAA) . IEEE, 2025, pp. 1–5. [20] C. Ick, G. Wichern, Y. Masuyama, F. Germain, and J. L. Roux, “Direction-aware neural acoustic fields for few-shot interpolation of ambisonic impulse responses,” arXiv preprint arXiv:2505.13617 , 2025. [21] S. Liang, C. Huang, Y. Tian, A. Kumar, and C. Xu, “Av-nerf: Learning neural fields for real-world audio-visual scene synthesis,” Advances in Neural Information Processing Systems , vol. 36, pp. 37 472–37 490, 2023. [22] A. Ratnarajah, S. Ghosh, S. Kumar, P. Chiniya, and D. Manocha, “Av-rir: Audio-visual room impulse response estimation,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition ,2024, pp. 27 164–27 175. [23] C. Fan, J. Guan, Y. Lin, D. Xu, T. Ye, Q. Zhu, P. Feng, and W. Wang, “Physics-aware novel-view acoustic synthesis with vision-language priors and 3d acoustic environment modeling,” 2026. [Online]. Available: https://arxiv.org/abs/2601.19712 [24] Z. Lan, Y. Tang, Y. Wang, H. Lai, Y. Hao, and M. Zhao, “Building audio-visual digital twins with smartphones,” arXiv preprint arXiv:2512.10778 ,2025. [25] S. Majumder, C. Chen, Z. Al-Halah, and K. Grauman, “Few-shot audio-visual learning of environment acoustics,” 2022. [Online]. Available: https://arxiv.org/abs/2206.04006 [26] X. Liu, A. Kumar, P. Calamia, S. V. Amengual, C. Murdock, I. Ananthabhotla, P. Robinson, E. Shlizerman, V. K. Ithapu, and R. Gao, “Hearing anywhere in any environment,” 2025. [Online]. Available: https://arxiv.org/abs/2504.10746 [27] A. Brunetto, “Few-shot acoustic synthesis with multimodal flow matching,” 2026. [Online]. Available: https://arxiv.org/abs/2603.19176 [28] J. Wang, M. Chen, N. Karaev, A. Vedaldi, C. Rupprecht, and D. Novotny, “Vggt: Visual geometry grounded transformer,” 2025. [Online]. Available: https://arxiv.org/abs/2503.11651 [29] Y. Shen, Z. Zhang, Y. Qu, X. Zheng, J. Ji, S. Zhang, and L. Cao, “Fastvggt: Training-free acceleration of visual geometry transformer,” 2025. [Online]. Available: https://arxiv.org/abs/2509.02560 [30] Z. Wang and D. Xu, “Flashvggt: Efficient and scalable visual geometry transformers with compressed descriptor attention,” 2025. [Online]. Available: https://arxiv.org/abs/2512.01540 [31] H. Kuttruff, Room acoustics . Crc Press, 2016. [32] J. Chen, J. Yu, C. Ge, L. Yao, E. Xie, Y. Wu, Z. Wang, J. Kwok, P. Luo, H. Lu, and Z. Li, “Pixart-α: Fast training of diffusion transformer for photorealistic text-to-image synthesis,” 2023. [Online]. Available: https://arxiv.org/abs/2310.00426 [33] H. Liu, Z. Chen, Y. Yuan, X. Mei, X. Liu, D. Mandic, W. Wang, and M. D. Plumbley, “Audioldm: Text-to-audio generation with latent diffusion models,” 2023. [Online]. Available: https://arxiv.org/abs/2301.12503 [34] P. Esser, S. Kulal, A. Blattmann, R. Entezari, J. Müller, H. Saini, Y. Levi, D. Lorenz, A. Sauer, F. Boesel, D. Podell, T. Dockhorn, Z. English, K. Lacey, A. Goodwin, Y. Marek, and R. Rombach, “Scaling rectified flow transformers for high-resolution image synthesis,” 2024. [Online]. Available: https://arxiv.org/abs/2403.03206 [35] A. Radford, J. W. Kim, C. Hallacy, A. Ramesh, G. Goh, S. Agarwal, G. Sastry, A. Askell, P. Mishkin, J. Clark, G. Krueger, and I. Sutskever, “Learning transferable visual models from natural language supervision,” 2021. [Online]. Available: https://arxiv.org/abs/2103.00020 [36] J. Zhang, Y. Li, A. Chen, M. Xu, K. Liu, J. Wang, X.-X. Long, H. Liang, Z. Xu, H. Su, C. Theobalt, C. Rupprecht, A. Vedaldi, K. Zhou, P. P. Liang, S. Lu, and F. Zhan, “Advances in feed-forward 3d reconstruction and view synthesis: A survey,” 2025. [Online]. Available: https://arxiv.org/abs/2507.14501 [37] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly, J. Uszkoreit, and N. Houlsby, “An image is worth 16x16 words: Transformers for image recognition at scale,” 2021. [Online]. Available: https://arxiv.org/abs/2010.11929 [38] R. Kumar, P. Seetharaman, A. Luebs, I. Kumar, and K. Kumar, “High-fidelity audio compression with improved rvqgan,” Advances in Neural Information Processing Systems , vol. 36, pp. 27 980–27 993, 2023. [39] A. van den Oord, O. Vinyals, and K. Kavukcuoglu, “Neural discrete representation learning,” 2018. [Online]. Available: https: //arxiv.org/abs/1711.00937 [40] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” Advances in neural information processing systems , vol. 30, 2017. [41] W. Peebles and S. Xie, “Scalable diffusion models with transformers,” in Proceedings of the IEEE/CVF international conference on computer vision , 2023, pp. 4195–4205. [42] D. P. Kingma and J. Ba, “Adam: A method for stochastic optimization,” 2017. [Online]. Available: https://arxiv.org/abs/1412.6980

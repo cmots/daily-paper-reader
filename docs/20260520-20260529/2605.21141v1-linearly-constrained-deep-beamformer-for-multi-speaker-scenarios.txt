@@ -1,0 +1,406 @@
+Title: Linearly Constrained Deep Beamformer for Multi-Speaker Scenarios
+
+URL Source: https://arxiv.org/pdf/2605.21141v1
+
+Published Time: Thu, 21 May 2026 01:09:07 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# LINEARLY CONSTRAINED DEEP BEAMFORMER FOR MULTI-SPEAKER SCENARIOS 
+
+# Ilai Zaidel ∗ Ori Engel ∗ Bar Engel ∗ Sharon Gannot 
+
+# Faculty of Engineering, Bar-Ilan University, Israel 
+
+ABSTRACT 
+
+We propose a deep beamforming framework for enhancing tar-get speaker(s) in multi-speaker environments. A deep neural net-work (DNN) is trained to estimate beamforming weights directly from noisy multichannel inputs while satisfying linear spatial con-straints through an adaptive multi-term loss inspired by the aug-mented Lagrangian framework. The loss combines signal recon-struction with penalties that enforce a distortionless response toward the target and suppress the interference subspace. The model is fur-ther guided by the target relative transfer function (RTF) and the estimated interference subspace. The proposed model can direct a beam toward the target speaker while directing nulls toward the inter-fering sources, achieving superior overall enhancement performance compared with the classical LCMV beamformer constructed by the same estimated spatial signatures. Furthermore, compared with the LCMV beamformer, the proposed model produces more controlled sidelobes and improved background-noise attenuation. 
+
+Index Terms — Speech enhancement, multi-speaker, LCMV, constrained optimization, RTF estimation 
+
+1. INTRODUCTION 
+
+Multichannel beamforming enables spatial filtering of concurrent speakers using microphone arrays and is widely used for speech en-hancement in complex acoustic environments. In multi-speaker sce-narios, the challenge is not only to enhance the desired speaker but also to suppress interfering sources using directional filtering and null steering. In this work, we propose a fully DNN-based beam-forming framework that combines deep neural networks with lin-early constrained spatial objectives for multi-speaker enhancement. Linearly constrained beamforming provides a principled frame-work for controlling the spatial response of microphone arrays through explicit constraints on the beamformer weights. A special-case formulation is the minimum variance distortionless response (MVDR) beamformer [1, 2], which enforces a distortionless re-sponse to a desired speaker while minimizing the output noise and interference power. In the more general case, the linearly con-strained minimum variance (LCMV) beamformer [3] extends this formulation by incorporating multiple linear constraints, enabling explicit control over the spatial response, including preservation of the target signal(s) and placement of nulls toward interfering sources [4–6]. These formulations rely on accurate knowledge of the sources’ spatial signatures, which define the desired constraints. In practice, such spatial information is commonly represented using the relative transfer function (RTF), which captures both direct-path and rever-berant propagation effects. Several studies have shown that RTF-based beamforming yields improved speech quality compared with approaches that rely solely on direct-path models [1,7]. In principle, 
+
+> ∗These authors contributed equally to this work.
+
+LCMV beamforming can achieve perfect interference cancellation when accurate target RTFs and either accurate interfering-speaker RTFs or an accurate interference subspace are available. However, in practice, its performance critically depends on reliable estimation of these spatial signatures, motivating the use of robust RTF-based formulations [8]. Recently, DNN-based beamformers have achieved strong per-formance by jointly learning spatial and spectral representations from data [9, 10]. However, these methods are often not directly interpretable, motivating approaches that explicitly analyze and encourage spatial selectivity in multichannel processing [11–14]. Prior works have incorporated RTF information either by estimating classical beamformer coefficients [2, 15, 16] or by embedding it as a spatial filter within deep architectures [17]. Building on these ideas, our previous work [18] demonstrated that guiding a DNN-based beamformer with time-varying RTF estimates improves the spatial consistency and directional behavior of learned beamformers. Nev-ertheless, such approaches only enforce spatial guidance toward the desired speaker, without explicitly constraining the response toward interfering sources, and therefore cannot reliably guarantee directional null steering. Several works have explored incorporating directional con-straints and null steering into learning-based beamforming frame-works. Works such as [19, 20] combine deep learning with classical constrained beamforming formulations, where neural networks es-timate spatial or statistical quantities required for beamforming and interference representations, while the final spatial filtering is still performed using analytical model-based beamformers. In parallel, works such as [21], proposed in the context of wireless communi-cations, train DNNs to directly predict beamforming weights that imitate the behavior of constrained beamformers and achieve direc-tional null control. However, in such approaches, spatial constraints are not explicitly incorporated into the learning objective; instead, they are either enforced analytically via a separate beamforming stage or approximated implicitly through supervised training. Our work builds upon the frameworks presented in [13, 18], which learn beamforming weights using a DNN while preserving the beamforming structure. While both works demonstrate strong enhancement capabilities, including dynamic binaural beamforming in [18], they do not explicitly enforce spatial constraints and there-fore cannot reliably achieve directional null steering toward interfer-ing sources. In contrast, we propose a fully DNN-based beamformer opti-mized to satisfy linear constraints for target speaker extraction and interference suppression. Specifically, we design an adaptive multi-term loss function, reminiscent of the LCMV criterion, that com-bines a signal reconstruction objective with constraint-driven penal-ties that enforce a distortionless response toward the target and null out the interference subspace. The training process follows an aug-mented Lagrangian-inspired approach, where the weights of the con-straint terms are gradually increased during training, enabling the 
+
+> arXiv:2605.21141v1 [eess.AS] 20 May 2026
+
+network to learn both accurate signal reconstruction and spatially selective filtering. To further guide the learning process, the model is provided with spatial information in the form of the target RTF and an estimated interference subspace, which together define the constraint structure and encourage spatially selective beamforming behavior. Throughout this work, we evaluate the learned beamformer un-der three configurations: (i) guidance using estimated target RTFs and interference subspaces (referred to as the “Estimated RTF” model), (ii) a model without RTF guidance (“No RTF”), and (iii) guidance using the oracle RTFs of the target and interfering speakers (“Oracle RTF”). 
+
+2. PROBLEM FORMULATION 
+
+In the short-time Fourier transform (STFT) domain, the multichan-nel mixture signal is modeled as 
+
+y(l, k ) = H(k)s(l, k ) + n(l, k ) ∈ CM ×1, (1) where l and k denote the time-frame and frequency-bin indices, re-spectively, and M is the number of microphones. Here, 
+
+s(l, k ) = s1(l, k ), . . . , s J (l, k )⊤ , (2) represents the J ≤ M active speakers, and 
+
+H(k) = h1(k), . . . , hJ (k) (3) comprises the acoustic transfer functions (ATFs) from each source to the microphones. The vector n(l, k ) denotes additive noise. We apply the time-invariant spatial filter 
+
+ˆs(l, k ) = wH(k)y(l, k ), (4) where w(k) denotes the DNN based beamformer weights and 
+
+ˆs(l, k ) is the beamformer output. The output is designed to estimate, through the optimization of a suitable loss function, a target signal defined as a linear combination of the sources of interest: 
+
+starget (l, k ) = g⊤s(l, k ), (5) where g ∈ RJ×1 is a weighting vector. Typically, the entries of g
+
+are ‘1’ for the desired source(s) and ‘0’ for all interference sources. In the proposed method, the beamformer weights are chosen to min-imize the loss between ˆs and starget , while satisfying a set of linear constraints. 
+
+3. PROPOSED METHOD 
+
+This section describes the proposed DNN-based beamforming framework. The model follows the U-Net architecture of [13,18] and incorporates spatial guidance via estimates of the target speaker’s RTF and an interference subspace corresponding to the interfering speakers. The full architecture is shown in Fig. 1. 
+
+3.1. U-Net Model with Attention Fusion 
+
+We employ a U-Net architecture with an attention-based fusion fron-tend to integrate the spatial guidance information with the multi-channel mixture. The target RTF and interference subspace are fused with the mixture signal through shared local attention blocks, and the resulting features are concatenated with the raw mixture to form the encoder input. The U-Net follows an encoder-decoder structure with skip connections and transposed-convolution decoder blocks, where attention is also applied over the skip connections [13]. The final layer applies a fully connected projection along the frequency dimension, followed by complex-valued normalization and a learn-able global gain scaling to produce the beamforming weights. 
+
+3.2. RTF Estimation 
+
+To estimate the static spatial signatures of the speakers, we employ the covariance whitening (CW) method for RTF estimation [8]. Al-though the formulation in (5) is general, in this work we focus on single target extraction. Given J active speakers, the objective is to preserve the target speaker while suppressing the remaining J −1 in-terfering speakers. To this end, the same CW procedure is applied to frame sets corresponding to different source activity patterns, assum-ing such frame annotations are available. Frames in which only the target speaker is active are used to estimate the target RTF, whereas frames containing only interfering speakers are used to estimate the interference subspace. In addition, noise-only frames are assumed to be available for estimating the noise covariance matrix. 
+
+3.2.1. Covariance-Whitening 
+
+Let Vn denote the set of frames in which only noise is present. The noise covariance matrix is then estimated as 
+
+ˆΦnn (k) = 1
+
+|V n|
+
+X
+
+> l∈V n
+
+y(l, k )yH(l, k ). (6) The whitening operation is defined as: 
+
+yw (l, k ) = ˆΦ−1/2 
+
+> nn
+
+(k) y(l, k ), (7) where ˆΦ−1/2 
+
+> nn
+
+(k) is computed via eigenvalue decomposition (EVD) of ˆΦnn (k).Let Vt denote the set of frames in which only the target speaker is active, and let Vi denote the set of frames in which only interfering speakers are active. The set Vi includes multiple active sources of the interference group, but not the target source. For a given frame set V, the corresponding noisy covariance matrix is estimated as: 
+
+ˆΦ(V) 
+
+> yy
+
+(k) = 1
+
+|V| 
+
+X
+
+> l∈V
+
+y(l, k )yH(l, k ), (8) and the whitened covariance matrix is defined by 
+
+ˆΦ(V)  
+
+> ywyw
+
+(k) = ˆΦ−1/2 
+
+> nn
+
+(k) ˆΦ(V) 
+
+> yy
+
+(k) ( ˆΦ−1/2 
+
+> nn
+
+)H(k). (9) Applying this procedure to Vt, the target RTF is obtained from the dominant eigenvector of ˆΦ(Vt)  
+
+> ywyw
+
+(k), denoted by ˆψ(t), as 
+
+ˆa(t)(k) = ˆΦH/2 
+
+> nn
+
+(k) ˆψ(t)
+
+e⊤ 
+
+> ref
+
+ˆΦH/2 
+
+> nn
+
+(k) ˆψ(t) , (10) with eref the selection vector for the chosen reference microphone. Applying the same procedure to Vi, the interference subspace is estimated by taking the J − 1 dominant eigenvectors of ˆΦ(Vi)  
+
+> ywyw
+
+(k).Denoting these eigenvectors by { ˆψ(i) 
+
+> j
+
+}J−1 
+
+> j=1
+
+, the corresponding inter-ference basis vectors are obtained: 
+
+ˆu(i) 
+
+> j
+
+(k) = ˆΦH/2 
+
+> nn
+
+(k) ˆψ(i)
+
+> j
+
+e⊤ 
+
+> ref
+
+ˆΦH/2 
+
+> nn
+
+(k) ˆψ(i)
+
+> j
+
+, j = 1 , . . . , J − 1. (11) Thus, the same CW procedure is used for both estimations: the dom-inant eigenvector from Vt provides the target RTF, while the domi-nant eigensubspace from Vi provides a basis that spans the interfer-ing speakers’ RTF subspace. Multichannel noisy inputs 
+
+## STFT y RTF Estimation Attn. U-Net ˆs ISTFT 
+
+# w
+
+Fig. 1 : Overview of the proposed beamforming network. 
+
+3.3. Loss Function and Training Process 
+
+In this work, we propose to minimize the SI-SDR between the esti-mated source and the target combination of the sources of interest. We discuss a single desired source and J − 1 interference sources, namely g⊤ = [1 , 0, . . . , 0] (assuming, without loss of generality, that the desired source is source #1). An extension to multiple de-sired sources is straightforward. To impose a distortionless response toward the target source and suppress the interference sources, we define the following loss function inspired by the LCMV criterion. We adopt a procedure inspired by the augmented Lagrangian framework [22], in which the constraint terms are incorporated into the objective as weighted penalties. The corresponding penalty coef-ficients are progressively increased during training, thereby encour-aging gradual satisfaction of the spatial constraints. The network predicts frequency-dependent time-varying beam-forming weights, which are averaged along the time-frame axis to obtain the final time-invariant beamformer weights w(k) ∈ CM .The enhanced signal ˆs and the target signal starget , defined in (4) and (5), respectively, are considered here in the time domain. The training objective is given by: 
+
+L = −SI -SDR(ˆ s, s target )+ λpass Ek
+
+
+
+wH(k)atarget (k) − 1 2
+
++ λnull Ek
+
+
+
+10 log 10 
+
+
+
+wH(k)Ainterf (k) 2
+
++ ϵ
+
+ 
+
+,
+
+(12) which jointly promotes target reconstruction, enforces a distortion-less response toward the desired direction, and encourages null steer-ing toward the interference subspace. Here, atarget (k) ∈ CM de-notes the oracle RTF of the target speaker used for supervised train-ing, and Ainterf (k) ∈ CM ×(J−1) contains the oracle RTFs of the in-terfering speakers. Applying the null penalty on a logarithmic scale increases the sensitivity to low-level residual interference, thereby encouraging deeper nulls compared with linear-domain penalties. The penalty weights λpass and λnull are gradually increased during training according to a predefined schedule, and are activated only after an initial warm-up period of 10 epochs. In this work, the target speaker was selected at random from the J speakers. It is important to note that the network is trained to optimize the loss function in (12) using oracle spatial information for supervision. However, during inference, oracle RTFs are not available. Instead, the network is guided by the estimated target RTF in (10) and the estimated interference subspace in (11), which are provided as inputs to the network. 
+
+4. EXPERIMENTAL STUDY 
+
+This section details the dataset generation process and presents the results of the proposed model. 
+
+4.1. Dataset Generation and Noise Environment 
+
+Multichannel multi-speaker recordings were simulated in randomly generated acoustic environments. Each sample corresponds to a room with width and length uniformly drawn in [6 , 9] m and a fixed height of 3 m. An 8-microphone linear array was placed at a height of 1.3 m and randomly tilted within [−45 ◦, 45 ◦] (see Fig. 3 in [13] for the array configuration). Speech signals were drawn from the LibriSpeech dataset [23] and positioned at a distance of 1–1.5 mfrom the array center. Each sample includes J ∈ {2, 3} static speakers immersed in a stationary babble-noise environment, with one target speaker and J − 1 interfering speakers. Both anechoic and reverberant target/interference conditions were considered. For each sample, stationary babble noise was pre-generated by summing 
+
+20 randomly chosen active speakers positioned near the room walls using the room impulse response (RIR) generator [24], and was in-troduced to enable noise covariance estimation. The same simulator was used for the anechoic target/interfering speakers. Reverberant target/interference conditions with T60 ∈ [0 .3, 0.55] s were simu-lated only for the target and interfering speakers using the GPU-RIR package [25] to reduce computational cost. Each recording contains an initial 4 s segment used for beamformer estimation: the first 0.5 scontains only babble noise, followed by a 1 s target-only segment and a 1 s interference-only segment, while the final 1.5 s contains the full mixture with all speakers simultaneously active. The esti-mated time-invariant beamforming weights are then applied to an additional 4 s fully overlapped mixture segment, resulting in final 
+
+8 s recordings used for evaluation. The training set contains 20 ,000 
+
+multichannel recordings. 
+
+4.2. Results 
+
+This section reports the results of the proposed linearly constrained DNN beamformer. Audio samples, beam-patterns, and implementa-tion code are available in our online repository. 1
+
+Enhancement Performance: We evaluate the proposed method us-ing SI-SDR, SNR, and SIR, computed over the active mixture frames spanning 2.5–8 s of the 8 s recordings, during which all speakers are simultaneously active. In addition, we report the power ratio 
+
+Pwr Ratio = 10 log 10 
+
+ E|xout |2
+
+> E|xin |2
+
+
+
+, which is computed by applying the learned beamformer weights separately to each signal component and measuring its average energy before and after beamforming. All outputs are normalized to preserve the target speaker power. The analytical LCMV beamformer is constructed using the esti-mated spatial signatures and is given by: 
+
+wLCMV (k) = ˆΦ−1 
+
+> nn
+
+(k)C(k)
+
+
+
+CH (k) ˆΦ−1 
+
+> nn
+
+(k)C(k)
+
+−1
+
+g, (13) where C(k) = 
+
+h
+
+ˆa(t)(k), ˆu(i)1 (k), . . . , ˆu(i)
+
+> J−1
+
+(k)
+
+i
+
+, ˆΦnn (k) defined in (6), and the spatial signatures are defined in (10) and (11) for the target source and the interference subspace, respectively. Tables 1 and 2 summarize the performance of the proposed beamformer under both anechoic and reverberant conditions for two- and three-speaker mixtures ( J ∈ { 2, 3}). Although the LCMV beamformer explicitly enforces spatial constraints, the proposed learned models achieve superior overall enhancement performance 
+
+> 1https://github.com/GannotLab/LC-DeepBeam
+
+together with stronger background-noise attenuation. In particular, the proposed models achieve substantially higher SI-SDR and SNR values than the LCMV baseline in both the anechoic and reverberant scenarios, while maintaining competitive interference suppression. The “Estimated RTF” and “No RTF” models achieve similar en-hancement metrics in the evaluated scenarios. 
+
+On the Importance of RTF Guidance: To further examine the role of spatial guidance, Table 3 presents a conceptual fully over-lapped scenario in which all speakers remain simultaneously active throughout the recording. Since the proposed CW-based estimation method requires separated source activity patterns, this experiment serves only to illustrate the importance of spatial guidance. In this setting, the unguided model (“No RTF”) fails to achieve meaningful enhancement or interference suppression, whereas the “Oracle RTF” model maintains strong directional filtering and null steering. These results motivate the development of spatial-guidance methods that do not rely on separated source activity patterns. 
+
+Beampattern Analysis: The narrowband beampattern is defined as B(k, θ ) = wH(k)h(k, θ ), where h(k, θ ) is the steering vec-tor corresponding to the direction of arrival θ. Figure 2 presents the corresponding wideband beampower, computed as P (θ) =P 
+
+> k
+
+|B(k, θ )|2. Compared with the LCMV beamformer, the pro-posed learned models produce more directional and spatially selec-tive responses, with lower sidelobe levels and improved background-noise suppression. While the LCMV beamformer exhibits a less spatially selective response with stronger sidelobes, the learned beamformers maintain focused main lobes toward the target direc-tion together with clear attenuation toward the interfering speakers. In addition, the RTF-guided beamformers produce more spatially coherent beampatterns than the unguided model, which exhibits a less structured spatial response despite achieving similar enhance-ment metrics. 
+
+Table 1 : Three-speaker scenario (anechoic target/interference). 
+
+Metric [dB] Input Est. RTF No RTF Oracle RTF LCMV Target speaker (enhancement) 
+
+SI-SDR -4.65 0.63 0.62 1.04 -1.94 SNR 1.46 5.74 6.16 6.02 2.96 SIR -3.39 4.90 5.15 5.49 6.70 Pwr Ratio – 0.00 0.00 0.00 0.00 
+
+Interferer 1 (suppression) 
+
+Pwr Ratio – -10.18 -10.69 -10.89 -10.31 
+
+Interferer 2 (suppression) 
+
+Pwr Ratio – -8.53 -9.02 -9.58 -9.96 
+
+Background noise (suppression) 
+
+Pwr Ratio – -4.28 -4.69 -4.56 -1.50 
+
+Table 2 : Two-speaker scenario (reverberant target/interference). 
+
+Metric [dB] Input Est. RTF No RTF Oracle RTF LCMV Target speaker (enhancement) 
+
+SI-SDR -1.81 0.33 0.05 0.40 -3.50 SNR 3.30 5.61 6.33 6.11 5.24 SIR -0.03 4.78 4.62 5.00 5.58 Pwr Ratio – 0.00 0.00 0.00 0.00 
+
+Interferer 1 (suppression) 
+
+Pwr Ratio – -4.81 -4.66 -5.03 -5.61 
+
+Background noise (suppression) 
+
+Pwr Ratio – -2.31 -3.03 -2.81 -1.94 
+
+Table 3 : Three-speaker scenario (fully overlapped, anechoic). 
+
+Metric [dB] Input Oracle RTF No RTF Target speaker (enhancement) 
+
+SI-SDR -4.65 1.28 -4.62 SNR 1.46 5.85 1.52 SIR -3.39 5.74 -3.34 Pwr Ratio – 0.00 0.00 
+
+Interferer 1 (suppression) 
+
+Pwr Ratio – -10.91 -0.02 
+
+Interferer 2 (suppression) 
+
+Pwr Ratio – -9.81 -0.04 
+
+Background noise (suppression) 
+
+Pwr Ratio – -4.39 -0.05 -90° 
+
+> -60°
+> -30°
+> 0°
+> 30°
+> 60°
+> 90°
+> -15 -10 -5 0
+> Wideband Beampattern [dB]
+> Beampower
+> Speaker 1 (Target)
+> Speaker 2 (Null)
+> Speaker 3 (Null)
+
+(a) Estimated RTF -90°  
+
+> -60°
+> -30°
+> 0°
+> 30°
+> 60°
+> 90°
+> -15 -10 -5 0
+> Wideband Beampattern [dB]
+> Beampower
+> Speaker 1 (Target)
+> Speaker 2 (Null)
+> Speaker 3 (Null)
+
+(b) Oracle RTF -90° 
+
+> -60°
+> -30°
+> 0°
+> 30°
+> 60°
+> 90°
+> -15 -10 -5 0
+> Wideband Beampattern [dB]
+> Beampower
+> Speaker 1 (Target)
+> Speaker 2 (Null)
+> Speaker 3 (Null)
+
+(c) No RTF -90°  
+
+> -60°
+> -30°
+> 0°
+> 30°
+> 60°
+> 90°
+> -15 -10 -5 0
+> Wideband Beampattern [dB]
+> Beampower
+> Speaker 1 (Target)
+> Speaker 2 (Null)
+> Speaker 3 (Null)
+
+(d) LCMV 
+
+Fig. 2 : Comparison of static beampatterns for different methods. 
+
+5. CONCLUSIONS 
+
+In this work, we propose a fully DNN-based beamforming frame-work for target-speaker enhancement in multi-speaker environments that leverages explicit spatial guidance. The proposed method combines RTF-based guidance with an adaptive loss inspired by constrained optimization, enabling the network to jointly preserve the target speaker and suppress interfering speakers within a fully learned beamforming framework. The results demonstrate that the proposed approach learns spatially selective filtering behavior, pro-ducing focused beampatterns and effective interference suppression that outperform those of a classical LCMV beamformer constructed from the estimated spatial signatures in several evaluated scenar-ios. Moreover, the proposed method exhibits lower sidelobe levels, thereby improving background noise attenuation. Overall, the pro-posed framework highlights the potential of incorporating explicit spatial constraints and priors into interpretable and robust DNN-based multichannel speech enhancement systems. 6. REFERENCES 
+
+[1] S. Gannot, D. Burshtein, and E. Weinstein, “Signal enhance-ment using beamforming and nonstationarity with applications to speech,” IEEE Trans. Signal Process. , vol. 49, no. 8, pp. 1614–1626, Aug. 2001. [2] S. Gannot, E. Vincent, S. Markovich-Golan, and A. Ozerov, “A consolidated perspective on multimicrophone speech enhance-ment and source separation,” IEEE/ACM Trans. Audio, Speech, and Lang. Process. , vol. 25, no. 4, pp. 692–730, Apr. 2017. [3] Meng Er and A. Cantoni, “Derivative constraints for broad-band element space antenna array processors,” IEEE Trans. Acoust., Speech, Signal Process. , vol. 31, no. 6, pp. 1378– 1393, 1983. [4] Shmulik Markovich, Sharon Gannot, and Israel Cohen, “Mul-tichannel eigenspace beamforming in a reverberant noisy envi-ronment with multiple interfering speech signals,” IEEE Trans. Audio, Speech, Lang. Process. , vol. 17, no. 6, pp. 1071–1086, 2009. [5] Ofer Schwartz, Sharon Gannot, and Emanu¨ el A. P. Habets, “Multispeaker LCMV beamformer and postfilter for source separation and noise reduction,” IEEE/ACM Trans. Audio, Speech, Lang. Process. , vol. 25, no. 5, pp. 940–951, 2017. [6] Shmulik Markovich-Golan, Sharon Gannot, and Walter Keller-mann, “Combined LCMV-TRINICON beamforming for sep-arating multiple speech sources in noisy and reverberant envi-ronments,” IEEE/ACM Trans. Audio, Speech, Lang. Process. ,vol. 25, no. 2, pp. 320–332, 2017. [7] Oren Shmaryahu and Sharon Gannot, “On the importance of acoustic reflections in beamforming,” in Proc. Int. Workshop Acoust. Signal Enhancement (IWAENC) , 2022. [8] Shmulik Markovich-Golan, Sharon Gannot, and Walter Keller-mann, “Performance analysis of the covariance-whitening and the covariance-subtraction methods for estimating the rel-ative transfer function,” in European Signal Proc. Conf. (EU-SIPCO) , Rome, Italy, 2018, pp. 2499–2503. [9] Yi Luo, Cong Han, Nima Mesgarani, Enea Ceolini, and Shih-Chii Liu, “FaSNet: Low-latency adaptive beamforming for multi-microphone audio processing,” in IEEE Automatic Speech Recognition and Understanding Workshop (ASRU) ,2019, pp. 260–267. [10] Xinlei Ren, Xu Zhang, Lianwu Chen, Xiguang Zheng, Chen Zhang, Liang Guo, and Bing Yu, “A causal U-Net based neu-ral beamforming network for real-time multi-channel speech enhancement,” in Interspeech , Aug. 2021, pp. 1832–1836. [11] Annika Briegleb, Mhd Modar Halimeh, and Walter Keller-mann, “Exploiting spatial information with the informed complex-valued spatial autoencoder for target speaker extrac-tion,” in Proc. IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP) , 2023. [12] Kristina Tesch and Timo Gerkmann, “Insights into deep non-linear filters for improved multi-channel speech enhancement,” 
+
+IEEE/ACM Trans. Audio, Speech, Lang. Process. , vol. 31, pp. 563–575, 2022. [13] Adi Cohen, Daniel Wong, Jung-Suk Lee, and Sharon Gan-not, “Explainable DNN-based beamformer with postfilter,” 
+
+IEEE/ACM Trans. Audio, Speech, Lang. Process. , vol. 33, pp. 3070–3085, Jul. 2025. [14] Weilong Huang, Longfei Felix Yan, and Emanu¨ el A.P. Habets, “Robust superdirective beamforming using a uniform circular array with directional microphones,” in Proc. Asia-Pacific Sig-nal Inf. Process. Assoc. Annu. Summit Conf. (APSIPA ASC) ,2025, pp. 89–94. [15] Or Ronai, Yuval Sitton, Amitay Bar, and Ronen Talmon, “RTF estimation using Riemannian geometry for speech enhance-ment in the presence of interferences,” in Proc. IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP) , 2025. [16] Giovanni Bologni, Richard C. Hendriks, and Richard Heus-dens, “Wideband relative transfer function (RTF) estimation exploiting frequency correlations,” IEEE Trans. Audio, Speech, Lang. Process. , vol. 33, pp. 731–747, 2025. [17] Ching-Hua Lee, Chouchang Yang, Yashas Malur Saidutta, Rakshith Sharma Srinivasa, Yilin Shen, and Hongxia Jin, “Bet-ter exploiting spatial separability in multichannel speech en-hancement with an align-and-filter network,” in Proc. IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP) , 2025. [18] Ilai Zaidel and Sharon Gannot, “Interpretable binaural deep beamforming guided by time-varying relative transfer func-tion,” arXiv:2511.10168 , 2026. [19] Shlomo E Chazan, Jacob Goldberger, and Sharon Gannot, “DNN-based concurrent speakers detector and its application to speaker extraction with LCMV beamforming,” in Proc. IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP) ,2018, pp. 6712–6716. [20] Yichen Yang, Ningning Pan, Wen Zhang, Chao Pan, Jacob Benesty, and Jingdong Chen, “Interference-controlled maxi-mum noise reduction beamformer based on deep-learned in-terference manifold,” IEEE/ACM Trans. Audio, Speech, Lang. Process. , vol. 32, pp. 4676–4690, 2024. [21] Yuanzhe Gong, Mohammadhossein Karimi, and Tho Le-Ngoc, “Near-field nulling control beamfocusing optimization for multi-user interference suppression,” IEEE Open J. Com-mun. Soc. , vol. 6, pp. 1727–1746, 2025. [22] Dimitri P Bertsekas, Constrained optimization and Lagrange multiplier methods , Academic press, 2014. [23] Vassil Panayotov, Guoguo Chen, Daniel Povey, and Sanjeev Khudanpur, “Librispeech: an ASR corpus based on public domain audio books,” in Proc. IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP) , 2015, pp. 5206–5210. [24] Emanuel AP Habets, “Room impulse response generator,” 
+
+Technische Universiteit Eindhoven, Tech. Rep. , vol. 2, no. 2.4, pp. 1, 2006. [25] David Diaz-Guerra, Antonio Miguel, and Jose R Beltran, “gpuRIR: A python library for room impulse response simu-lation with GPU acceleration,” Multimedia Tools Appl. , vol. 80, no. 4, pp. 5653–5671, 2021.

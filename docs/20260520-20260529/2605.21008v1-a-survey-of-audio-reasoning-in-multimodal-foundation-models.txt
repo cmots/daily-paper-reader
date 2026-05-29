@@ -1,0 +1,694 @@
+Title: A Survey of Audio Reasoning in Multimodal Foundation Models
+
+URL Source: https://arxiv.org/pdf/2605.21008v1
+
+Published Time: Thu, 21 May 2026 01:09:25 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+> 1
+
+# A Survey of Audio Reasoning in Multimodal Foundation Models 
+
+Zhihan Guo*, Wenqian Cui*, Guan-Ting Lin, Daxin Tan, Jingyao Li, Qiyong Zheng, Dingdong Wang, Jing Xiong, Han Shi, Jiaya Jia, Fellow, IEEE and Irwin King, Fellow, IEEE 
+
+Abstract —Reasoning has become a defining capability of modern foundation models, yet its development in the audio modality remains limited. Audio poses challenges that are distinct from those of text and vision. It is continuous, temporally dense, and contains linguistic, paralinguistic, and environmental information at multiple time scales. As a result, audio reasoning models must align acoustic signals with the discrete semantic space of large language models, while still preserving fine-grained information needed for reliable inference. Progress is also limited by three major obstacles: the scarcity of genuinely audio-grounded reasoning data, shortcut learning and modality hallucination, and the tension between reasoning depth and real-time latency in spoken interaction. In this paper, we present the first dedicated survey of audio reasoning. We provide a unified formulation that distinguishes direct predictive modeling from reasoning-augmented generation, review the architectural and training foundations of audio reasoning models, and sys-tematically organize recent advances in Audio-to-Text, Audio-to-Speech, Audio-Visual Reasoning and Agentic Audio Reasoning. We further examine emerging paradigms such as Chain-of-Thought prompting, supervised fine-tuning, reinforcement learn-ing, and latency-aware spoken interaction, and discuss evaluation practices, open challenges, and future directions. Our goal is to offer a coherent roadmap for developing robust, efficient, and natively grounded audio reasoning systems. 
+
+Index Terms —Audio Reasoning, Multimodal Foundation Mod-els, Chain-of-Thought Reasoning. 
+
+I. I NTRODUCTION 
+
+Chain-of-Thought (CoT) reasoning has fundamentally re-shaped the development of modern foundation models, yield-ing substantial gains in complex tasks such as mathemati-cal reasoning, coding, and logical problem solving [1]–[3]. For instance, DeepSeek-R1 achieves superior performance on verifiable tasks such as mathematics and coding competi-tions, reaching unprecedented accuracy on rigorous bench-marks like AIME and MATH-500 [4], [5]. Recent reasoning-oriented Large Language Models (LLMs) demonstrate that 
+
+Zhihan Guo, Wenqian Cui, Jingyao Li, Qiyong Zheng and Irwin King are with Department of Computer Science and Engineering of The Chinese University of Hong Kong (CUHK), e-mail: zhguo22@cse.cuhk.edu.hk Guan-Ting Lin is with the Graduate Institute of Communication Engineer-ing of National Taiwan University Daxin Tan is with the Department of Electronic Engineering of The Chinese University of Hong Kong (CUHK) Dingdong Wang is with the Department of Systems Engineering and Engineering Management of The Chinese University of Hong Kong (CUHK) Jing Xiong is with the Department of Electrical and Computer Engineering of The University of Hong Kong (HKU) Han Shi and Jiaya Jia is with the Department of Computer Science and Engineering of The Hong Kong University of Science and Technology (HKUST) Zhihan Guo and Wenqian Cui contributed equally to this work. 
+
+allocating additional test-time compute can markedly improve performance by enabling longer trajectories of exploration, verification, self-correction, and strategic refinement before producing a final answer [6], [7]. This paradigm has also been extended successfully to Vision-Language Models (VLMs), where explicit intermediate reasoning improves performance on tasks requiring dense perceptual grounding, including spa-tial reasoning, robotic decision making, and medical visual question answering [8], [9]. In contrast, despite the rapid progress of Audio Foundation Models (AFMs), the question of how to endow these systems with robust reasoning capabilities remains largely unresolved [10], [11]. Advancing audio reasoning is important for two reasons. First, audio is not merely an alternative carrier of textual content. It also encodes rich paralinguistic and environmental signals, such as prosody, speaker state, emotion, overlap, temporal dynamics, and background events, that are often essential for reliable inference but are partially or entirely lost in text transcription [12], [13]. Second, natural human communication is fundamentally speech-centric [14], [15]. If future AI systems are expected to operate in realistic, embodied, and interactive settings, they must reason directly over acoustic signals and respond in forms compatible with human spoken interaction, rather than relying exclusively on cascaded text-based pipelines [16], [17]. However, incorporating reasoning into AFMs is not merely a matter of transplanting CoT techniques from text or vi-sion [18], [19]. Audio reasoning introduces a set of modality-specific research questions that can be organized according to the form of input evidence, output modality, interaction setting, and reasoning workflow. Guided by these dimensions, this sur-vey organizes the field into four paradigms. In Audio-to-Text reasoning, models are expected to infer textual answers from acoustic signals by exploiting linguistic content, paralinguistic cues, environmental events, and temporal dynamics, making acoustic grounding a central requirement. In Audio-to-Speech reasoning, reasoning is embedded in spoken interaction: sys-tems must understand audio inputs, perform intermediate de-liberation, and generate speech responses while balancing rea-soning depth against conversational latency. In Audio-Visual reasoning, the reasoning process must integrate synchronized auditory and visual evidence, requiring temporal alignment, cross-modal grounding, and robust disambiguation across modalities. Beyond these single-model paradigms, Agentic Audio Reasoning decomposes complex audio-centered tasks into perception, planning, tool use, memory, reflection, and multi-module collaboration, thereby extending audio reasoning           
+
+> arXiv:2605.21008v1 [eess.AS] 20 May 2026 2Audio -to -text Audio -to -speech
+> Audio -visual Agentic Audio Reasoning
+> TJSTG
+> 2023 2024 1-89-10
+> 11 -12
+> GLM -4-Voice
+> 2025
+> MALLM
+> LLaMA -Omni
+> Mini -Omni2
+> 1-3
+> 4-6
+> 7
+> Audio -CoT
+> Audio -Reasoner
+> Qwen2.5 -Omni
+> TSART
+> Mini -Omni Kimi -Audio
+> Daily -Omni
+> AURA
+> 8
+> 9
+> 10
+> 11
+> 2026 13
+> CoQo
+> Step -Audio 2
+> Audio -Thinker
+> Audio Flamingo
+> Sound -CoT
+> Mini -Omni -
+> Reasoner
+> AVRT
+> AudioGenie -
+> Reasoner
+> Qwen3 -Omni
+> Chronological
+> Thinking
+> AudioToolAgent
+> SHANKS
+> MPS
+> SAR -LM
+> Speech -Hands
+> EmotionThinker
+> TWL
+> STITCH
+> ReEmpathy
+> LTS -VoiceAgent
+> FLAIR
+> Fig. 1. Timeline of representative audio reasoning models. Models are organized chronologically and grouped by major paradigms, including Audio-to-Text, Audio-to-Speech, Audio-Visual, and agentic audio reasoning.
+
+from direct generation to structured problem solving. This tax-onomy clarifies the scope of audio reasoning and highlights the field’s current fragmentation across formulation, architecture, training, interaction, grounding, and evaluation. These gaps also expose a limitation of the existing survey literature. Recent reviews have systematically examined audio large language models, spoken language models, multimodal alignment, instruction tuning, real-time speech interaction, and evaluation pipelines [10], [20]. In parallel, recent surveys on multimodal Chain-of-Thought discuss reasoning across modalities more broadly [21]. Nevertheless, in most of these works, reasoning in the audio modality is treated as a sec-ondary capability [10], [20], [22]–[26], rather than as the central focus. As a result, the field still lacks a dedicated synthesis that centers audio reasoning itself: how it should be formulated, what architectural and training foundations it requires, why existing reasoning paradigms behave differently in audio than in text, how real-time spoken reasoning changes the design space, and how genuine acoustic grounding should be evaluated. To the best of our knowledge, this work is the first survey specifically devoted to audio reasoning. To address this need, we present a structured survey of audio reasoning that connects problem formulation, model foundations, reasoning paradigms, grounding, and evaluation. Specifically, our contributions are as follows:  
+
+> •
+
+A unified formulation of audio reasoning. We define common notations and formalize audio reasoning across text-output, speech-output, audio-visual, and agentic set-tings under a unified framework.  
+
+> •
+
+A review of model foundations. We summarize the foundations of audio reasoning models, including audio encoders, modality projectors, LLM backbones, speech tokenization, alignment, instruction tuning, preference optimization, and parameter-efficient adaptation.  
+
+> •
+
+A comprehensive taxonomy of audio reasoning paradigms. We organize studies into Audio-to-Text, Audio-to-Speech, Audio-Visual, and Agentic Audio Rea-soning, covering CoT prompting, supervised fine-tuning, reinforcement learning, latency-aware spoken interaction, cross-modal grounding, and tool-augmented reasoning.  
+
+> •
+
+A discussion of evaluation and future directions. We summarize evaluation protocols, identify their limitations, and outline open challenges for building robust, efficient, and natively grounded audio reasoning systems. The remainder of this paper is organized as follows. Sec-tion II introduces the notations and formal problem formula-tions for audio reasoning. Section III reviews the architectural and training foundations of audio reasoning models. Sec-tion IV surveys Audio-to-Text reasoning methods, including CoT prompting, supervised fine-tuning, reinforcement learn-ing, and reasoning-oriented dataset construction. Section V discusses sequential and real-time Audio-to-Speech reason-ing, with emphasis on latency-aware interaction paradigms. Section VI examines Audio-Visual reasoning, cross-modal grounding, and audio-visual benchmarks. Section VII reviews Agentic Audio Reasoning, including predefined workflow agents, dynamic tool-calling agents, and design patterns. Sec-tion VIII summarizes evaluation settings, benchmarks, and metrics for audio reasoning. Finally, Section IX discusses open challenges and future research directions, including data reliability, modality hallucination, latency constraints, long-context audio reasoning, and reasoning-oriented pre-training. II. N OTATIONS AND PROBLEM FORMULATIONS 
+
+In this section, we establish a unified mathematical frame-work for the audio reasoning settings discussed throughout this survey. Our goal is not to impose a model architecture, but to provide a consistent notation system that covers the four paradigms reviewed later in the paper: Audio-to-Text rea-soning, Audio-to-Speech reasoning, Audio-Visual reasoning, and Agentic Audio Reasoning. We begin with the notational conventions for inputs, intermediate representations, reasoning states, and outputs, and then formalize each reasoning setting 3Audio            
+
+> Reasoning
+> Audio -to -text
+> (Section IV)
+> Audio -to -speech
+> (Section V)
+> Audio -Visual
+> (Section VI)
+> Inference -time CoT
+> SFT -based CoT
+> RL -based CoT
+> Sequential Audio -to -Speech
+> Realtime: Thinking While Listening (TWL)
+> SFT Methods
+> Multi -Stage SFT with Distillation
+> SFT Combined with RL
+> Agentic Audio
+> Reasoning
+> (Section VII)
+> Predefined Workflow Agents
+> Dynamic Tool -Calling Agents
+> Task / Data Extensions
+> Realtime: Thinking While Speaking (TWS)
+> Design Patterns for Agentic Audio Reasoning
+> Fig. 2. A compact taxonomy of audio reasoning. We organize the literature into four paradigms: Audio-to-Text reasoning, Audio-to-Speech reasoning, Audio-Visual reasoning, and Agentic Audio Reasoning. Representative meth-ods and design patterns are discussed in the corresponding sections.
+
+under a common probabilistic view. For clarity, Table I sum-marizes the main symbols used throughout the paper. 
+
+A. General Formulation of Audio Reasoning 
+
+Audio reasoning can be viewed as conditional generation over multimodal evidence with an optional intermediate rea-soning process. As summarized in Table I, we use A, X, and 
+
+V to denote audio, textual, and visual inputs, respectively, and use C to denote the unified context derived from the available modalities. In its most general form, the model conditions on 
+
+C and produces an output sequence O, optionally through an intermediate reasoning trajectory R:
+
+P (O | C) or P (R, O | C) = P (R | C)P (O | C, R).
+
+(1) Here, O can be instantiated as a textual response Y, aspeech-token response S, or another task-specific output. The key distinction between conventional audio understanding and reasoning-enhanced generation is whether the model explicitly or implicitly constructs an intermediate reasoning trajectory that mediates the mapping from perceptual input to output. 
+
+B. Scope of the Formulation 
+
+The general formulation above provides a common ab-straction for the specific settings discussed in this survey. In Audio-to-Text reasoning, the context is constructed from audio input A and textual instruction X, and the output O
+
+is instantiated as a textual response Y. In Audio-to-Speech reasoning, the output becomes a speech-token sequence S;in real-time settings, streaming audio chunks Astr , stepwise reasoning states Rt, and speech chunks St further characterize the causal interaction among listening, thinking, and speaking. In Audio-Visual reasoning, visual input V is incorporated into the context C, enabling reasoning over jointly grounded acoustic and visual evidence. In Agentic Audio Reasoning,                                    
+
+> TABLE I CORE NOTATIONS USED IN THIS SURVEY .Symbol Meaning
+> A={at}Ta
+> t=1 Audio input or feature sequence
+> X={xn}Nn=1 Text instruction or prompt
+> V={vp}Pp=1 Visual input sequence
+> CUnified multimodal context
+> R={rk}Kk=1 Reasoning trajectory
+> Y={ym}Mm=1 Text output
+> S={sℓ}Ls
+> ℓ=1 Speech-token output
+> OGeneric output, e.g., Yor SAstr ={A(c)}Cs
+> c=1 Streaming audio chunks
+> Sstr ={St}t≥1Streaming speech chunks
+> RtReasoning state at step t
+> StSpeech chunk at step t
+
+the same abstraction defines the perceptual input, intermediate reasoning trajectory, and task output, while agent-specific mechanisms such as planning, tool use, memory, reflection, and multi-module collaboration are discussed in Section VII. III. F OUNDATIONS FOR AUDIO REASONING MODELS 
+
+Audio reasoning fundamentally requires systems capable of deciphering the complex, continuous nature of sound and translating these acoustic signals into logical comprehension or expressive generation. The foundation of these advanced cognitive abilities is predicated upon two critical dimensions— This section discusses the 1) underlying model architectures 
+
+designed to effectively bridge audio signals with language modeling, alongside the 2) training technologies necessary to cultivate the reasoning abilities. 
+
+A. Underlying Model Architectures 1) Large Audio Language Models (LALMs): LALMs aim to enable the audio comprehension abilities to the LLMs. They take audio and optional text instructions as input and generate text as output. Their dominant architecture is an encoder– projector–LLM pipeline, where an audio encoder first extracts continuous representations from the input audio, a modality projector maps these representations into the embedding space of a text LLM, and the LLM then performs autoregressive text generation conditioned on the projected audio features and optional textual instructions. In LALMs, audio serves as an external input modality aligned with the textual reasoning space of the LLMs. This design enables efficient reuse of pretrained audio encoders [27]–[31] and text LLM backbones [32]–[35], making LALMs modular and extensible. 
+
+2) Spoken Language Models (SLMs): SLMs are foundation models built for spoken dialogue interactions. Similar to LALMs, SLMs can take audio and optional text as inputs, but their outputs are speech representations or waveforms rather than text. Architecturally, they can follow either the encoder– projector–LLM–decoder design that resembles LALMs but adds a speech generation module [36], [37] after the LLM, or a more unified token-based design [38], [39], in which contin-uous speech is first converted into discrete speech tokens and both input and output speech are modeled autoregressively in 4
+
+a shared token space together with text. The latter formulation is more end-to-end, but it also introduces challenges such as long token sequences, multi-codebook token structures, and waveform reconstruction from generated tokens. In short, the main difference is that LALMs align audio to text for text generation, whereas SLMs must additionally support speech generation, requiring an explicit mechanism for producing and decoding speech representations. 
+
+B. Training Technologies 
+
+While architectural designs provide the structural founda-tion for multimodal perception, the emergence of complex reasoning capabilities relies fundamentally on specific training paradigms. In this part, we explore the underlying mechanisms of the core training paradigms that empower audio models with reasoning capabilities. 
+
+1) Cross-Modal Alignment Pre-training: Before an LLM can reason over audio, it must first learn to associate acoustic patterns with linguistic meaning [40]. The goal of cross-modal alignment pre-training is therefore to bridge the semantic gap between the audio modality and the LLM’s native language space. During this stage, the LLM backbone is often frozen, or only lightly updated, to preserve its linguistic and rea-soning capabilities, while the bridging components, such as the modality projector in LALMs or the embedding layers for discrete audio tokens in SLMs, are optimized [38], [41]. This stage typically relies on large-scale audio-text data, often instantiated through tasks such as ASR and audio captioning. The audio context may refer either to projected continuous features or to discrete audio tokens, and the model is usually trained with the standard autoregressive cross-entropy loss. 
+
+2) Post-training: While cross-modal alignment pre-training establishes a fundamental mapping between acoustic repre-sentations and linguistic semantics, this baseline alignment is typically insufficient for robust instruction following, multi-step reasoning, or reliable user interaction. Consequently, the model must undergo post-training—a suite of optimization procedures designed to refine the behavioral priors of the aligned system and elicit the higher-order reasoning capabili-ties required for complex multimodal tasks. Post-training typically proceeds in two primary phases: Supervised Fine-Tuning (SFT) and Alignment Optimization. During SFT, the model is trained on curated instruction-response pairs—often enriched with CoT annotations—to learn the structural logic of following complex audio-related commands. While SFT provides a foundation through demon-stration, subsequent alignment via Preference Optimization or Reinforcement Learning (RL), such as PPO [42] and GRPO [43], further refines the model’s behavior. These methods optimize for higher-level objectives such as factual accuracy, reasoning consistency, and faithfulness to the acoustic evi-dence, ensuring the model’s outputs align with human intent and logical rigor. IV. A UDIO -TO -T EXT REASONING 
+
+Audio-to-text reasoning refers to the process of perceiv-ing and analyzing audio signals through step-by-step logical reasoning to draw inferences, with the final output presented in textual form. To ensure accurate reasoning, this approach fully leverages the multiple types of information embedded in audio signals, including linguistic semantic information (e.g., speech content), paralinguistic cues (e.g., intonation, stress, and emotion), and environmental acoustic information (e.g., background sounds and acoustic events). To formally define Audio-to-Text reasoning, the system receives audio input A and textual instruction X, and produces a textual response Y. In a direct predictive formulation without explicit reasoning, the model optimizes 
+
+P (Y | A, X) = 
+
+> M
+
+Y
+
+> m=1
+
+P (ym | A, X, Y<m ). (2) Reasoning-augmented models instead introduce an interme-diate reasoning trajectory R, yielding the joint formulation 
+
+P (R, Y | A, X) = P (R | A, X) P (Y | A, X, R). (3) Applying the chain rule gives the stepwise autoregressive form 
+
+P (R, Y | A, X) = 
+
+> K
+
+Y
+
+> k=1
+
+P (rk | A, X, R<k )
+
+·
+
+> M
+
+Y
+
+> m=1
+
+P (ym | A, X, R, Y<m ).
+
+(4) 
+
+A. Audio-to-Text Reasoning Methods 
+
+The emergence of CoT prompting has fundamentally changed the landscape of Large Language Models (LLMs) by shifting the focus from simple pattern matching to explicit, step-by-step cognitive processing. Although CoT techniques were initially introduced in the text domain, they have now been widely adopted in the field of audio reasoning, serving as a vital technology for its advancement. This section explores how CoT techniques are applied in audio reasoning, catego-rizing the discussion based on different learning paradigms: inference-time CoT, SFT-based CoT, and RL-based CoT. 
+
+1) Inference-Time CoT Reasoning Methods: Inference-time CoT reasoning methods elicit explicit intermediate reasoning steps directly at LLM decoding time, without modifying model parameters. Audio-CoT [44] is the first study in the field of CoT-based audio reasoning. It presents the first systematic exploration of integrating inference-time CoT reasoning into LALMs to improve their reasoning capabilities across speech, sound, and music modalities. They investigate three inference-time CoT approaches:  
+
+> •
+
+Manual-CoT: This approach utilizes a few-shot learning paradigm featuring hand-crafted exemplars that provide explicit reasoning chains to guide the model toward structured, logical outputs.  
+
+> •
+
+Zero-Shot-CoT: This method employs a task-agnostic “magic prompt”, such as “Let’s think step by step”, to elicit internal reasoning processes without the require-ment of pre-defined demonstrations.  
+
+> •
+
+Desp-CoT: This technique involves a two-stage process, where the model first generates a descriptive caption 5
+
+or intermediate audio representation, which is then con-catenated with the original instruction to facilitate the reasoning process. The authors found that explicit step-by-step reasoning signif-icantly enhances model performance on easy and medium-difficulty tasks, though it can sometimes confuse the models on harder problems. This study systematically proves the feasibil-ity of integrating CoT into the audio reasoning process, laying a solid foundation for future work. Another inference-time CoT reasoning paper, SAR-LM [45], investigates the concept of symbolic audio reasoning, where complex audio signals are converted into simple, human-readable text descriptions before the AI processes them. While inference-time CoT methods successfully elicit latent reasoning without the need for additional training, they are fundamentally constrained by the model’s original param-eter distribution and the stochastic nature of zero-shot or few-shot prompting. To move beyond these inherent lim-itations, researchers have increasingly turned to training-based approaches, including SFT- and RL-based methods. This paradigm enables the model to learn explicitly from domain-specific reasoning chains, thereby improving its audio reasoning performance. 
+
+2) SFT-Based CoT Reasoning Methods: While inference-time techniques leverage the latent capabilities of pre-trained models, SFT-based CoT methods involve training LALMs on curated datasets that explicitly pair audio inputs with multi-step reasoning chains. This approach moves beyond simple instruction-following by teaching the model the structural logic required to decompose complex acoustic scenes. The effectiveness of SFT-based CoT reasoning is fundamen-tally driven by data construction, relying on the thoroughness and precision of the annotated intermediate steps (e.g., plan-ning, captioning, and summarizing). Because the success of these methods depends so heavily on the quality and structure of the underlying data, readers can refer to the Section IV-B for detailed discussions on specific reasoning datasets, such as the datasets in Audio-Reasoner [46], Audio Flamingo Sound-CoT [47], Audio-Cogito [48], and their generation pipelines. Ultimately, SFT-based CoT methods are largely driven by data construction—their performance depends heavily on the qual-ity and structure of annotated reasoning chains. Yet even with well-designed data, true reasoning ability relies on whether the model can internalize and generalize the logic rather than merely imitate it. This constraint has prompted a shift toward RL-based approaches, where reasoning can be more directly optimized through tailored training objectives. 
+
+3) RL-Based CoT Reasoning Methods: RL-based CoT reasoning methods aim to further enhance audio reasoning ability by directly optimizing the quality, faithfulness, and usefulness of intermediate reasoning steps through the RL process. RL techniques, such as Reinforcement Learning with Verifiable Rewards (RLVR), have been extensively studied in the text domain and have demonstrated strong effectiveness in enhancing the complex reasoning abilities of LLMs. However, it is unclear whether these techniques can be successfully transferred to the audio domain, especially given the contin-uous and multi-modal nature of audio signals. Recent studies have begun adapting RL frameworks to the audio modality, yielding promising results in complex acoustic reasoning. It is worth noting that, similar to TLM training, SFT is typically employed as a preliminary step before RL optimization, but our primary focus in this section is on RL. R1-AQA [49] is among the first to empirically demonstrate the effectiveness of RL training in the audio reasoning task. They show that RL training leads to better model performance compared to SFT training. However, they raise questions about the usefulness of intermediate CoT tokens in this task. Specifically, they find that while CoT tokens can enhance model performance in an inference-only setting, they do not improve performance when trained with GRPO. This indicates that leveraging CoT tokens in RL training may face domain-specific challenges when applied to the audio domain. Another domain-specific challenge is highlighted by Omni-R1 [50], which questions the effectiveness of audio signals in audio reasoning tasks. They find that many audio QA problems in MMAU [51] can be solved correctly by relying solely on text information. Furthermore, they discover that text-only RL fine-tuning can enhance audio QA accuracy. Together, these findings emphasize that audio reasoning requires unique considerations, from problem design to model training. Researchers have identified several key techniques to en-hance audio reasoning abilities. The first technique involves understanding problem difficulty . Studies show that it is crucial to categorize problems according to their difficulty levels during RL training, and problems with different dif-ficulty levels are often treated differently. Wijngaard et al. [52] utilize a single model, Phi-4-mini-instruct [53], to directly assess the difficulty of various problems. They implement the curriculum training by first performing RL training on the easy data, followed by training on all the data. SARI [54] leverages the backbone model itself to solve the target problems. The difficulty label is determined by the ratio of correctly answered questions. Then, curriculum learning is utilized as the training method. Omni-AutoThink [55] employs three models to determine the problem difficulty: a base model, a strong non-reasoning model, and a strong reasoning model. The reasoning tokens of the easy problems are excluded from the gradient update during RL training. Additionally, Omni-CLST [56] uses the target model in two training phases— before and after SFT training on the target problems—to address the problem difficulty. Similarly, the reasoning tokens for the easy problems are dropped. Sheng et al. [57] propose utilizing the entropy of attention across all audio tokens, suggesting that a problem is considered more difficult if it exhibits higher entropy. They design the reward function to favor the output of more reasoning tokens on harder problems. The second technique focuses on the information type that the model should prioritize during RL training, allowing it to better reason about the important aspects or properties of the audio input. AudSemThinker [58] suggests that conducting additional audio information extraction prior to reasoning can improve a model’s audio reasoning capabilities. This involves extracting the auditory semantics of the audio input, which includes details about who, what, how, when, and where, and using this information for reasoning. AudioMCQ [59] 6                                                                                    
+
+> TABLE II TYPES OF REWARDS USED BY RL-B ASED AUDIO -TO -T EXT REASONING
+> METHODS .
+> Models Accuracy Consistency Format Length Quality
+> Step-Audio 2 ✓✗✗✓✗
+> Audio-Thinker ✓✓✓✗✓
+> CESAR ✓✓✓✓✗
+> Omni-AutoThink ✓✗✓✗✗
+> Covo-Audio ✓✓✓✗✓
+> R1-AQA ✓✗✓✗✗
+> Omni-R1 ✓✗✗✗✗
+> Sheng et al. ✓✗✗✓✗
+> Wijngaard et al. ✓✗✓✗✗
+> SARI ✓✗✓✗✗
+> Omni-CLST ✓✗✓✗✗
+> AudioMCQ ✓✗✗✗✗
+> AudSemThinker ✓✗✓✓✗
+> Step-Audio R1 ✓✗✓✗✗
+> Audio-DeepThinker ✓✓✓✗✓
+
+categorizes audio reasoning problems into two groups based on whether the model requires audio information to answer the questions correctly. They conduct experiments by replacing the original audio with 30 seconds of silence, proposing that RL training should only be applied to problems that necessitate audio. Step-Audio-R1 [60] also emphasizes that the reasoning process should be anchored in the audio information. They implement iterative RL training, where they select data containing acoustic feature analysis from the model’s rollouts, training the model to iteratively ground its reasoning in the audio data. 
+
+Reward design is another crucial component for successful RL training. Existing papers primarily design rewards based on five important aspects. 1) Reasoning accuracy: This reward measures the model’s ability to reach the correct final answer, often using objective metrics like exact match. 2) Reasoning consistency: This reward encourages the model to maintain logical alignment between its inter-mediate CoT steps and the final output, ensuring that the conclusion is a direct result of the preceding reasoning. 3) Reasoning format: This reward enforces structural con-straints—such as the use of specific tags like <think> 
+
+and <answer> —to ensure the model produces a clear, parsable separation between its internal deliberation and its final response. 4) Reasoning length: This reward serves as a regularizer to prevent “reasoning collapse” or excessive verbosity, either incentivizing longer chains for complex problems to discourage shortcuts or penalizing redundant tokens to maintain efficiency. 5) Reasoning quality: This reward evaluates the validity of the reasoning process itself, penalizing logically flawed steps even when they are consistent with the final answer or happen to yield the correct result. It encourages step-by-step soundness and ensures the conclusion is derived through genuinely correct reasoning rather than coinci-dental or shortcut solutions. Specifically, Step-Audio 2 [61] design reward that controls rea-soning length, boosts reasoning quality, and boosts audio per-ception abilities. Audio-Thinker [62] and Audio-DeepThinker [63] ensure reasoning accuracy, consistency, format, and the quality of the reasoning tokens. CESAR [64] includes all types of rewards except the reasoning quality. Omni-AutoThink [55] combines the reasoning accuracy and length rewards by assigning high rewards to answers both accurate and concise. While most papers tackle the standard audio-to-text reason-ing task, other papers extend the current learning paradigm to more complex tasks . SoundMind [65] explores the task of Audio Logical Reasoning (ALR)—determining whether a logical conclusion is entailed or not-entailed by spoken premises, requiring a model to perform formal deductive rea-soning directly over speech audio. MALLM [66] extends the standard audio-to-text reasoning to the multi-audio scenario, where the models are required to reason over multiple separate audio clips to solve the problem. 
+
+4) Is CoT Really Helping?: Despite the widespread adop-tion of CoT techniques across inference-time, SFT-based, and RL-based paradigms, a closer examination of the empirical findings reveals a more nuanced picture. While CoT reasoning has proven transformative in the text domain, its benefits in audio reasoning are neither universal nor guaranteed. Several studies raise important questions about when, and whether, intermediate reasoning chains genuinely contribute to perfor-mance gains—or whether they introduce new failure modes unique to the audio modality. For instance, Audio-CoT [44] demonstrates that explicit step-by-step reasoning can paradox-ically hurt performance on harder problems, while R1-AQA [49] finds that CoT tokens that are beneficial at inference time fail to improve—and may even hinder performance under GRPO training. Most strikingly, Omni-R1 [50] reveals that a substantial portion of audio QA benchmarks can be solved by a model that never listens to the audio at all. Collectively, these anomalies indicate that discovering how to effectively and universally leverage CoT to drive genuine audio reasoning abilities remains a critical open challenge. 
+
+B. Dataset and Pre-processing for Audio-to-Text Reasoning 
+
+The development of audio-to-text reasoning capabilities critically depends on the construction of high-quality training data. Unlike standard audio understanding tasks that rely on simple annotations such as sound event labels or cap-tions, reasoning-oriented training requires explicit intermediate reasoning chains that teach models to decompose complex problems step by step. This subsection surveys the data construction and preprocessing strategies employed across the audio-to-text reasoning literature, covering data sources and reasoning chain construction. 
+
+1) Data Sources and QA Pair Construction: The majority of existing works repurpose established audio corpora rather than collecting new recordings. AVQA is the most widely adopted source, used by R1-AQA [49], Audio-Thinker [62], SARI [54], Omni-CLST [56], CESAR [64], Omni-R1 [50], and Sheng et al. [57], who extract audio tracks from the original audio-visual dataset and adapt question text by re-placing visual references (e.g., “video”) with auditory ones 7
+
+(e.g., “audio”). Other commonly leveraged datasets include AudioSet, AudioCaps, Clotho, MusicBench, and VGGSound, which provide diverse audio content spanning environmental sounds, music, and speech. AudioMCQ [59] aggregates seven source datasets covering speech (47%), sound (39.1%), music (8.1%), and temporal reasoning (5.8%), constructing 571k multiple-choice QA samples. AudSemThinker [58] constructs an entirely new corpus by mining YouTube closed captions (213k samples) and processing them through an ensemble of nine specialized audio, image, and video analysis models. Two paradigms dominate QA pair construction. The first directly reuses existing QA annotations with minimal mod-ification, as in R1-AQA [49] and Audio-Thinker [62]. The second employs LLMs to synthesize new questions and answer choices from audio captions: Omni-R1 [50] uses ChatGPT to generate multiple-choice questions from multi-perspective audio captions, SARI [54] uses Qwen2.5-72B, and Au-dioMCQ [59] uses Qwen3-235B. Audio-Reasoner [46] adopts a progressive difficulty strategy, generating three questions per audio clip at increasing complexity levels—from factual queries to multi-step reasoning problems—using Google Gem-ini. For multi-audio scenarios, PolyAudio [67] constructs 110k QA pairs spanning 11 multi-audio reasoning tasks (e.g., cross-clip comparison, chronological ordering, multi-audio entail-ment) using LLM-generated task-specific prompts. 
+
+2) Reasoning Chain Construction: The construction of intermediate reasoning chains—critical for SFT-based CoT training—follows several distinct strategies. 
+
+Single-LLM generation is the most prevalent approach, where a powerful LLM produces reasoning chains given audio captions, questions, and answers. Audio-Reasoner [46] uses Gemini to generate four-component chains (planning, captioning, reasoning, and summarizing) for its 1.2M-sample CoTA dataset. SARI [54] uses Qwen2.5-72B to produce both structured (four-section) and unstructured (free-form) CoT for-mats, demonstrating that structured reasoning yields more ro-bust generalization. AudioMCQ [59] employs Qwen3-235B to generate three-stage reasoning chains (question type analysis, audio content analysis, answer selection) along with simplified unstructured versions. Audio-Cogito [48] uses Qwen3-Omni-Thinking to generate free-form reasoning chains. 
+
+LLM-ALM collaborative generation addresses the con-cern that text-only LLMs may hallucinate audio-specific de-tails. Audio Flamingo Sound-CoT [47] proposes a collabora-tive pipeline where a text LLM and an audio language model jointly construct reasoning chains through either parallel sub-question decomposition (BFS-style) or multi-round interactive conversation (DFS-style), ensuring that intermediate reasoning steps are grounded in actual audio content. 
+
+Iterative self-distillation enables the model to progres-sively improve its own reasoning data. Step-Audio-R1 [60] in-troduces Modality-Grounded Reasoning Distillation (MGRD), where the model generates candidate reasoning chains that are then filtered for acoustic grounding (i.e., references to percep-tual features rather than text descriptions), logical coherence, and answer correctness, progressively shifting reasoning from text-surrogate to genuinely audio-grounded. 
+
+Domain-specific feature-enriched generation augments LLM-based CoT construction with specialized audio anal-ysis. EmotionThinker [68] constructs EmotionCoT-35K by first extracting prosodic features—pitch, energy, speaking rate, word-level stress, and intonation patterns—via classical signal processing and specialized models, then using GPT-4o to generate reasoning traces grounded in these acoustic cues. Table III summarizes the training datasets and construction methods across the surveyed audio-to-text reasoning methods. V. A UDIO -TO -S PEECH REASONING 
+
+Integrating reasoning capabilities into end-to-end SLMs fundamentally changes how latency, context, and logical depth are jointly managed, in contrast to traditional cascaded ASR– LLM–TTS pipelines. In this survey, we adopt the terminology “Audio-to-Speech” to precisely delineate the scope of “Audio-in, Speech-out” interaction. We use “Audio-in” rather than “Speech-in” because modern acoustic encoders can process not only spoken utterances but also environmental sounds and paralinguistic acoustic cues, making the input modality broader than speech alone. Regarding the output modality, we strictly focus on “Speech-out” systems designed for spoken conversational interaction 1.
+
+A. Sequential Audio-to-Speech Reasoning 
+
+A broad range of prominent end-to-end Audio-to-Speech models, such as Qwen2.5-Omni [69], Kimi-Audio [70], GLM-4-Voice [36], Llama-omni [16], Mini-Omni [71], Mini-Omni 2 [72], and SALM-Omni [73], exhibit reasoning capabilities inherited from their text-based LLM backbones. These models can apply reasoning to audio inputs, but their performance is often limited by the modality gap [74] between text and audio and by the lack of audio-specific reasoning supervision. To optimize reasoning for the audio modality, recent frame-works including Qwen3-Omni [75], Qwen3.5-Omni [76], Step-Audio 2 [61], and Mimo-Audio [77], have explicitly incorporated audio-related reasoning data into their training pipelines. This approach typically involves introducing audio-to-text “thinking” data to enhance the model’s comprehension of complex acoustic signals, or utilizing reasoning steps to generate more contextually appropriate and natural speech responses. Particularly, Qwen3.5-Omni [76] addresses the text-audio performance gap through on-policy distillation, which distills high-quality reasoning from text-conditioned outputs into audio-conditioned responses. OpenS2S [78] optionally incorporates a static thinking stage prior to speech synthesis, where the model reasons over the user’s emotional cues before producing an empathetic spoken response. We classify this paradigm as sequential reasoning because the architecture necessitates a discrete, step-by-step pipeline. In all the aforementioned systems, the internal text-based reasoning or “thinking” process must fully conclude before the speech synthesis module can initiate output generation. While this sequential dependency preserves the logical integrity of the generated response, it introduces significant latency that                                                                                             
+
+> 1We exclude systems targeting general audio synthesis or music generation, whose objectives (acoustic fidelity, musicality) differ fundamentally from reasoning-driven conversational interaction. 8
+> TABLE III SUMMARY OF TRAINING DATASETS AND CONSTRUCTION METHODS FOR AUDIO -TO -TEXT REASONING .
+> Model Source Data CoT Construction Training Scale
+> Audio-CoT MMAU (eval only) Prompt-based (no training) ——SAR-LM MMAU, MMAR (eval only) Symbolic features (no training) ——Audio-Reasoner AudioSet, AudioCaps, + 7 others Gemini (structured 4-part) SFT 1.2M AF Sound-CoT AudioSkills, Clotho-AQA, + 10 others LLM-ALM collaborative (BFS/DFS) SFT 1.24M Audio-Cogito AudioSet, Clotho, AudioCaps, + 7 others Self-distillation (Qwen3-OmniThinking) SFT 545k R1-AQA AVQA None (direct answer) GRPO 38k Omni-R1 AVQA, VGGSound ChatGPT-generated QA GRPO 38k–54k SARI AudioSet, MusicBench, MELD, AVQA Qwen2.5-72B (structured + unstructured) SFT+GRPO 42k Audio-Thinker AVQA Qwen2.5-72B (structured 4-part) SFT+GRPO 40k AudioMCQ 7 datasets (Clotho, AudioCaps, etc.) Qwen3-235B (3-stage + simplified) SFT+GRPO 571k AudSemThinker YouTube closed captions Qwen2.5-72B (2/3-phase semantic) SFT+GRPO 213k Omni-CLST AVQA, AudSemThinker data Reused (guided dropout) SFT+GRPO 249k Omni-AutoThink Audio-Reasoner, + multi-modal Hierarchical difficulty calibration SFT+GRPO 571k Sheng et al. AVQA —GRPO 38k Wijngaard et al. AVQA, ClothoAQA, + 4 others Gemini2.5-Pro (cold-start) SFT+GRPO 64k CESAR AVQA (augmented) —GRPO 38k+ Step-Audio 2 AudioSet, AudioCaps, + in-house LLM from mixing recipes SFT+RL Large Step-Audio-R1 ASR, paralinguistic, + in-house Self-distillation (MGRD) SFT+RLVR 5M EmotionThinker IEMOCAP, MELD, Expresso, + 2 others GPT-4o (prosody-enriched) SFT+GRPO 35k SoundMind LogiQA 2.0-NLI (TTS synthesis) DeepSeek-R1 SFT+RL 6.4k PolyAudio AudioSet, LibriSpeech, + 5 others LLM (multi-audio tasks) SFT+GRPO 160k Audio-DeepThinker AVQA, AudioSet, MagnaTagATune, + others DeepSeek V3.1 GRPO 69k
+
+constitutes a major bottleneck in human-computer dialogue, motivating the low-latency, real-time audio-to-speech reason-ing frameworks explored in the subsequent section. Formally, a standard non-streaming, sequential formulation models the generation process as a joint probability that can be factorized to highlight the sequential dependency: 
+
+P (R, S | A, X) = P (R | A, X) · P (S | R, A, X). (5) Here, the system first generates an intermediate reasoning sequence R conditioned on the fully received audio input 
+
+A and any accompanying context X. Only after R is en-tirely derived can the system produce the final spoken output 
+
+S. This factorization explicitly encapsulates the step-by-step constraint: input perception and internal reasoning must fully conclude before speech synthesis begins. 
+
+B. Realtime Audio-to-Speech Reasoning 
+
+Unlike the non-streaming formulations in Section V-A, real-time Audio-to-Speech reasoning requires input perception and output generation to proceed incrementally and concurrently, imposing strict causal and temporal constraints on the reason-ing process. Let the streaming audio input be defined as: 
+
+Astr = {A(1) , A(2) , . . . , A(Cs)} (6) and let the generated spoken output be a sequence of chunks: 
+
+Sstr = {S1, S2, . . . }. (7) The sequential formulation in Eq. (5) is insufficient for these systems, because the model cannot wait for the full input 
+
+A or the complete reasoning sequence R. Instead, it must dynamically balance reasoning depth against strict response latency at each incremental step. The architectural strategies for incorporating reasoning into real-time audio-in speech-out models can be broadly classified into two categories based on when the reasoning compu-tation occurs relative to the user’s input and the system’s output: reasoning that overlaps with the listening window (Section V-B1), and reasoning that overlaps with the speaking window (Section V-B2). 
+
+1) Category 1: Thinking While Listening (Reasoning during Input): Methods in this category share a core premise: the duration of the user’s speech provides a natural time window that can be actively repurposed for computation. Instead of treating the listening phase as passive transcription followed by a delayed deliberation step, these systems reason simul-taneously while the user is still speaking. Consequently, by the time the user finishes their utterance, the model is already prepared to respond. Formally, this concurrent process is modeled as: 
+
+P (Rt | Astr 
+
+> ≤t
+
+, X, R<t ), (8) where Astr  
+
+> ≤t
+
+= {A(1) , . . . , A(t)}. This formulation ensures that the reasoning state at any time t relies strictly on the audio prefix observed up to that moment. Existing approaches in this category generally differ across three key design choices. The first is the reasoning format —how the internal thoughts are represented, such as through free-form text tokens, structured nodes, or latent states. The second is the trigger condition —whether the reasoning runs continuously as the audio streams in, or is completeness-gated by the detection of a full phrase. The third is the update granularity —how frequently the reasoning state is refreshed, which can be processed per-chunk, per-segment, or per-step. 
+
+SHANKS [79] takes the most direct approach: it splits the input speech into fixed-duration chunks and, after each chunk, generates a sequence of unspoken free-form reasoning tokens that update the model’s understanding of the partial utterance. Because the reasoning state is refreshed every chunk, it can 9
+
+also be used to decide barge-in points, letting the model interrupt the user when it has enough information to respond. 
+
+Shih et al. [80] shift the focus from how to reason to when to reason. They introduce an entropy-based metric called Question Completeness ( ζ) that tracks how much semantic information has accumulated from the user’s speech so far, and trigger the reasoning chain as soon as ζ indicates the query is sufficiently complete. This avoids both waiting for end-of-turn silence and reasoning unnecessarily at every chunk. 
+
+Chronological Thinking [81] constrains the reasoning trace to a structured form. As the user speaks, the model emits a chain of typed thinking nodes (entity, intent, action, knowledge, logic) instead of free-form language, with each node attached to the corresponding semantic segment of the utterance. The reasoning is scheduled toward the end of the listening window and can be cut off at any moment, so when the user stops speaking the model halts reasoning and responds immediately, without additional latency. 
+
+FLAIR [82] replaces explicit token-based reasoning with latent reasoning. Instead of emitting discrete text tokens during listening, the LLM recursively feeds its own hidden state from the previous step back as input, so the hidden state itself accumulates reasoning information as audio arrives. To supervise this implicit process without CoT annotations, the authors train against a non-causal expert model that has access to the full dialogue, using an ELBO objective so that the causal model’s latent matches the expert’s at each step. The latent update reuses the standard forward pass and therefore adds no inference latency. The continuous hidden state can also be smoothly revised when the user’s later words contradict earlier ones, at the cost of the reasoning trace that is no longer expressible in natural language. 
+
+2) Category 2: Thinking While Speaking (Reasoning during Output): The second category addresses latency during the generation stage. Rather than borrowing time from the user’s listening window, these systems take advantage of a hardware-level speed asymmetry: GPUs can generate tokens much faster than the real-time rate at which audio is played back. This speed difference creates a time buffer during playback, allowing the system to pre-compute subsequent reasoning and speech tokens simultaneously. The model jointly predicts the current speech chunk and the next reasoning step: 
+
+P (St, Rt+1 | A, X, S<t , R≤t). (9) Here, St denotes the t-th outgoing speech chunk and Rt de-notes the reasoning produced in the t-th computation window. Notably, the generation is conditioned on the fully received audio A rather than a streaming prefix Astr 
+
+> ≤t
+
+. This reflects the current paradigm of most models in this category, which still operate sequentially during the listening phase—waiting for the user’s utterance to conclude before initiating the concurrent thinking-and-speaking output phase. The index offset between 
+
+St and Rt+1 captures the asynchronous pipeline: within a single time window, the model emits St while concurrently computing Rt+1 for use in subsequent steps. Current approaches within this category generally differ in two main aspects. The first is structural organization —how reasoning and speech are integrated. Models may alternate reasoning and speech blocks at the chunk level, interleave both token types within a single sequence, or utilize two separate modules running in parallel. The second aspect is the 
+
+reasoning objective —what the system is actually “thinking” about. This reasoning typically focuses either on solving an underlying logical problem or self-reflecting on the quality of the response being generated. 
+
+STITCH [83] directly implements this playback-driven idea. The model is trained to alternate between an unspoken reasoning chunk and a spoken response chunk: while the N -th audio chunk is being played to the user, the GPU uses the idle time to generate the next reasoning chunk, which then conditions the generation of the (N + 1) -th audio chunk. The architecture remains a single monolithic model, and inference latency is hidden behind the system’s own speech. 
+
+Mini-Omni-Reasoner [84] pushes interleaving from the chunk level to the token level: silent reasoning tokens and spoken response tokens are mixed within a single sequence, with each response token immediately preceded by the reason-ing tokens that support it. This tight local alignment allows reasoning to be embedded continuously within the speech stream rather than separated into discrete blocks, enabling continuous speech generation without pausing for thought. The design relies on a hierarchical Thinker-Talker architecture in which only response tokens are passed from the Thinker to the Talker for speech synthesis. 
+
+Mind-Paced Speaking (MPS) [85] decouples reasoning and articulation into two separate modules. A Formulation Brain produces high-level logical thoughts while an Articula-tion Brain converts thoughts into fluent speech; crucially, the Articulation Brain starts speaking from preliminary thoughts before the full reasoning chain is finished, and the Formulation Brain acts as a pacemaker that keeps feeding refined logic to the speaker. Because reasoning and articulation run in parallel on separate modules rather than taking turns within a single model, the speaker can begin responding as soon as preliminary thoughts are available. 
+
+ReEmpathy [86] uses the same thinking-while-speaking architecture but for reflective rather than logical reasoning. The model interleaves fixed-length spoken response chunks with free-form reasoning chunks, but unlike STITCH’s forward-looking deliberation, each reasoning chunk is a self-critique on the empathetic quality of what has been said, and the next response chunk is adjusted accordingly. This shows that the thinking-while-speaking architecture extends beyond logical derivation to iterative refinement of affective dimensions. 
+
+C. Training Data for Spoken Reasoning 
+
+Reasoning Domains. Across the surveyed models, spoken reasoning has been applied to two primary domains. The dominant focus is mathematical and logical reasoning , pur-sued by MPS, STITCH, Mini-Omni-Reasoner, and SHANKS, where models are evaluated on TTS-synthesized versions of text benchmarks such as GSM8K. These studies consistently demonstrate that internal chain-of-thought (CoT) is essential for multi-step arithmetic in the spoken modality, as the sequen-tial nature of mathematical derivation aligns naturally with dis-crete reasoning-token generation. A second, emerging domain 10                             
+
+> TABLE IV COMPARISON OF DATASETS AND TASKS IN REALTIME AUDIO -TO -S PEECH REASONING MODELS . “(S)” INDICATES TTS-SYNTHESIZED VERSIONS OF ORIGINALLY TEXT -BASED DATASETS .
+> Model Domain Source Data
+> Category 1: Thinking While Listening
+> Chronological Thinking [81] Task-oriented Dialogue, Open-domain QA GenConv(S), SpokenWOZ(S), LlamaQ(S) SHANKS [79] Math Reasoning Tulu3-Persona-Math-Grade(S) Shih et al. [80] Common Sense & Math Reasoning COT COLLECTION [87](S) FLAIR [82] Open-domain QA Synthetic dialogues (GPT-OSS/Qwen2.5/Llama3.1)
+> Category 2: Thinking While Speaking
+> MPS [85] Math Reasoning, Complex Conversation Not disclosed STITCH [83] Math Reasoning, Knowledge QA VoiceAssistant400K, Tulu-3-Persona(S), Natural Questions(S), TriviaQA(S) Mini-Omni-Reasoner [84] Math Reasoning SPOKEN-MATH-PROBLEMS-3M ReEmpathy [86] Empathetic Dialogue & Reflection EmotionTalk, OpenS2S subset
+
+is paralinguistic and empathetic reasoning , which targets the prosodic and affective dimensions of communication rather than propositional content. ReEmpathy interleaves reflective reasoning chunks with spoken output to iteratively refine empathetic quality. This divergence reflects an unresolved trade-off between responsiveness and the depth of affective reasoning required for genuinely empathetic output. Beyond these two foci, FLAIR extends spoken reasoning to open-domain instruction-following and full-duplex conversational QA, showing that latent reasoning can generalize beyond structured mathematical derivation. 
+
+Data Scarcity and Adaptation. A primary challenge in training reasoning-capable SLMs is the scarcity of native spoken reasoning datasets. Consequently, current research pre-dominantly relies on adapting text-based benchmarks (e.g., GSM8K, MultiWOZ) into spoken form via text-to-speech (TTS) synthesis, coupled with reasoning supervision distilled from strong text LLMs. The specific adaptation strategy, however, varies considerably across architectures. 
+
+Modality-Specific Pre-processing. For models such as Chronological Thinking, unstructured CoT traces are parsed into structured thinking nodes (entity, intent, action, knowl-edge, and logic) to align with the temporal progression of speech. Mini-Omni-Reasoner and STITCH instead adopt a text-audio interleaving strategy, where reasoning remains as text tokens but is inserted between synthesized speech tokens in the training data; this requires careful alignment to ensure that “thought” tokens are positioned immediately before their corresponding audio generation triggers. For affective reason-ing, ReEmpathy generates “reflection” tokens that explicitly critique the emotional appropriateness of a response, which are then interleaved with the dialogue history to supervise the model’s internal state during inference. A notable exception is FLAIR, which eliminates the need for explicit reasoning annotations altogether: its latent targets are produced on-the-fly by a non-causal expert model during training via ELBO optimization, sidestepping the dataset construction burden that the methods above share. Table IV summarizes the datasets utilized across the sur-veyed literature. We use the notation “(S)” to indicate that the original text dataset has been converted into spoken form via TTS synthesis. 
+
+D. Discussion on Reasoning with Latency Constraints 
+
+While all surveyed methods aim to reduce the initial re-sponse latency (Time-To-First-Token, or TTFT), experimental results reveal substantially different overall performance pro-files depending on how reasoning and audio generation are temporally synchronized. 
+
+Thinking While Listening can effectively eliminate addi-tional wait times after the user finishes speaking. For example, Chronological Thinking restricts reasoning to the duration of the user’s utterance, enabling near-instant responses. However, this paradigm is fundamentally limited by the duration of the user’s utterance. If the query is brief but requires deep reasoning (e.g., a short mathematical question), the listen-ing window may be insufficient to complete the necessary computation. More critically, because reasoning begins before the user finishes speaking, the model operates on incom-plete information. This can lead to premature or erroneous reasoning—for instance, committing to an incorrect problem interpretation if the user’s final words substantially alter the underlying condition—resulting in wasted computation and degraded response quality. Latent-reasoning variants such as FLAIR partially mitigate these issues by maintaining a con-tinuous hidden state rather than committing to discrete textual hypotheses, allowing smoother revision as new audio arrives. This flexibility comes at the cost of interpretability, as the reasoning trace is no longer expressible in natural language. 
+
+Thinking While Speaking is not constrained by the user’s utterance length but is instead limited by the ratio of reasoning throughput to audio playback speed. Models like STITCH and Mini-Omni-Reasoner hide inference latency by ensuring that reasoning for the (N + 1) -th audio chunk completes before playback of the N -th chunk finishes. However, this approach encounters difficulties with highly complex tasks. When reasoning chains exceed the available playback buffer, the audio generation may stall, resulting in perceptible pauses or disfluencies in the output speech. Each of these paradigms addresses a different facet of the latency challenge, and neither is universally optimal. To over-come their respective limitations, future systems could benefit from a hybrid architecture that combines both strategies. A key research question is how to design a reasoning scheduler 
+
+that dynamically selects the appropriate strategy based on real-time signals—for example, determining whether a query is 11 Audio -Visual Reasoning                                    
+
+> Audio -to -Text Reasoning
+> Input Audio Token
+> Input Visual Toke n
+> Input Text Token
+> Reasoning Token
+> Output Speech Token
+> Output Text Token
+> Sequential Audio -to -Speech Reasoning
+> (Listening ->Thinking ->Speaking)
+> Token -to -Speech
+> Time
+> Realtime Audio -to -Speech Reasoning
+> (Thinking -while -Listening)
+> Token -to -Speech
+> Time
+> Token -to -Speech
+> Time
+> (1) Predefined Workflow Agents
+> Perception Verification
+> Planning Execution
+> Central Controller
+> (2)Dynamic Tool -Calling Agents
+> LLM
+> Planner
+> ASR
+> TTS
+> Web Search
+> Calendar
+> Email
+> Sub -Agents
+> Agentic Audio Reasoning Audio -to -Speech Reasoning
+> Audio Visual Reasoning
+> Audio -to -Text Reasoning
+> Realtime Audio -to -Speech Reasoning
+> (Thinking -while -Speaking)
+
+Fig. 3. Overview of major audio reasoning paradigms. The figure summarizes four paradigms covered in this survey: Audio-to-Text, Audio-to-Speech, Audio-Visual, and Agentic Audio Reasoning. It contrasts text-output reasoning, cross-modal audio-visual grounding, sequential and real-time speech-output reasoning, and agentic workflows based on predefined pipelines or dynamic tool calling. 
+
+sufficiently complete to trigger early reasoning, or whether the reasoning budget fits within the available playback buffer. Further open questions include graceful recovery from pre-mature reasoning and computation allocation across parallel reasoning tracks when both strategies run concurrently. Finally, we note that recent work has explored offloading reasoning to an external text-based back-end running asynchronously alongside the speech model (e.g., [88], [89]). While these systems fall outside the scope of this survey, as the speech model itself does not perform reasoning, they represent a complementary architectural direction that could be combined with the internal reasoning paradigms discussed above. VI. A UDIO -V ISUAL REASONING 
+
+Audio-visual reasoning requires a model to jointly perceive synchronized or loosely aligned acoustic and visual streams and produce a coherent textual response. Unlike unimodal tasks, it demands that evidence from both modalities be integrated, disambiguated, and weighted against a natural-language instruction. 
+
+A. Formulation of Audio-Visual Reasoning 
+
+Given audio input A, visual input V, and textual instruction 
+
+X, a direct model predicts the textual output Y as 
+
+P (Y | A, V, X) = 
+
+> M
+
+Y
+
+> m=1
+
+P (ym | A, V, X, Y<m ). (10) Reasoning-augmented models introduce an intermediate rea-soning trajectory R, yielding 
+
+P (R, Y | A, V, X) = P (R | A, V, X) P (Y | A, V, X, R),
+
+(11) which expands autoregressively as 
+
+P (R, Y | A, V, X) = 
+
+> K
+
+Y
+
+> k=1
+
+P (rk | A, V, X, R<k )
+
+·
+
+> M
+
+Y
+
+> m=1
+
+P (ym | A, V, X, R, Y<m ).
+
+(12) Direct models must implicitly resolve audio-visual corre-spondence within the backbone, leaving no explicit trace of modality weighting. Reasoning-augmented models external-ize this process as intermediate steps R = (r1, . . . , r K ),improving interpretability and accuracy on multi-hop tasks such as speaker identification or cross-modal event description. Current systems represent R as natural-language thinking tokens [90], structured sub-questions, or latent intermediate representations, and differ further in whether audio-visual features are fused before (early fusion) or after (late fusion) the LLM decoder. 
+
+B. Audio-Visual Reasoning Methods 
+
+We organise existing methods by their post-pretraining optimisation strategy: (i) pure SFT, (ii) multi-stage SFT with distillation, and (iii) SFT followed by reinforcement learning. 
+
+1) Supervised Fine-Tuning (SFT) Methods: Most omni-modal models adopt multi-stage SFT pipelines that pro-gressively align modalities before joint instruction tuning. 
+
+VITA [91] extends a Mixtral-8 ×7B backbone with modality alignment (InternViT-300M for vision, Whisper-large-v2 for audio) followed by joint multimodal instruction tuning, using state tokens to distinguish noise, audio instructions, and plain text. Mini-Omni2 [72] adds a SNAC-based parallel text– speech decoding head and a semantic interruption mechanism to a compact 0.5B backbone. Megrez-Omni [92] adopts a three-stage alignment pipeline with a perceiver resampler for 12 
+
+vision and joint omni instruction tuning on mixed-modality data. Baichuan-Omni [93] progressively unfreezes compo-nents across four stages and adds a flow-matching speech decoder trained separately from the understanding pipeline. 
+
+Lyra [94] augments a Qwen2-VL backbone with three com-ponents: a Latent Cross-Modality Regularizer (LCMR) that aligns speech and text embeddings via Dynamic Time Warp-ing, modality-specific LoRA adapters to prevent catastrophic forgetting, and a block-wise top-k token extractor to reduce computation on long audio-visual inputs. 
+
+2) Multi-Stage SFT with Distillation: Qwen2.5-Omni [69] adopts a Thinker-Talker architecture: the Thinker processes interleaved text, audio, image, and video tokens, while the Talker is a streaming speech decoder refined with DPO [95] for speech quality and multi-speaker instruction tuning. 
+
+Baichuan-Omni-1.5 [96] constructs cross-modal training data by synthesising text segments into audio via TTS, yield-ing interleaved image-audio-text prompts that improve audio-visual grounding. LongCat-Flash-Omni [97] is a large MoE model trained progressively from text-only to full audio-visual alignment, supporting streaming interaction and long-range cross-modal reasoning within a 128K-token context window. 
+
+3) SFT Combined with Reinforcement Learning (SFT+RL): 
+
+Qwen3-Omni [90] combines SFT, strong-to-weak distillation, and Group Sampling Policy Optimisation (GSPO) [98] with rule-based rewards for verifiable tasks and model-based re-wards for open-ended tasks. Its dedicated AuT audio encoder provides richer representations than Whisper-based encoders, and the RL-based thinking mode enables multi-step cross-modal reasoning not achievable by direct-decoding baselines. 
+
+C. Audio-Visual Reasoning Benchmarks 
+
+Recent benchmarks for audio-visual reasoning have in-creasingly shifted beyond visual-dominant evaluation toward scenarios where auditory understanding and temporal align-ment are indispensable. Daily-Omni [99] specifically evalu-ates whether models can reason over synchronized multimodal streams in everyday settings, emphasizing temporal consis-tency between acoustic and visual events rather than static scene recognition alone. Similarly, WorldSense [100] targets real-world omnimodal understanding, measuring a model’s ability to integrate heterogeneous sensory evidence under realistic conditions. AVUT [101] further highlights audio-centric reasoning by constructing video understanding tasks that remove textual shortcuts, forcing models to rely on sound cues and their correspondence with visual dynamics. Beyond event-level grounding, AV-SpeakerBench [102] focuses on speaker attribution and human speech understanding, where models must jointly analyze lip movements, facial behaviors, and speaker characteristics in the audio track to determine who is speaking. At a finer semantic level, Omni-Cloze [103], introduced in Omni-Captioner, adopts a cloze-style evaluation protocol to assess detailed multimodal caption understanding, requiring inference over timestamps, entity relations, and subtle auditory details from partially observed descriptions. Collectively, these benchmarks demonstrate that progress in audio-visual reasoning depends not only on visual perception, but increasingly on robust auditory modeling, temporal syn-chronization, and deep cross-modal integration. VII. A GENTIC AUDIO REASONING 
+
+Traditional audio reasoning systems, including audio-to-text, speech-to-speech, and audio-visual reasoning, are com-monly built upon monolithic architectures with single-pass inference. While effective for routine tasks, they struggle in complex, open-ended scenarios that require multi-step deduc-tion, ambiguity resolution, error correction, real-time interac-tion, or cross-modal alignment. To address these limitations, a growing line of research explores agentic extensions to audio reasoning, in which autonomous agents perform perception, planning, and execution while flexibly integrating speech, text, and vision modalities. Unlike conventional systems, agentic models perceive inputs, plan strategies, decompose tasks, use tools, reflect on intermediate outputs, and execute multi-stage cross-module reasoning trajectories. In this section, we provide a unified overview of such systems, categorize them by their decision-making workflow, summarize representative works, and discuss their key design patterns. 
+
+A. Core Capabilities of Agentic Audio Reasoning 
+
+Agentic systems for audio reasoning typically exhibit five core capabilities:  
+
+> •
+
+Task decomposition : Breaking down a complex in-struction into smaller, manageable sub-tasks (e.g., audio feature extraction, semantic understanding, logical deduc-tion) to reduce inference complexity.  
+
+> •
+
+Self-reflection : Evaluating intermediate outputs to detect and correct errors or resolve ambiguities caused by low-quality signals.  
+
+> •
+
+Tool use : Leveraging external modules (e.g., speech recognition, calculators, web search) to overcome a single model’s inherent limitations.  
+
+> •
+
+Adaptability : Dynamically adjusting the reasoning strat-egy based on the input audio’s characteristics or interme-diate findings.  
+
+> •
+
+Interpretability : Producing interpretable reasoning traces or explicit chain-of-thought, making the system’s decision process transparent and auditable. 
+
+B. Taxonomy of Agentic Paradigms 
+
+As illustrated in Figure 3, we categorize existing agentic systems into two fundamental paradigms based on how the system’s core decision flow is defined: Predefined Workflow Agents and Dynamic Tool-Calling Agents .
+
+1) Predefined Workflow Agents: Systems in this paradigm follow a fixed, predetermined execution pipeline . The se-quence of stages—such as perception, planning, execution, and verification—is statically designed. A central controller executes these stages in a rigid order without dynamically selecting from a pool of heterogeneous tools at runtime. This closed and predictable structure ensures strong coherence, interpretability, and stability, making it ideal for tasks where reliability is important. However, this fixed structure makes 13 
+
+it difficult to extend or adapt to new requirements, and performance is ultimately bounded by the capacity of the core model or the fixed design of its internal sub-agents. An early example is Speech-Hands [104], which addresses the problem of an omni-model being misled by noisy inputs. It adopts a three-stage decision pipeline: generating two candi-date hypotheses, predicting a special action token ( <internal> ,
+
+<external> , <rewrite> ) to choose or rewrite the answer, and producing the final output. All reasoning is confined within a single model, where self-reflection serves as a fixed step instead of a runtime adaptive choice. A more elaborate multi-agent design is AudioGenie-Reasoner (AGR) [105]. It runs a training-free, fixed loop that starts from a coarse transcript and refines it through four specialized agents ( Planning , Interaction , Augmentation ,
+
+Answering ). The first three agents collaborate to identify gaps and retrieve missing information using tools like ASR or audio QA, and the final agent outputs the answer. The entire sequence is predetermined, yet the iterative refinement enables deep reasoning without parameter updates. Streaming scenarios challenge the “listen-then-act” assump-tion. LTS-VoiceAgent [106] tackles the “think vs. speak” dilemma with a fixed streaming workflow: a Dynamic Seman-tic Trigger detects meaningful speech boundaries, after which a Dual-Role Stream Orchestrator runs a background Thinker 
+
+and a foreground Speaker in parallel, allowing speculative generation while listening. The roles are pre-assigned and do not change at runtime, preserving determinism while reducing interaction latency. Finally, cross-modal reasoning appears in Daily-Omni Agent [107], a training-free diagnostic baseline. It follows a static pipeline: segment videos and audios, label each modality independently with off-the-shelf unimodal models (Qwen2.5-VL for vision, Qwen2-Audio and Whisper-Large-V2 for au-dio), locate timestamps of critical events, and then generate the answer. All modalities are integrated under a centralized controller, demonstrating that even simple fixed workflows can yield robust audio-visual reasoning. 
+
+2) Dynamic Tool-Calling Agents: In this paradigm, a cen-tral planner (typically an LLM) decides at runtime which external modules to call, in what order, and how to combine their outputs. This design emphasizes flexibility, scalability, and modularity, but introduces coordination overhead and potential output inconsistency due to the non-deterministic nature of LLM decisions. A foundational system is AURA [108], the first open-source speech-native assistant. It implements a ReAct-style loop where the LLM planner alternates between generating Thought 
+
+and Action steps; the Action can invoke heterogeneous APIs (calendar, search, email) and the results become Observation 
+
+for the next cycle. This dynamic tool scheduling enables com-plex, multi-turn tasks while keeping the assistant architecture fully modular. A natural extension is AudioToolAgent [109], which co-ordinates audio-language models as tools. A central LLM decides which specialist QA models (e.g., Qwen2.5 Omni) or ASR modules (e.g., Whisper) to call, how to refine queries, and how to reconcile conflicting outputs. The runtime selection of tools allows it to adapt to diverse audio understanding tasks. Rather than relying on prompt-based heuristics, AuTA-gent [110] learns the tool selection policy via reinforcement learning. It combines Group Relative Policy Optimization (GRPO) with a Baseline-subtracted Differential Reward Func-tion , training the agent to invoke external tools only when they yield a net performance gain. The learned policy improves accuracy over both open-source and closed-source backbones on audio reasoning benchmarks. While the above agents operate in a turn-based or of-fline fashion, SHANKS [79] brings dynamic tool call-ing to the streaming setting. An SLM generates unspoken chain-of-thought reasoning while listening to the user. This hidden reasoning drives runtime decisions: whether to interrupt the user (e.g., when a mistake is detected) or to issue tool calls before the user finishes speaking. Despite its streaming nature, each chunk still triggers a fixed CoT generation step, but the tool invocation decision itself is made dynamically. Another streaming solution, Stream RAG [111], directly predicts tool queries in parallel with the user’s ongoing speech. Instead of waiting for utterance completion, its central LLM issues tool calls early and incorporates retrieved results into a spoken summary. This preemptive, runtime orchestration reduces tool-use latency while substantially improving QA accuracy. Finally, VoxMind [112] demonstrates that dynamic tool calling can be embedded in an end-to-end, non-cascaded spoken dialogue model. It introduces a “Think-before-Speak” mechanism that internalizes reasoning before response gen-eration, and an asynchronous multi-agent tool manager that offloads retrieval tasks to a separate agent, decoupling infer-ence latency from the size of the toolset. The tool manager is invoked at runtime based on dialogue context, keeping the model within the dynamic tool-calling paradigm while achieving state-of-the-art task completion. 
+
+C. Design Patterns for Agentic Audio Reasoning 
+
+Beyond the aforementioned two-paradigm taxonomy, we identify representative design patterns that underpin agentic behavior in audio reasoning. In practice, these patterns are non-exclusive and are often integrated within a single system.  
+
+> •
+
+Correction Pattern : The agent verifies, judges, and cor-rects its own perception errors in a closed loop. Speech-Hands and Daily-Omni Agent are prime examples, the former using a special token to choose the best hypoth-esis, the latter using video as ground truth to correct audio predictions. This pattern focuses on improving the 
+
+reliability of the core model.  
+
+> •
+
+Iterative Refinement Pattern : The agent starts with a low-resolution representation and iteratively enriches it. AudioGenie-Reasoner embodies this, starting with a coarse transcription and refining it through multiple specialized agents, enabling deep reasoning without extra training processes.  
+
+> •
+
+Reactive Tool-Use Pattern : The agent operates in a 
+
+Thought → Action → Observation loop, where the action 14               
+
+> TABLE V KEY TRADE -OFFS BETWEEN PREDEFINED WORKFLOW AND DYNAMIC TOOL -CALLING AGENTS .
+> Dimension Predefined Workflow Dynamic Tool-Calling
+> Control flow Fixed at design time Decided at runtime by LLM Extensibility Low (requires redesign) High (plug-and-play tools) Interpretability High (predictable traces) Medium (depends on LLM’s reasoning chain) Latency Low (streaming) to medium (non-streaming) Medium to high (depends on tool calls) Data/training needs Low (training optional) Medium (prompt-based or RL) Suitable scenarios High-precision, structured tasks Open-domain, multi-tool collaboration
+
+is a tool call. AURA and AudioToolAgent are represen-tative examples, dynamically invoking APIs or specialist models to solve tasks.  
+
+> •
+
+Proactive Streaming Pattern : The agent takes action 
+
+before it has complete information to reduce latency. SHANKS (CoT generation), LTS-VoiceAgent (specula-tive speaking), and Stream RAG (parallel tool call) are key instances. This pattern is critical in real-time interac-tion scenarios.  
+
+> •
+
+Data-driven Orchestration Pattern : The agent learns its planning and tool-use policy from data, rather than relying on static prompts or rules. AuTAgent is the archetype, using RL to learn when and which tools to use, overcoming the brittleness of hand-crafted heuristics.  
+
+> •
+
+Asynchronous Multi-Agent Pattern : Separate agents run in parallel, decoupling latency-critical components from heavy tools. VoxMind exemplifies this with an auxiliary agent that executes retrieval asynchronously while the main model generates a response. Recent trends highlight three key developments: proac-tive streaming patterns (SHANKS, LTS-VoiceAgent, Stream RAG) are breaking the “listen-then-act” assumption; RL-based learned orchestration (AuTAgent) is surpassing prompt-based tool selection; and asynchronous multi-agent designs (VoxMind) decouple tool execution from response generation, enabling hybrid efficiencies. These patterns provide a toolkit for designing future agentic audio reasoning systems. 
+
+D. Discussion 
+
+Table V summarizes the core trade-offs between the two dominant paradigms. Predefined workflows remain the choice for high-reliability applications where interpretability and traceability are critical. Their streaming variants (SHANKS, LTS) now achieve low latency while retaining deterministic behavior. Dynamic tool-calling agents offer superior flexibility for open-ended tasks, and the shift from prompt-based or-chestration (AudioToolAgent) to learned policies (AuTAgent) signals a maturing of the paradigm. VIII. E VALUATIONS 
+
+Evaluating audio reasoning models requires assessing not only final answer correctness but also whether the underlying reasoning is genuinely grounded in acoustic evidence. In this section, we survey the benchmarks, metrics, and protocols used to evaluate models across the Audio-to-Text and Audio-to-Speech reasoning paradigms. 
+
+A. Audio-to-Text Evaluation 
+
+Audio-to-text evaluation aims to assess whether models can correctly understand spoken inputs and produce textual outputs that reflect both the semantic content and the un-derlying acoustic cues. Compared with conventional speech recognition, the focus here is not limited to recovering lexical content, but extends to reasoning over speech in a way that is robust to acoustic variability and sensitive to non-textual information when necessary. From this perspective, audio-to-text evaluation can be organized around two aspects: the tested reasoning capability and the metrics. 
+
+1) Reasoning Capability: A central goal of audio-to-text evaluation is to assess whether a model can reason over spoken input rather than merely transcribe it. Existing settings can be divided into content-based reasoning and acoustic-based reasoning, depending on whether inference relies on linguistic content or acoustic signals. Content-based reasoning includes tasks where evidence comes from semantic content, such as spoken QA [113], dialogue understanding [114], [115], and instruction follow-ing [116], [117]. The model needs to recover meaning and reason over it to produce correct responses. Instruction fol-lowing in speech is also a form of content-based reasoning, as it requires understanding and executing semantic intent. Recent settings [113], [116], [117] further introduce content-preserving acoustic variations, such as emotion, speaking rate, or background noise. These aim not to test reasoning over acoustic cues, but to evaluate whether content-based reasoning remains stable under such perturbations. In contrast, acoustic-based reasoning [118]–[120] involves tasks where correct inference depends on information not reducible to text, including prosody, emotion, speaker traits, emphasis, hesitation, and other paralinguistic signals. Text transcripts alone are insufficient, and the model must use acoustic evidence. Thus, acoustic-based reasoning more di-rectly tests whether models leverage speech-specific infor-mation, rather than relying on implicit text-only processing. This distinction is key to understanding whether systems truly reason over speech or mainly over textual abstractions. 
+
+2) Evaluation Metrics: Evaluation of audio-to-text tasks typically includes both objective metrics, which measure cor-rectness against references, and subjective evaluation, which assesses quality in open-ended settings. 
+
+ACC-Metrics. A common approach is to use accuracy-based metrics from language model benchmarks [51], [118]– [120], especially when outputs are discrete or can be normal-ized into a small set. This is typical in multiple-choice QA, 15 
+
+classification, and closed-ended reasoning. Common metrics include accuracy, F1, and, in retrieval or imbalanced set-tings, mean average precision (mAP). These directly measure agreement with ground truth and suit controlled reasoning evaluation. Many spoken reasoning benchmarks adopt this paradigm for clear comparison and reduced ambiguity. 
+
+Text-overlap Metrics. For free-form outputs, exact match can be too strict, as correct answers may vary in wording. Text-overlap metrics such as BLEU, ROUGE, and METEOR measure similarity between outputs and references. They are useful for structured generation tasks like summarization, short QA, or captioning, where references exist and surface simi-larity is informative. However, they poorly capture reasoning quality, as responses may be semantically correct but lexically different, or similar yet incorrect. 
+
+Human Evaluation. Subjective evaluation is important for open-ended tasks where multiple responses are valid or cor-rectness depends on nuanced interpretation. Evaluators assess correctness, coherence, relevance, faithfulness to the audio, and reasoning quality. It is especially valuable for long-form responses, dialogue, and explanations, where objective metrics fall short. Despite high cost and limited scalability, it is still considered a highly reliable evaluation approach. 
+
+LLM-based Evaluation. To improve scalability, recent work uses LLMs as evaluators [113], [121], [122]. The evalua-tor model scores or compares outputs based on criteria such as correctness, completeness, or consistency with audio-derived context. This approach is attractive for open-ended reasoning due to flexibility and lower cost than human annotation. However, reliability depends on prompt design, bias, and the model’s ability to assess audio-grounded reasoning, so it is best viewed as a scalable proxy rather than a replacement for human evaluation. 
+
+B. Audio-to-Speech Evaluation 
+
+Audio-to-speech evaluation assesses whether models can generate spoken responses that are acoustically natural, se-mantically correct, and contextually appropriate. While all audio-to-text evaluation metrics apply equally here, audio-to-speech evaluation goes further to encompass interaction ability, response alignment, and real-time behavior that are unique to spoken dialogue systems. 
+
+Dialogue-oriented ability. A key aspect is supporting co-herent spoken interaction, including maintaining consistency across turns, adapting to context, and generating appropriate replies. It also requires sensitivity to affective and pragmatic cues such as emotion, emphasis, and speaking style. In ad-vanced settings, evaluation includes full-duplex interaction, handling overlap, turn-taking, and interruptions. 
+
+Speech quality. This evaluates whether generated audio is natural and intelligible, considering pronunciation, prosody, and absence of artifacts like distortion or unnatural pauses. These remain essential in AR-LLMs, where speech depends on dynamic content and reasoning. 
+
+Response alignment. This measures whether speech re-flects semantic content and contextual intent, including cor-rectness, consistency with dialogue history, and alignment between meaning and paralinguistic expression. For example, emotion and prosody should match the intended message. Misalignment may produce fluent but inappropriate responses. 
+
+Real-time interaction. This evaluates performance under latency and streaming constraints, including response delay, incremental generation, and stability. Low latency supports natural flow, while robust streaming is needed for long-form spoken dialogue. 
+
+Subjective evaluation. Perceptual quality and interaction effectiveness are inherently difficult to quantify with automatic metrics, making subjective assessment indispensable. Mean Opinion Score (MOS) is the standard measure for speech nat-uralness and quality. Other human or model-based evaluation captures higher-level attributes such as coherence, emotional appropriateness, and conversational effectiveness. IX. C HALLENGES AND FUTURE DIRECTIONS 
+
+A. Reliability of Synthesized Reasoning Data 
+
+The development of robust audio reasoning models is funda-mentally constrained by the scarcity of high-quality, domain-specific training data. To circumvent the prohibitive costs of human annotation, a common paradigm involves leverag-ing powerful text-only LLMs as data engines to synthesize reasoning trajectories based on acoustic metadata, such as transcripts or sound event tags. However, relying exclusively on text-based LLMs to construct these reasoning chains intro-duces significant reliability concerns. Because this synthetic data is derived from discrete textual approximations rather than the continuous acoustic signal, there is no guarantee that the resulting reasoning chains are genuinely grounded in the actual audio input. Consequently, acquiring reasoning trajectories that faithfully capture complex, continuous acous-tic nuances—without incurring immense human annotation costs—remains a critical bottleneck for the field. 
+
+B. Modality Hallucination and Shortcut Learning 
+
+A fundamental architectural challenge in current LALMs stems from an inherent modality mismatch during initial-ization. As most LALMs inherit their reasoning capabilities from backbone models trained predominantly on text, they frequently exhibit shortcut learning or modality hallucination. Specifically, models often default to text-surrogate reasoning [60], where they rely on discrete audio captions or intermediate text representations to perform logical deduction rather than grounding their analysis in the continuous acoustic signal. Consequently, rather than executing genuine acoustic rea-soning, these models sometimes bypass the auditory input entirely, relying excessively on the strong semantic priors of their language backbone to infer answers. Mitigating this over-reliance and ensuring that models explicitly anchor their reasoning in raw auditory cues is essential for developing faithful audio reasoning systems. 
+
+C. The Accuracy vs. Latency Trade-Off 
+
+For the Audio-to-Speech task, researchers face an intrinsic trade-off between reasoning accuracy and the strict latency 16    
+
+> TABLE VI OVERVIEW OF REASONING BENCHMARKS FOR SLM S. O PEN AND CLOSED DENOTE OPEN -ENDED AND CLOSED -ENDED EVALUATION TYPES ,
+> RESPECTIVELY .
+
+Benchmark Domain Audio Type Eval Type Size #Tasks Year 
+
+MMAU [51] General Audio Reasoning Speech, Sound, Music Closed 10K 27 2024 MMAU-Pro [123] General Audio Reasoning Speech, Sound, Music Closed 0.5K 49 2025 MMAR [120] General Audio Reasoning Speech, Sound, Music Closed 1K 16 2025 MMSU [119] Speech-focused Reasoning Speech Closed 5K 47 2025 VoxEval [124] Speech-focused Reasoning Speech Closed 14K 56 2025 CMDAR [125] Chinese Audio Reasoning Speech, Sound Closed, Open 3K 5 2025 Spoken-MQA [126] Spoken Mathematical Reasoning Speech Closed, Open 3K 5 2025 WildSpeech-Bench [127] End-to-end Interaction Speech Open 1.1K 5 2025 URO-Bench [128] End-to-end Interaction Speech Closed, Open 5K 20 2025 VoiceAgentBench [129] Multi-turn Tool Use & Reasoning Speech Closed 6K 6 2025 SAKURA [130] Multi-hop audio reasoning Speech, Sound Closed 4K 4 2025 WavBench [122] End-to-end Interaction Speech Closed, Open 2K 5 (scenarios) 2026 
+
+τ -Voice [131] End-to-end Interaction Speech Closed 0.3K 3 (domains) 2026 AudioRAG [132] Audio Retrieval-based Reasoning Speech, Sound, Music Closed 8K 3 (scenarios) 2026 Full-Duplex-Bench-v3 [133] Multi-turn Tool Use & Reasoning Speech Closed 0.1k 4 2026 
+
+constraints required for real-time human-computer interaction. Generating extensive, multi-step reasoning chains inevitably delays the system’s acoustic response, disrupting the natural flow of conversation. To mitigate this, emerging architectural paradigms—such as “thinking while listening” or “thinking while speaking”—attempt to parallelize the reasoning compu-tation with the user’s input or the system’s output. However, an observable performance gap persists between these streaming approaches and their offline counterparts [79], [83]. Models performing latency-constrained reasoning currently struggle to match the high accuracy and rigorous deduction achieved by unconstrained audio reasoning or pure text-based reason-ing systems. Overcoming this performance degradation while maintaining the ultra-low latency necessary for seamless, full-duplex communication remains a critical challenge. 
+
+D. Long-Context Audio Reasoning 
+
+Current methodologies in audio reasoning have primarily demonstrated efficacy on relatively short, well-defined audio clips. However, scaling these reasoning capabilities to pro-cess continuous, long-form audio streams—such as meetings, podcasts, or environmental recordings lasting several min-utes—introduces significant computational and cognitive un-certainties. Feeding uncompressed, temporally dense acoustic features directly into a model often results in computationally prohibitive sequence lengths. Furthermore, it remains empiri-cally unclear whether current models can successfully main-tain precise audio perception and context retention over these extended durations. The ability to execute multi-hop reasoning over lengthy acoustic scenes, where a model must recall and integrate distinct audio events separated by minutes of context, is an open question that requires dedicated benchmarking and architectural innovation. 
+
+E. Shifting Toward Foundational Pre-Training for Reasoning 
+
+The prevailing paradigm for eliciting audio reasoning ca-pabilities heavily relies on post-training interventions. Con-temporary approaches typically apply SFT or RL to models that have already undergone basic modality alignment. While effective to a degree, this post-training focus raises ques-tions about the foundational limits of the underlying model capabilities. A promising yet underexplored direction is the integration of reasoning-oriented objectives during the pre-training or mid-training phases. By cultivating deep, intrin-sic alignment and logical structuring earlier in the training pipeline—potentially through large-scale, joint audio-text pre-dictive objectives—researchers might establish a more robust cognitive foundation. It remains to be investigated whether establishing this structural groundwork during pre-training can make subsequent post-training reasoning enhancements significantly more effective and native to the audio modality. X. C ONCLUSION 
+
+In this survey, we review the emerging field of audio reason-ing, highlighting key challenges such as modality mismatch, data scarcity, shortcut learning, and latency constraints. We organize existing approaches into Audio-to-Text and Audio-to-Speech, with an extension to the Audio-Visual domain. We examine techniques, including Chain-of-Thought reasoning and agentic frameworks, and how these frameworks meet the interaction latency constraint. Through our analysis, we iden-tified several critical problems in current works, notably their tendency for modality hallucination, where models bypass auditory cues to rely on text-surrogate reasoning, the reliability concerns of using text-only LLMs to synthesize acoustic rea-soning data, an unresolved trade-off between deep reasoning accuracy and real-time interaction latency, and uncertainties in processing long-context continuous audio streams. Overall, we provide a unified perspective and outline future directions for building robust, real-time, and genuinely audio-grounded reasoning systems. REFERENCES [1] J. Wei, X. Wang, D. Schuurmans, M. Bosma, F. Xia, E. Chi, Q. V. Le, D. Zhou et al. , “Chain-of-thought prompting elicits reasoning in large 17 
+
+language models,” Advances in neural information processing systems ,vol. 35, pp. 24 824–24 837, 2022. [2] Z.-Z. e. a. Li, “From system 1 to system 2: A survey of reasoning large language models,” arXiv preprint arXiv:2502.17419 , 2025. [3] D. Guo, D. Yang, H. Zhang, J. Song, P. Wang, Q. Zhu, R. Xu, R. Zhang, S. Ma, X. Bi et al. , “Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning,” arXiv preprint arXiv:2501.12948 ,2025. [4] J. D. et al., “Beyond benchmarks: Matharena as an evaluation platform for mathematics with llms,” 2026. [Online]. Available: https://arxiv.org/abs/2605.00674 [5] H. e. a. Lightman, “Let’s verify step by step,” in International Confer-ence on Learning Representations , vol. 2024, 2024, pp. 39 578–39 601. [6] C. V. Snell, J. Lee, K. Xu, and A. Kumar, “Scaling llm test-time compute optimally can be more effective than scaling parameters for reasoning,” in The Thirteenth International Conference on Learning Representations , 2025. [7] Y. Wu, Z. Sun, S. Li, S. Welleck, and Y. Yang, “Inference scaling laws: An empirical analysis of compute-optimal inference for llm problem-solving,” in The Thirteenth International Conference on Learning Representations , 2025. [8] H. e. a. Shao, “Visual cot: Advancing multi-modal language models with a comprehensive dataset and benchmark for chain-of-thought rea-soning,” Advances in Neural Information Processing Systems , vol. 37, pp. 8612–8642, 2024. [9] C. Mitra, B. Huang, T. Darrell, and R. Herzig, “Compositional chain-of-thought prompting for large multimodal models,” in Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-tion , 2024, pp. 14 420–14 431. [10] S. Arora, K.-W. Chang, C.-M. Chien, Y. Peng, H. Wu, Y. Adi, E. Dupoux, H.-Y. Lee, K. Livescu, and S. Watanabe, “On the landscape of spoken language models: A comprehensive survey,” arXiv preprint arXiv:2504.08528 , 2025. [11] S. e. a. Sakshi, “Mmau: A massive multi-task audio understanding and reasoning benchmark,” in International Conference on Learning Representations , vol. 2025, 2025, pp. 84 929–84 964. [12] J. e. a. Ao, “Sd-eval: A benchmark dataset for spoken dialogue under-standing beyond words,” Advances in Neural Information Processing Systems , vol. 37, pp. 56 898–56 918, 2024. [13] Y. e. a. Guo, “Recent advances in discrete speech tokens: A review,” 
+
+IEEE Transactions on Pattern Analysis and Machine Intelligence , 2025. [14] I. e. a. Arnon, “What enables human language? a biocultural frame-work,” Science , vol. 390, no. 6775, p. eadq8303, 2025. [15] S. K. e. a. Wandelt, “Representation of internal speech by single neurons in human supramarginal gyrus,” Nature human behaviour ,vol. 8, no. 6, pp. 1136–1149, 2024. [16] Q. Fang, S. Guo, Y. Zhou, Z. Ma, S. Zhang, and Y. Feng, “Llama-omni: Seamless speech interaction with large language models,” arXiv preprint arXiv:2409.06666 , 2024. [17] Q. e. a. Zhang, “OmniFlatten: An end-to-end GPT model for seamless voice conversation,” in Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , W. Che, J. Nabende, E. Shutova, and M. T. Pilehvar, Eds. Vienna, Austria: Association for Computational Linguistics, Jul. 2025, pp. 14 570–14 580. [Online]. Available: https://aclanthology.org/2025.acl-long.709/ [18] Z. R. S. et al., “To cot or not to cot? chain-of-thought helps mainly on math and symbolic reasoning,” in The Thirteenth International Conference on Learning Representations , 2025. [Online]. Available: https://openreview.net/forum?id=w6nlcS8Kkn [19] K. e. a. Gao, “Benchmarking open-ended audio dialogue understanding for large audio-language models,” in Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , W. Che, J. Nabende, E. Shutova, and M. T. Pilehvar, Eds. Vienna, Austria: Association for Computational Linguistics, Jul. 2025, pp. 4763–4784. [Online]. Available: https://aclanthology.org/2025.acl-long.237/ [20] W. Cui, D. Yu, X. Jiao, Z. Meng, G. Zhang, Q. Wang, S. Y. Guo, and I. King, “Recent advances in speech language models: A survey,” in Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 2025, pp. 13 943– 13 970. [21] S. Latif, M. Shoukat, F. Shamshad, M. Usama, Y. Ren, H. Cuayáhuitl, W. Wang, X. Zhang, R. Togneri, E. Cambria et al. , “Sparks of large au-dio models: A survey and outlook,” arXiv preprint arXiv:2308.12792 ,2023. [22] Y. Su, J. Bai, Q. Xu, K. Xu, and Y. Dou, “Audio-language models for audio-centric tasks: A survey,” arXiv preprint arXiv:2501.15177 , 2025. [23] J. Peng, Y. Wang, B. Li, Y. Guo, H. Wang, Y. Fang, Y. Xi, H. Li, X. Li, K. Zhang et al. , “A survey on speech large language models for understanding,” IEEE Journal of Selected Topics in Signal Processing ,2025. [24] S. Wang, Z. Jin, C. Tang, Q. Li, B. Li, C. Chen, Y. Hu, W. Yu, Y. Li, J. Zhuang et al. , “Towards general auditory intelligence: Large multimodal models for machine listening and speaking,” arXiv preprint arXiv:2511.01299 , 2025. [25] C.-K. Yang, N. S. Ho, and H.-y. Lee, “Towards holistic evaluation of large audio-language models: A comprehensive survey,” in Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , 2025, pp. 10 155–10 181. [26] Y. Wang, S. Wu, Y. Zhang, S. Yan, Z. Liu, J. Luo, and H. Fei, “Multimodal chain-of-thought reasoning: A comprehensive survey,” 
+
+arXiv preprint arXiv:2503.12605 , 2025. [27] A. Radford, J. W. Kim, T. Xu, G. Brockman, C. McLeavey, and I. Sutskever, “Robust speech recognition via large-scale weak super-vision,” in International Conference on Machine Learning (ICML) .PMLR, 2023, pp. 28 492–28 518. [28] W.-N. Hsu, B. Bolte, Y.-H. H. Tsai, K. Lakhotia, R. Salakhutdinov, and A. Mohamed, “Hubert: Self-supervised speech representation learning by masked prediction of hidden units,” IEEE/ACM Transactions on Audio, Speech, and Language Processing , vol. 29, pp. 3451–3460, 2021. [29] S. Chen, Y. Wu, C. Wang, S. Liu, D. Tompkins, Z. Chen, W. Che, X. Yu, and F. Wei, “Beats: Audio pre-training with acoustic tokenizers,” in International Conference on Machine Learning (ICML) . PMLR, 2023, pp. 5178–5193. [30] Y. Gong, Y.-A. Chung, and J. Glass, “Ast: Audio spectrogram trans-former,” in Proc. Interspeech 2021 , 2021, pp. 571–575. [31] A. Radford, J. W. Kim, T. Xu, G. Brockman, C. McLeavey, and I. Sutskever, “Robust speech recognition via large-scale weak supervision,” 2022. [Online]. Available: https://arxiv.org/abs/2212. 04356 [32] H. Touvron, L. Martin, K. Stone, P. Albert, A. Almahairi, Y. Babaei, N. Bashlykov, S. Batra, P. Bhargava, S. Bhosale et al. , “Llama 2: Open foundation and fine-tuned chat models,” arXiv preprint arXiv:2307.09288 , 2023. [33] A. Dubey, A. Jauhri, A. Pandey, A. Kadian, A. Al-Dahle, A. Letman, A. Mathur, A. Schelten, A. Yang, A. Fan et al. , “The llama 3 herd of models,” arXiv preprint arXiv:2407.21783 , 2024. [34] A. Yang, B. Yang, B. Hui, B. Zheng, B. Yu, C. Zhou, C. Li, C. Li, D. Liu, F. Huang et al. , “Qwen2 technical report,” arXiv preprint arXiv:2407.10671 , 2024. [35] W.-L. Chiang, Z. Li, Z. Lin, Y. Sheng, Z. Wu, H. Zhang, L. Zheng, S. Zhuang, Y. Zhuang, J. E. Gonzalez, I. Stoica, and E. P. Xing, “Vi-cuna: An open-source chatbot impressing GPT-4 with 90%* ChatGPT quality,” https://lmsys.org/blog/2023-03-30-vicuna/, 2023, accessed: 2023-03-30. [36] A. Zeng, Z. Du, M. Liu, K. Wang, S. Jiang, L. Zhao, Y. Dong, and J. Tang, “Glm-4-voice: Towards intelligent and human-like end-to-end spoken chatbot,” arXiv preprint arXiv:2412.02612 , 2024. [37] Q. Fang, S. Niu, R. Zhou, Z. Lin, M. Chen, and Y. Feng, “LLaMA-Omni: Seamless speech interaction with large language models,” arXiv preprint arXiv:2409.06666 , 2024. [38] D. Zhang, S. Li, X. Zhang, J. Zhan, P. Wang, Y. Zhou, and X. Qiu, “Speech gpt: Empowering large language models with intrinsic cross-modal conversational abilities,” in Findings of the Association for Computational Linguistics: EMNLP 2023 , 2023, pp. 15 757–15 773. [39] A. Défossez et al. , “Moshi: a speech-text foundation model for real-time dialogue,” arXiv preprint arXiv:2410.00080 , 2024. [40] C. Wang, M. Liao, Z. Huang, J. Lu, J. Wu, Y. Liu, C. Zong, and J. Zhang, “Blsp: Bootstrapping language-speech pre-training via behavior alignment of continuation writing,” 2024. [Online]. Available: https://arxiv.org/abs/2309.00916 [41] C. Tang, W. Yu, G. Sun, X. Chen, T. Tan, W. Li, L. Lu, Z. Ma, and C. Zhang, “Salmonn: Towards generic hearing abilities for large language models,” in The Twelfth International Conference on Learning Representations (ICLR) , 2024. [42] J. Schulman, F. Wolski, P. Dhariwal, A. Radford, and O. Klimov, “Proximal policy optimization algorithms,” 2017. [Online]. Available: https://arxiv.org/abs/1707.06347 [43] Z. Shao, P. Wang, Q. Zhu, R. Xu, J. Song, X. Bi, H. Zhang, M. Zhang, Y. K. Li, Y. Wu, and D. Guo, “Deepseekmath: Pushing 18 
+
+the limits of mathematical reasoning in open language models,” 2024. [Online]. Available: https://arxiv.org/abs/2402.03300 [44] Z. Ma, Z. Chen, Y. Wang, E. S. Chng, and X. Chen, “Audio-cot: Exploring chain-of-thought reasoning in large audio language model,” 
+
+arXiv preprint arXiv:2501.07246 , 2025. [45] T. Taheri, Y. Ma, and E. Benetos, “Sar-lm: Symbolic audio reasoning with large language models,” arXiv preprint arXiv:2511.06483 , 2025. [46] Z. Xie, M. Lin, Z. Liu, P. Wu, S. Yan, and C. Miao, “Audio-reasoner: Improving reasoning capability in large audio language models,” arXiv preprint arXiv:2503.02318 , 2025. [47] Z. Kong, A. Goel, J. F. Santos, S. Ghosh, R. Valle, W. Ping, and B. Catanzaro, “Audio flamingo sound-cot technical report: Improving chain-of-thought reasoning in sound understanding,” arXiv preprint arXiv:2508.11818 , 2025. [48] L. Li, H. Chen, Z. Li, Q. Hu, J. Kang, J. Li, L. Xie, and Y. Li, “Audio-cogito: Towards deep audio reasoning in large audio language models,” 
+
+arXiv preprint arXiv:2604.12527 , 2026. [49] G. Li, J. Liu, H. Dinkel, Y. Niu, J. Zhang, and J. Luan, “Reinforcement learning outperforms supervised fine-tuning: A case study on audio question answering,” arXiv preprint arXiv:2503.11197 , 2025. [50] A. Rouditchenko, S. Bhati, E. Araujo, S. Thomas, H. Kuehne, R. Feris, and J. Glass, “Omni-r1: Do you really need audio to fine-tune your audio llm?” arXiv preprint arXiv:2505.09439 , 2025. [51] S. Sakshi, U. Tyagi, S. Kumar, A. Seth, R. Selvakumar, O. Nieto, R. Duraiswami, S. Ghosh, and D. Manocha, “Mmau: A massive multi-task audio understanding and reasoning benchmark,” arXiv preprint arXiv:2410.19168 , 2024. [52] G. Wijngaard, E. Formisano, M. Esposito, and M. Dumontier, “Data-balanced curriculum learning for audio question answering,” arXiv preprint arXiv:2507.06815 , 2025. [53] M. Abdin, J. Aneja, H. Behl, S. Bubeck, R. Eldan, S. Gunasekar, M. Harrison, R. J. Hewett, M. Javaheripi, P. Kauffmann et al. , “Phi-4 technical report,” arXiv preprint arXiv:2412.08905 , 2024. [54] C. Wen, T. Guo, S. Zhao, W. Zou, and X. Li, “Sari: Structured audio reasoning via curriculum-guided reinforcement learning,” arXiv preprint arXiv:2504.15900 , 2025. [55] D. Yang, S. Liu, D. Wang, Y. Wang, G. Wan, and H. Meng, “Omni-autothink: Adaptive multimodal reasoning via reinforcement learning,” 
+
+arXiv preprint arXiv:2512.03783 , 2025. [56] J. Zhao, H. Su, L. Fan, Z. Luo, H. Wang, H. Sun, and Y. Qin, “Omni-clst: Error-aware curriculum learning with guided selec-tive chain-of-thought for audio question answering,” arXiv preprint arXiv:2509.12275 , 2025. [57] Z. Sheng, S. Zhou, C. Gong, and Z. Li, “Think smart, not hard: Difficulty adaptive reasoning for large audio language models,” arXiv preprint arXiv:2509.21960 , 2025. [58] G. Wijngaard, E. Formisano, M. Esposito, and M. Dumontier, “Aud-semthinker: Enhancing audio-language models through reasoning over semantics of sound,” arXiv preprint arXiv:2505.14142 , 2025. [59] H. He, X. Du, R. Sun, Z. Dai, Y. Xiao, M. Yang, J. Zhou, X. Li, Z. Liu, Z. Liang et al. , “Measuring audio’s impact on correctness: Audio-contribution-aware post-training of large audio language models,” arXiv preprint arXiv:2509.21060 , 2025. [60] F. Tian, X. T. Zhang, Y. Zhang, H. Zhang, Y. Li, D. Liu, Y. Deng, D. Wu, J. Chen, L. Zhao et al. , “Step-audio-r1 technical report,” arXiv preprint arXiv:2511.15848 , 2025. [61] B. Wu, C. Yan, C. Hu, C. Yi, C. Feng, F. Tian, F. Shen, G. Yu, H. Zhang, J. Li et al. , “Step-audio 2 technical report,” arXiv preprint arXiv:2507.16632 , 2025. [62] S. Wu, C. Li, W. Wang, H. Zhang, H. Wang, M. Yu, and D. Yu, “Audio-thinker: Guiding audio language model when and how to think via reinforcement learning,” arXiv preprint arXiv:2508.08039 , 2025. [63] X. He, C. Li, J. Wang, Y. Rong, T. Xie, W. Wang, L. Liu, and D. Yu, “Audio-deepthinker: Progressive reasoning-aware reinforcement learning for high-quality chain-of-thought emergence in audio language models,” arXiv preprint arXiv:2604.18187 , 2026. [64] J. Fan, R. Ren, J. Li, R. Pandey, P. G. Shivakumar, I. Bulyko, A. Gandhe, G. Liu, and Y. Gu, “Incentivizing consistent, effective and scalable reasoning capability in audio llms via reasoning process rewards,” arXiv preprint arXiv:2510.20867 , 2025. [65] X. Diao, C. Zhang, K. Kong, W. Wu, C. Ma, Z. Ouyang, P. Qing, S. Vosoughi, and J. Gui, “Soundmind: Rl-incentivized logic reasoning for audio-language models,” in Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing , 2025, pp. 528– 540. [66] Y. Chen, X. Yue, X. Gao, C. Zhang, L. F. D’Haro, R. T. Tan, and H. Li, “Beyond single-audio: Advancing multi-audio processing in audio large language models,” in Findings of the Association for Computational Linguistics: EMNLP 2024 , 2024, pp. 10 917–10 930. [67] S. Kumar, S. Ghosh, Y. Lin, Y. Chen, R. Duraiswami, and D. Manocha, “Polyaudio: Advancing multi-audio analysis & reasoning in large audio language models,” 2025. [68] D. Wang, S. Liu, T. Zhang, Y. Chen, J. Li, and H. Meng, “Emotion-thinker: Prosody-aware reinforcement learning for explainable speech emotion reasoning,” arXiv preprint arXiv:2601.15668 , 2026. [69] J. X. et al., “Qwen2.5-omni technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2503.20215 [70] D. Ding, Z. Ju, Y. Leng, S. Liu, T. Liu, Z. Shang, K. Shen, W. Song, X. Tan, H. Tang et al. , “Kimi-audio technical report,” arXiv preprint arXiv:2504.18425 , 2025. [71] Z. Xie and C. Wu, “Mini-omni: Language models can hear, talk while thinking in streaming,” arXiv preprint arXiv:2408.16725 , 2024. [72] ——, “Mini-omni2: Towards open-source gpt-4o model with vision, speech and duplex,” arXiv preprint arXiv:2410.11190 , 2024. [73] W. e. a. Chen, “SLAM-omni: Timbre-controllable voice interaction system with single-stage training,” in Findings of the Association for Computational Linguistics: ACL 2025 , W. Che, J. Nabende, E. Shutova, and M. T. Pilehvar, Eds. Vienna, Austria: Association for Computational Linguistics, Jul. 2025, pp. 2262–2282. [Online]. Available: https://aclanthology.org/2025.findings-acl.115/ [74] W. Cui, X.-H. Li, D. Tan, Q. Zheng, and I. King, “Minimizing modality gap from the input side: Your speech llm can be aprosody-aware text llm,” arXiv preprint arXiv:2605.05927 , 2026. [Online]. Available: https://arxiv.org/abs/2605.05927 [75] J. e. a. Xu, “Qwen3-omni technical report,” arXiv preprint arXiv:2509.17765 , 2025. [76] Q. Team, “Qwen3. 5-omni technical report,” arXiv preprint arXiv:2604.15804 , 2026. [77] L.-C.-T. Xiaomi, “Mimo-audio: Audio language models are few-shot learners,” 2025. [Online]. Available: https://github.com/XiaomiMiMo/ MiMo-Audio [78] C. Wang, T. Peng, W. Yang, Y. Bai, G. Wang, J. Lin, L. Jia, L. Wu, J. Wang, C. Zong et al. , “Opens2s: Advancing fully open-source end-to-end empathetic large speech language model,” in Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing: System Demonstrations , 2025, pp. 906–917. [79] C.-H. Chiang, X. Wang, L. Li, C.-C. Lin, K. Lin, S. Liu, Z. Wang, Z. Yang, H.-y. Lee, and L. Wang, “Shanks: Simultaneous hear-ing and thinking for spoken language models,” arXiv preprint arXiv:2510.06917 , 2025. [80] Y.-J. Shih, D. Raj, C. Wu, W. Zhou, S. Bong, Y. Gaur, J. Mahadeokar, O. Kalinli, and M. Seltzer, “Can speech LLMs think while listening?” in The Fourteenth International Conference on Learning Representations , 2026. [Online]. Available: https: //openreview.net/forum?id=dFVenZdVbX [81] D. Wu, H. Zhang, C. Chen, T. Zhang, F. Tian, X. Yang, G. Yu, H. Liu, N. Hou, Y. Hu et al. , “Chronological thinking in full-duplex spoken dialogue language models,” arXiv preprint arXiv:2510.05150 , 2025. [82] D. Wu, T. Zhang, Y. Li, H. Liu, C. Chen, E. S. Chng, and Y. Bengio, “The silent thought: Modeling internal cognition in full-duplex spoken dialogue models via latent reasoning,” arXiv preprint arXiv:2603.17837 , 2026. [83] C.-H. C. et al., “STITCH: Simultaneous thinking and talking with chunked reasoning for spoken language models,” in The Fourteenth International Conference on Learning Representations , 2026. [Online]. Available: https://openreview.net/forum?id=5Z1eMhCeTb [84] Z. Xie, Z. Ma, Z. Liu, K. Pang, H. Li, J. Zhang, Y. Liao, D. Ye, C. Miao, and S. Yan, “Mini-omni-reasoner: Token-level thinking-in-speaking in large speech models,” arXiv preprint arXiv:2508.15827 , 2025. [85] D. Wu, H. Zhang, J. Chen, H. Liu, E. S. Chng, F. Tian, X. Yang, X. Zhang, D. Jiang, G. Yu et al. , “Mind-paced speaking: A dual-brain approach to real-time reasoning in spoken language models,” arXiv preprint arXiv:2510.09592 , 2025. [86] Y. Jia, P. Liu, H. Sun, J. Zhou, X. Cheng, C. Liu, K. Zeng, X. Cai, and Y. Qin, “Reflecting twice before speaking with empathy: Self-reflective alternating inference for empathy-aware end-to-end spoken dialogue,” 
+
+arXiv preprint arXiv:2601.18281 , 2026. [87] S. Kim, S. J. Joo, D. Kim, J. Jang, S. Ye, J. Shin, and M. Seo, “The cot collection: Improving zero-shot and few-shot learning of language models via chain-of-thought fine-tuning,” in The 2023 Conference on Empirical Methods in Natural Language Processing , 2023. [Online]. Available: https://openreview.net/forum?id=D7omx8QyFP 19 
+
+[88] S. Kuroki, Y. Kubo, T. Akiba, and Y. Tang, “Kame: Tandem architec-ture for enhancing knowledge in real-time speech-to-speech conversa-tional ai,” arXiv preprint arXiv:2510.02327 , 2025. [89] C.-M. Chien, M. Orsini, E. Kharitonov, N. Zeghidour, K. Livescu, and A. Défossez, “Moshirag: Asynchronous knowledge retrieval for full-duplex speech language models,” 2026. [Online]. Available: https://arxiv.org/abs/2604.12928 [90] J. X. et al., “Qwen3-omni technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2509.17765 [91] C. Fu, H. Lin, Z. Long, Y. Shen, M. Zhao, Y. Zhang, X. Wang, D. Yin, L. Ma, X. Zheng et al. , “Vita: Towards open-source interactive omni multimodal llm,” arXiv preprint arXiv:2408.05211 , 2024. [92] Q. Ma, Y. Zheng, Z. Shi, Z. Zhao, B. Jia, Z. Huang, Z. Lin, Y. Li, J. Yang, Y. Peng, Z. Zhang, and X. Liu, “Veomni: Scaling any modality model training with model-centric distributed recipe zoo,” 2025. [Online]. Available: https://arxiv.org/abs/2508.02317 [93] Y. L. et al., “Baichuan-omni technical report,” 2024. [Online]. Available: https://arxiv.org/abs/2410.08565 [94] Z. Zhong, C. Wang, Y. Liu, S. Yang, L. Tang, Y. Zhang, J. Li, T. Qu, Y. Li, Y. Chen, S. Yu, S. Wu, E. Lo, S. Liu, and J. Jia, “Lyra: An efficient and speech-centric framework for omni-cognition,” 2024. [Online]. Available: https://arxiv.org/abs/2412.09501 [95] R. Rafailov, A. Sharma, E. Mitchell, S. Ermon, C. D. Manning, and C. Finn, “Direct preference optimization: Your language model is secretly a reward model,” 2024. [Online]. Available: https://arxiv.org/abs/2305.18290 [96] Y. L. et al., “Baichuan-omni-1.5 technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2501.15368 [97] M. L. T. et al., “Longcat-flash-omni technical report,” 2025. [Online]. Available: https://arxiv.org/abs/2511.00279 [98] C. Zheng, S. Liu, M. Li, X.-H. Chen, B. Yu, C. Gao, K. Dang, Y. Liu, R. Men, A. Yang, J. Zhou, and J. Lin, “Group sequence policy optimization,” 2025. [Online]. Available: https: //arxiv.org/abs/2507.18071 [99] Z. Zhou, R. Wang, and Z. Wu, “Daily-omni: Towards audio-visual reasoning with temporal alignment across modalities,” 2025. [Online]. Available: https://arxiv.org/abs/2505.17862 [100] J. Hong, S. Yan, J. Cai et al. , “Worldsense: Evaluating real-world omnimodal understanding for multimodal llms,” in ICLR 2026 , 2026. [101] Y. Yang, J. Zhuang, G. Sun et al. , “Audio-centric video understanding benchmark without text shortcut,” in EMNLP 2025 , 2025. [102] L. T. P. Nguyen and e. a. Yu, “See, hear, and understand: Benchmarking audiovisual human speech understanding in multimodal large language models,” arXiv preprint arXiv:2512.02231 , 2025. [103] Z. Ma, R. Xu, Z. Xing et al. , “Omni-captioner: Data pipeline, mod-els, and benchmark for omni detailed perception,” arXiv preprint arXiv:2510.12720 , 2025. [104] Z. e. a. Wan, “Speech-hands: A self-reflection voice agentic approach to speech recognition and audio reasoning with omni perception,” arXiv preprint arXiv:2601.09413 , 2026. [105] Y. Rong, C. Li, D. Yu, and L. Liu, “Audiogenie-reasoner: A training-free multi-agent framework for coarse-to-fine audio deep reasoning,” 
+
+arXiv preprint arXiv:2509.16971 , 2025. [106] W. Zou, Y. Miao, Z. Ma, J. Xu, J. Gao, J. Hao, R. He, and J. Xu, “Lts-voiceagent: A listen-think-speak framework for efficient streaming voice interaction via semantic triggering and incremental reasoning,” 
+
+arXiv preprint arXiv:2601.19952 , 2026. [107] Z. Zhou, R. Wang, and Z. Wu, “Daily-omni: Towards audio-visual reasoning with temporal alignment across modalities,” 2025. [Online]. Available: https://arxiv.org/abs/2505.17862 [108] L. M. Maben, G. G. Lakshmy, S. Radhakrishnan, S. Arora, and S. Watanabe, “Aura: Agent for understanding, reasoning, and auto-mated tool use in voice-driven tasks,” arXiv preprint arXiv:2506.23049 ,2025. [109] G. Wijngaard, E. Formisano, M. Dumontier, and J. Jitsev, “Audiotoola-gent: An agentic framework for audio-language models,” arXiv preprint arXiv:2510.02995 , 2025. [110] S. Tong, X. Li, Y. Wang, B. Bi, Y. Cai, S. Liu, Y. He, and C. Hao, “Autagent: A reinforcement learning framework for tool-augmented audio reasoning,” arXiv preprint arXiv:2602.13685 , 2026. [111] S. Arora, H. Khan, K. Sun, X. L. Dong, S. Choudhary, S. Moon, X. Zhang, A. Sagar, S. T. Appini, K. Patnaik et al. , “Stream rag: Instant and accurate spoken dialogue systems with streaming tool usage,” arXiv preprint arXiv:2510.02044 , 2025. [112] T. e. a. Liang, “Voxmind: An end-to-end agentic spoken dialogue system,” arXiv preprint arXiv:2604.15710 , 2026. [113] Y. Chen, X. Yue, C. Zhang, X. Gao, R. T. Tan, and H. Li, “Voicebench: Benchmarking llm-based voice assistants,” arXiv preprint arXiv:2410.17196 , 2024. [114] A. Gosai, T. Vuong, U. Tyagi, S. Li, W. You, M. Bavare, A. Uçar, Z. Fang, B. Jang, B. Liu et al. , “Audio multichallenge: A multi-turn evaluation of spoken dialogue systems on natural human interaction,” 
+
+arXiv preprint arXiv:2512.14865 , 2025. [115] H. Zhang, W. Cui, H. Xu, X. Li, L. Zhu, H. Bai, S. Ma, and I. King, “Mtr-duplexbench: Towards a comprehensive evaluation of multi-round conversations for full-duplex speech language models,” arXiv preprint arXiv:2511.10262 , 2025. [116] K.-H. Lu, C.-Y. Kuan, and H.-y. Lee, “Speech-ifeval: Evaluating instruction-following and quantifying catastrophic forgetting in speech-aware language models,” arXiv preprint arXiv:2505.19037 , 2025. [117] D. Wang, J. Xu, R. Chu, Z. Guo, X. Wang, J. Wu, D. Yang, S. Ji, and J. Lin, “Inserter: Speech instruction following with unsupervised interleaved pre-training,” in Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 2025, pp. 18 024–18 046. [118] S. e. a. Sakshi, “Mmau: A massive multi-task audio understanding and reasoning benchmark,” arXiv preprint arXiv:2410.19168 , 2024. [119] D. Wang, J. Wu, J. Li, D. Yang, X. Chen, T. Zhang, and H. Meng, “MMSU: A massive multi-task spoken language understanding and reasoning benchmark,” CoRR , vol. abs/2506.04779, 2025. [Online]. Available: https://doi.org/10.48550/arXiv.2506.04779 [120] Z. Ma, Y. Ma, Y. Zhu, C. Yang, Y.-W. Chao, R. Xu, W. Chen, Y. Chen, Z. Chen, J. Cong et al. , “Mmar: A challenging benchmark for deep reasoning in speech, audio, music, and their mix,” arXiv preprint arXiv:2505.13032 , 2025. [121] Q. Yang, J. Xu, W. Liu, Y. Chu, Z. Jiang, X. Zhou, Y. Leng, Y. Lv, Z. Zhao, C. Zhou et al. , “Air-bench: Benchmarking large audio-language models via generative comprehension,” in Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 2024, pp. 1979–1998. [122] Y. Li, S. Ji, Y. Chen, T. Liang, H. Ying, Y. Wang, J. Li, J. Fang, and Z. Zhao, “Wavbench: Benchmarking reasoning, colloquialism, and paralinguistics for end-to-end spoken dialogue models,” arXiv preprint arXiv:2602.12135 , 2026. [123] S. Kumar, Š. Sedláˇ cek, V. Lokegaonkar, F. López, W. Yu, N. Anand, H. Ryu, L. Chen, M. Pliˇ cka, M. Hlaváˇ cek et al. , “Mmau-pro: A challenging and comprehensive benchmark for holistic evaluation of audio general intelligence,” arXiv preprint arXiv:2508.13992 , 2025. [124] W. Cui, X. Jiao, Z. Meng, and I. King, “Voxeval: Benchmarking the knowledge understanding capabilities of end-to-end spoken language models,” in Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , 2025, pp. 16 735–16 753. [125] H. Li, C. Jiang, H. Wang, M. Zhang, J. Sun, Z. Yang, Y. Cao, S. Dou, X. Fan, B. Fan et al. , “Mdar: A multi-scene dynamic audio reasoning benchmark,” arXiv preprint arXiv:2509.22461 , 2025. [126] C. Wei, B. Wang, J.-j. Kim, and N. F. Chen, “Towards spoken math-ematical reasoning: Benchmarking speech-based models over multi-faceted math problems,” arXiv preprint arXiv:2505.15000 , 2025. [127] L. Zhang, J. Zhang, B. Lei, C. Wu, A. Liu, W. Jia, and X. Zhou, “Wildspeech-bench: Benchmarking end-to-end speechllms in the wild,” 
+
+arXiv preprint arXiv:2506.21875 , 2025. [128] R. Yan, X. Li, W. Chen, Z. Niu, C. Yang, Z. Ma, K. Yu, and X. Chen, “Uro-bench: Towards comprehensive evaluation for end-to-end spoken dialogue models,” arXiv preprint arXiv:2502.17810 , 2025. [129] D. Jain, H. Shukla, G. Rajeev, A. Kulkarni, C. Khatri, and S. Agarwal, “Voiceagentbench: Are voice assistants ready for agentic tasks?” arXiv preprint arXiv:2510.07978 , 2025. [130] C.-K. Yang, N. Ho, Y.-T. Piao, and H.-y. Lee, “Sakura: On the multi-hop reasoning of large audio-language models based on speech and audio information,” arXiv preprint arXiv:2505.13237 , 2025. [131] S. Ray, K. Dhandhania, V. Barres, and K. Narasimhan, “ τ -voice: Benchmarking full-duplex voice agents on real-world domains,” 2026. [Online]. Available: https://arxiv.org/abs/2603.13686 [132] J. Lin, C. Zhang, T. Wang, and H. Li, “Audiorag: A challenging bench-mark for audio reasoning and information retrieval,” arXiv preprint arXiv:2602.10656 , 2026. [133] G.-T. Lin, C. Chen, Z. Chen, and H.-y. Lee, “Full-duplex-bench-v3: Benchmarking tool use for full-duplex voice agents under real-world disfluency,” arXiv preprint arXiv:2604.04847 , 2026. 20 
+
+Zhihan Guo received the B.Eng. degree from Bei-jing Institute of Technology. She is currently a Ph.D. student at the Department of Computer Science and Engineering of the Chinese University of Hong Kong (CUHK), under the supervision of Prof. Irwin King. Her research interests include long text generation and agentic AI. 
+
+Wenqian Cui received the B.Eng. degree from Bei-jing University of Posts and Telecommunications. He is currently a Ph.D. student at the Department of Computer Science and Engineering of the Chinese University of Hong Kong (CUHK), under the su-pervision of Prof. Irwin King. His research interests include multimodal large language models and AI for audio. 
+
+Guan-Ting Lin received the Ph.D. degree in Com-munication Engineering from National Taiwan Uni-versity, under the supervision of Prof. Hung-yi Lee. He serves as a reviewer for ICLR, NeurIPS, ACL, EMNLP, NAACL, ICASSP and etc. His research interests include spoken language models, spoken dialogue system, and full-duplex interaction. 
+
+Daxin Tan received the Ph.D. degree from the De-partment of Electronic Engineering of The Chinese University of Hong Kong, supervised by Prof. Tan Lee, and the B.E. degree from Tsinghua University. His research interests include speech representation learning, text-to-speech synthesis, and multi-modal large language models. 
+
+Jingyao Li received the B.Eng. degree from Xi’an Jiaotong University. She is currently a Ph.D. student at Department of Computer Science and Engineering of the Chinese University of Hong Kong (CUHK), under the supervision of Prof. Jiaya Jia. Her research interests include training of foundation large lan-guage models. 
+
+Qiyong Zheng received the B.Sc. degree from Shen-zhen University. He is currently an MPhil student at the Department of Computer Science and Engi-neering of the Chinese University of Hong Kong (CUHK), under the supervision of Prof. Irwin King. His research interest lies in post-training for large language models. 
+
+Dingdong Wang received the B.Sc. degree from The Chinese University of Hong Kong (CUHK). She is currently a Ph.D. student in the Department of Systems Engineering and Engineering Management at CUHK, under the supervision of Prof. Helen Meng. Her research interests include multimodal large language models and AI for audio. 
+
+Jing Xiong is currently a PhD student at the Uni-versity of Hong Kong, supervised by Prof. Yi Huang and Prof. Lingpeng Kong. He has published multiple papers in top-tier conferences and journals, including ICLR, ICML, NeurIPS, ACL, EMNLP, and TMLR. His research primarily focuses on efficient language model inference and automated theorem proving. 
+
+Han Shi is a research scientist at Huawei Foundation Model Department. He obtained his Ph.D. degree from Department of Computer Science and Engi-neering (CSE) in HKUST, supervised by Prof. James T. Kwok. Before his Ph.D. journey, he obtained his Bachelor degree in Electronic Engineering from Tsinghua University. His current research interests are Generative Models, Neural Architecture Design and Automated Machine Learning (AutoML). 
+
+Jiaya Jia received the Ph.D. degree in Computer Science from Hong Kong University of Science and Technology in 2004 and is currently a chair profes-sor in Department of Computer Science and Engi-neering at the Hong Kong University of Science and Technology (HKUST). He assumes the position of Associate Editor-in-Chief of IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI) and is in the editorial board of International Journal of Computer Vision (IJCV). He continuously served as area chairs for ICCV, CVPR, AAAI, ECCV, and several other conferences for the organization. He was on program committees of major conferences in graphics and computational imaging, including ICCP, SIGGRAPH, and SIGGRAPH Asia. He is a Fellow of the IEEE. 
+
+Irwin King is a globally recognized scholar in the field of machine intelligence, currently serving as the Pro-Vice-Chancellor (Education) and Professor at the Department of Computer Science & Engi-neering at The Chinese University of Hong Kong. His extensive research interests encompass a wide range of areas, including trustworthy AI, machine learning, social computing, AI, and data mining. Professor King is a Fellow of esteemed societies and associations, such as the ACM, IEEE, AAAI, and INNS.

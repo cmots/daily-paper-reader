@@ -1,6 +1,326 @@
 {
-  "generated_at": "2026-03-06T19:11:18.471356+00:00",
-  "updated_date": "20260306",
+  "generated_at": "2026-05-29T14:57:23.254752+00:00",
+  "updated_date": "20260520-20260529",
   "carryover_days": 9,
-  "items": []
+  "tag_states": {
+    "speech-model": {
+      "updated_date": "20260520-20260529",
+      "carryover_days": 9,
+      "items": [
+        {
+          "id": "2605.27258v1",
+          "source": "arxiv",
+          "title": "PilotTTS: A Disciplined Modular Recipe for Competitive Speech Synthesis",
+          "abstract": "Building state-of-the-art text-to-speech (TTS) systems typically demands millions of hours of proprietary data and complex multi-stage architectures, creating substantial barriers for resource-constrained research teams. In this report, we present PilotTTS, a lightweight autoregressive TTS system that achieves competitive performance through minimalist architecture and rigorous data engineering. PilotTTS is trained on only 200K hours of data processed entirely with open-source tools. Specifically, our contributions are: (1) a reproducible multi-stage data processing pipeline covering quality assessment, label annotation, and filtering, and (2) a compact model architecture that employs Q-Former-based conditioning to decouple speaker identity from speaking style via cross-sample paired training. Within a unified framework, PilotTTS supports zero-shot voice cloning, emotion synthesis (11 categories), paralinguistic synthesis (4 categories), and Chinese dialect synthesis (14 dialects). On the Seed-TTS Eval benchmark, PilotTTS achieves the lowest WER of 1.50% on test-en, a CER of 0.87% on test-zh, and the highest speaker similarity on both test sets (0.862 and 0.815), outperforming systems trained on significantly larger datasets. We release the complete data pipeline recipe, pretrained weights, and code at https://github.com/AMAPVOICE/PilotTTS.",
+          "authors": [
+            "Bowen Li",
+            "Shaotong Guo",
+            "Zhen Wang",
+            "Yang Xiang",
+            "Mingli Jin",
+            "Yihang Lin",
+            "Jiahui Zhao",
+            "Weibo Xiong",
+            "Dongrui Li",
+            "Keming Chen",
+            "Yunze Gao",
+            "Yuze Zhou",
+            "Zeyang Lin",
+            "Yue Liu"
+          ],
+          "primary_category": "cs.SD",
+          "categories": [
+            "cs.SD",
+            "cs.AI"
+          ],
+          "published": "2026-05-26T16:36:56+00:00",
+          "link": "https://arxiv.org/pdf/2605.27258v1",
+          "tags": [
+            "keyword:speech-model",
+            "query:speech-model"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "lightweight autoregressive TTS for expressive speech synthesis",
+          "llm_evidence_cn": "轻量级自回归TTS用于表现力语音合成",
+          "llm_evidence": "轻量级自回归TTS用于表现力语音合成",
+          "canonical_evidence": "轻量级自回归TTS用于表现力语音合成",
+          "llm_tldr_en": "PilotTTS presents a lightweight autoregressive TTS system achieving competitive performance with only 200K hours of open-source data, using a modular pipeline and Q-Former conditioning.",
+          "llm_tldr_cn": "当前高性能TTS模型依赖海量专有数据和复杂架构，资源受限团队难以复现。本文提出PilotTTS，一个轻量级自回归TTS系统，仅用20万小时开源数据即可达到竞争性表现。其核心贡献包括：一个可复现的多阶段数据处理流水线，和一个采用Q-Former解耦说话人身份的紧凑模型架构。实验证明，在数据量大幅减少的情况下，PilotTTS仍能生成高质量语音，降低了TTS研究的门槛。",
+          "llm_tldr": "当前高性能TTS模型依赖海量专有数据和复杂架构，资源受限团队难以复现。本文提出PilotTTS，一个轻量级自回归TTS系统，仅用20万小时开源数据即可达到竞争性表现。其核心贡献包括：一个可复现的多阶段数据处理流水线，和一个采用Q-Former解耦说话人身份的紧凑模型架构。实验证明，在数据量大幅减少的情况下，PilotTTS仍能生成高质量语音，降低了TTS研究的门槛。",
+          "llm_tags": [
+            "query:speech-model"
+          ],
+          "matched_query_tag": "query:speech-model",
+          "matched_query_text": "expressive speech synthesis",
+          "matched_requirement_id": "req-3",
+          "selection_source": "carryover_cache",
+          "paper_id": "2605.27258v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2605.23859v1",
+          "source": "arxiv",
+          "title": "Natural Yet Challenging to Detect: Robust In-the-Wild TTS through EMA and Dual-Scoring Prompt Selection -- Submission for WildSpoof 2026 TTS Track",
+          "abstract": "In this technical report, we describe our submission for the WildSpoof Challenge TTS Track: Text-to-Speech with In-the-Wild Data. We introduce F5-TTS-DPS, a model built upon the F5-TTS architecture. Our approach integrates Exponential Moving Average (EMA) into supervised fine-tuning to stabilize training and improve generalization. To enhance synthesis fidelity, we leverage large language models (LLMs) and large audio language models (LALMs) for dual-scoring prompt selection, filtering reference audio and text prompts to ensure quality while addressing alignment issues in noisy datasets.   Experimental evaluation demonstrates that F5-TTS-DPS achieves strong performance with UTMOS of 3.20 and speaker similarity of 0.51 on the development set. More importantly, our model achieves the best a-DCF scores of 0.1582, 0.5233, and 0.2562 across three advanced SASV systems among all submissions, indicating our synthesized speech is the most difficult to detect and exhibits the highest degree of naturalness and authenticity. Combined with competitive WER performance, these results validate the effectiveness of our approach in generating natural-sounding speech with strong spoofing capabilities.",
+          "authors": [
+            "Renhe Sun",
+            "Jiayi Zhou",
+            "Haolin He",
+            "Yueying Feng",
+            "Jian Liu"
+          ],
+          "primary_category": "eess.AS",
+          "categories": [
+            "eess.AS"
+          ],
+          "published": "2026-05-22T17:18:50+00:00",
+          "link": "https://arxiv.org/pdf/2605.23859v1",
+          "tags": [
+            "keyword:speech-model",
+            "query:speech-model"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "robust TTS system with EMA and dual-scoring prompt selection for expressive synthesis",
+          "llm_evidence_cn": "结合EMA和双评分提示选择的鲁棒TTS，用于表现力合成",
+          "llm_evidence": "结合EMA和双评分提示选择的鲁棒TTS，用于表现力合成",
+          "canonical_evidence": "结合EMA和双评分提示选择的鲁棒TTS，用于表现力合成",
+          "llm_tldr_en": "F5-TTS-DPS enhances TTS robustness using EMA for stable training and dual-scoring prompt selection with LLMs/LALMs for high-fidelity synthesis in noisy conditions.",
+          "llm_tldr_cn": "野外数据中的文本到语音合成面临噪声和不对齐问题。本文基于F5-TTS架构提出F5-TTS-DPS，通过指数移动平均（EMA）稳定微调，并利用大语言模型和音频语言模型进行双评分提示选择，过滤低质量参考音频和文本。实验证明该方法在WildSpoof挑战赛中取得了强竞争力，提升了野外场景的合成保真度。",
+          "llm_tldr": "野外数据中的文本到语音合成面临噪声和不对齐问题。本文基于F5-TTS架构提出F5-TTS-DPS，通过指数移动平均（EMA）稳定微调，并利用大语言模型和音频语言模型进行双评分提示选择，过滤低质量参考音频和文本。实验证明该方法在WildSpoof挑战赛中取得了强竞争力，提升了野外场景的合成保真度。",
+          "llm_tags": [
+            "query:speech-model"
+          ],
+          "matched_query_tag": "query:speech-model",
+          "matched_query_text": "expressive speech synthesis",
+          "matched_requirement_id": "req-3",
+          "selection_source": "carryover_cache",
+          "paper_id": "2605.23859v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2605.28227v1",
+          "source": "arxiv",
+          "title": "Why We Need Speech to Evaluate Speech Translation",
+          "abstract": "Speech translation models are increasingly capable of preserving speech-specific information (e.g., speaker gender, prosody, and emphasis), yet evaluation metrics remain blind to such phenomena. We meta-evaluate both text- and speech-based quality estimation metrics on two contrastive datasets targeting gender agreement and prosody, and find that both fall short, even when given direct access to the speech signal. We then train SpeechCOMET, a family of quality estimation models with speech encoders, and evaluate a state-of-the-art SpeechLLM as a judge. Both match or exceed text-based COMET on standard quality estimation, but neither consistently assesses speech-specific phenomena. We identify three causes: (1) speech-specific features are not reliably preserved in current encoders, (2) models tend to ignore the speech source signal, and (3) quality estimation training data contains too few relevant examples. We release all models and code, and argue that progress requires dedicated speech-specific training data and models that genuinely condition on speech.",
+          "authors": [
+            "Maike Züfle",
+            "Danni Liu",
+            "Vilém Zouhar",
+            "Jan Niehues"
+          ],
+          "primary_category": "cs.CL",
+          "categories": [
+            "cs.CL"
+          ],
+          "published": "2026-05-27T09:41:22+00:00",
+          "link": "https://arxiv.org/pdf/2605.28227v1",
+          "tags": [
+            "keyword:speech-model",
+            "query:speech-model"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "evaluation of speech translation models with speech-specific information",
+          "llm_evidence_cn": "评估包含语音特有信息的语音翻译模型",
+          "llm_evidence": "评估包含语音特有信息的语音翻译模型",
+          "canonical_evidence": "评估包含语音特有信息的语音翻译模型",
+          "llm_tldr_en": "SpeechCOMET is a family of quality estimation models with speech encoders that match text-based COMET but fail to assess speech-specific phenomena in translation.",
+          "llm_tldr_cn": "语音翻译模型逐渐能保留语音特有信息（如性别、韵律），但现有评估指标对此不敏感。本文对比文本和语音质量评估模型，发现两者均无法可靠评估语音现象。为此训练SpeechCOMET系列模型，结合语音编码器，在标准质量评估上持平文本COMET，但对语音特定特征评估仍不足。分析发现语音特征在翻译和评估中均未得到充分保留。",
+          "llm_tldr": "语音翻译模型逐渐能保留语音特有信息（如性别、韵律），但现有评估指标对此不敏感。本文对比文本和语音质量评估模型，发现两者均无法可靠评估语音现象。为此训练SpeechCOMET系列模型，结合语音编码器，在标准质量评估上持平文本COMET，但对语音特定特征评估仍不足。分析发现语音特征在翻译和评估中均未得到充分保留。",
+          "llm_tags": [
+            "query:speech-model"
+          ],
+          "matched_query_tag": "query:speech-model",
+          "matched_query_text": "speech translation",
+          "matched_requirement_id": "req-2",
+          "selection_source": "carryover_cache",
+          "paper_id": "2605.28227v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2605.26672v1",
+          "source": "arxiv",
+          "title": "Can We Hear from Events? Generating Speech from Event Camera",
+          "abstract": "Traditional RGB-based speech generation faces Temporal Granularity Mismatch since fixed camera exposure times inevitably blur the high-frequency articulatory transients essential for rendering emotional speech. To break this ceiling, we propose EventSpeech as a novel text-conditioned framework pioneering the use of neuromorphic events for expressive speech generation, since these microsecond-precise events naturally align with acoustic waveform dynamics. Our architecture integrates a dedicated Event Encoder to model sparse neuromorphic events alongside a multi-scale Audio Encoder featuring a Hierarchical Wavelet Contextualizer (HWC). A bidirectional alignment mechanism seamlessly synchronizes linguistic content and visual dynamics with dense acoustic features. Furthermore, we construct EVT-SPK as the first benchmark comprising large-scale synthetic data and real-world recordings from specialized neuromorphic hardware. Extensive evaluations demonstrate that EventSpeech significantly outperforms current baselines by preserving fine-grained emotions and resisting motion blur to establish a new paradigm for multimodal speech generation. Code and demo are available at https://xrfang-0102.github.io/EventSpeechWeb/.",
+          "authors": [
+            "Jingping Fang",
+            "Lin Chen",
+            "Chenyang Xu",
+            "Tong Zhao",
+            "Weidong Cai",
+            "Xiaoming Chen"
+          ],
+          "primary_category": "cs.MM",
+          "categories": [
+            "cs.MM",
+            "cs.SD"
+          ],
+          "published": "2026-05-26T08:11:27+00:00",
+          "link": "https://arxiv.org/pdf/2605.26672v1",
+          "tags": [
+            "keyword:WM-VLA-SA",
+            "keyword:speech-model",
+            "query:WM-VLA-SA",
+            "query:speech-model"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "expressive speech generation from event camera",
+          "llm_evidence_cn": "从事件相机生成表现力语音",
+          "llm_evidence": "从事件相机生成表现力语音",
+          "canonical_evidence": "从事件相机生成表现力语音",
+          "llm_tldr_en": "EventSpeech uses neuromorphic events for expressive speech generation, achieving high-quality emotional TTS.",
+          "llm_tldr_cn": "传统RGB语音生成因相机曝光时间固定而模糊高频发音瞬态，限制了情感语音表现力。本文提出EventSpeech，首次利用神经形态事件进行文本条件表现力语音生成，通过事件编码器和多尺度音频编码器，结合双向对齐机制，同步语言内容与视觉动态。实验证明该方法在情感语音合成任务上优于RGB基线。",
+          "llm_tldr": "传统RGB语音生成因相机曝光时间固定而模糊高频发音瞬态，限制了情感语音表现力。本文提出EventSpeech，首次利用神经形态事件进行文本条件表现力语音生成，通过事件编码器和多尺度音频编码器，结合双向对齐机制，同步语言内容与视觉动态。实验证明该方法在情感语音合成任务上优于RGB基线。",
+          "llm_tags": [
+            "query:speech-model"
+          ],
+          "matched_query_tag": "query:speech-model",
+          "matched_query_text": "expressive speech synthesis",
+          "matched_requirement_id": "req-3",
+          "selection_source": "carryover_cache",
+          "paper_id": "2605.26672v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2605.29209v1",
+          "source": "arxiv",
+          "title": "The WER Trap: Shattering the Illusion of Unified Tokens in Speech Language Models",
+          "abstract": "The pursuit of a \"unified\" discrete token for both speech understanding and generation has led the Speech Language Model (SLM) community to heavily rely on Word Error Rate (WER) -- the core metric for Whisper-style tokenizers -- as the definitive proxy for representation quality. This fosters the assumption that low-WER tokens inherently preserve the information necessary for intelligible acoustic synthesis. We argue this is fundamentally deceptive. While high-frequency tokens succeed in generation tasks due to implicit information leakage, isolating pure semantic information at ultra-low frame rates strips away the finegrained articulation and micro-dynamics essential for ODE-based generation. Empirically validating this requires extreme compression without sacrificing WER -- a methodological bottleneck, as standard fixed-stride downsampling arbitrarily truncates phonetic boundaries. To overcome this, we develop a dynamic compression tokenizer that intelligently aligns representations with semantic boundaries, achieving ultra-low frame rates with exceptionally low WER. Using these isolated \"pure\" semantic tokens, we expose the WER trap: when conditioning generative models -- even with oracle duration alignments -- the reconstructed speech suffers from severe articulation blur and is rendered acoustically unintelligible. Our findings demonstrate that semantic categorization rewarded by low WER is inherently orthogonal to the continuous phonetic trajectories required for synthesis, shattering the illusion of the unified token and advocating for explicitly decoupled speech representations.",
+          "authors": [
+            "Xiangyu Zhang",
+            "Yuxin Li",
+            "Haoyang Zhang",
+            "Shiqi Han",
+            "Hexin Liu",
+            "Qiquan Zhang",
+            "Beena Ahmed",
+            "Julien Epps"
+          ],
+          "primary_category": "eess.AS",
+          "categories": [
+            "eess.AS"
+          ],
+          "published": "2026-05-28T00:42:45+00:00",
+          "link": "https://arxiv.org/pdf/2605.29209v1",
+          "tags": [
+            "keyword:WM-VLA-SA",
+            "keyword:speech-model",
+            "query:WM-VLA-SA",
+            "query:speech-model"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "critique of unified tokens for speech understanding and generation",
+          "llm_evidence_cn": "对统一语音理解和生成令牌的批判性分析",
+          "llm_evidence": "对统一语音理解和生成令牌的批判性分析",
+          "canonical_evidence": "对统一语音理解和生成令牌的批判性分析",
+          "llm_tldr_en": "Argues that low-WER tokens for unified speech understanding and generation are deceptive, as they lose fine-grained articulation needed for synthesis.",
+          "llm_tldr_cn": "语音语言模型社区普遍追求一种统一的离散令牌，并依赖词错误率作为表征质量的代理指标。本文指出这一假设具有欺骗性：低词错误率的令牌虽然在理解任务中表现良好，但会丢失生成任务所需的细粒度发音和微动态信息。通过极端条件下的实验验证，揭示了纯语义令牌在基于常微分方程生成中的不足。该研究促使社区重新审视统一令牌的设计标准。",
+          "llm_tldr": "语音语言模型社区普遍追求一种统一的离散令牌，并依赖词错误率作为表征质量的代理指标。本文指出这一假设具有欺骗性：低词错误率的令牌虽然在理解任务中表现良好，但会丢失生成任务所需的细粒度发音和微动态信息。通过极端条件下的实验验证，揭示了纯语义令牌在基于常微分方程生成中的不足。该研究促使社区重新审视统一令牌的设计标准。",
+          "llm_tags": [
+            "query:speech-model"
+          ],
+          "matched_query_tag": "query:speech-model",
+          "matched_query_text": "unified speech generation and understanding",
+          "matched_requirement_id": "req-4",
+          "selection_source": "carryover_cache",
+          "paper_id": "2605.29209v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2605.28618v1",
+          "source": "arxiv",
+          "title": "Comprehensive Benchmarking of Long-Form Speech Generation in Diverse Scenarios",
+          "abstract": "Recent advances in speech generation have enabled high-fidelity synthesis, yet systematic evaluation of models under long-context conditions remains largely underexplored. A comprehensive evaluation benchmark for long-form speech is indispensable for two reasons: 1) existing test scenarios are often confined to limited domains, creating a significant gap with the diverse downstream applications; 2) existing metrics overlook critical long-text factors such as consistency and coherence, failing to generalize reliably. To this end, we propose Swanbench-Speech, a comprehensive benchmark that decomposes long-form speech quality into specific, disentangled dimensions. SwanBench-Speech has three key properties. 1) Rich speech scenarios: Focusing on long-form speech generation and dialog generation, SwanBench-Speech covers acoustics, semantics, and expressiveness challenges, and consists of 1,101 samples spanning 17 common speech scenarios; 2) Comprehensive evaluation dimensions: Along the acoustics, semantics, and expressiveness axes, SwanBench-Speech defines an automated evaluation protocol with seven metrics to provide a comprehensive, accurate, and standardized assessment; 3) Valuable Insights: Through extensive experiments, we reveal that current models still struggle in highly expressive scenarios and exhibit a notable gap in consistency and hierarchy compared to real recordings.",
+          "authors": [
+            "Changhao Pan",
+            "Rui Yang",
+            "Han Wang",
+            "Zhuan Zhou",
+            "Xuming He",
+            "Wenxiang Guo",
+            "Ziyue Jiang",
+            "Ruiqi Li",
+            "Yu Zhang",
+            "Chenyuhao Wen",
+            "Ke Lei",
+            "Xiang Yin",
+            "Jingyu Lu",
+            "Zhiyuan Zhu",
+            "Zhou Zhao"
+          ],
+          "primary_category": "eess.AS",
+          "categories": [
+            "eess.AS"
+          ],
+          "published": "2026-05-27T15:28:15+00:00",
+          "link": "https://arxiv.org/pdf/2605.28618v1",
+          "tags": [
+            "keyword:speech-model",
+            "query:speech-model"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "benchmark for long-form speech generation evaluation",
+          "llm_evidence_cn": "长形式语音生成评估基准",
+          "llm_evidence": "长形式语音生成评估基准",
+          "canonical_evidence": "长形式语音生成评估基准",
+          "llm_tldr_en": "Proposes Swanbench-Speech, a comprehensive benchmark decomposing long-form speech quality into disassemble dimensions, covering diverse scenarios and long-context coherence.",
+          "llm_tldr_cn": "该论文提出Swanbench-Speech，一个全面且细粒度的长形式语音生成评估基准。现有基准局限于有限领域且忽略长文本的连贯性，该基准将质量分解为多个可解耦维度，涵盖丰富场景，并对一致性和连贯性进行专门评估，为长语音合成研究提供了标准化评价工具。",
+          "llm_tldr": "该论文提出Swanbench-Speech，一个全面且细粒度的长形式语音生成评估基准。现有基准局限于有限领域且忽略长文本的连贯性，该基准将质量分解为多个可解耦维度，涵盖丰富场景，并对一致性和连贯性进行专门评估，为长语音合成研究提供了标准化评价工具。",
+          "llm_tags": [
+            "query:speech-model"
+          ],
+          "matched_query_tag": "query:speech-model",
+          "matched_query_text": "expressive speech synthesis",
+          "matched_requirement_id": "req-3",
+          "selection_source": "carryover_cache",
+          "paper_id": "2605.28618v1",
+          "carry_days": 1
+        },
+        {
+          "id": "2605.24618v1",
+          "source": "arxiv",
+          "title": "FC-TTS: Style and Timbre Control in Zero-Shot Text-to-Speech with Disentangled Speech Representations",
+          "abstract": "Recent advances in zero-shot text-to-speech (TTS) have enabled accurate imitation of reference speech in terms of both speaking style and speaker timbre. However, achieving disentangled control over these aspects from separate references remains a challenging task. Several studies have proposed disentangled speech representations that decompose speech into interpretable attributes (e.g., timbre, prosody, and content), providing a promising foundation for TTS with attribute control from separate references. Yet, how to effectively integrate such representations into TTS systems to achieve independent and precise control remains underexplored. In this paper, we present FC-TTS, a zero-shot TTS framework that enables disentangled control of style and timbre by conditioning on two distinct reference utterances. Unlike existing systems that inherit limitations from those pre-trained disentangled representations, FC-TTS introduces key design strategies, including architectural choices, training framework, and auxiliary training objectives, which improve the reliability of attribute separation and dual-reference control. Experiments show that FC-TTS achieves high-fidelity synthesis and competitive zero-shot naturalness, while uniquely supporting consistent and independent manipulation of style and timbre. Audio samples are available at https://qualcomm-ai-research.github.io/fc-tts",
+          "authors": [
+            "Yoonhyung Lee",
+            "Hyunsin Park",
+            "Jinhwan Park",
+            "Jinkyu Lee"
+          ],
+          "primary_category": "eess.AS",
+          "categories": [
+            "eess.AS"
+          ],
+          "published": "2026-05-23T15:01:28+00:00",
+          "link": "https://arxiv.org/pdf/2605.24618v1",
+          "tags": [
+            "keyword:WM-VLA-SA",
+            "keyword:speech-model",
+            "query:speech-model"
+          ],
+          "llm_score": 8.0,
+          "llm_evidence_en": "zero-shot text-to-speech with style and timbre control",
+          "llm_evidence_cn": "零样本文本到语音，带有风格和音色控制",
+          "llm_evidence": "零样本文本到语音，带有风格和音色控制",
+          "canonical_evidence": "零样本文本到语音，带有风格和音色控制",
+          "llm_tldr_en": "FC-TTS enables disentangled control over speaking style and speaker timbre from separate reference audios in zero-shot TTS.",
+          "llm_tldr_cn": "本文提出FC-TTS，一种零样本TTS框架，通过解耦语音表示实现对说话风格和音色从不同参考音频中的独立控制。实验表明该方法在保持高质量语音合成的同时，实现了精准的属性分离调整，增强了表达控制的灵活性。",
+          "llm_tldr": "本文提出FC-TTS，一种零样本TTS框架，通过解耦语音表示实现对说话风格和音色从不同参考音频中的独立控制。实验表明该方法在保持高质量语音合成的同时，实现了精准的属性分离调整，增强了表达控制的灵活性。",
+          "llm_tags": [
+            "query:speech-model"
+          ],
+          "matched_query_tag": "query:speech-model",
+          "matched_query_text": "expressive speech synthesis",
+          "matched_requirement_id": "req-3",
+          "selection_source": "carryover_cache",
+          "paper_id": "2605.24618v1",
+          "carry_days": 1
+        }
+      ]
+    },
+    "WM-VLA-SA": {
+      "updated_date": "20260520-20260529",
+      "carryover_days": 9,
+      "items": []
+    }
+  }
 }
