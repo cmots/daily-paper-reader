@@ -25,3 +25,89 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: speech-model
+      description: 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: S2ST
+          keyword_cn: 语音-语音翻译
+          query: voice translation
+        - keyword: speech translation
+          keyword_cn: 语音翻译
+          query: speech translation
+        - keyword: expressive speech generation
+          keyword_cn: 表现力语音生成
+          query: expressive speech synthesis
+        - keyword: unified speech model
+          keyword_cn: 统一语音模型
+          query: unified speech generation and understanding
+        - keyword: speech to speech
+          keyword_cn: 语音到语音
+          query: speech to speech translation
+      intent_queries:
+        - query: speech to speech translation papers
+          query_cn: 语音到语音翻译论文
+          enabled: true
+          source: manual
+          note: ''
+        - query: expressive speech generation research
+          query_cn: 表现力语音生成研究
+          enabled: true
+          source: manual
+          note: ''
+        - query: unified speech generation and understanding models
+          query_cn: 语音生成与理解统一模型
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-05-29T14:48:53.496Z'
+    - tag: WM-VLA-SA
+      description: 查找世界模型、VLA、空间音频的论文
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: world model
+          keyword_cn: 世界模型
+          query: world model for reinforcement learning and planning
+        - keyword: vision-language-action model
+          keyword_cn: 视觉-语言-动作模型
+          query: vision language action model for robotics
+        - keyword: spatial audio
+          keyword_cn: 空间音频
+          query: spatial audio processing and rendering techniques
+      intent_queries:
+        - query: Find research papers on world models, Vision Language Action models, and spatial audio
+          query_cn: 查找关于世界模型、视觉 语言 动作模型和空间音频的研究论文
+          enabled: true
+          source: manual
+          note: ''
+        - query: Search for papers that combine world models with vision language action models for embodied AI
+          query_cn: 搜索结合世界模型与视觉 语言 动作模型的具身智能论文
+          enabled: true
+          source: manual
+          note: ''
+        - query: Explore spatial audio techniques in world model based autonomous agents
+          query_cn: 探索基于世界模型的自主体中的空间音频技术
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-05-29T14:49:54.333Z'
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
