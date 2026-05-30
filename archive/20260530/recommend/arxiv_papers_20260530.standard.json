@@ -1,0 +1,695 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-05-30T20:44:44.089552+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 8,
+    "deep_cap": 7,
+    "deep_selected": 7,
+    "quick_candidates": 9,
+    "quick_skim_target": 12,
+    "quick_selected": 9
+  },
+  "deep_dive": [
+    {
+      "id": "2605.30282v1",
+      "source": "arxiv",
+      "title": "Gaze2Act: Gaze-Conditioned Vision-Language-Action Policies for Interactive Robot Manipulation",
+      "abstract": "Vision-Language-Action (VLA) models have recently shown strong potential for robot learning by following language instructions. However, in practice, language alone is often insufficient to precisely convey human intent. It is difficult to describe which exact object to interact with among similar candidates, where to act on the object, or how the target may change during execution. To address this limitation, we propose Gaze2Act, a novel VLA framework that leverages human gaze as a dynamic and intuitive intent signal for complex interactive manipulation. Gaze2Act first bridges the ego-exo view gap by mapping first-person gaze into the robot's perspective through cross-view semantic matching, producing both an object mask and a gaze point for coarse-to-fine target specification. These cues are then integrated into the policy through perception-level prompting and action-level conditioning, allowing the robot to attend to relevant regions and execute precise interactions under dynamic intent. In a systematic evaluation across seven task categories and 16 real-robot tasks on a Unitree G1 humanoid, Gaze2Act achieves state-of-the-art performance in both intent accuracy and task success rate. It notably outperforms baselines in object disambiguation, fine-grained interaction, and dynamic intent steering. These results demonstrate that human gaze provides a natural, low-burden, and highly expressive modality for human-in-the-loop VLA control.",
+      "authors": [
+        "Kuangji Zuo",
+        "Gen Li",
+        "Bofan Lyu",
+        "Yanshuo Lu",
+        "Boyu Ma",
+        "Shijia Han",
+        "Xinyu Zhou",
+        "Xichen Yuan",
+        "Chuhao Zhou",
+        "Jiaqi Bai",
+        "Geng Li",
+        "Jianfei Yang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-05-28T17:37:16+00:00",
+      "link": "https://arxiv.org/pdf/2605.30282v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Gaze-conditioned VLA policy for robot manipulation",
+      "llm_evidence_cn": "基于注视条件的VLA策略用于机器人操作",
+      "llm_evidence": "基于注视条件的VLA策略用于机器人操作",
+      "canonical_evidence": "基于注视条件的VLA策略用于机器人操作",
+      "llm_tldr_en": "Gaze2Act integrates human gaze into VLA models for interactive robot manipulation, bridging ego-exo views to enable precise intent-driven actions.",
+      "llm_tldr_cn": "本文针对语言指令在机器人操作中表达意图不精确的问题，提出Gaze2Act框架，将人类注视作为动态意图信号融入VLA模型。通过跨视角语义匹配将第一人称注视映射到机器人视角，生成目标掩膜和引导，使机器人能准确执行交互操作。实验证明该方法在复杂操作任务上显著优于纯语言指令的VLA模型。",
+      "llm_tldr": "本文针对语言指令在机器人操作中表达意图不精确的问题，提出Gaze2Act框架，将人类注视作为动态意图信号融入VLA模型。通过跨视角语义匹配将第一人称注视映射到机器人视角，生成目标掩膜和引导，使机器人能准确执行交互操作。实验证明该方法在复杂操作任务上显著优于纯语言指令的VLA模型。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.24618v1",
+      "source": "arxiv",
+      "title": "FC-TTS: Style and Timbre Control in Zero-Shot Text-to-Speech with Disentangled Speech Representations",
+      "abstract": "Recent advances in zero-shot text-to-speech (TTS) have enabled accurate imitation of reference speech in terms of both speaking style and speaker timbre. However, achieving disentangled control over these aspects from separate references remains a challenging task. Several studies have proposed disentangled speech representations that decompose speech into interpretable attributes (e.g., timbre, prosody, and content), providing a promising foundation for TTS with attribute control from separate references. Yet, how to effectively integrate such representations into TTS systems to achieve independent and precise control remains underexplored. In this paper, we present FC-TTS, a zero-shot TTS framework that enables disentangled control of style and timbre by conditioning on two distinct reference utterances. Unlike existing systems that inherit limitations from those pre-trained disentangled representations, FC-TTS introduces key design strategies, including architectural choices, training framework, and auxiliary training objectives, which improve the reliability of attribute separation and dual-reference control. Experiments show that FC-TTS achieves high-fidelity synthesis and competitive zero-shot naturalness, while uniquely supporting consistent and independent manipulation of style and timbre. Audio samples are available at https://qualcomm-ai-research.github.io/fc-tts",
+      "authors": [
+        "Yoonhyung Lee",
+        "Hyunsin Park",
+        "Jinhwan Park",
+        "Jinkyu Lee"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS"
+      ],
+      "published": "2026-05-23T15:01:28+00:00",
+      "link": "https://arxiv.org/pdf/2605.24618v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "zero-shot TTS with style and timbre control using disentangled representations",
+      "llm_evidence_cn": "零样本TTS，通过解耦表示实现风格和音色控制",
+      "llm_evidence": "零样本TTS，通过解耦表示实现风格和音色控制",
+      "canonical_evidence": "零样本TTS，通过解耦表示实现风格和音色控制",
+      "llm_tldr_en": "FC-TTS enables precise disentangled control over style and timbre in zero-shot TTS from separate reference speech.",
+      "llm_tldr_cn": "零样本文本到语音合成中，准确模仿参考语音的风格和音色已成为可能，但如何从不同参考中独立控制这些属性仍具挑战。本文提出FC-TTS，利用解耦语音表示将语音分解为可解释属性（如音色、韵律、内容），实现对风格和音色的独立精确控制，为零样本TTS提供了新的灵活性。",
+      "llm_tldr": "零样本文本到语音合成中，准确模仿参考语音的风格和音色已成为可能，但如何从不同参考中独立控制这些属性仍具挑战。本文提出FC-TTS，利用解耦语音表示将语音分解为可解释属性（如音色、韵律、内容），实现对风格和音色的独立精确控制，为零样本TTS提供了新的灵活性。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech synthesis",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.29074v1",
+      "source": "arxiv",
+      "title": "Embodied3DBench: Benchmarking Low-Level Embodied Spatial Intelligence of Vision Language Models",
+      "abstract": "Are current Vision Language Models (VLMs) ready to comprehend and reason about complex embodied interactions in 3D environments? We introduce Embodied3DBench, a robot-centric benchmark targeting low-level spatial intelligence in embodied 3D environments. To systematically evaluate these foundational perceptual capabilities, the benchmark includes 6 task categories divided into two core groups: Spatial Structural Understanding (Grounding, Spatial Relation Prediction, and Multi-view Correspondence) and Interaction-Oriented Perception (Affordance Prediction, Grasp Point Prediction, and Trajectory Prediction). The benchmark spans 12 subcategories and contains over 21k high-quality question-answer pairs. We evaluate 13 state-of-the-art models, and the results show that while current models exhibit relatively strong high-level spatial reasoning, such as understanding object-to-object positional relations, they remain fragile in interaction-oriented perception, highlighting a significant lack of robust 3D-aware interaction priors. To actively bridge this capability gap revealed by our benchmark, we further synthesize a large-scale training dataset comprising 1.3M QA pairs. Notably, fine-tuning on this dataset yields significant improvements in low-level spatial intelligence. Ultimately, Embodied3DBench fills a critical gap by providing both a systematic evaluation framework and a scalable data solution, setting a clear target for the development of interaction-aware multimodal systems.",
+      "authors": [
+        "Jiyao Zhang",
+        "Mingxu Zhang",
+        "Yitong Peng",
+        "Haoxuan Liu",
+        "Chenshuo Wang",
+        "Yuxing Long",
+        "Haoyang Huang",
+        "Dongjiang Li",
+        "Nan Duan",
+        "Hui Shen",
+        "Hao Dong"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.RO"
+      ],
+      "published": "2026-05-27T20:28:56+00:00",
+      "link": "https://arxiv.org/pdf/2605.29074v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "benchmark for VLM embodied spatial intelligence in robotics",
+      "llm_evidence_cn": "针对机器人VLMs的具身空间智能基准",
+      "llm_evidence": "针对机器人VLMs的具身空间智能基准",
+      "canonical_evidence": "针对机器人VLMs的具身空间智能基准",
+      "llm_tldr_en": "Embodied3DBench is a benchmark evaluating low-level spatial intelligence of vision-language models in embodied 3D environments, with 6 task categories and over 21k QA pairs, testing 13 models.",
+      "llm_tldr_cn": "该论文提出了Embodied3DBench，一个用于评估视觉语言模型在具身3D环境中低层空间智能的基准。基准包含空间结构理解与交互感知两组共6类任务，涵盖超过21k个问答对。通过评估13个最先进模型，揭示了当前VLM在空间关系预测和轨迹预测等任务上的不足，为机器人VLA模型的发展提供重要参考。",
+      "llm_tldr": "该论文提出了Embodied3DBench，一个用于评估视觉语言模型在具身3D环境中低层空间智能的基准。基准包含空间结构理解与交互感知两组共6类任务，涵盖超过21k个问答对。通过评估13个最先进模型，揭示了当前VLM在空间关系预测和轨迹预测等任务上的不足，为机器人VLA模型的发展提供重要参考。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.29416v1",
+      "source": "arxiv",
+      "title": "3DVLA: Enhancing Vision-Language-Action Models via 3D Spatial and Instance Understanding",
+      "abstract": "Vision-Language-Action models have achieved remarkable progress in robotic manipulation, yet they suffer from a critical limitation: a lack of 3D scene understanding. This deficiency manifests as three intertwined challenges: weak extraction of 3D spatial positions without enforcing multi-view consistency, inadequate 3D instance understanding, and fragile reasoning under occlusion. Although mature 3D perception methods exist, their direct integration into VLA pipelines is hindered by architectural incompatibility and by heavy reliance on costly instance-level annotations. To address the above challenges, we propose 3DVLA, a plug-and-play framework that injects robust 3D reasoning into pretrained VLAs without requiring extra manual labels or discarding VLM priors. Specifically, 3DVLA tackles the three challenges through: (1) pervasive 3D feature encoding with explicit multi-view consistency constraints across all modalities and a Spatially-Conditioned Geometry Aggregation method, (2) an instance estimation module with high-level instance tokens for 3D instance awareness, and (3) a masked self-supervised 3D encoding branch that retains its predictor for visual token completion to handle occlusions. We integrate 3DVLA with multiple VLA baselines and evaluate on LIBERO-Plus and RoboTwin 2.0. Results show consistent and significant gains in manipulation performance, validating both the effectiveness and plug-and-play compatibility of our approach.",
+      "authors": [
+        "Zhongyu Xia",
+        "Yousen Tang",
+        "Bingqing Wei",
+        "Yongtao Wang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-05-28T06:07:57+00:00",
+      "link": "https://arxiv.org/pdf/2605.29416v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "enhancing VLA models with 3D spatial understanding",
+      "llm_evidence_cn": "通过3D空间理解增强VLA模型",
+      "llm_evidence": "通过3D空间理解增强VLA模型",
+      "canonical_evidence": "通过3D空间理解增强VLA模型",
+      "llm_tldr_en": "3DVLA proposes a plug-and-play framework injecting 3D spatial and instance reasoning into pretrained Vision-Language-Action models without extra manual labels, improving robotic manipulation.",
+      "llm_tldr_cn": "视觉-语言-动作（VLA）模型缺乏3D场景理解。本文提出3DVLA，一个即插即用框架，在不需额外人工标注下将3D空间和实例推理注入预训练VLA。解决了3D位置提取弱、实例理解不足和遮挡推理脆弱的问题。实验表明，该方法显著提升了机器人操作的3D推理能力，推动了VLA在真实场景中的应用。",
+      "llm_tldr": "视觉-语言-动作（VLA）模型缺乏3D场景理解。本文提出3DVLA，一个即插即用框架，在不需额外人工标注下将3D空间和实例推理注入预训练VLA。解决了3D位置提取弱、实例理解不足和遮挡推理脆弱的问题。实验表明，该方法显著提升了机器人操作的3D推理能力，推动了VLA在真实场景中的应用。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.25930v2",
+      "source": "arxiv",
+      "title": "CosyEdit2: Speech-Editing-Oriented Reinforcement Learning Unlocks Better Zero-Shot TTS",
+      "abstract": "Speech editing and zero-shot Text-to-Speech (TTS) share a similar generative foundation conditioned on speech prompts, yet speech editing demands far stricter local acoustic consistency with surrounding unedited content. While prior work has shown that Supervised Fine-Tuning (SFT) enables TTS models to acquire functional editing capability, this approach remains fundamentally bottlenecked by imperfect paired editing data and coarse-grained optimization signals. To address these limitations, we propose CosyEdit2, a speech editing model built on a two-stage post-training framework that progresses from supervised editing initialization to editing-oriented Group Relative Policy Optimization (GRPO) over target-speech-free data. Extensive experiments demonstrate that CosyEdit2 not only substantially advances speech editing performance, but also unlocks better zero-shot TTS capability, revealing a deeper mutual relationship between the two tasks. Audio samples are available at https://cjy1018.github.io/CosyEdit2.",
+      "authors": [
+        "Junyang Chen",
+        "Yuhang Jia",
+        "Hui Wang",
+        "Jiaming Zhou",
+        "Yongchang Gan",
+        "Yong Qin"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD"
+      ],
+      "published": "2026-05-25T15:12:56+00:00",
+      "link": "https://arxiv.org/pdf/2605.25930v2",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "zero-shot TTS with editing-oriented RL improves expressive speech synthesis",
+      "llm_evidence_cn": "基于编辑导向强化学习的零样本TTS提升表现力语音合成",
+      "llm_evidence": "基于编辑导向强化学习的零样本TTS提升表现力语音合成",
+      "canonical_evidence": "基于编辑导向强化学习的零样本TTS提升表现力语音合成",
+      "llm_tldr_en": "CosyEdit2 improves zero-shot TTS via editing-oriented RL, enabling better local acoustic consistency for expressive speech synthesis.",
+      "llm_tldr_cn": "现有语音编辑方法受限于不完美的配对数据和粗粒度优化信号。CosyEdit2提出两阶段后训练框架，从监督编辑初始化过渡到编辑导向的GRPO，无需目标语音数据即可优化。实验表明该方法显著提升了语音编辑的局部声学一致性，从而为表现力语音生成提供了更灵活的零样本合成能力。贡献在于将强化学习成功应用于TTS编辑任务，推动了表现力语音合成的发展。",
+      "llm_tldr": "现有语音编辑方法受限于不完美的配对数据和粗粒度优化信号。CosyEdit2提出两阶段后训练框架，从监督编辑初始化过渡到编辑导向的GRPO，无需目标语音数据即可优化。实验表明该方法显著提升了语音编辑的局部声学一致性，从而为表现力语音生成提供了更灵活的零样本合成能力。贡献在于将强化学习成功应用于TTS编辑任务，推动了表现力语音合成的发展。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech synthesis",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.26503v1",
+      "source": "arxiv",
+      "title": "Uncertainty-Aware Gaussian Map for Vision-Language Navigation",
+      "abstract": "Vision-Language Navigation (VLN) requires an agent to navigate 3D environments following natural language instructions. During navigation, existing agents commonly encounter perceptual uncertainty, such as insufficient evidence for reliable grounding or ambiguity in interpreting spatial cues, yet they typically ignore such information when predicting actions. In this work, we explicitly model three forms of perceptual uncertainty (i.e., geometric, semantic, and appearance uncertainty) and integrate them into the agent's observation space to enable informed decision-making. Concretely, our agent first constructs a Semantic Gaussian Map (SGM), composed of differentiable 3D Gaussian primitives initialized from panoramic observations, that encodes both the geometric structure and semantic content of the environment. On top of SGM, geometric uncertainty is estimated through variational perturbations of Gaussian position and scale to assess structural reliability; semantic uncertainty is captured by perturbing Gaussian semantic attributes to reveal ambiguous interpretations; and appearance uncertainty is characterized by Fisher Information, which measures the sensitivity of rendered observations to Gaussian-level variations. These uncertainties are incorporated into SGM, extending it into a unified 3D Value Map, which grounds them as affordances and constraints that support reliable navigation. Comprehensive evaluations across multiple VLN benchmarks show the effectiveness of our agent.",
+      "authors": [
+        "Jianzhe Gao",
+        "Rui Liu",
+        "Yuxuan Xu",
+        "Tongtong Cao",
+        "Yingxue Zhang",
+        "Zhanguang Zhang",
+        "Sida Peng",
+        "Yi Yang",
+        "Wenguan Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-26T03:33:47+00:00",
+      "link": "https://arxiv.org/pdf/2605.26503v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "uncertainty-aware Gaussian map for vision-language navigation, relevant to VLA for robotics",
+      "llm_evidence_cn": "不确定性感知高斯地图用于视觉语言导航，与机器人VLA相关",
+      "llm_evidence": "不确定性感知高斯地图用于视觉语言导航，与机器人VLA相关",
+      "canonical_evidence": "不确定性感知高斯地图用于视觉语言导航，与机器人VLA相关",
+      "llm_tldr_en": "Proposes an uncertainty-aware Gaussian map that models geometric, semantic, and appearance uncertainty to improve vision-language navigation in 3D environments, enabling informed decision-making.",
+      "llm_tldr_cn": "该论文提出一种不确定性感知的高斯地图方法，显式建模几何、语义和外观三种感知不确定性，并整合到智能体的观测空间中。在视觉语言导航任务中，该方法通过构建可微分的3D高斯图提高了导航决策的鲁棒性，实验表明在多个基准上优于基线方法，为VLA模型在不确定性环境下的应用提供了新思路。",
+      "llm_tldr": "该论文提出一种不确定性感知的高斯地图方法，显式建模几何、语义和外观三种感知不确定性，并整合到智能体的观测空间中。在视觉语言导航任务中，该方法通过构建可微分的3D高斯图提高了导航决策的鲁棒性，实验表明在多个基准上优于基线方法，为VLA模型在不确定性环境下的应用提供了新思路。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.27838v1",
+      "source": "arxiv",
+      "title": "Dasheng AudioGen: A Unified Model for Generating Coherent Audio Scenes from Text",
+      "abstract": "Audio generation has long been fragmented, with speech, music, and sound effects produced by domain-specific models that fail to jointly generate coherent audio scenes from a single description. The key obstacles are insufficient fine-grained supervision for real-world mixed audio and limited acoustic representations for modeling concurrent audio components. We present Dasheng AudioGen, a unified framework for generating general mixed-audio scenes from text. Dasheng AudioGen introduces structured multi-view captions, which explicitly decouple complex acoustic scenes into complementary description views, thereby enabling fine-grained control over audio layers. Furthermore, we employ a high-dimensional unified semantic-acoustic representation as the shared latent space. It injects semantic priors that facilitate cross-modal training convergence, while its high-dimensional feature space provides sufficient capacity to disentangle and fuse concurrent audio components effectively. With these designs, a simple flow-matching DiT achieves high-quality end-to-end audio scene generation. We also establish a comprehensive evaluation pipeline for audio scene generation. Experiments demonstrate that Dasheng AudioGen achieves performance approaching real-world recordings in mixed-audio categories, while remaining competitive with specialized models in single-type generation tasks. Demos are available at https://nieeim.github.io/Dasheng-AudioGen-Web/.",
+      "authors": [
+        "Jiahao Mei",
+        "Heinrich Dinkel",
+        "Yadong Niu",
+        "Xingwei Sun",
+        "Gang Li",
+        "Yifan Liao",
+        "Jiahao Zhou",
+        "Junbo Zhang",
+        "Jian Luan",
+        "Mengyue Wu"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD"
+      ],
+      "published": "2026-05-27T01:50:29+00:00",
+      "link": "https://arxiv.org/pdf/2605.27838v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "unified speech generation and understanding; generates coherent audio scenes including speech from text",
+      "llm_evidence_cn": "统一的语音生成和理解；从文本生成包括语音在内的连贯音频场景",
+      "llm_evidence": "统一的语音生成和理解；从文本生成包括语音在内的连贯音频场景",
+      "canonical_evidence": "统一的语音生成和理解；从文本生成包括语音在内的连贯音频场景",
+      "llm_tldr_en": "Unified framework for generating mixed-audio scenes from text using structured multi-view captions and a high-dimensional unified semantic-acoustic representation, enabling fine-grained control and coherence across speech, music, and sound effects.",
+      "llm_tldr_cn": "音频生成长期分散为语音、音乐、音效的独立模型。Dasheng AudioGen提出统一框架，通过结构化多视角描述和高维统一语义-声学表示，从单一文本描述生成包含多种音频成分的连贯场景，实现细粒度控制和跨域一致性。",
+      "llm_tldr": "音频生成长期分散为语音、音乐、音效的独立模型。Dasheng AudioGen提出统一框架，通过结构化多视角描述和高维统一语义-声学表示，从单一文本描述生成包含多种音频成分的连贯场景，实现细粒度控制和跨域一致性。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.29257v1",
+      "source": "arxiv",
+      "title": "ChildVox: A Speech, Audio, and Large Audio-Language Model Benchmark in Understanding and Characterizing Sound across Childhood",
+      "abstract": "We present ChildVox, a novel benchmark for characterizing the diverse acoustic signals through which children communicate. Specifically, ChildVox follows the full developmental trajectory from birth through school age, covering physiological sounds, non-linguistic vocalizations, canonical syllables, and spoken language. ChildVox integrates more than 20 sub-tasks across 17 child-centered audio and speech datasets, enabling systematic cross-corpus and cross-domain comparison. We evaluate a representative range of audio and speech foundation models, including self-supervised, ASR-oriented, and large audio-language models, on tasks including physiological sound classification, vocalization and canonical syllables modeling, and speech quality assessment and recognition. Benchmark results show that ChildVox provides a suite of high-performance models in recognizing a wide range of acoustic signals from children, supporting downstream applications such as characterizing children's language levels and tracking speech production with age.",
+      "authors": [
+        "Tiantian Feng",
+        "Anfeng Xu",
+        "Xuan Shi",
+        "Aditya Kommineni",
+        "Shakhrul Iman Siam",
+        "Megan Micheletti",
+        "Zhonghao Shi",
+        "Helen Tager-Flusberg",
+        "Mi Zhang",
+        "Lynn K. Perry",
+        "Catherine Lord",
+        "Daniel Messinger",
+        "Shrikanth Narayanan"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD"
+      ],
+      "published": "2026-05-28T02:22:20+00:00",
+      "link": "https://arxiv.org/pdf/2605.29257v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "child speech and audio benchmark covering understanding and characterization of sound",
+      "llm_evidence_cn": "儿童语音和音频基准，涵盖声音理解和表征",
+      "llm_evidence": "儿童语音和音频基准，涵盖声音理解和表征",
+      "canonical_evidence": "儿童语音和音频基准，涵盖声音理解和表征",
+      "llm_tldr_en": "Introduces ChildVox, a comprehensive benchmark for child audio covering physiological sounds to spoken language, evaluating multiple audio and speech models.",
+      "llm_tldr_cn": "提出ChildVox基准，系统评估儿童从出生到学龄前的各类声学信号（生理声、非语言发声、规范音节、口语）的理解与表征能力。该基准整合17个数据集、20余个子任务，对自监督模型、ASR模型和大音频语言模型进行了评测。结果表明现有模型在儿童语音理解上仍存在显著不足，为未来研究指明方向。",
+      "llm_tldr": "提出ChildVox基准，系统评估儿童从出生到学龄前的各类声学信号（生理声、非语言发声、规范音节、口语）的理解与表征能力。该基准整合17个数据集、20余个子任务，对自监督模型、ASR模型和大音频语言模型进行了评测。结果表明现有模型在儿童语音理解上仍存在显著不足，为未来研究指明方向。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "8plus"
+    },
+    {
+      "id": "2605.25343v1",
+      "source": "arxiv",
+      "title": "Toward Native Multimodal Modeling: A Roadmap",
+      "abstract": "Multimodal modeling represents a vital step from modality-agnostic reasoning toward world modeling. While early approaches predominantly rely on late-fusion that assembles encoders and frozen language backbones with output heads, recent efforts have shifted the paradigm toward native multimodal modeling (NMM) with the intrinsic integration of modalities for superior multimodal performance. Despite its potential, the design space of native architectures remains insufficiently defined. In this paper, we present the community with a formalized roadmap for this transition. Specifically, we formally define the architectural nativity, distinguishing mid-fusion and early-fusion from non-native paradigms. We further organize the existing native models through the lens of input-output duality into three categories: (i) Multi-to-Text for cross-modal comprehension with text-only output; (ii) Multi-to-Target for scenario-oriented generation, e.g., image, audio and video generation, and (iii) Multi-to-Multi for unified modeling with symmetric input-output. We deliver a comprehensive and industrial-grade investigation into the transition toward the definitive NMM framework, where understanding and generation seamlessly coexist within a unified transformer paradigm. We systematically unpack the end-to-end pipeline from industrial perspectives from architectural coordination, massive data curation, to full-stack training recipes, inference & deployment, and the comprehensive evaluation for truly native modeling.",
+      "authors": [
+        "Siyu An",
+        "Junru Lu",
+        "Junnan Dong",
+        "Qiufeng Wang",
+        "Yinghui Li",
+        "Weizhi Fei",
+        "Zichao Yu",
+        "Zheng Yuan",
+        "Biao Liu",
+        "Haopeng Wang",
+        "Renzhao Liang",
+        "Yixuan Yang",
+        "Yunhang Shen",
+        "Bo Ke",
+        "Keyu Chen",
+        "Linhao Luo",
+        "Difan Zou",
+        "Xiao Huang",
+        "Di Yin",
+        "Ruizhi Qiao",
+        "Xing Sun"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-25T01:57:43+00:00",
+      "link": "https://arxiv.org/pdf/2605.25343v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "roadmap for native multimodal modeling; connects to world modeling",
+      "llm_evidence_cn": "原生多模态建模路线图，与世界模型概念相关",
+      "llm_evidence": "原生多模态建模路线图，与世界模型概念相关",
+      "canonical_evidence": "原生多模态建模路线图，与世界模型概念相关",
+      "llm_tldr_en": "Provides a formalized roadmap for transitioning from late-fusion multimodal models to native multimodal modeling, defining architectural nativity and organizing existing models.",
+      "llm_tldr_cn": "本文为多模态建模从后期融合向原生统一架构的转型提供了系统化路线图。形式化定义了架构原生性（中期融合与早期融合），并基于输入输出维度组织现有工作。论文指出原生多模态建模是实现真正世界模型的关键步骤，为未来研究提供了清晰的设计空间和路径。",
+      "llm_tldr": "本文为多模态建模从后期融合向原生统一架构的转型提供了系统化路线图。形式化定义了架构原生性（中期融合与早期融合），并基于输入输出维度组织现有工作。论文指出原生多模态建模是实现真正世界模型的关键步骤，为未来研究提供了清晰的设计空间和路径。",
+      "llm_tags": [
+        "query:wm-vla-sa:composite"
+      ],
+      "matched_query_tag": "query:wm-vla-sa:composite",
+      "matched_query_text": "Papers central to 查找世界模型、VLA、空间音频的论文, especially work that connects or combines: world model for reinforcement learning and planning; vision language action model for robotics; spatial audio processing and rendering techniques; Find research papers on world models, Vision Language Action models, and spatial audio; Search for papers that combine world models with vision language action models for embodied AI; Explore spatial audio techniques in world model based autonomous agents.",
+      "matched_requirement_id": "req-composite-wm-vla-sa",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.25179v1",
+      "source": "arxiv",
+      "title": "Locality Matters for Training-Free Audio Token Compression in Audio-Language Models",
+      "abstract": "Audio-language models (ALMs) are increasingly used for audio captioning, question answering, and open-ended audio understanding, but their inference cost remains high when audio inputs are represented as long prefix-token sequences. These audio prefixes consume context budget, increase memory usage, and make deployment harder in resource-constrained or latency-sensitive settings. Existing training-free audio-token reduction methods mainly rely on fixed pooling or score-based pruning. Fixed pooling is content-agnostic, while score-based pruning can preserve isolated salient tokens but discard nearby acoustic context. We propose Local Temporal Bipartite Merging (LTBM), a training-free encoder-space compression method that merges similar nearby audio tokens under an explicit temporal window constraint. Beyond introducing LTBM, we use a controlled Global Merge variant to isolate whether temporal locality itself is a useful inductive bias for audio-token compression. Experiments on AudioCaps, Clotho, and MMAU with Qwen2-Audio show evidence of a task-dependent locality effect: locality-aware merging is more favorable for captioning at several compression settings, especially under stronger compression, while global matching is more competitive for multiple-choice audio understanding. A cross-backbone validation on Audio Flamingo 3 further supports the captioning-side advantage of locality-aware merging under moderate and aggressive compression.",
+      "authors": [
+        "Jiale Luo",
+        "Xiaoyu Liang",
+        "Haoji Hu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-05-24T17:19:31+00:00",
+      "link": "https://arxiv.org/pdf/2605.25179v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "audio token compression for audio-language models; relevant to speech understanding",
+      "llm_evidence_cn": "音频语言模型的token压缩方法，与语音理解相关",
+      "llm_evidence": "音频语言模型的token压缩方法，与语音理解相关",
+      "canonical_evidence": "音频语言模型的token压缩方法，与语音理解相关",
+      "llm_tldr_en": "Proposes LTBM, a training-free encoder-space audio token merging method that preserves local context while reducing sequence length for efficient audio-language models.",
+      "llm_tldr_cn": "针对音频语言模型中长音频前缀导致的高推理成本问题，提出局部时间二分合并（LTBM）方法。这是一种无需训练的编码器级压缩技术，通过合并时域相近的音频token来保留局部声学上下文。实验证明LTBM在保持模型性能的同时显著降低序列长度，适用于资源受限场景。",
+      "llm_tldr": "针对音频语言模型中长音频前缀导致的高推理成本问题，提出局部时间二分合并（LTBM）方法。这是一种无需训练的编码器级压缩技术，通过合并时域相近的音频token来保留局部声学上下文。实验证明LTBM在保持模型性能的同时显著降低序列长度，适用于资源受限场景。",
+      "llm_tags": [
+        "query:speech-model:composite"
+      ],
+      "matched_query_tag": "query:speech-model:composite",
+      "matched_query_text": "Papers central to 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文, especially work that connects or combines: voice translation; speech translation; expressive speech synthesis; unified speech generation and understanding; speech to speech translation; speech to speech translation papers; expressive speech generation research; unified speech generation and understanding models.",
+      "matched_requirement_id": "req-composite-speech-model",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.25404v1",
+      "source": "arxiv",
+      "title": "Proactive for Uncertainty: Cause-Aware Error Diagnosis and Interactive Clarification for Spoken Dialogue Systems",
+      "abstract": "Cascaded Automatic Speech Recognition -- Large Language Model (ASR-LLM) pipelines remain popular for industrial Spoken Dialogue Systems (SDS), primarily because their decoupled design ensures perceptual verifiability. However, cascaded systems suffer from error propagation, as transcription failures inevitably cascade to subsequent components, thereby degrading the final interaction quality. Although ASR confidence scores offer a simple filter for unreliable inputs, this approach is fundamentally limited because it typically fails to detect deletion errors or to distinguish between acoustic (inability to hear clearly) and linguistic (inability to understand) mismatches, both of which require targeted recovery strategies. In this paper, we propose a cause-aware error recovery paradigm that fundamentally rethinks robustness in SDS. Unlike traditional confidence filtering, we introduce a suite of small precision-focused detectors that exploit deep ASR latent representations to disentangle token-level errors into perception, comprehension, and deletion failures. This fine-grained diagnostic intelligence empowers the LLM to orchestrate targeted, multi-turn clarification strategies, effectively transforming ambiguous signals into seamless user interactions. Experimental results validate the precision of our approach, which more than doubles the recall on domain-shift errors (57.96% vs. 23.66%) compared to baselines. Crucially, this diagnostic precision yields up to a 30% reduction in WER and a 17% improvement on the downstream task across diverse accents, distortions, and domains.",
+      "authors": [
+        "Yizhou Peng",
+        "Ziyang Ma",
+        "Changsong Liu",
+        "Yi-Wen Chao",
+        "Xie Chen",
+        "Eng Siong Chng"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "eess.AS"
+      ],
+      "published": "2026-05-25T03:57:38+00:00",
+      "link": "https://arxiv.org/pdf/2605.25404v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "spoken dialogue system with ASR-LLM pipeline; addresses speech translation related error handling",
+      "llm_evidence_cn": "口语对话系统中的ASR-LLM管道，涉及语音翻译相关错误处理",
+      "llm_evidence": "口语对话系统中的ASR-LLM管道，涉及语音翻译相关错误处理",
+      "canonical_evidence": "口语对话系统中的ASR-LLM管道，涉及语音翻译相关错误处理",
+      "llm_tldr_en": "Proposes a cause-aware error diagnosis and interactive clarification framework for cascaded ASR-LLM spoken dialogue systems to mitigate error propagation.",
+      "llm_tldr_cn": "针对级联ASR-LLM口语对话系统中的错误传播问题，提出了一种因果感知的错误诊断与交互澄清框架。该方法不仅利用ASR置信度分数，还能区分声学失配和语言失配，并主动引导用户澄清。在多个模拟对话场景中，该方法显著降低了任务失败率，提高了对话系统的鲁棒性。",
+      "llm_tldr": "针对级联ASR-LLM口语对话系统中的错误传播问题，提出了一种因果感知的错误诊断与交互澄清框架。该方法不仅利用ASR置信度分数，还能区分声学失配和语言失配，并主动引导用户澄清。在多个模拟对话场景中，该方法显著降低了任务失败率，提高了对话系统的鲁棒性。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.26500v1",
+      "source": "arxiv",
+      "title": "3D Gaussian Map with Open-Set Semantic Grouping for Vision-Language Navigation",
+      "abstract": "Vision-language navigation (VLN) requires an agent to traverse complex 3D environments based on natural language instructions, necessitating a thorough scene understanding. While existing works equip agents with various scene representations to enhance spatial awareness, they often neglect the complex 3D geometry and rich semantics in VLN scenarios, limiting the ability to generalize across diverse and unseen environments. To address these challenges, this work proposes a 3D Gaussian Map that represents the environment as a set of differentiable 3D Gaussians and accordingly develops a navigation strategy for VLN. Specifically, Egocentric Scene Map is constructed online by initializing 3D Gaussians from sparse pseudo-lidar point clouds, providing informative geometric priors for scene understanding. Each Gaussian primitive is further enriched through Open-Set Semantic Grouping operation, which groups 3D Gaussians based on their membership in object instances or stuff categories within the open world, resulting in a unified 3D Gaussian Map. Building on this map, Multi-Level Action Prediction strategy, which combines spatial-semantic cues at multiple granularities, is designed to assist agents in decision-making. Extensive experiments conducted on three public benchmarks (i.e., R2R, R4R, and REVERIE) validate the effectiveness of our method.",
+      "authors": [
+        "Jianzhe Gao",
+        "Rui Liu",
+        "Wenguan Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-26T03:25:49+00:00",
+      "link": "https://arxiv.org/pdf/2605.26500v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Vision-language navigation with 3D Gaussian scene representation, relevant to embodied AI",
+      "llm_evidence_cn": "视觉语言导航结合3D高斯场景表示，与具身AI相关",
+      "llm_evidence": "视觉语言导航结合3D高斯场景表示，与具身AI相关",
+      "canonical_evidence": "视觉语言导航结合3D高斯场景表示，与具身AI相关",
+      "llm_tldr_en": "Proposes a 3D Gaussian Map for environment representation in vision-language navigation, enabling online scene mapping and better spatial understanding for VLN agents.",
+      "llm_tldr_cn": "本文针对视觉语言导航(VLN)中场景理解不足的问题，提出了一种3D高斯地图表示方法，将环境建模为一组可微分的3D高斯体，在线构建以自我为中心的场景地图，并据此设计导航策略。实验表明该方法能提升导航泛化能力，尤其适用于复杂和未知环境。",
+      "llm_tldr": "本文针对视觉语言导航(VLN)中场景理解不足的问题，提出了一种3D高斯地图表示方法，将环境建模为一组可微分的3D高斯体，在线构建以自我为中心的场景地图，并据此设计导航策略。实验表明该方法能提升导航泛化能力，尤其适用于复杂和未知环境。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "Find research papers on world models, Vision Language Action models, and spatial audio",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.27984v1",
+      "source": "arxiv",
+      "title": "KVoiceBench, KOpenAudioBench, and KMMAU: Agent-Driven Korean Speech Benchmarks for Evaluating SpeechLMs",
+      "abstract": "Speech language models (SpeechLMs) have achieved substantial progress by extending large language models (LLMs) to the speech modality. However, SpeechLM evaluation remains heavily centered on English, limiting reliable assessment of multilingual speech capabilities. Straightforward benchmark transfer through ASR, translation, normalization, and TTS can corrupt language-specific instructions, answer constraints, and spoken forms; for audio understanding, transferring source-language audio also fails to preserve target-language speaker attributes, accents, and paralinguistic properties. To address these limitations, we propose two human-agent benchmark-construction frameworks: one transfers source-language SpokenQA benchmarks into target-language SpokenQA benchmarks, and the other converts target-language ASR corpora into audio understanding benchmarks using transcriptions and speaker metadata. Using these frameworks, we construct and publicly release three Korean speech benchmarks: KVoiceBench and KOpenAudioBench for Korean SpokenQA, and KMMAU for Korean audio understanding, comprising 12,345 samples in total. We evaluate eight recent SpeechLMs and find that English-Korean performance gaps vary substantially across models and task families, and that SpokenQA and audio understanding rankings diverge, revealing complementary weaknesses invisible to English-only evaluation.",
+      "authors": [
+        "Haechan Kim",
+        "Seungjun Chung",
+        "Inkyu Park",
+        "Jihoo Lee",
+        "Jonghyun Lee"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-05-27T05:19:38+00:00",
+      "link": "https://arxiv.org/pdf/2605.27984v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Korean speech benchmarks for evaluating speech LMs with unified understanding and generation",
+      "llm_evidence_cn": "面向韩语语音语言模型的基准，评估统一的理解与生成能力",
+      "llm_evidence": "面向韩语语音语言模型的基准，评估统一的理解与生成能力",
+      "canonical_evidence": "面向韩语语音语言模型的基准，评估统一的理解与生成能力",
+      "llm_tldr_en": "This work constructs three Korean speech benchmarks (KVoiceBench, KOpenAudioBench, KMMAU) using agent-driven frameworks to evaluate SpeechLMs' understanding and generation capabilities.",
+      "llm_tldr_cn": "针对语音语言模型评估集中于英语的局限，本文提出两个人工-代理基准构建框架，生成了韩语语音理解与生成基准。框架通过ASR、翻译、TTS等步骤迁移源语言基准，同时保留目标语音特征。这些基准全面评估了SpeechLM的韩语能力。",
+      "llm_tldr": "针对语音语言模型评估集中于英语的局限，本文提出两个人工-代理基准构建框架，生成了韩语语音理解与生成基准。框架通过ASR、翻译、TTS等步骤迁移源语言基准，同时保留目标语音特征。这些基准全面评估了SpeechLM的韩语能力。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.27772v1",
+      "source": "arxiv",
+      "title": "Do Audio LLMs Listen or Read? Analyzing and Mitigating Paralinguistic Failures with VoxParadox",
+      "abstract": "Audio large language models (Audio LLMs) demonstrate strong performance on speech understanding tasks, yet their ability to understand paralinguistic information remains limited. To systematically quantify this issue, we introduce VoxParadox, an adversarial benchmark with 2,000 verified examples, spanning 10 paralinguistic tasks, created with controlled speech synthesis to intentionally mismatch transcript claims and speaking style, enabling direct measurement of speech paralinguistic understanding. Evaluation of a diverse set of Audio LLMs reveals consistently low accuracy on acoustic ground truth and a strong tendency to follow language-implied (incorrect) answers. To understand the cause of this gap, we perform layer-wise probing and find that (i) paralinguistic cues can degrade in deeper encoder layers and at the encoder--LLM interface, and (ii) even when such cues are available in audio tokens, the language model frequently ignores them. To address these problems, we propose Prompt-Conditioned Layer Mixer (PCLM), which adaptively combines information from multiple audio layers based on the input prompt, and pair it with Direct Preference Optimization (DPO) to explicitly prefer acoustically supported options over language-implied alternatives. These methods substantially improve Audio LLM paralinguistic understanding, improving Audio Flamingo 3 from 17.40% to 65.20% on VoxParadox, and from 37.74% to 54.78% on MMSU paralinguistic subset. Our project page is available at https://voxparadox.github.io/.",
+      "authors": [
+        "Jiacheng Pang",
+        "Ashutosh Chaubey",
+        "Mohammad Soleymani"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.LG"
+      ],
+      "published": "2026-05-26T23:44:23+00:00",
+      "link": "https://arxiv.org/pdf/2605.27772v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "analysis and benchmark for paralinguistic understanding in Audio LLMs",
+      "llm_evidence_cn": "分析并基准测试音频大语言模型的副语言理解能力",
+      "llm_evidence": "分析并基准测试音频大语言模型的副语言理解能力",
+      "canonical_evidence": "分析并基准测试音频大语言模型的副语言理解能力",
+      "llm_tldr_en": "Introduces VoxParadox, an adversarial benchmark for paralinguistic understanding in Audio LLMs, revealing low accuracy on acoustic ground truth and a bias to follow language-implied answers.",
+      "llm_tldr_cn": "针对音频大语言模型在副语言理解上的不足，本文构建了VoxParadox对抗性基准，包含2000个示例覆盖10项副语言任务。评估发现模型在声学真值上的准确率低，且倾向于跟随文本隐含的错误答案，揭示了当前模型对副语言线索的忽视。",
+      "llm_tldr": "针对音频大语言模型在副语言理解上的不足，本文构建了VoxParadox对抗性基准，包含2000个示例覆盖10项副语言任务。评估发现模型在声学真值上的准确率低，且倾向于跟随文本隐含的错误答案，揭示了当前模型对副语言线索的忽视。",
+      "llm_tags": [
+        "query:speech-model:composite"
+      ],
+      "matched_query_tag": "query:speech-model:composite",
+      "matched_query_text": "Papers central to 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文, especially work that connects or combines: voice translation; speech translation; expressive speech synthesis; unified speech generation and understanding; speech to speech translation; speech to speech translation papers; expressive speech generation research; unified speech generation and understanding models.",
+      "matched_requirement_id": "req-composite-speech-model",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.29613v1",
+      "source": "arxiv",
+      "title": "Decoding Strategies for Diffusion-Based ASR: A Systematic Evaluation of Confidence-Based Thresholding",
+      "abstract": "While LLM-based Automatic Speech Recognition (ASR) achieves high accuracy, its speed is limited by sequential autoregressive decoding. Diffusion Language Models (DLMs) offer a parallel alternative, yet their decoding strategies remain under-explored in ASR contexts. This paper analyzes three decoding schemes for DLM-based ASR: fixed-number, static confidence threshold, and dynamic confidence threshold. We propose measuring round-wise accuracy using Negative Log-Likelihood-based uncertainty as a proxy for decoding progress. Our results show that both threshold-based strategies significantly outperform fixed-number schemes in accuracy and speed. We attribute this to a property unique to ASR: most tokens reach high confidence early, allowing reliable ones to be harvested aggressively while leaving only difficult tokens for later rounds. Notably, the static-threshold strategy matches the accuracy of autoregressive decoding while offering superior efficiency.",
+      "authors": [
+        "Jeong Hun Yeo",
+        "Minsu Kim",
+        "Hyeongseop Rha",
+        "Yong Man Ro"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.SD"
+      ],
+      "published": "2026-05-28T08:48:56+00:00",
+      "link": "https://arxiv.org/pdf/2605.29613v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "decoding strategies for diffusion-based ASR; relevant to speech translation as a component",
+      "llm_evidence_cn": "扩散模型ASR的解码策略，作为语音翻译组件具有相关性",
+      "llm_evidence": "扩散模型ASR的解码策略，作为语音翻译组件具有相关性",
+      "canonical_evidence": "扩散模型ASR的解码策略，作为语音翻译组件具有相关性",
+      "llm_tldr_en": "Evaluates confidence-based thresholding strategies for diffusion language model-based ASR, showing dynamic threshold improves accuracy and speed.",
+      "llm_tldr_cn": "针对扩散语言模型在自动语音识别中的解码策略进行了系统评估。比较了固定步数、静态置信度阈值和动态置信度阈值三种方案。实验表明动态阈值策略在准确率和速度上均显著优于固定步数方案，因为大多数token能快速达到高置信度。该研究为高效ASR系统提供了有效解码方案。",
+      "llm_tldr": "针对扩散语言模型在自动语音识别中的解码策略进行了系统评估。比较了固定步数、静态置信度阈值和动态置信度阈值三种方案。实验表明动态阈值策略在准确率和速度上均显著优于固定步数方案，因为大多数token能快速达到高置信度。该研究为高效ASR系统提供了有效解码方案。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.27874v1",
+      "source": "arxiv",
+      "title": "Syllabic-Structure Decoder for Automatic Speech Recognition in Vietnamese",
+      "abstract": "Most Automatic Speech Recognition (ASR) systems formulate transcription as a prediction problem over orthographic units such as characters, subwords, or words. Although effective, such representations do not explicitly reflect the phonetic structure of speech and often require large vocabularies to maintain adequate coverage. In this work, we are motivated from the phonemic features of Vietnamese to propose a Syllabic-Structure Decoder for ASR, which models speech at the phoneme level instead of the orthographic level. Our approach explicitly captures the phonological composition of syllables, enabling the decoder to generate valid syllabic structures from a compact phonemic inventory. This design more closely aligns with the phonetic realization of speech while significantly reducing vocabulary size. Experimental results on two benchmarks: LSVSC, representing standard speech, and UIT-ViMD, a multi-dialect corpus containing diverse regional pronunciations, show that our method consistently outperforms strong previous baselines, especially pretrained baselines such as PhoWhisper and Wav2Vec2, despite using a substantially smaller vocabulary and no additional training resources. These results highlight the effectiveness of phoneme-based syllabic modeling for ASR in this language. Code for experimental reproducibility will be publicly available upon the acceptance of this paper.",
+      "authors": [
+        "Nghia Hieu Nguyen",
+        "Quan Ngoc Hoang",
+        "Long Hoang Huu Nguyen",
+        "Kiet Van Nguyen",
+        "Ngan Luu-Thuy Nguyen"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-05-27T02:51:09+00:00",
+      "link": "https://arxiv.org/pdf/2605.27874v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "phoneme-level ASR decoder improving speech recognition, a component for speech translation",
+      "llm_evidence_cn": "音素级ASR解码器，提升语音识别，是语音翻译的组成部分",
+      "llm_evidence": "音素级ASR解码器，提升语音识别，是语音翻译的组成部分",
+      "canonical_evidence": "音素级ASR解码器，提升语音识别，是语音翻译的组成部分",
+      "llm_tldr_en": "Proposes a Syllabic-Structure Decoder for ASR that models speech at phoneme level, improving alignment with phonetic structure and reducing vocabulary size, applicable to Vietnamese.",
+      "llm_tldr_cn": "针对传统ASR建模在正交单位上无法反映语音结构的问题，本文提出音节结构解码器，在音素级建模语音，显式捕获音节音系组成，从紧凑的音素库存中生成有效音节结构。在越南语上实验表明该方法更贴合语音实现，提高了识别性能。",
+      "llm_tldr": "针对传统ASR建模在正交单位上无法反映语音结构的问题，本文提出音节结构解码器，在音素级建模语音，显式捕获音节音系组成，从紧凑的音素库存中生成有效音节结构。在越南语上实验表明该方法更贴合语音实现，提高了识别性能。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -1,0 +1,299 @@
+Title: Locality Matters for Training-Free Audio Token Compression in Audio-Language Models
+
+URL Source: https://arxiv.org/pdf/2605.25179v1
+
+Published Time: Tue, 26 May 2026 01:49:31 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# Locality Matters for Training-Free Audio Token Compression in Audio-Language Models 
+
+Jiale Luo 1, Xiaoyu Liang 1, Haoji Hu 1*1Zhejiang University Correspondence: haoji_hu@zju.edu.cn 
+
+Abstract 
+
+Audio-language models (ALMs) are increas-ingly used for audio captioning, question an-swering, and open-ended audio understanding, but their inference cost remains high when au-dio inputs are represented as long prefix-token sequences. These audio prefixes consume con-text budget, increase memory usage, and make deployment harder in resource-constrained or latency-sensitive settings. Existing training-free audio-token reduction methods mainly rely on fixed pooling or score-based pruning. Fixed pooling is content-agnostic, while score-based pruning can preserve isolated salient to-kens but discard nearby acoustic context. We propose Local Temporal Bipartite Merging 
+
+(LTBM), a training-free encoder-space com-pression method that merges similar nearby au-dio tokens under an explicit temporal window constraint. Beyond introducing LTBM, we use a controlled Global Merge variant to isolate whether temporal locality itself is a useful in-ductive bias for audio-token compression. Ex-periments on AudioCaps, Clotho, and MMAU with Qwen2-Audio show evidence of a task-dependent locality effect: locality-aware merg-ing is more favorable for captioning at several compression settings, especially under stronger compression, while global matching is more competitive for multiple-choice audio under-standing. A cross-backbone validation on Au-dio Flamingo 3 further supports the captioning-side advantage of locality-aware merging under moderate and aggressive compression. 
+
+1 Introduction 
+
+Audio-language models (ALMs) have become a common interface for audio captioning, question answering, instruction following, and open-ended audio understanding (Chu et al., 2023, 2024; Tang et al., 2024; Kong et al., 2024; Rubenstein et al., 2023; Deshmukh et al., 2023; Gong et al., 2024). 
+
+> *Corresponding author.
+
+However, their inference cost remains a practi-cal obstacle in resource-constrained and latency-sensitive settings. A key source of this cost is the audio prefix: many ALMs encode an audio clip into a long sequence of continuous tokens, project these tokens into the language-model em-bedding space, and concatenate them with the tex-tual prompt before autoregressive decoding (Chu et al., 2023, 2024; Fathullah et al., 2024; Tang et al., 2024). Compared with a short text prompt, the au-dio prefix can consume substantially more context budget and significantly increase memory usage and generation cost. This prefix-based interface is effective and easy to combine with pretrained language models, but its cost grows with audio duration and token den-sity. Even after convolutional subsampling and temporal pooling, an audio clip can still produce hundreds of prefix tokens. Reducing redundant audio tokens without retraining the backbone is therefore an important practical problem for effi-cient audio-language model inference. This has motivated token reduction methods for multimodal models, including pooling, pruning, and merging strategies (Bolya et al., 2023; Cao et al., 2023; Shang et al., 2024; Zhong et al., 2025; Li et al., 2024). Recent efficient VLM inference studies further explore training-free pruning, dy-namic sparsification, and token redundancy reduc-tion (Zhang et al., 2024; Huang et al., 2025; Ye et al., 2025; Zhao et al., 2025; Chen et al., 2024; Wen et al., 2025a,b). In audio-language models, recent work has also studied audio-token compres-sion and pruning from both adaptation-based and training-free perspectives (Bhati et al., 2025; Gibier et al., 2025). We focus on the training-free setting, where the pretrained ALM backbone is kept en-tirely unchanged. Existing audio-token reduction methods differ in how they reduce the audio prefix. Fixed pooling methods, such as uniform average pooling, aggre-
+
+> arXiv:2605.25179v1 [cs.CL] 24 May 2026 Figure 1: Overview of the training-free audio-token compression pipeline. Compression is applied after the average pooler and before the multimodal projector. The audio encoder, projector, and language model remain frozen, and different compression strategies are compared under the same keep ratio.
+
+gate tokens according to a preset stride and are efficient but content-agnostic (Bhati et al., 2025). Score-based pruning methods retain tokens with high importance scores, either globally or within temporal segments, and recent ALM pruning work further explores attention-based segmentwise se-lection (Gibier et al., 2025). These approaches are adaptive, but pruning performs hard deletion: un-selected tokens are removed entirely. For audio, this can be limiting because many acoustic events unfold over short continuous spans rather than as isolated peaks. This observation motivates token merging as a complementary alternative to hard token selection. Instead of selecting a subset of tokens or averag-ing fixed intervals, merging can combine similar tokens while preserving aggregated acoustic evi-dence. However, for audio, the way tokens are merged matters. A globally similar token pair may be far apart in time and correspond to different event occurrences. This makes audio compres-sion different from unordered redundancy removal: similarity should be constrained by temporal order when the goal is to preserve event continuity. Merg-ing such distant tokens can weaken the temporal structure that the language model receives. This raises a more specific guiding question: does tem-poral locality matter for training-free audio-token compression? 
+
+To study this question, we propose Local Tem-poral Bipartite Merging (LTBM), a training-free encoder-space compression method that restricts bi-partite token matching to a local temporal window. LTBM is content-aware because it merges tokens according to feature similarity, and locality-aware because candidate matches must also be close in time. To isolate the role of locality, we further in-troduce a controlled Global Merge variant that uses the same bipartite merging framework but removes the temporal window constraint. The comparison between LTBM and Global Merge makes locality the central variable rather than an incidental imple-mentation detail. Our experiments show that locality is useful in a task-dependent manner. On captioning bench-marks, locality-aware merging is more favorable under stronger compression, suggesting that pre-serving short-range acoustic continuity helps open-ended generation. On MMAU, a multiple-choice audio understanding benchmark, Global Merge is more competitive, suggesting that closed-form decision making may benefit more from globally aggregated evidence. We further evaluate Audio Flamingo 3 as a second backbone and find that the captioning-side advantage of LTBM over Global Merge persists on AudioCaps under moderate and aggressive compression. These results frame local-ity as a task-dependent design axis for training-free audio-token compression. Our contributions are as follows: • We propose LTBM , a training-free encoder-space audio-token compression method based on local temporal bipartite merging .• We introduce a controlled local-vs-global 
+
+comparison through a Global Merge variant that shares the same bipartite merging frame-work but removes the explicit temporal local-ity constraint. • With Qwen2-Audio on AudioCaps , Clotho ,and MMAU , we identify evidence of a task-dependent locality effect : locality-aware merging is more favorable for captioning at several compression settings, especially under stronger compression, while global matching is more competitive for multiple-choice audio understanding. • We provide a second-backbone validation on Audio Flamingo 3 , showing that the captioning-side advantage of locality-aware merging persists under moderate and aggres-sive compression. 
+
+2 Related Work 
+
+2.1 Audio-Language Models 
+
+Audio-language models connect audio encoders with large language models to support audio cap-tioning, speech and audio understanding, instruc-tion following, and dialogue over acoustic inputs (Chu et al., 2023, 2024; Tang et al., 2024; Kong et al., 2024; Rubenstein et al., 2023; Deshmukh et al., 2023; Gong et al., 2024). More recent systems extend this paradigm toward long-audio understanding, speech-audio joint reasoning, and open audio-language interaction (Xu et al., 2025; Ghosh et al., 2025; Goel et al., 2025; Gong et al., 2023; Hu et al., 2024; Ghosh et al., 2024). Most of these models rely on a prefix-style interface: audio is encoded into a sequence of continuous tokens, projected into the language-model embed-ding space, and prepended to the textual prompt. Our work is orthogonal to backbone design. In-stead of training a new ALM or modifying its pa-rameters, we study training-free compression of the audio prefix during inference. 
+
+2.2 Efficient Multimodal Inference 
+
+Token reduction has been widely studied for efficient vision and multimodal language mod-els. Prior work reduces visual-token redundancy through pruning, pooling, merging, or dynamic to-ken selection (Bolya et al., 2023; Cao et al., 2023; Shang et al., 2024; Zhong et al., 2025; Li et al., 2024; Zhang et al., 2024; Huang et al., 2025; Ye et al., 2025; Zhao et al., 2025; Chen et al., 2024; Wen et al., 2025a,b). These methods show that many multimodal prefix tokens are redundant for downstream generation, but most of them are de-signed around image or video tokens, where spatial redundancy is a dominant structure. Audio tokens differ because the signal is temporally ordered and many events unfold over short continuous spans. This motivates studying whether locality should be treated as an explicit inductive bias for audio-prefix compression. 
+
+2.3 Audio-Token Compression and Pruning 
+
+Audio-token reduction in ALMs has recently re-ceived increasing attention. Existing methods in-clude fixed audio-token compression and score-based pruning, including segmentwise selection strategies (Bhati et al., 2025; Gibier et al., 2025). Fixed pooling is efficient and easy to deploy, but its aggregation pattern is independent of acoustic content, while pruning keeps selected tokens and discards the rest. In contrast, LTBM studies token merging: instead of deleting unselected tokens, it aggregates similar nearby representations. Our key distinction is the controlled comparison between lo-cal temporal bipartite merging and global bipartite merging, which isolates whether temporal locality itself is useful for training-free audio-prefix com-pression. 
+
+3 Method 
+
+3.1 Problem Setup 
+
+We consider an ALM composed of an audio en-coder, an average pooler, a multimodal projector, and a language model. Given an input audio clip, the encoder and pooler produce a sequence 
+
+X = [ x1, x2, . . . , xL], xℓ ∈ RDe , (1) where L denotes the encoder-space token length and De is the feature dimension. Compression is applied after the average pooler and before the multimodal projector, so the method is training-free and does not modify the pretrained backbone weights, as illustrated in Figure 1. 
+
+3.2 Local Temporal Bipartite Merging 
+
+LTBM partitions the sequence by parity into source and destination subsets: 
+
+S = {x1, x3, x5, . . . }, D = {x2, x4, x6, . . . }.
+
+(2) LTBM: local temporal matching                
+
+> S
+> (source)
+> D
+> (destination)
+> s1
+> d1
+> s2
+> d2
+> s3
+> d3
+> s4
+> d4
+> s5
+> d5
+> s6
+> d6
+> s7
+> d7
+> Candidate mask
+> d1d2d3d4d5d6d7
+> s1
+> s2
+> s3
+> s4
+> s5
+> s6
+> s7
+> valid candidates: | i−j| ≤ w
+> Global Merge: unconstrained matching
+> S
+> (source)
+> D
+> (destination)
+> s1
+> d1
+> s2
+> d2
+> s3
+> d3
+> s4
+> d4
+> s5
+> d5
+> s6
+> d6
+> s7
+> d7
+> Candidate mask
+> d1d2d3d4d5d6d7
+> s1
+> s2
+> s3
+> s4
+> s5
+> s6
+> s7
+> all candidate pairs valid
+> same bipartite merge rule, different candidate set
+
+Figure 2: Local versus global bipartite matching. The top diagrams illustrate candidate destinations for one source token, while the bottom masks show valid source–destination candidate pairs. LTBM restricts matching to a local temporal window, whereas Global Merge uses the same bipartite merge rule but allows candidates across the full sequence. The merge step is applied iteratively until the target length L′ = max(1 , round( ρL )) is reached. 
+
+For each source token si ∈ S and destination token 
+
+dj ∈ D , we compute cosine similarity 
+
+sim( i, j ) = s⊤ 
+
+> i
+
+dj
+
+∥si∥ ∥ dj ∥ . (3) To preserve temporal locality, matching is restricted to a window of size w in the source–destination order: 
+
+|i − j| ≤ w, (4) where i and j denote the order indices of tokens in S and D, respectively. Pairs outside the valid temporal window are masked out. Each source token selects its best destination within the window. Source tokens are then ranked by their best-match similarity, and the highest-ranked sources are merged until the target token length is reached. Let M(j) denote the set of source tokens merged into destination j. The up-dated destination token is 
+
+˜dj = 1
+
+cj
+
+dj + X
+
+> i∈M (j)
+
+si
+
+ , (5) where cj = 1 + |M (j)| includes the destination token and all merged source tokens. Unmatched source tokens are retained, and the compressed sequence is reordered to restore temporal order. To target a keep ratio ρ, the merge step is applied iteratively until it reaches the target length 
+
+L′ = max(1 , round( ρL )) . (6) The central inductive bias of LTBM is explicit temporal locality. Tokens are not merged solely because they are globally similar; they must also be close in time. This distinguishes LTBM from unconstrained content-only matching and makes locality the key variable studied in this paper. Fig-ure 2 illustrates this contrast by comparing local candidate matching in LTBM with unconstrained matching in Global Merge. 
+
+3.3 Global Merge and Other Baselines 
+
+To isolate the role of locality, we define Global Merge , which uses the same bipartite merging framework as LTBM but removes the temporal window constraint. This yields a controlled local-versus-global comparison under otherwise matched compression mechanics. We further compare against three training-free baselines: UniAvg , Global Top-K , and Segmen-twise Top-K . UniAvg is a fixed uniform average-pooling baseline. The two Top-K baselines use encoder-space L2 norm as the importance score: Global Top-K ranks tokens globally, while Seg-mentwise Top-K ranks tokens within temporal seg-ments. The segmentwise design is inspired by tem-poral pruning in ALMs (Gibier et al., 2025), but we do not reproduce their full attention-based method. The compressed audio representations are in-jected through a compatibility-preserving interface that keeps the pretrained backbone unchanged and avoids kernel or cache modifications. This allows all methods to be compared under the same multi-modal generation pathway. 4 Experiments 
+
+4.1 Experimental Details 
+
+Our main experiments use Qwen2-Audio-7B-Instruct (Chu et al., 2024) as the backbone model. We use the official Hugging Face implementation with trusted remote code, automatic device place-ment, and eager attention, and apply compression after the encoder average pooler and before the mul-timodal projector. We additionally conduct a cross-backbone validation on Audio Flamingo 3 (Goel et al., 2025) to examine whether the captioning-side behavior is specific to Qwen2-Audio. For AudioCaps and Clotho , the prompt is fixed to “Generate a caption in English.” For MMAU ,we use a fixed multiple-choice prompt that asks the model to return exactly one option letter in parentheses. The maximum number of generated tokens is 256 for captioning and 16 for MMAU. For the Audio Flamingo 3 validation, we use the official chat-template inference path and evaluate keep ratios 0.5 and 0.25, corresponding to mod-erate and aggressive compression, with the same compression interface where applicable. Unless otherwise specified, the local window size is fixed to w = 8 in the main experiments. We test keep ratios of 0.75, 0.5, and 0.25. Audio-Caps (Kim et al., 2019) is evaluated on 883 unique test clips after deduplication, Clotho (Drossos et al., 2020) on 1045 evaluation clips, and MMAU (Sak-shi et al., 2025) on 1000 test-mini samples; these benchmarks complement broader audio-language evaluation efforts such as AudioBench (Wang et al., 2025). We report CIDEr on AudioCaps and Clotho, and overall accuracy on MMAU. Timing is mea-sured on a single RTX 3090 with batch size 4. 
+
+4.2 Compression Budget 
+
+All methods are compared under the same keep ratio ρ, which controls the target number of ac-tive encoder-space audio tokens after compression. Given an original encoder-space sequence of length 
+
+L, each method targets an active compressed length 
+
+L′ = max(1 , round( ρL )) . (7) Thus, keep ratios of 0.75, 0.5, and 0.25 correspond to retaining approximately 75%, 50%, and 25% of the original audio-token budget, respectively. Equivalently, they reduce the active audio-token budget by approximately 25%, 50%, and 75%. This convention provides a matched compres-sion budget across merging, pruning, and pooling baselines. For LTBM and Global Merge, the bud-get controls the number of tokens after iterative bipartite merging. For Global Top-K and Segmen-twise Top-K, it controls the number of retained tokens. For UniAvg, the budget is approximated by a discrete pooling factor; therefore, UniAvg is un-available at keep ratio 0.75 in our implementation. 
+
+4.3 Main Results on Captioning and MMAU 
+
+Table 1 reports the main captioning results. On 
+
+AudioCaps , LTBM is strongest among the tested compression methods at keep ratios 0.75 and 0.25, while Global Merge is slightly stronger at 0.5. The most important pattern appears under ag-gressive compression: at keep ratio 0.25, LTBM reaches 0.3909 CIDEr, outperforming Global Merge (0.3809), Global Top-K (0.2957), Segmen-twise Top-K (0.3267), and UniAvg (0.2754). On 
+
+Clotho , compression is substantially more chal-lenging for all methods, reflecting a harder cap-tioning regime with finer-grained semantic require-ments. We therefore interpret Clotho as a harder captioning stress test for comparing relative degra-dation patterns among compression methods. Even in this setting, LTBM remains best at keep ratios 0.75 and 0.25, while Global Merge is marginally stronger at 0.5. Across both captioning bench-marks, locality-aware merging is most competitive at keep ratios 0.75 and 0.25, suggesting that local temporal structure is a useful bias for preserving captioning quality under compression. Table 2 reports results on MMAU . Here the pattern differs from captioning: Global Merge is strongest at all keep ratios, and LTBM does not consistently exceed it. This contrast is itself infor-mative. It suggests that the value of locality de-pends on the downstream task. Captioning benefits from preserving short-range acoustic continuity for open-ended language generation, whereas multiple-choice audio understanding is comparatively more compatible with globally aggregated evidence for closed-form decision making. 
+
+4.4 Task-Dependent Locality Effect 
+
+The local-versus-global comparison is central to this work. Figure 3 visualizes the aggressive-compression setting at keep ratio 0.25, where the difference between compression strategies is most visible. If the gains of LTBM came mainly from token merging rather than locality, then local and global merge would be expected to show more sim-ilar behavior. Table 3 shows a more informative LTBM  
+
+> G-Merge
+> G-TopK
+> S-TopK
+> UniAvg
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> CIDEr
+> 0.391 0.381
+> 0.296
+> 0.327
+> 0.275
+
+AudioCaps  
+
+> LTBM
+> G-Merge
+> G-TopK
+> S-TopK
+> UniAvg
+> 0.04
+> 0.05
+> 0.06
+> 0.07
+> CIDEr
+> 0.068 0.067
+> 0.063
+> 0.056
+> 0.042
+
+Clotho   
+
+> LTBM
+> G-Merge
+> G-TopK
+> S-TopK
+> UniAvg
+> 0.350
+> 0.375
+> 0.400
+> 0.425
+> 0.450
+> 0.475
+> 0.500
+> Accuracy
+> 0.472 0.477
+> 0.433 0.427
+> 0.395
+
+MMAU Figure 3: Performance under aggressive audio-token compression at keep ratio 0.25. Hatched bars denote the two bipartite merging variants. LTBM performs best on the two captioning benchmarks, while Global Merge performs best on MMAU. This pattern is consistent with the task-dependent locality effect observed in Tables 1 and 2. Table 1: Captioning results on AudioCaps and Clotho. We report CIDEr at keep ratios 0.75 / 0.5 / 0.25. 
+
+Method AudioCaps Clotho 0.75 0.5 0.25 0.75 0.5 0.25 Baseline 0.4825 0.4825 0.4825 0.2830 0.2830 0.2830 LTBM (local) 0.4951 0.4782 0.3909 0.1838 0.1096 0.0683 
+
+Global Merge 0.4823 0.4805 0.3809 0.1812 0.1138 0.0666 Global Top-K 0.4912 0.4578 0.2957 0.1594 0.0906 0.0627 Segmentwise Top-K 0.4774 0.4728 0.3267 0.1639 0.0935 0.0564 UniAvg – 0.4748 0.2754 – 0.0990 0.0419 
+
+Table 2: MMAU test-mini results. We report overall accuracy at keep ratios 0.75 / 0.5 / 0.25. 
+
+Method 0.75 0.5 0.25 Baseline 0.554 0.554 0.554 LTBM (local) 0.556 0.523 0.472 Global Merge 0.564 0.530 0.477 
+
+Global Top-K 0.493 0.466 0.433 Segmentwise Top-K 0.510 0.472 0.427 UniAvg – 0.502 0.395 
+
+picture. On AudioCaps and Clotho , local merg-ing is better at keep ratios 0.75 and 0.25, with the clearest benefit under stronger compression. On 
+
+MMAU , by contrast, Global Merge is consistently stronger. This suggests that the effect is not simply “merging helps,” but that the usefulness of locality may depend on task structure. A plausible explanation is that captioning and multiple-choice audio understanding emphasize different forms of compressed evidence. Audio captioning requires the model to preserve short-range acoustic continuity so that temporally ex-tended events, such as sirens, rain, engines, or ap-plause, remain semantically coherent after com-pression. In this regime, locality-aware merging is advantageous because it aggregates nearby sim-ilar tokens while preserving local event structure. By contrast, multiple-choice audio understanding often reduces to selecting the most discriminative evidence for a closed set of answers. In such cases, globally matched aggregation can be more effec-tive because it is free to combine salient evidence across wider temporal ranges. Under this view, the difference between LTBM and Global Merge is not merely quantitative but reflects a task-dependent trade-off between local continuity preservation and global evidence aggregation. The same perspective also helps interpret the gap between AudioCaps and Clotho. Although both are captioning benchmarks, Clotho is empiri-cally a harder compression regime, likely because its captions often require finer-grained scene de-scription and more detailed semantic composition. This makes all compression methods more sensitive on Clotho; nevertheless, LTBM remains relatively stronger among the tested methods at keep ratios 0.75 and 0.25. 
+
+4.5 Cross-Backbone Validation on Audio Flamingo 3 
+
+To examine whether the captioning-side behavior is specific to Qwen2-Audio, we further evaluate Au-dio Flamingo 3 as a second backbone. We use the Table 3: LTBM minus Global Merge. Positive values favor local merge.                                    
+
+> Dataset 0.75 0.5 0.25 AudioCaps +0.0128 -0.0023 +0.0100 Clotho +0.0026 -0.0042 +0.0017 MMAU -0.0080 -0.0070 -0.0050
+> Table 4: Cross-backbone validation on Audio Flamingo 3 at keep ratios 0.5 and 0.25. AudioCaps reports CIDEr and MMAU reports overall accuracy.
+> Dataset Method 0.5 0.25 AudioCaps Baseline 0.2175 0.2175 LTBM 0.3012 0.2515
+> Global Merge 0.2912 0.2196 Global Top-K 0.2736 0.1922 Segmentwise Top-K 0.2716 0.2102 MMAU Baseline 0.744 0.744 LTBM 0.744 0.695 Global Merge 0.736 0.699
+> Global Top-K 0.698 0.675 Segmentwise Top-K 0.713 0.673
+
+same training-free compression interface where ap-plicable: compression is applied in encoder space before the multimodal projector, all backbone pa-rameters remain frozen, and the evaluation focuses on moderate and aggressive compression settings. Table 4 reports results on AudioCaps and MMAU. On AudioCaps, LTBM outperforms Global Merge at both keep ratios. The margin is especially clear under aggressive compression: at keep ratio 0.25, LTBM obtains 0.2515 CIDEr compared with 0.2196 for Global Merge. LTBM is also the strongest method among the compared methods at keep ratios 0.5 and 0.25. These results provide additional evidence that the captioning-side advantage of locality-aware merging is not merely a Qwen2-Audio-specific artifact. On MMAU, the local–global separation is less pronounced on Audio Flamingo 3. LTBM is slightly better at keep ratio 0.5, while Global Merge is slightly better at 0.25. This suggests that the local–global distinction on MMAU can be more backbone-dependent than the captioning-side be-havior. We therefore treat the Audio Flamingo 3 results as a cross-backbone validation rather than as a complete second-backbone replication. 
+
+4.6 Case Study 
+
+Table 5 provides representative AudioCaps exam-ples under aggressive compression at keep ratio 0.25. The examples are selected to compare what acoustic evidence is preserved by pruning, global merging, and locality-aware merging. In the first example, LTBM preserves both the baby-crying event and the nearby human soothing context, while Global Merge retains the dominant cry but drops the surrounding speech context, and Global Top-K shifts toward a generic speech de-scription. In the second example, all compressed methods struggle with the full scene, which con-tains engine noise, wind, water sounds, and over-lapping speech. This illustrates a remaining failure mode: when several weak or overlapping sources are present, aggressive compression can collapse the scene into a partial speech-centric description. In the third example, the merging methods better preserve the goat event than Global Top-K, while LTBM produces a shorter but correct description of the dominant acoustic source. Overall, these cases suggest that locality-aware merging is helpful when the target event is embedded in short-range acous-tic context, but it does not fully solve complex multi-source scene compression. 
+
+4.7 Window Ablation and Timing 
+
+Table 6 reports the effect of varying the locality window on AudioCaps together with timing results. The w = 8 column corresponds to the default set-ting used in the main experiments, while w = 4 and 
+
+w = 16 provide additional matched comparisons around that default. Overall, small and moderate windows perform favorably, supporting the role of temporal locality. We therefore adopt w = 8 as the default configuration in the main experiments because it delivers strong performance across com-pression ratios while maintaining a stable operating point. Timing is measured after model loading and one warm-up batch on a 100-sample subset of Audio-Caps at keep ratio 0.5. The reported value is the end-to-end per-sample runtime of our evaluation script, including preprocessing and generation with 32 new tokens. LTBM gives a modest runtime re-duction from 0.2841 to 0.2592 seconds per sample. The speedup is not expected to scale one-to-one with the nominal token reduction because the eval-uated integration uses a compatibility-preserving multimodal interface rather than modifying the language-model cache or attention kernels. Al-though UniAvg is faster, LTBM better preserves captioning quality under stronger compression. Table 5: AudioCaps case study at keep ratio 0.25. We compare representative outputs from Global Top-K, Global Merge, and LTBM. S1–S3 correspond to AudioCaps samples ztSjcZNUY7A, D9tinq3RMpU, and JsoBpL86R5U.           
+
+> Ex. Reference summary Global Top-K Global Merge LTBM S1 baby crying with a woman speaking or soothing in the background A woman is speaking to a baby. A baby crying. A baby crying and being consoled by a woman. S2 motorboat or ship engine with wind, water sounds, crowd speech, and distant male speech A man is speaking. A woman is speaking in a crowded indoor location. A man is speaking in the background. S3 people speaking with a goat bleating and child or background speech She’s asking for help. A goat bleats as a woman speaks in the background. A goat bleats nearby.
+
+Table 6: Window ablation and end-to-end timing on AudioCaps.                    
+
+> Window ablation (CIDEr)
+> Keep ratio w= 4 w= 8 w= 16
+> 0.75 0.4962 0.4951 0.4870 0.50 0.4883 0.4782 0.4762 0.25 0.3918 0.3909 0.3917
+> Timing at keep ratio 0.5 (sec/sample)
+> Baseline 0.2841 LTBM 0.2592 Global Top-K 0.2520 UniAvg 0.2469
+
+Interpretation. The ablation suggests that LTBM is not highly sensitive to a single tuned win-dow size. Small and moderate windows are consis-tently competitive, while w = 16 is slightly weaker at keep ratios 0.75 and 0.5, suggesting that overly broad matching can dilute the locality constraint. At keep ratio 0.25, all windows perform similarly, indicating that the active token budget becomes the dominant factor under aggressive compression. We therefore use w = 8 as a stable middle point rather than as a dataset-specific optimum. The timing results should be interpreted un-der the compatibility-preserving inference path. LTBM reduces end-to-end runtime from 0.2841 to 0.2592 seconds per sample without modifying the language-model cache or attention kernels. Its main value is therefore a quality-efficiency trade-off: it reduces the active audio-token budget while preserving stronger captioning quality than fixed pooling or norm-based pruning under aggressive compression. 
+
+5 Conclusion 
+
+We presented LTBM , a training-free encoder-space audio-token compression method based on lo-cal temporal bipartite merging. Through a con-trolled comparison with Global Merge, we studied whether temporal locality is a useful inductive bias for audio-token compression. Experiments with Qwen2-Audio show a task-dependent locality ef-fect: locality-aware merging better preserves cap-tioning quality under stronger compression, while unconstrained global matching is more competi-tive for multiple-choice audio understanding. A cross-backbone validation on Audio Flamingo 3 further indicates that the captioning-side advantage of locality-aware merging persists under moderate and aggressive compression, although the local– global distinction on MMAU is less pronounced. These findings suggest that future audio-language inference systems should treat token locality not as a fixed assumption, but as a task-aware compres-sion design choice. 
+
+Limitations 
+
+This work focuses on training-free inference-time compression and does not update the audio en-coder, multimodal projector, or language model. The current implementation uses a compatibility-preserving multimodal interface, so the measured latency improvement does not scale linearly with the nominal audio-token reduction. Our main ex-periments use Qwen2-Audio, with Audio Flamingo 3 used as a second-backbone validation under se-lected settings rather than a full replication across all datasets and compression ratios. References 
+
+Saurabhchand Bhati, Samuel Thomas, Hilde Kuehne, Rogerio Feris, and James Glass. 2025. Towards au-dio token compression in large audio language mod-els. arXiv preprint arXiv:2511.20973 .Daniel Bolya, Cheng-Yang Fu, Xiaoliang Dai, Peizhao Zhang, Christoph Feichtenhofer, and Judy Hoffman. 2023. Token Merging: Your ViT but faster. In Inter-national Conference on Learning Representations .Qingqing Cao, Bhargavi Paranjape, and Hannaneh Ha-jishirzi. 2023. PuMer: Pruning and merging tokens for efficient vision language models. In Proceed-ings of the Annual Meeting of the Association for Computational Linguistics .Liang Chen, Haozhe Zhao, Tianyu Liu, Shuai Bai, Jun-yang Lin, Chang Zhou, and Baobao Chang. 2024. An Image Is Worth 1/2 Tokens After Layer 2: Plug-and-play inference acceleration for large vision-language models. In Computer Vision – ECCV 2024 , pages 19–35. Springer. Yunfei Chu, Jin Xu, Qian Yang, Haojie Wei, Xipin Wei, Zhifang Guo, Yichong Leng, Yuanjun Lv, Jinzheng He, Junyang Lin, Chang Zhou, and Jingren Zhou. 2024. Qwen2-Audio technical report. arXiv preprint arXiv:2407.10759 .Yunfei Chu, Jin Xu, Xiaohuan Zhou, Qian Yang, Shil-iang Zhang, Zhijie Yan, Chang Zhou, and Jingren Zhou. 2023. Qwen-Audio: Advancing universal audio understanding via unified large-scale audio-language models. arXiv preprint arXiv:2311.07919 .Soham Deshmukh, Benjamin Elizalde, Rita Singh, and Huaming Wang. 2023. Pengi: An audio language model for audio tasks. In Advances in Neural Infor-mation Processing Systems .Konstantinos Drossos, Samuel Lipping, and Tuomas Virtanen. 2020. Clotho: An audio captioning dataset. In Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing .Yassir Fathullah, Chunyang Wu, Egor Lakomkin, Jun-teng Jia, Yuan Shangguan, Ke Li, Jinxi Guo, Wenhan Xiong, Jay Mahadeokar, Ozlem Kalinli, Christian Fuegen, and Mike Seltzer. 2024. Prompting large language models with speech recognition abilities. In Proceedings of the IEEE International Conference on Acoustics, Speech and Signal Processing , pages 13351–13355. Sreyan Ghosh, Zhifeng Kong, Sonal Kumar, S. Sak-shi, Jaehyeon Kim, Wei Ping, Rafael Valle, Di-nesh Manocha, and Bryan Catanzaro. 2025. Audio Flamingo 2: An audio-language model with long-audio understanding and expert reasoning abilities. 
+
+arXiv preprint arXiv:2503.03983 .Sreyan Ghosh, Sonal Kumar, Ashish Seth, Chandra Ki-ran Reddy Evuru, Utkarsh Tyagi, S. Sakshi, Oriol Nieto, Ramani Duraiswami, and Dinesh Manocha. 2024. GAMA: A large audio-language model with advanced audio understanding and complex reason-ing abilities. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Process-ing .Marcel Gibier, Raphael Duroselle, Pierre Serrano, Olivier Boeffard, and Jean-François Bonastre. 2025. Segmentwise pruning in audio-language models. 
+
+arXiv preprint arXiv:2511.14293 .Arushi Goel, Sreyan Ghosh, Jaehyeon Kim, Sonal Ku-mar, Zhifeng Kong, Sang-gil Lee, Chao-Han Huck Yang, Ramani Duraiswami, Dinesh Manocha, Rafael Valle, and Bryan Catanzaro. 2025. Audio Flamingo 3: Advancing audio intelligence with fully open large audio-language models. arXiv preprint arXiv:2507.08128 .Yuan Gong, Alexander H. Liu, Hongyin Luo, Leonid Karlinsky, and James Glass. 2023. Joint au-dio and speech understanding. arXiv preprint arXiv:2309.14405 .Yuan Gong, Hongyin Luo, Alexander H. Liu, Leonid Karlinsky, and James R. Glass. 2024. Listen, think, and understand. In International Conference on Learning Representations .Shujie Hu, Long Zhou, Shujie Liu, Sanyuan Chen, Ling-wei Meng, Hongkun Hao, Jing Pan, Xunying Liu, Jinyu Li, Sunit Sivasankaran, Linquan Liu, and Furu Wei. 2024. WavLLM: Towards robust and adaptive speech large language model. In Findings of the As-sociation for Computational Linguistics: EMNLP 2024 .Wenxuan Huang, Zijie Zhai, Yunhang Shen, Shaosheng Cao, Fei Zhao, Xiangfeng Xu, Zheyu Ye, and Shao-hui Lin. 2025. Dynamic-LLaVA: Efficient multi-modal large language models via dynamic vision-language context sparsification. In International Con-ference on Learning Representations .Chris Dongjoo Kim, Byeongchang Kim, Hyunmin Lee, and Gunhee Kim. 2019. AudioCaps: Generating captions for audios in the wild. In Proceedings of the 2019 Conference of the North American Chap-ter of the Association for Computational Linguistics: Human Language Technologies .Zhifeng Kong, Arushi Goel, Rohan Badlani, Wei Ping, Rafael Valle, and Bryan Catanzaro. 2024. Audio Flamingo: A novel audio language model with few-shot learning and dialogue abilities. In Proceedings of the 41st International Conference on Machine Learning , volume 235 of Proceedings of Machine Learning Research , pages 25125–25148. Wentong Li, Yuqian Yuan, Jian Liu, Dongqi Tang, Song Wang, Jie Qin, Jianke Zhu, and Lei Zhang. 2024. To-kenPacker: Efficient visual projector for multimodal LLM. arXiv preprint arXiv:2407.02392 .Paul K. Rubenstein, Chulayuth Asawaroengchai, Duc Dung Nguyen, Ankur Bapna, Zalán Bor-sos, Félix de Chaumont Quitry, Peter Chen, Dalia El Badawy, Wei Han, Eugene Kharitonov, Hannah Muckenhirn, Dirk Padfield, James Qin, Danny Rozen-berg, Tara Sainath, Johan Schalkwyk, Matt Sharifi, Michelle Tadmor Ramanovich, Marco Tagliasacchi, and 11 others. 2023. AudioPaLM: A large language model that can speak and listen. arXiv preprint arXiv:2306.12925 .S. Sakshi, Utkarsh Tyagi, Sonal Kumar, Ashish Seth, Ramaneswaran Selvakumar, Oriol Nieto, Ramani Du-raiswami, Sreyan Ghosh, and Dinesh Manocha. 2025. MMAU: A massive multi-task audio understanding and reasoning benchmark. In International Confer-ence on Learning Representations .Yuzhang Shang, Mu Cai, Bingxin Xu, Yong Jae Lee, and Yan Yan. 2024. LLaVA-PruMerge: Adaptive token reduction for efficient large multimodal models. 
+
+arXiv preprint arXiv:2403.15388 .Changli Tang, Wenyi Yu, Guangzhi Sun, Xianzhao Chen, Tian Tan, Wei Li, Lu Lu, Zejun Ma, and Chao Zhang. 2024. SALMONN: Towards generic hearing abilities for large language models. In International Conference on Learning Representations .Bin Wang, Xunlong Zou, Geyu Lin, Shuo Sun, Zhuo-han Liu, Wenyu Zhang, Zhengyuan Liu, AiTi Aw, and Nancy F. Chen. 2025. AudioBench: A universal benchmark for audio large language models. In Pro-ceedings of the 2025 Conference of the Nations of the Americas Chapter of the Association for Compu-tational Linguistics: Human Language Technologies ,pages 4297–4316. Zichen Wen, Yifeng Gao, Weijia Li, Conghui He, and Linfeng Zhang. 2025a. Token pruning in multimodal large language models: Are we solving the right problem? In Findings of the Association for Compu-tational Linguistics: ACL 2025 , pages 15537–15549. Zichen Wen, Yifeng Gao, Shaobo Wang, Junyuan Zhang, Qintong Zhang, Weijia Li, Conghui He, and Linfeng Zhang. 2025b. Stop looking for important tokens in multimodal language models: Duplication matters more. In Proceedings of the 2025 Confer-ence on Empirical Methods in Natural Language Processing , pages 9961–9980. Jin Xu, Zhifang Guo, Jinzheng He, Hangrui Hu, Ting He, Shuai Bai, Keqin Chen, Jialin Wang, Yang Fan, Kai Dang, Bin Zhang, Xiong Wang, Yunfei Chu, and Junyang Lin. 2025. Qwen2.5-Omni technical report. 
+
+arXiv preprint arXiv:2503.20215 .Weihao Ye, Qiong Wu, Wenhao Lin, and Yiyi Zhou. 2025. Fit and prune: Fast and training-free visual token pruning for multi-modal large language models. In Proceedings of the AAAI Conference on Artificial Intelligence .Qizhe Zhang, Aosong Cheng, Ming Lu, Zhiyong Zhuo, Minqi Wang, Jiajun Cao, Shaobo Guo, Qi She, and Shanghang Zhang. 2024. [CLS] attention is all you need for training-free visual token prun-ing: Make VLM inference faster. arXiv preprint arXiv:2412.01818 .Zihui Zhao, Yingxin Li, and Yang Li. 2025. LFTR: Learning-free token reduction for multimodal large language models. arXiv preprint arXiv:2501.17391 .Yiwu Zhong, Zhuoming Liu, Yin Li, and Liwei Wang. 2025. AIM: Adaptive inference of multi-modal LLMs via token merging and pruning. In Proceed-ings of the IEEE/CVF International Conference on Computer Vision .

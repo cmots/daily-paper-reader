@@ -1,0 +1,430 @@
+Title: ChildVox: A Speech, Audio, and Large Audio-Language Model Benchmark in Understanding and Characterizing Sound across Childhood
+
+URL Source: https://arxiv.org/pdf/2605.29257v1
+
+Published Time: Fri, 29 May 2026 00:29:08 GMT
+
+Number of Pages: 18
+
+Markdown Content:
+# ChildVox: A Speech, Audio, and Large Audio-Language Model Benchmark in Understanding and Characterizing Sound across Childhood 
+
+Tiantian Feng 1 Anfeng Xu 1 Xuan Shi 1 Aditya Kommineni 1 Shakhrul Iman Siam 2
+
+Megan Micheletti 3 Zhonghao Shi 4 Helen Tager-Flusberg 5 Mi Zhang 2
+
+Lynn K. Perry 6 Catherine Lord 3 Daniel Messinger 6 Shrikanth Narayanan 1
+
+> 1
+
+University of Southern California 2The Ohio State University 
+
+> 3
+
+University of California, Los Angeles 4Harvard University 
+
+> 5
+
+Boston University 6University of Miami 
+
+tiantiaf@usc.edu 
+
+Abstract 
+
+We present ChildVox , a novel benchmark for characterizing the diverse acoustic signals through which children communicate. Specifi-cally, ChildVox follows the full developmental trajectory from birth through school age, cover-ing physiological sounds, non-linguistic vocal-izations, canonical syllables, and spoken lan-guage. ChildVox integrates more than 20 sub-tasks across 17 child-centered audio and speech datasets, enabling systematic cross-corpus and cross-domain comparison. We evaluate a rep-resentative range of audio and speech founda-tion models, including self-supervised, ASR-oriented, and large audio-language models, on tasks including physiological sound classifica-tion, vocalization and canonical syllables mod-eling, and speech quality assessment and recog-nition. Benchmark results show that ChildVox 
+
+provides a suite of high-performance models in recognizing a wide range of acoustic signals from children, supporting downstream applica-tions such as characterizing children’s language levels and tracking speech production with age. 
+
+1 Introduction 
+
+Deep learning and Artificial Intelligence for child-centered speech or voice processing and modeling have long focused on automatic speech recogni-tion (ASR) (Fan et al., 2024; Ying et al., 2025; Singh et al., 2026), a general-purpose task for pop-ulations with established spoken language skills. However, children “express” themselves through a wide range of verbal and non-verbal skills at differ-ent stages of childhood (Li et al., 2026a), shaped by their physical (Namasivayam et al., 2020) and neuro-developmental status (Lord et al., 2018) and educational backgrounds (Lesaux and Siegel, 2003). Therefore, tasks like ASR cover only a subset of children’s communicative skills and life experiences, and do not fully capture signals criti-cal for understanding development, language level, health, and behaviors across childhood. This limitation is amplified for children who have not yet fully acquired socially recognized spo-ken language, or who experience speech sound disorders (SSD) and other conditions that impact speech production. In early childhood, for exam-ple, communication is often dominated by non-spoken forms, including vocalized events (e.g., cries). Moreover, physiological sounds (e.g., car-diac sounds (Oliveira et al., 2021)) can carry criti-cal information when verbal or non-verbal cues are insufficient for understanding a child’s condition. In this work, we therefore rethink what consti-tutes speech, voice, or language in the context of child development. We introduce ChildVox , an audio benchmark that extends conventional ASR modeling to broader forms of children’s voices”, enabling the characterization of sounds across childhood experiences for child-centered applica-tions. We broadly view “voice” in children as em-bodied communication that includes not only spo-ken language, but also vocalization, canonical syl-lables, and physiological sounds, all of which work together to convey meaning and express internal states. This definition calibrates communication skills to the developmental stage, recognizing that how children interact with the world evolves as their linguistic, motor, and cognitive skills develop. Our proposed ChildVox benchmark offers unique contributions compared to prior works: (1) Unlike previous studies that primarily focus on children’s ASR, ChildVox considers the full de-velopmental trajectory from birth through school age, covering physiological sounds, vocalizations, canonical syllables, and speech within a single uni-fied benchmark. (2) ChildVox integrates more than 20 sub-tasks across 17 child-centered au-dio and speech datasets into a consistent evalu-ation protocol. (3) We evaluate a representative range of self-supervised, ASR-oriented, and large audio-language models, showing that different pre-training setups offer complementary measures of 1  
+
+> arXiv:2605.29257v1 [cs.SD] 28 May 2026 Figure 1: Overview of the wide range of ways that children “express” themselves. ChildVox benchmarks audio, speech, and large audio-language models on physiological sounds, vocalizations, canonical syllables, and speech.
+
+child-centered acoustic signals. Moreover, models provided in ChildVox consistently outperform the frontier proprietary models like Gemini 3.5 Flash. Extensive experiments show that ChildVox pro-vides a robust platform for supporting downstream applications in understanding children’s audio and spoken language across developmental contexts. 
+
+2 Related Works 
+
+2.1 Child ASR Benchmarks 
+
+Several recent studies have proposed benchmark-style evaluations for children’s ASR, where many of these works consistently show substantial degra-dation when adult-trained ASR systems are ap-plied to children’s speech, due to developmental acoustic variability, pronunciation differences, and conversational dynamics. For example, Fan et al. (2024); Ying et al. (2025) evaluate supervised and self-supervised speech foundation models for child ASR, analyzing the effects of model scaling, train-ing paradigms, and datasets. Other studies examine ASR robustness of speech from children with de-velopmental delays, highlighting challenges from atypical vocal behaviors (McGonigle et al., 2024). Recently, causal analyses of children’s ASR errors further quantify the contributions of physiological, cognitive, and environmental factors to recognition failures (Singh et al., 2026). 
+
+2.2 Child Speech Benchmarks beyond ASR 
+
+Apart from ASR, recent work has applied speech foundation models to a range of child-centered tasks, showing that self-supervised representa-tions capture meaningful developmental informa-tion from children’s speech and infant vocaliza-tions (Li et al., 2024). Other studies have explored speech foundation models for child-adult speaker diarization in naturalistic dyadic interactions (Xu et al., 2024), spoken language development anal-ysis in children with ASD (Xu et al., 2023a), and phoneme recognition for language learning applica-tions (Medin et al., 2024). Additionally, layer-wise analyses from a recent work further reveal that dif-ferent model layers encode distinct developmental information (Sinha et al., 2026). Collectively, these studies show the growing potential of speech foun-dation models beyond ASR in children’s speech. 
+
+3 ChildVox Benchmark 
+
+Figure 1 presents the overview of benchmark de-sign to characterize the range of ways that children “express” themselves from birth through school age. 
+
+3.1 Benchmark Overview 
+
+Unlike conventional ASR-centric benchmarks on children’s speech, ChildVox captures the di-verse spectrum of child-produced and child-related acoustic signals that emerge throughout develop-ment: physiological sounds, such as cardiac sounds that provide markers of health conditions; vocaliza-tions, such as crying in infancy; canonical syllables and emerging language behaviors in toddlers, such as proto-speech that reflect the progressive develop-ment of communicative skills; and the more com-plex social communicative behaviors of school-age children associated with spoken language interac-tion in everyday interactions. Collectively, this developmental framing across childhood positions the ChildVox as an ecologically grounded platform for advancing child-centered audio intelligence. 2Table 1: Summary of the audio and speech data used in the ChildVox benchmark. The proposed benchmark includes more than 20 sub-tasks related to physiological sound classification, vocalization classification, canonical syllables classification, and speech recognition and classification. 
+
+Dataset Evaluation Tasks Labels Data License 
+
+CirCor (Oliveira et al., 2021) Murmur Detection Absent, Present, Unknown Open Database ICBHI (Rocha et al., 2019) Crackle Detection Crackles, No crackles Open Database Wheeze Detection Wheezes, No wheezes Respiratory Condition Healthy, COPD, Other condition SPRSound (Zhang et al., 2022) Respiratory Sound Normal, CAS, DAS, Not Specified CAS & DAS, Poor Quality Donate-a-cry Cry Classification Hunger, Other Open Database CryBank (Lockhart-Bouron et al., 2023) Cry Classification Hunger, Loneliness, Discomfort Not Specified AudioSet (Gemmeke et al., 2017) Child speech, Babbling, Giggle, CC-BY-4.0 Child Sound Children shouting, Baby laughter, Classification Baby cry, Whimper, Child singing, Children playing, Music for children ReCANVo (Johnson et al., 2023) Affective Status Delighted, Dysregulated, Frustrated, Not Specified Request, Selftalk, Social BabbleCor (Cychosz et al., 2021) Vocal Development Crying, Laughing, Canonical, Customized License Classification Non-Canonical, Junk SpeechMaturity (Hitczenko et al., 2025) Vocal Development Crying, Laughing, Canonical, Customized License Classification Non-Canonical, Junk C-BESD (Rao et al., 2024) Emotion Recognition Anger, Happy, Neutral, Sad Not Specified PERCEPT-R (Benway et al., 2022) Pronunciation Rhotic, Derhotic PhonBank License SpeechOcean762 (Zhang et al., 2021) Prosody Poor, Nearly correct, Correct intonation CC-BY-4.0 Fluency Little influent, Fluent in general, Fluent Pronunciation Poor or Understandable, Good, Excellent UltraSuite (Eshky et al., 2018) Speech Articulator Bilabial, Labiodental, Dental, Glottal CC-BY-NC-4.0 Labiovelar, Alveolar, Palatal, Velar Natural Language Sampling (NLS) Diarization Speaker labels and timestamps Private Speech Intelligibility Intelligible, Unintelligible, Vocalization In-house ADOS2-Mod3 Diarization Speaker labels and timestamps Private ASR Speech Transcript MyST (Pradhan et al., 2024) ASR Speech Transcript Customized License TinyVox (Lavechin et al., 2026) ASR Phoneme Transcript Not Specified 
+
+3.2 Benchmark Tasks and Datasets 
+
+ChildVox evaluates four broad categories of child-centered audio datasets: physiological sounds, vo-calizations, canonical syllables, and speech. The information regarding evaluation tasks, labels, and data license is provided in Table 1. The details about each dataset are described in the Appendix A. 
+
+Physiological Sound Classification ChildVox 
+
+includes three benchmark datasets for pediatric physiological sound classification covering both cardiac and respiratory assessment. The bench-mark targets four tasks: murmur detection, crackle detection, wheeze detection, and respiratory con-dition classification. Murmur detection is evalu-ated on CirCor (Oliveira et al., 2021), a collection of 5,272 pediatric cardiac auscultation recordings, while crackle detection, wheeze detection, and res-piratory condition classification are evaluated on ICBHI (Rocha et al., 2019) and SPRSound (Zhang et al., 2022), two respiratory sound datasets con-sisting of pediatric and general patient populations. 
+
+Vocalization Event Classification ChildVox 
+
+targets two vocalization-related tasks: generic child sound and infant cry classification. Child sound classification covers ten child-related audios: speech, babble, giggle, shout, laughter, cry, whim-per, sing, play, and music for children. This is drawn from AudioSet (Gemmeke et al., 2017), a large-scale ontology-driven collection of YouTube data. Cry cause classification is evaluated on two infant cry corpora: Donate-a-Cry (don), where we classify hunger versus other, given its imbalanced distribution, and CryBank (Lockhart-Bouron et al., 2023) is with labels: hunger, loneliness, and dis-30 2000 4000 6000 8000 10000 12000 
+
+> Number of samples
+> MyST
+> Tiny-Vox
+> SpeechMaturity
+> SpeechOcean762
+> BabbleCor
+> ReCANVo
+> PERCEPT-R
+> ICBHI-Crackles
+> CirCor
+> ICBHI-Wheeze
+> CryBank
+> AudioSet-Child
+> ICBHI-Condition
+> SPRSound
+> 10,000 (15.5%)
+> 10,000 (15.5%)
+> 9,199 (14.2%)
+> 6,000 (9.3%)
+> 5,112 (7.9%)
+> 4,128 (6.4%)
+> 4,000 (6.2%)
+> 3,247 (5.0%)
+> 2,811 (4.3%)
+> 2,674 (4.1%)
+> 2,088 (3.2%)
+> 2,000 (3.1%)
+> 1,900 (2.9%)
+> 1,482 (2.3%)
+> Dataset distribution (N = 64,641)
+
+Figure 2: Training data distribution of each sub-dataset in ChildVox-Balanced dataset for training LALMs. 
+
+comfort. 
+
+Canonical Syllables Classification We experi-mented with ReCANVo (Johnson et al., 2023), a database of affective nonverbal sounds recorded in everyday interactions from minimally speaking children and adults with neurodevelopmental con-ditions. This corpus supports affective status classi-fication (e.g., dysregulated). BabbleCor (Cychosz et al., 2021) and SpeechMaturity (Hitczenko et al., 2025) target early vocal development in children, supporting vocal development classification across cry, laugh, canonical, non-canonical, and junk. 
+
+Speech Quality Assessment We include three datasets evaluating speech production, pronuncia-tion, and articulation. PERCEPT-R (Benway et al., 2022) (with PhonBank (Rose and MacWhinney, 2014)) contains recordings from children with typ-ical speech development and speech sound disor-ders, emphasizing rhotic production in American English. SpeechOcean762 (Zhang et al., 2021) provides 5,000 English utterances from 250 non-native speakers (half children), each annotated by five expert raters for pronunciation accuracy, flu-ency, and prosody. UltraSuite (Eshky et al., 2018) pairs synchronized ultrasound tongue imaging with acoustic recordings for research on child speech disorders. Inspired by Ribeiro et al. (2021), we use it for articulator classification across eight places of articulation (e.g., velar) on word-level audios. 
+
+Adult-child Speaker Diarization A core com-ponent of analyzing child speech in interaction is speaker diarization, which detects speech segments and labels “who spoke when”. Here, we include two in-house datasets to benchmark the speaker diarization. Specifically, the Natural Language Sampling (NLS) (Butler et al., 2022) dataset in-cludes child-parent conversations collected from remote dyadic interactions involving minimally verbal children with ASD. The corpus includes 73 English-speaking child-parent sessions with de-tailed child/ adult speaker and speech intelligibility labels. Moreover, the ADOS2-Mod3 dataset (Xu et al., 2026) consists of recordings from more than 100 children participating in Autism Diagnostic Observation Schedule-Module3 (Lord et al., 2008) assessments. Within this dataset, interactions re-lated to emotion and social-difficulty segments are annotated with speaker labels. 
+
+Automatic Speech Recognition We target both word-level and phoneme-level transcription of chil-dren’s speech. Word-level recognition is evaluated on MyST (Pradhan et al., 2024), a corpus of el-ementary school students interacting with a vir-tual science tutor, and on ADOS2-Mod3, whose transcripts are annotated with emotion and social-difficulty segments. Phoneme-level recognition is evaluated on TinyVox (Lavechin et al., 2026), which provides over half a million phoneme-level transcriptions across multiple languages. Here, we focus on the English subset with one item. 
+
+3.3 ChildVox -Balanced Dataset 
+
+Given the substantial aggregate scale of the com-bined datasets, we construct ChildVox -Balanced, a curated subset with labels balanced within each classification task, to support practical and repro-ducible supervised fine-tuning of Large Audio Lan-guage Models (LALMs) mentioned later. It draws only on publicly accessible resources and limits training and testing samples per label to 2,000 and 50, respectively. For ASR evaluation, we include 10,000/500 utterances from MyST and TinyVox for training/testing. Figure 2 shows the resulting per-dataset distribution, where is a total of 64,641 audio and speech recordings across 14 subtasks. 
+
+4 Benchmark Models 
+
+In ChildVox , we evaluate several representative au-dio, speech, and large audio-language models for benchmark experiments. The details of the experi-mented pre-trained models are listed in Table 2. 
+
+4.1 Encoder-based Models Self-supervised Models We evaluate three rep-resentative self-supervised audio and speech foundation models: SSAST (Gong et al., 2022), voc2vec (Koudounas et al., 2025), and WavLM (Chen et al., 2022). SSAST , voc2vec ,4Pre-trained Model Pre-Training Objectives # Parameters Used SSAST-Base         
+
+> Self-supervised
+> ∼89M
+> voc2vec-HuBERT ∼89M
+> WavLM Large ∼316M
+> Whisper Base
+> VAD, ASR, LID
+> ∼20.1M
+> Whisper Small ∼88M
+> Whisper Large V3 ∼635M
+> Qwen2-Audio Instruct Multi-stage Uni-modal ∼7B
+> AudioFlamingo 3 and Multi-modal Learning ∼8B
+
+Table 2: Summary of audio and speech foundation models used in the ChildVox benchmark. We include only the encoder part for presenting the parameter size of the Whisper family models. Speech/Audio 
+
+> Speech
+> Foundation Model
+> 1D point-wise Convolution
+> DNN
+> Weighted Average LORA
+
+Figure 3: LoRA fine-tune in encoder-based pre-trained models. 
+
+and WavLM apply self-supervised learning to learn representations from generic audio events, non-verbal vocalizations, and speech, respectively. These pre-trained models have shown strong performance on audio event detection, speech recognition, and speaker diarization tasks. 
+
+ASR Models We primarily evaluate models from the Whisper family, an encoder-decoder architec-ture trained on large-scale multilingual speech pri-marily for ASR. Apart from ASR, Whisper en-coders have shown strong transferability across speech processing problems, such as child-adult speaker diarization (Xu et al., 2024). To explore the effect of model scale, we evaluate encoder embed-dings from three Whisper variants: Whisper-Base, Whisper-Small, and Whisper-Large-v3. Moreover, we include Parakeet-TDT (Rekesh et al., 2023; Xu et al., 2023b) for fine-tuned ASR tasks. 
+
+4.2 Large Audio-Language Model 
+
+We include two widely used Large Audio-Language Models (LALMs) in our benchmark: Qwen2-Audio-Instruct (Chu et al., 2024) and Au-dio Flamingo 3 (AF3) (Ghosh et al., 2026). Both models unify diverse audio understanding across speech, environmental sounds, and music. Specifi-cally, Qwen2-Audio combines a Whisper-large-v3 audio encoder with the Qwen-7B language model backbone. Similar to Qwen2-Audio, the audio en-coder of AF3 is initialized from Whisper-Large-v3. 
+
+5 Experiments 
+
+5.1 Data Preprocessing 
+
+For all datasets included in ChildVox , audio sam-ples are resampled to 16 kHz to match the sampling rate of all pre-trained models. Across most exper-iments, we restrict a minimum input duration of 200 ms to maintain sufficient acoustic information for downstream evaluation. For datasets without predefined training, development, and test parti-tions, we adopt a 5-fold cross-validation setup in the experiment. More details, such as the prompt design for the SFT experiments with LALM and data filtering, are in the Appendix A and C. 
+
+5.2 Modeling Details 
+
+The details of training settings, like learning rate and training epochs, are listed in the Appendix B. 
+
+Model Parameters We fine-tune SSAST us-ing full-model optimization, whereas for voc2vec-HuBERT, WavLM-Large, and Whisper-family models, we keep the pretrained backbone weights frozen and adopt parameter-efficient fine-tuning through LoRA. Specifically, we apply LoRA with a rank of 64 to the feedforward layers for voc2vec, WavLM, and Whisper as shown in Figure 3. For LALMs, LoRA modules with rank 64 are inserted into the query, key, value, down-projection, and up-projection layers of the language model, and feedforward layers of the audio encoder. 
+
+Evaluation We report utterance-level Macro-F1 on the test set for most classification tasks in the benchmark. For speaker diarization, we report di-arization error metrics, while ASR and phoneme recognition are evaluated using word error rate (WER) and phoneme error rate (PER), respectively. Results for encoder-based models are reported as averages across multi-folds in Appendix A. 
+
+6 Benchmark Results 
+
+6.1 Encoder-based Model Results 
+
+Table 3 presents the results of the encoder-based model on the complete ChildVox benchmark data. 
+
+Physiological Sound Classification For phys-iological sound classification tasks, SSAST and 5Table 3: Benchmark performance across physiological sounds, vocalization, canonical syllables, and speech from children on each complete dataset. voc2vec-H, WavLM-L, Whisper-B, Whisper-S, Whisper-L are voc2vec-HuBERT, WavLM-Large, Whisper-Base, Whisper-Small, Whisper-Large, respectively. We report the average Macro-F1 score (higher the better), and the best and second-best results per row are in bold and underlined, respectively.                                                                                                                      
+
+> Task Category Dataset SSAST voc2vec-H WavLM-L Whisper-B Whisper-S Whisper-L CirCor 0.636 0.563 0.643 0.499 0.546 0.552
+> ICBHI-crackles 0.644 0.626 0.612 0.581 0.597 0.586
+> Physiological ICBHI-wheezes 0.638 0.592 0.614 0.614 0.621 0.609
+> Sounds ICBHI-Condition 0.466 0.445 0.392 0.473 0.483 0.508
+> SPRSound 0.448 0.368 0.439 0.345 0.362 0.414
+> Vocalization AudioSet-Child 0.657 0.560 0.539 0.598 0.634 0.619
+> CryBank 0.300 0.303 0.321 0.333 0.326 0.323
+> donate-a-cry 0.473 0.486 0.468 0.467 0.528 0.502 Canonical Syllables ReCANVo 0.444 0.416 0.423 0.414 0.415 0.359
+> Speech Maturity 0.686 0.640 0.620 0.625 0.634 0.640 BabbleCor 0.569 0.514 0.485 0.546 0.596 0.594 Speech NLS-Speech Intelligibility 0.588 0.548 0.603 0.635 0.658 0.661
+> Percept-R 0.789 0.788 0.813 0.794 0.807 0.811
+> Ultrasuite 0.850 0.635 0.882 0.923 0.926 0.888
+> SpeechOcean-Fluency 0.601 0.554 0.613 0.625 0.626 0.627
+> SpeechOcean-Accuracy 0.564 0.557 0.625 0.605 0.628 0.649
+> SpeechOcean-Prosody 0.613 0.613 0.705 0.701 0.704 0.715
+> C-BESD 0.753 0.566 0.892 0.596 0.593 0.532
+
+Table 4: Diarization and ASR performance. We re-port Diarization Error Rate (DER) and Word Error Rate (WER), where the lower is better. Best results per col-umn in bold , second-best underlined.                          
+
+> DER ( ↓)WER ( ↓)Model NLS ADOS MyST ADOS WavLM-Large 22 .10 45 .60 16 .56 59 .34
+> Whisper-Base 24 .20 48 .20 16 .99 55 .85
+> Whisper-Small 18.70 44.00 15 .93 59 .91
+> Whisper-Large 17.70 42.50 14.80 40.20
+> Parakeet-TDT ––15.82 45.60
+
+WavLM-Large generally outperform Whisper-family models or the voc2vec model. In par-ticular, WavLM-Large achieves the highest per-formance on CirCor (0.643), while SSAST per-forms best on ICBHI-crackles, ICBHI-wheezes, and SPRSound. These results suggest that models learned with generic audio representation may bet-ter capture fine-grained spectral and temporal char-acteristics present in physiological signals. In con-trast, Whisper-based models show comparatively lower performance on most physiological sound tasks, indicating that speech-oriented pretraining may not provide benefits for physiological sound classification, particularly in children. 
+
+Vocalization and Canonical Syllables For vo-calization and canonical syllables modeling, the re-sults reveal a more balanced ranking between SSL-based and ASR-oriented models. SSAST achieves the best performance on AudioSet-Child (0.657), ReCANVo (0.444), and Speech Maturity (0.686), suggesting that audio-based pre-training is still ben-eficial for modeling non-linguistic and early de-velopmental vocal behaviors. Unlike physiolog-ical sound classification, Whisper-based models achieve competitive performance on multiple tasks, such as BabbleCor and donate-a-cry. 
+
+Speech Quality Assessment For speech qual-ity classification, Whisper models achieve consis-tently higher performance. Specifically, Whisper-Large obtains the best results on all tasks from the SpeechOcean762 dataset. This suggests the strong speech recognition capabilities acquired from large-scale multilingual pre-training. On the other hand, SSL-based models remain competitive, with WavLM-Large achieving the best score on speech emotion recognition. Overall, these results indicate that speech-based pre-training benefits the classification of children’s speech, despite such models being trained predominantly on adult data. 
+
+Speaker Diarization and Speech Recognition 
+
+Table 4 reports diarization and ASR perfor-mance across the NLS, ADOS2-Mod3, and MyST datasets. For speaker diarization, Whisper-Large achieves the lowest error rates on both NLS (17.70 DER) and ADOS2-Mod3 (42.50 DER). For ASR, Whisper-Large also obtains the best results, reach-ing 14.80 WER on MyST and 40.20 WER on 6Table 5: Benchmark performance on ChildVox-Balanced test set using encoder-based models and LALMs. We report PER and WER (lower the better) for TinyVox and MyST, respectively. We report the Macro-F1 score (higher the better) on the remaining sets. SO refers to the SpeechOcean762 dataset.                                                                        
+
+> Model CirCor SPRSound AudioSet ReCANVo Speech PERCEPT-R SO-Prosody TinyVox MyST (↑)(↑)(↑)(↑)Maturity ( ↑)(↑)(↑)(↓)(↓)SSAST 0.543 0.508 0.638 0.500 0.735 0.800 0.644 --WavLM-Large 0.571 0.518 0.538 0.448 0.612 0.843 0.726 -0.147 Whisper-Base 0.349 0.362 0.605 0.373 0.663 0.769 0.745 -0.147 Whisper-Large 0.402 0.452 0.636 0.370 0.689 0.815 0.759 -0.128
+> AudioFlamingo3 0.452 0.162 0.089 0.157 0.069 0.323 0.400 0.958 0.274 Qwen2-Audio 0.397 0.541 0.699 0.514 0.726 0.779 0.671 0.602 0.133
+
+ADOS, with Parakeet-TDT ranking second on both ASR benchmarks. Overall, model scale is the domi-nant factor, with the largest Whisper model leading on the speech recognition and diarization tasks. 
+
+Findings Overall, performance varies substan-tially across child-centered audio categories, high-lighting the diverse acoustic properties of physio-logical sounds, vocalizations, canonical syllables, and speech. Meanwhile, no single model domi-nates across all tasks, whereas different encoders capture complementary aspects of these signals. 
+
+6.2 Large Audio Language Models Results 
+
+Table 5 compares the two LALMs against the encoder-based models on the ChildVox-Balanced 
+
+subset, where two LALMs behave substantially differently in their performance. Qwen2-Audio is consistently competitive with the strongest encoder-based models, achieving the best scores on Au-dioSet and ReCANVo. It remains close to the best encoder-based models on SpeechMaturity and Percept-R, and obtains a low WER on MyST. In contrast, AudioFlamingo3 performs substantially worse on nearly every task, with particularly low scores on vocalization and canonical syllables clas-sification, such as AudioSet and SpeechMaturity. It also returns an extremely large error rate on TinyVox phoneme recognition (0.958 PER). 
+
+Error Inspection Manual inspection indicates that this performance difference is driven by in-consistent instruction-following from the response, where AudioFlamingo3 often returns free-form de-scriptions (e.g., the audio clip is of a baby laugh-ing”) instead of the requested label. It also tends to summarize or hallucinate on transcription tasks. For example, given the reference transcript “Well, without electricity, an electromagnet would never be possible, because it gives it the magnetism,” AF3 hallucinates a summary rather than a transcription, Macro-F1 0.00 0.25 0.50 0.75 1.00 CirCor SPRSound ReCANVo PERCEPT-R SO-Prosody   
+
+> Gemini 2.5 Flash Gemini 3.5 Flash ChildVox-Best Encoder-based ChildVox-Qwen2 Audio
+> Comparison of Open-Source and Proprietary Models on ChildVox-Balanced Testset
+
+Figure 4: Macro-F1 on ChildVox-Balanced test set. Zero-shot proprietary models (Gemini 2.5/3.5 Flash) un-derperform the ChildVox -trained encoder and Qwen2-Audio baselines across all five datasets. 
+
+producing “The electromagnet is not working.” 
+
+6.3 Comparison with Proprietary Baselines 
+
+We compare zero-shot Gemini 2.5 Flash and Gem-ini 3.5 Flash against our ChildVox -trained encoder (best one) and Qwen2-Audio on five public datasets in Figure 4. We limit this comparison to these five datasets to ensure that no restricted or license-protected data is transmitted to third-party APIs. Overall, specialized models from ChildVox out-perform both proprietary baselines on every task. Specifically, both Gemini models perform particu-larly poorly on CirCor, SPRSound, and ReCANVo (Macro-F1 < 0.35), suggesting that general-purpose LALM struggle with fine-grained pediatric vocal and physiological audios. In summary, these re-sults highlight the effectiveness of models trained on the ChildVox benchmark. Zero-shot Gemini settings are detailed in the Appendix D. 
+
+7 Exemplar Applications with ChildVox 
+
+Inspired by the previous work (Lavechin et al., 2026), we design two experiments using the bench-mark models developed from the ChildVox to mea-sure the child’s speech production and language development in two different applications. 7Figure 5: Utterance rate (utterances per minute) derived from the speaker diarization model by language level (LL-1 to LL-3) in the NLS study. The violin plot shows that the utterance rate increases with the language levels. 
+
+7.1 Characterizing the Language Level Application Setup Our first application is on the in-house NLS dataset described in Section 3. In this study, domain experts categorize each child’s spo-ken language level into pre-verbal communication, first words, and word combinations, following the definitions by Tager-Flusberg et al. (2009). Specifi-cally, we refer to these three levels as LL-1, LL-2, and LL-3, respectively. We then apply our speaker diarization estimation models to compare language level differences across three groups. 
+
+Observations Figure 5 reveals a clear monotonic relationship between language level and utterance rate: the median number of utterances per minute increases steadily from LL-1 (pre-verbal communi-cation) through LL-2 (first words) to LL-3 (word combinations). This trend indicates that children at more advanced spoken language levels are more vocally active, producing speech at a higher rate. Moreover, the variability in utterance rate is in-creased with language level, with LL-3 showing the most varied distribution. Overall, these results show that diarization-derived utterance rate cap-tures a meaningful developmental signal consistent with expert-assigned language levels. 
+
+7.2 Speech Production Development Application Setup Our second application uses the PERCEPT-R corpus (Section 3), which con-tains single-word rhotic-targeted speech samples from children with typical development and SSDs, each manually annotated for correct rhotic produc-tion. We apply our Whisper-Large Rhotic/Derhotic classification model to investigate how the pre-dicted probability of rhotic production varies with chronological age. Specifically, we restrict the pre-
+
+> Figure 6: Correlation between model-predicted proba-bility of correct rhotic production and chronic age on PERCEPT-R dataset. Each dot represents a single par-ticipant, where the model-predicted probability is aggre-gated from all reading samples of a participant.
+
+diction only to typical developing children. 
+
+Observations Figure 6 shows a moderate pos-itive correlation between chronological age and the model-predicted probability of rhotic produc-tion in PERCEPT-R ( r = 0 .576 ). Specifically, younger children ( ∼115-135 months) show larger variability, while predicted probabilities from older children centered more consistently around 0.75. Several lower-probability outliers remain present at older ages, highlighting continued inter-speaker variability. These results indicate the ChildVox 
+
+provides models that can capture developmental changes in rhotic articulation across late childhood 
+
+8 Conclusion and Future Work 
+
+We introduce ChildVox , a benchmark characteriz-ing the diverse acoustic signals through which chil-dren communicate from birth through school age, integrating more than 20 sub-tasks across 17 child-centered audio and speech datasets. We would highlight that the scope of the benchmark design is rarely presented in the literature. Evaluated on a representative range of speech and audio founda-tion models, ChildVox supports downstream ap-plications such as characterizing children’s lan-guage levels and tracking speech production with age. In the future, we plan to expand it toward broader phoneme recognition (Bharadwaj et al., 2026; Guo et al., 2026), additional recording envi-ronments (Li et al., 2021; Feng et al., 2025b; Long et al., 2024), and to apply our benchmark models to enrich existing child audio corpora to support early screening (Islam et al., 2024), longitudinal monitor-ing (Kalenkovich et al., 2025), and education (Li et al., 2026b; Wagner et al., 2025) for children. 89 Limitations 
+
+While ChildVox facilitates the systematic eval-uation of audio, speech, and LALMs on child-centered audios, several limitations remain. 
+
+Language, Demographics, and Task Coverage 
+
+The majority of datasets in ChildVox include most English-language recordings in speech categories, with limited representation of other languages or dialects. Specifically, our ASR evaluation is re-stricted to the English subset. Therefore, conclu-sions about model performance may not generalize to children speaking other languages, such as Man-darin (Chua et al., 2023) or Spanish (Gildersleeve-Neumann et al., 2008). Similarly, the demographic factors (e.g., educational background or develop-mental status) across the experimental datasets are, in many cases, not fully documented, which may introduce sampling biases that propagate into model evaluation and result interpretation. More-over, we would consider integrating more spo-ken language understanding tasks as described in Dynamic-superb (Huang et al., 2025b, 2024). 
+
+Annotation variability Many child-centered au-dio tasks in ChildVox , particularly affective vocal-ization classification (ReCANVo), cry-cause classi-fication (Donate-a-Cry), and canonical syllables la-beling (SpeechMaturity), involve inherently subjec-tive categories with inter-rater disagreement. There-fore, reported classification scores may only reflect the ceiling imposed by annotation reliability. 
+
+Restricted set of foundation models Although 
+
+ChildVox includes several representative self-supervised, ASR-oriented, and LALMs, the devel-opment of audio foundation models is expanding rapidly. Specifically, we did not evaluate every re-cent open-source LALMs, such as GAMA (Ghosh et al., 2024), SALMONN (Tang et al., 2024), Step-Audio (Huang et al., 2025a), and Kimi-Audio (Ding et al., 2025). Moreover, comparisons with proprietary baselines are limited to two Gem-ini Flash models in a zero-shot setting, and our zero-shot prompt approach did not cover different prompt-engineering techniques. 
+
+10 Ethical Considerations 
+
+Overall, all models released in this work are derived from publicly available sources, and ChildVox ad-heres to the scope of each dataset’s license. More-over, modeling children’s speech can expose sen-sitive information about children, and to mitigate misuse, we plan to release code and checkpoints un-der the Responsible AI License (RAIL). Users are expected to respect the privacy of data subjects and comply with applicable laws in their jurisdictions. We encourage the use of these models for research aimed at developing robust speech processing tech-nology for and about children. Specifically, use of the models for clinical or diagnostic applica-tions, surveillance, privacy-invasive applications, or commercial purposes is strictly prohibited. 
+
+A Dataset Details 
+
+CirCor The CirCor DigiScope Phonocardiogram Dataset (Oliveira et al., 2021) is one publicly avail-able pediatric heart-sound corpus, which includes 5,272 phonocardiogram recordings from 1,568 sub-jects aged 0–21 years. Each subject is annotated by an expert cardiac physiologist with a murmur label drawn from, present, absent, or unknown. We use the publicly released training/testing par-tition to classify these tree labels. We segment each recording into non-overlapping 10-second windows. We further perform between-subject 5-fold cross-validation, partitioning the train data with 80/20 into train and development sets. 
+
+ICBHI ICBHI (Rocha et al., 2019) is a publicly available benchmark for respiratory sound analysis, targeting the recognition of crackles, wheezes, and respiratory conditions. It comprises 920 record-ings collected from 126 subjects, accompanied by two complementary annotation schemes. The dataset provides cycle-level labels for 6,898 respi-ratory cycles, each categorized as normal, contain-ing crackles, containing wheezes, or both. Similar to the CirCor dataset, we use the official ICBHI train/test split and apply 5-fold cross-validation over the training subjects to construct train/dev folds. For respiratory condition classification, recordings are segmented into 10-second windows with a 5-second hop, with diagnoses mapped to healthy, COPD, and other. For crackle and wheeze detection, we instead segment each recording ac-cording to the provided respiratory-cycle annota-tions. Segments shorter than 3 seconds (recording-level) or 0.5 seconds (cycle-level) are discarded. 
+
+SPRSound SPRSound (Zhang et al., 2022) is a paediatric respiratory sound database, designed for automatic diagnosis. It contains 2683 records and 9089 respiratory sound events collected from 292 9participants and annotated by 11 annotators. This dataset categorizes respiratory sound into two ma-jor labels: normal and adventitious. Specifically, there are continuous adventitious (CAS, such as Rhonchi, Wheeze, and Stridor) and discrete ad-ventitious (DAS, such as Coarse Crackle and Fine Crackle) based on duration. We use the official SPRSound train/test split and apply 5-fold cross-validation over the training subjects to construct training and development folds. For respiratory sound classification, we use the record-level an-notations provided with each recording, which are normal, CAS, DAS, CAS & DAS, and poor quality. 
+
+Donate-a-cry Donate-a-cry is a public infant cry audio corpus with labels for crying reasons. The audio samples in the corpus are collected with mo-bile devices and cleaned in the post-processing. There are 465 samples in the dataset, from children aged from 0 weeks to 2 years. The dataset is dis-tributed with extreme imbalance crying reasons in belly_pain (16), burping (8), discomfort (27), tired (24), and hungry (382). Therefore, we simplify the label as hungry and other. 
+
+CryBank CryBank (Lockhart-Bouron et al., 2023) is collected for a longitudinal infant crying study. The samples are recorded from 24 families with 10 girls and 14 boys. In our study, we fo-cus on three primary cry causes, which are hunger, loneliness, and discomfort, discarding segments la-beled as pain, other, or unknown due to limited sample availability. We merge consecutive cry segments within each recording when the inter-segment gap is less than 1 second to form contin-uous cry bouts, and retain only merged segments with a duration of at least 3 seconds. The resulting dataset is partitioned at the subject level using 5-fold cross-validation, where within each fold 80% of the training subjects are used for training and the remaining 20% for validation. 
+
+AudioSet AudioSet (Gemmeke et al., 2017) is a large-scale ontology-driven collection of over one million YouTube video clips. In this bench-mark, we focus on child sound event classifica-tion and filter data belonging to the following ten child-related audios: speaking, babbling, giggling, shouting, laughing, crying, whimpering, singing, playing, and music for children. We select the AudioSet-balanced dataset as the training set. 
+
+ReCANVo ReCANVo (Johnson et al., 2023) is designed to investigate the informative expressions in nonverbal vocalizations from real-world interac-tion. The participants are 6 males and 2 females, aged from 6 to 23, with different developmental disorders. The speech samples from each speaker have at least 10 pieces with fewer than 10 words. Overall, the data has 7,077 audio samples, recorded in a home environment. In our benchmark, we use six expression categories: delighted, dysregulated, frustrated, request, self-talk, and social, while dis-carding samples that fall outside this label set. The dataset is partitioned at the utterance level using 5-fold cross-validation, where within each fold 80% of the training and validation samples are used for training and the remaining 20% for testing. 
+
+BabbleCor BabbleCor (Cychosz et al., 2021) is a crosslingual corpus of infants and children to investigate vocal development in typical speech. 52 participants are exposed to five different lan-guages, including English, Spanish, Yêlí-Dnye, Tseltal Mayan, and bilingual Quechua-Spanish. Audio samples are clipped (400ms) from a day-long real-life recording for each child and anno-tated into five categories: canonical, non-canonical, crying, laughing, and junk. In our data process-ing, we use all five vocalization categories, cry-ing, laughing, canonical, non-canonical, and junk, while discarding data marked as NO-LABEL. The dataset is partitioned at the subject level using 5-fold cross-validation, where within each fold 80% of the training subjects are used for training and validation, and the remaining 20% for testing. 
+
+SpeechMaturity SpeechMaturity (Hitczenko et al., 2025; Zhang et al., 2025) is also designed to investigate children’s vocal development. Following BabbleCor, SpeechMaturity acquires clips from day-long children’s speech recordings and gets clips annotated into the five categories. But SpeechMaturity is collected from a larger population size, containing 242,004 labeled vocalizations from more than 25 languages. Our data processing approach follows the same processing steps as stated in the BabbleCor dataset. 
+
+C-BESD C-BESD (Rao et al., 2024) is a bilin-gual dataset developed for children’s emotion de-velopment research. The dataset contains 4200 utterances from 70 child speakers, aged from 6 to 12, and gender-balanced. Each speaker has 5 utter-ances for each of the 6 emotions (Happy, Neutral, Angry, Disgust, Fear, and Sad) in both Telugu and English. In our study, we focus on four primary 10 emotion categories: angry, happy, neutral, and sad. This choice is similar to common emotion recog-nition benchmarks (Pepino et al., 2021; Feng and Narayanan, 2024). The dataset is partitioned at the speaker level using 5-fold cross-validation, where within each fold 80% of the training subjects are used for training and validation, and the remaining 20% for testing. 
+
+PERCEPT-R PERCEPT-R (Benway et al., 2022) focuses on the speech of children from fully-rhotic American English with Rhotacism Speech Sound Disorder (RSSD). PERCEPT-R contains 32.47 hours of citation speech recordings, com-prising 105,232 word-level utterances. The 281 children (121 girls and 160 boys) are involved in speech recording, ranging from 72 months to 288 months. In data processing, we discard any utter-ances without a valid perceptual label. We restrict the data to recordings from the pre-treatment (PRE-1) and discharge post-treatment (DP-1) sessions to capture both ends of the intervention spectrum. The dataset is partitioned at the subject level us-ing 5-fold cross-validation, where within each fold 80% of the training subjects are used for training and validation, and the remaining 20% for testing. 
+
+SpeechOcean762 SpeechOcean762 (Zhang et al., 2021) is an open-source non-native English speech corpus for multi-granularity pronunciation assessment. It contains 5,000 utterances from 250 Mandarin-speaking learners (half children, half adults) with balanced gender and proficiency distributions. Each utterance is annotated by five experts to assess its accuracy, fluency, and prosody. Specifically, for accuracy and prosody, scores of 6 or below are mapped to “Poor”, 7–8 to “Nearly correct”, and 9–10 to “Correct”. For fluency, scores below 5 are mapped to “Intermittent”, 5–6 to “Fluent in general”, and 7 or above to “Fluent”. We adopt the official train and test splits, and further split the training set at the speaker level using 5-fold cross-validation. 
+
+UltraSuite UltraSuite (Eshky et al., 2018) is a multimodal repository of synchronized ultrasound and acoustic data from child speech therapy ses-sions, containing 86 children (58 typically devel-oping, 28 with SSDs) across three sub-datasets totaling 37.28 hours of audio and 14,456 utter-ances. Data spans six prompt types and includes longitudinal recordings across therapy stages for children with disorders such as phonological delay and childhood apraxia of speech. In our bench-mark, we focus on the typically developing chil-dren subset (core-uxtd) and restrict the data to Type A prompts, which consist of single-word utterances for word-level articulation analysis. We formulate a multi-label classification task targeting eight places of articulation, alveolar, bilabial, palatal, glottal, labiovelar, velar, dental, and labiodental, by map-ping each target word to its constituent consonant phonemes via the CMU Pronouncing Dictionary. We adopt the official train, dev, and test partitions provided with the dataset. 
+
+Natural Language Sampling (NLS) The dataset (Butler et al., 2022) comprises 73 English-speaking child-parent dyadic interaction sessions that occurred in naturalistic or home settings. No child appears more than twice in the dataset. Most children are diagnosed with ASD and are minimally verbal. Recordings were made remotely by research personnel over Zoom. Domain experts assigned each child’s spoken language levels to one of the three levels: pre-verbal (LL-1), first words (LL-2), or word combinations (LL-3). This definition was based on the prior study by Tager-Flusberg et al. (2009). 
+
+In-house ADOS2-Mod3 The ADOS (Lord et al., 2008) is a semi-structured assessment protocol lasting 40–60 minutes, where ADOS-Module 3 (Mod3) targets verbally fluent children across 14 pre-defined activities. The in-house ADOS-Mod3 dataset (Xu et al., 2026) focuses on two interview-style components, Social Difficulties and Annoy-ance and Emotions. This produces 352 segments from 180 children (mean age 8.53 years, range 3–13). Roughly half received an ASD diagnosis, with most others diagnosed with ADHD or other neurodevelopmental or psychiatric conditions. 
+
+MyST MyST (Pradhan et al., 2024) is one of the largest children’s conversational speech corpora, containing 393 hours and 228,874 utterances from 1,371 third-to-fifth-grade students engaging in one-on-one spoken dialog with a virtual science tutor. The corpus includes a stratified train/dev/test split for the ASR experiment. 
+
+TinyVox TinyVox (Lavechin et al., 2026) is a large-scale cross-linguistic corpus of over 500,000 IPA-transcribed child vocalizations (387.7 hours) from 560 children aged 5–96 months, compiled and standardized from 31 PhonBank corpora spanning 11 English, French, Portuguese, German, and Span-ish, with a unified 57-phoneme target inventory mapped via phonological feature edit distance. The dataset provides a speaker-independent 80/10/10 train/validation/test split. In this study, we only perform the phoneme experiments with LALM, since the token spaces of the decoders for the eval-uated ASR models are not directly compatible with phoneme recognition targets. 
+
+B Training Details 
+
+B.1 Training Parameters 
+
+For non-ASR tasks, during fine-tuning, SSAST models are trained with learning rates from 
+
+1 × 10 −4, 5 × 10 −4, while other pre-trained speech models use learning rates from 
+
+2 × 10 −4, 5 × 10 −4, 1 × 10 −3. We use a learning rate of 1 × 10 −4 in fine-tuning Qwen2Audio and AudioFlamingo3. All experiments are trained for 10 epochs. We set the maximum audio duration of 10 seconds for most audio and speech classification tasks. We apply a batch size of 256 with a mini-batch size of 8 when fine-tuning LALMs. During training, we applied several augmentations to the input waveforms: the Gaussian noise was added with a probability of 1.0, using an SNR range of 3–30 dB; time stretching was used with a probability of 1.0, with stretch rates ranging from 0.9 to 1.1; and polarity inversion was applied with a probability of 0.5. For ASR fine-tuning, all models are trained with a learning rate of 1 × 10 −4 and a batch size of 32. We train for 5 epochs on the MyST dataset and 20 epochs on the ADOS dataset. Prior to fine-tuning, all transcripts are normalized using Whis-per’s BasicTextNormalizer , and the same nor-malization is applied to the model outputs during inference. Unlike the work in (Fan et al., 2024), we do not filter samples based on transcription length or the zero-shot Whisper-large-v3 WER, allowing for a more realistic and comprehensive evaluation of model performance. 
+
+B.2 Training Architecture Encoder-based Fine-tuning Prior works (Pepino et al., 2021; Feng et al., 2025a) have shown that fine-tuning hidden representations from pre-trained encoder layers of speech foundation models can effectively adapt to a broad range of downstream speech tasks. Based on this, we adopt the architecture in Figure 3, where a learnable weighted average over all encoder layers (both convolutional and transformer) is passed through a 1D point-wise convolution, followed by temporal averaging, and fed to a fully connected classifier. We further apply LoRA (Hu et al., 2022) to all fine-tuning experiments for parameter-efficient adaptation of the foundation model backbones, including for the ASR fine-tunings. 
+
+LALMs As stated in the main paragraph, we directly apply LoRA modules with rank 64 into the query, key, value, down-projection, and up-projection layers of the language model, and feed-forward layers of the audio encoder. We use 4-bit quantization during training and normal 16-bit pre-cision at inference. 
+
+B.3 Training Hardware 
+
+All experiments with public datasets are conducted on a High-Performance Computing (HPC) cluster. Most experiments are conducted with a single A40 or V100 GPU. Experiments with private data are conducted on a GPU server with 4 A6000 GPUs. Most experiments on encoder-based models require a fine-tuning time of less than 2 days, and experi-ments on LALMs require 4-5 days on an A40 GPU. 
+
+C Prompt Design 
+
+While LALMs are trained on generalized speech tasks, they may not have the domain knowledge about vocalizations/speech patterns specific to chil-dren. Hence, in our SFT pipeline, we design system prompts for each dataset so as to include descrip-tions for each of the classes in the datasets. System prompt was first designed by the authors and then filtered using a frontier model (Gemini 3.1-pro). System prompts corresponding to the SFT of each dataset are as follows: 
+
+C.1 SpeechMaturity  
+
+> Listen to the child audio recording and classify the vocalization type. Output only the label - no explanation or punctuation. Labels: - Crying: distress vocalizations, whimpers, or wails - Laughing: laughter or giggling sounds - Canonical: well-formed syllables with clear consonant-vowel structure (e.g., `` ba '' ,
+> `` da '' )- Non-Canonical: vocalizations lacking clear consonant-vowel structure (e.g., squeals, growls, vowel-only sounds) - Junk: non-speech noise, silence, or unintelligible audio
+
+12 C.2 BabbleCor 
+
+Listen to the child audio recording and classify the vocalization type. Output only the label - no explanation or punctuation. Labels: - Crying: distress vocalizations, whimpers, or wails - Laughing: laughter or giggling sounds - Canonical: well-formed syllables with clear consonant-vowel structure (e.g., `` ba '' ,
+
+`` da '' )- Non-Canonical: vocalizations lacking clear consonant-vowel structure (e.g., squeals, growls, vowel-only sounds) - Junk: non-speech noise, silence, or unintelligible audio 
+
+C.3 PERCEPT-R 
+
+Listen to the child reading a word. Evaluate the pronunciation of the 'r' sound specifically. Output only the label - no explanation or punctuation. Labels: - Rhotic: the 'r' sound is produced correctly with appropriate rhoticity - Derhotic: the 'r' sound is missing, distorted, or replaced (e.g., substituted with 'w')
+
+C.4 SpeechOcean762-Prosody 
+
+Listen to the child reading a sentence. Evaluate the prosody - focus on intonation, stress, and rhythm. Output only the label - no explanation or punctuation. Labels: - Poor intonation: flat, monotone, or clearly unnatural intonation patterns - Nearly correct intonation: mostly natural prosody with minor errors - Correct intonation: natural, native-like intonation and rhythm throughout 
+
+C.5 SpeechOcean762-Fluency 
+
+Listen to the child reading a sentence. Evaluate the fluency - focus on flow, pausing, and hesitations. Output only the label - no explanation or punctuation. Labels: - Intermittent or little influent: frequent pauses, hesitations, or disruptions in speech flow - Fluent in general: mostly smooth delivery with occasional minor disfluencies - Fluent: smooth, continuous speech with no notable disfluencies 
+
+C.6 SpeechOcean762-Accuracy 
+
+Listen to the child reading a sentence. Evaluate the pronunciation accuracy - focus on correct phoneme production. Output only the label - no explanation or punctuation. Labels: - Poor or Understandable: many mispronunciations; difficult to understand - Good: mostly accurate pronunciation with some errors - Excellent: highly accurate, native-like pronunciation throughout 
+
+C.7 CirCor 
+
+Listen to the heart sound recording. Determine whether a cardiac murmur is present. Output only the label - no explanation or punctuation. Labels: - Absent: no murmur detected; normal heart sounds - Present: a murmur is clearly audible - Unknown: audio quality or ambiguity prevents a confident determination 
+
+C.8 ICBHI-Record 
+
+Listen to the lung sound recording. Classify the respiratory condition based on the breath sounds. Output only the label - no explanation or punctuation. Labels: - Healthy: normal breath sounds with no abnormalities - Obstructive: sounds consistent with airway obstruction (e.g., wheezing) - Infectious: sounds consistent with infection (e.g., crackles, consolidation) 
+
+C.9 ICBHI-Crackles 
+
+Listen to the lung sound recording. Determine whether crackles are present. Output only the label - no explanation or punctuation. Labels: - Crackles: discontinuous, explosive sounds (fine or coarse crackles) are audible - No crackles: no crackle sounds detected 
+
+C.10 ICBHI-Wheezes 
+
+Listen to the lung sound recording. Determine whether wheezes are present. Output only the label - no explanation or punctuation. Labels: - Wheezes: continuous, high-pitched whistling sounds are audible - No wheezes: no wheeze sounds detected 
+
+C.11 SPRSound 
+
+Listen to the lung sound recording. Classify the respiratory sound pattern. Output only the label - no explanation or punctuation. 
+
+13 Labels: - Normal: clear breath sounds with no adventitious sounds - CAS: continuous adventitious sounds only (e.g., wheezes, rhonchi) - DAS: discontinuous adventitious sounds only (e.g., crackles) - CAS & DAS: both continuous and discontinuous adventitious sounds present - Poor Quality: recording is too noisy or unclear for reliable classification 
+
+C.12 ReCANVo 
+
+Listen to the child audio recording and classify the communicative intent or emotional state of the vocalization. Output only the label - no explanation or punctuation. Labels: - Delighted: joyful, excited, or positively expressive sounds - Dysregulated: distressed, overwhelmed, or emotionally dysregulated vocalizations - Frustrated: sounds expressing frustration or dissatisfaction - Request: vocalizations used to request an object, action, or attention - Selftalk: vocalizations directed inward, not toward a social partner - Social: vocalizations directed toward engaging or interacting with others 
+
+C.13 CryBank 
+
+Listen to the infant cry recording and identify the most likely cause of the cry. Output only the label - no explanation or punctuation. Labels: - Hunger: cry pattern associated with feeding need - Loneliness: cry pattern associated with desire for social contact or comfort. Loneliness was defined as the infant seeking contact or attention - Discomfort: cry pattern associated with physical discomfort. Examples of discomfort included cold, fever, and full diaper. 
+
+C.14 MyST 
+
+Listen to the child audio recording and transcribe exactly what is spoken. Output only the transcript - no labels, explanations, punctuation beyond what is spoken, or formatting. If the audio is unintelligible, output: [unintelligible] 
+
+C.15 TinyVox 
+
+Listen to the child speaking a single word. Transcribe the pronunciation using standard phoneme symbols (ARPABET or IPA). Output only the phoneme sequence - no labels, explanations, or formatting. Example format: /b ae t/ 
+
+D Proprietary Baselines 
+
+We apply both Gemini 2.5 Flash and Gemini 3.5 Flash APIs on 5 selected public datasets in the main paragraph. We apply a temperature of 1.0 in prompting both models. We run the prompt experiment on these two proprietary baselines for a single run due to the budget limitation. 
+
+E Generative AI Use Disclaim 
+
+Generative AI tools were used solely for gram-mar checking and polishing the writing of the manuscript. All research concepts, experimental design, implementations, analyses, and reported results were developed and conducted by the au-thors. The conceptual framing, methodology, and scientific contributions of this work are entirely human-generated. 14 References 
+
+donateacry-corpus. https://github.com/gveres/ donateacry-corpus .Nina Benway, Jonathan L Preston, Elaine Hitchcock, Asif Salekin, Harshit Sharma, and Tara McAllister Byun. 2022. Percept-r: An open-access american english child/clinical speech corpus specialized for the audio classification of /r/. In INTERSPEECH ,pages 3648–3652. Shikhar Bharadwaj, Chin-Jou Li, Yoonjae Kim, Kwanghee Choi, Eunjung Yeo, Ryan Soh-Eun Shim, Hanyu Zhou, Brendon Boldt, Karen Rosero Jacome, Kalvin Chang, and 1 others. 2026. Prism: Bench-marking phone realization in speech models. arXiv preprint arXiv:2601.14046 .Lindsay K Butler, Chelsea La Valle, Sophie Schwartz, Joseph B Palana, Cerelia Liu, Natalie Peterman, Lue Shen, and Helen Tager-Flusberg. 2022. Remote natu-ral language sampling of parents and children with autism spectrum disorder: Role of activity and lan-guage level. Frontiers in Communication , 7:820564. Sanyuan Chen, Chengyi Wang, Zhengyang Chen, Yu Wu, Shujie Liu, Zhuo Chen, Jinyu Li, Naoyuki Kanda, Takuya Yoshioka, Xiong Xiao, and 1 oth-ers. 2022. Wavlm: Large-scale self-supervised pre-training for full stack speech processing. IEEE Journal of Selected Topics in Signal Processing ,16(6):1505–1518. Yunfei Chu, Jin Xu, Qian Yang, Haojie Wei, Xipin Wei, Zhifang Guo, Yichong Leng, Yuanjun Lv, Jinzheng He, Junyang Lin, and 1 others. 2024. Qwen2-audio technical report. arXiv preprint arXiv:2407.10759 .Victoria YH Chua, Hexin Liu, Leibny Paola Garcia, Fei Ting Woon, Jinyi Wong, Xiangyu Zhang, San-jeev Khudanpur, Andy WH Khong, Justin Dauwels, and Suzy J Styles. 2023. Merlion ccs challenge: A english-mandarin code-switching child-directed speech corpus for language identification and diariza-tion. In Proc. Interspeech 2023 , pages 4109–4113. Margaret Cychosz, Alejandrina Cristia, Elika Bergel-son, Marisa Casillas, Gladys Baudet, Anne S Warlau-mont, Camila Scaff, Lisa Yankowitz, and Amanda Seidl. 2021. Vocal development in a large-scale crosslinguistic corpus. Developmental science ,24(5):e13090. Ding Ding, Zeqian Ju, Yichong Leng, Songxiang Liu, Tong Liu, Zeyu Shang, Kai Shen, Wei Song, Xu Tan, Heyi Tang, and 1 others. 2025. Kimi-audio technical report. arXiv preprint arXiv:2504.18425 .Aciel Eshky, Manuel Sam Ribeiro, Joanne Cleland, Ko-rin Richmond, Zoe Roxburgh, James M Scobbie, and Alan Wrench. 2018. Ultrasuite: A repository of ul-trasound and acoustic data from child speech therapy sessions. In Proc. Interspeech 2018 , pages 1888– 1892. Ruchao Fan, Natarajan Balaji Shankar, and Abeer Al-wan. 2024. Benchmarking children’s asr with super-vised and self-supervised speech foundation models. 
+
+Interspeech .Tiantian Feng, Jihwan Lee, Anfeng Xu, Yoonjeong Lee, Thanathai Lertpetchpun, Xuan Shi, Helin Wang, Thomas Thebaud, Laureano Moro-Velazquez, Dani Byrd, and 1 others. 2025a. Vox-profile: A speech foundation model benchmark for characterizing di-verse speaker and speech traits. arXiv preprint arXiv:2505.14648 .Tiantian Feng and Shrikanth Narayanan. 2024. Founda-tion model assisted automatic speech emotion recog-nition: Transcribing, annotating, and augmenting. In ICASSP 2024-2024 IEEE International Confer-ence on Acoustics, Speech and Signal Processing (ICASSP) , pages 12116–12120. IEEE. Tiantian Feng, Anfeng Xu, Xuan Shi, Somer Bishop, and Shrikanth Narayanan. 2025b. Egocentric speaker classification in child-adult dyadic interactions: From sensing to computational modeling. In Proc. Inter-speech 2025 , pages 2835–2839. Jort F Gemmeke, Daniel PW Ellis, Dylan Freedman, Aren Jansen, Wade Lawrence, R Channing Moore, Manoj Plakal, and Marvin Ritter. 2017. Audio set: An ontology and human-labeled dataset for audio events. In 2017 IEEE international conference on acoustics, speech and signal processing (ICASSP) ,pages 776–780. IEEE. Sreyan Ghosh, Arushi Goel, Jaehyeon Kim, Sonal Ku-mar, Zhifeng Kong, Sang-gil Lee, Chao-Han Yang, Ramani Duraiswami, Dinesh Manocha, Rafael Valle, and 1 others. 2026. Audio flamingo 3: Advancing au-dio intelligence with fully open large audio language models. Advances in Neural Information Processing Systems , 38:41819–41886. Sreyan Ghosh, Sonal Kumar, Ashish Seth, Chandra Ki-ran Reddy Evuru, Utkarsh Tyagi, S Sakshi, Oriol Nieto, Ramani Duraiswami, and Dinesh Manocha. 2024. Gama: A large audio-language model with ad-vanced audio understanding and complex reasoning abilities. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing ,pages 6288–6313. Christina E Gildersleeve-Neumann, Ellen S Kester, Bar-bara L Davis, and Elizabeth D Peña. 2008. English speech sound development in preschool-aged chil-dren from bilingual english–spanish environments. 
+
+Language, Speech, and Hearing Services in Schools ,39(3):314–328. Yuan Gong, Cheng-I Lai, Yu-An Chung, and James Glass. 2022. Ssast: Self-supervised audio spectro-gram transformer. In Proceedings of the AAAI Con-ference on Artificial Intelligence , volume 36, pages 10699–10709. Chenxu Guo, Jiachen Lian, Yisi Liu, Baihe Huang, Shriyaa Narayanan, Cheol Jun Cho, and Gopala 
+
+15 Anumanchipalli. 2026. Huper: A human-inspired framework for phonetic perception. arXiv preprint arXiv:2602.01634 .Kasia Hitczenko, Loann Peurey, WN Harvard, Kai Jia Tey, Amanda Seidl, Chiara Semenzin, Camila Scaff, Marvin Lavechin, Bridgette Kelleher, Lisa Hamrick, and 1 others. 2025. Speech maturity dataset: A cross-cultural corpus of naturalistic child and adult vocal-izations. OSF Preprints .Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, Weizhu Chen, and 1 others. 2022. Lora: Low-rank adaptation of large language models. ICLR , 1(2):3. Ailin Huang, Boyong Wu, Bruce Wang, Chao Yan, Chen Hu, Chengli Feng, Fei Tian, Feiyu Shen, Jingbei Li, Mingrui Chen, and 1 others. 2025a. Step-audio: Unified understanding and generation in intelligent speech interaction. arXiv preprint arXiv:2502.11946 .Chien-yu Huang, Wei-Chih Chen, Shu-wen Yang, Andy T Liu, Chen-An Li, Yu-Xiang Lin, Wei-Cheng Tseng, Anuj Diwan, Yi-Jen Shih, Jiatong Shi, and 1 others. 2025b. Dynamic-superb phase-2: A collabo-ratively expanding benchmark for measuring the ca-pabilities of spoken language models with 180 tasks. In International Conference on Learning Representa-tions , volume 2025, pages 82908–82973. Chien-yu Huang, Ke-Han Lu, Shih-Heng Wang, Chi-Yuan Hsiao, Chun-Yi Kuan, Haibin Wu, Siddhant Arora, Kai-Wei Chang, Jiatong Shi, Yifan Peng, and 1 others. 2024. Dynamic-superb: Towards a dynamic, collaborative, and comprehensive instruction-tuning benchmark for speech. In ICASSP 2024-2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pages 12136–12140. IEEE. Bashima Islam, Nancy L McElwain, Jialu Li, Maria I Davila, Yannan Hu, Kexin Hu, Jordan M Bodway, Ashutosh Dhekne, Romit Roy Choudhury, and Mark Hasegawa-Johnson. 2024. Preliminary technical val-idation of littlebeats™: A multimodal sensing plat-form to capture cardiac physiology, motion, and vo-calizations. Sensors , 24(3):901. Kristina T Johnson, Jaya Narain, Thomas Quatieri, Pat-tie Maes, and Rosalind W Picard. 2023. Recanvo: A database of real-world communicative and affective nonverbal vocalizations. Scientific Data , 10(1):523. Evgenii Kalenkovich, Sharath Koorathota, Shaelise Tor, Andrei Amatuni, Shannon Egan-Dailey, Charlotte Moore, Catherine Laing, Hallie Garrison, Gladys Baudet, Federica Bulgarelli, and 1 others. 2025. A year of nouns from english-learning infants’ daily lives: The seedlings-nouns dataset: E. kalenkovich et al. Behavior Research Methods , 57(11):298. Alkis Koudounas, Moreno La Quatra, Sabato Marco Siniscalchi, and Elena Baralis. 2025. voc2vec: A foundation model for non-verbal vocalization. In ICASSP 2025-2025 IEEE International Confer-ence on Acoustics, Speech and Signal Processing (ICASSP) , pages 1–5. IEEE. Marvin Lavechin, Elika Bergelson, and Roger Levy. 2026. Babar: from phoneme recognition to develop-mental measures of young children’s speech produc-tion. arXiv preprint arXiv:2603.05213 .Nonie K Lesaux and Linda S Siegel. 2003. The de-velopment of reading in children who speak english as a second language. Developmental psychology ,39(6):1005. Jialu Li, Mark Hasegawa-Johnson, and Nancy L McEl-wain. 2021. Analysis of acoustic and voice quality features for the classification of infant and mother vocalizations. Speech communication , 133:41–61. Jialu Li, Mark Hasegawa-Johnson, and Nancy L McEl-wain. 2024. Analysis of self-supervised speech mod-els on children’s speech and infant vocalizations. In 
+
+2024 IEEE International Conference on Acoustics, Speech, and Signal Processing Workshops (ICAS-SPW) , pages 550–554. IEEE. Jialu Li, Marvin Lavechin, Xulin Fan, Nancy L McEl-wain, Alejandrina Cristia, Paola Garcia-Perera, and Mark A Hasegawa-Johnson. 2026a. Automated anal-ysis of naturalistic recordings in early childhood: Ap-plications, challenges, and opportunities. IEEE Sig-nal Processing Magazine , 42(6):16–34. Shuhe Li, Chenxu Guo, Jiachen Lian, Cheol Jun Cho, Wenshuo Zhao, Xiner Xu, Ruiyu Jin, Xiaoyu Shi, Xuanru Zhou, Dingkun Zhou, and 1 others. 2026b. K-function: Joint pronunciation transcription and feedback for evaluating kids language function. In ICASSP 2026-2026 IEEE International Confer-ence on Acoustics, Speech and Signal Processing (ICASSP) , pages 3231–3235. IEEE. Marguerite Lockhart-Bouron, Andrey Anikin, Katarzyna Pisanski, Siloé Corvin, Clément Cornec, Léo Papet, Florence Levréro, Camille Fauchon, Hugues Patural, David Reby, and 1 others. 2023. Infant cries convey both stable and dynamic information about age and identity. Communications Psychology , 1(1):26. Bria Long, Sarah Goodin, George Kachergis, Virginia A Marchman, Samaher F Radwan, Robert Z Sparks, Violet Xiang, Chengxu Zhuang, Oliver Hsu, Brett Newman, and 1 others. 2024. The babyview camera: designing a new head-mounted camera to capture children’s early social and visual environments. Be-havior Research Methods , 56(4):3523–3534. Catherine Lord, Mayada Elsabbagh, Gillian Baird, and Jeremy Veenstra-Vanderweele. 2018. Autism spec-trum disorder. The lancet , 392(10146):508–520. Catherine Lord, Michael Rutter, Pamela C DiLavore, Susan Risi, K Gotham, SL Bishop, and 1 others. 2008. 
+
+Autism diagnostic observation schedule (ADOS): Manual . Western Psychological Services Los An-geles. 
+
+16 Emma McGonigle, Mark VanDam, Carol Wilkinson, and Kristina T Johnson. 2024. Benchmarking au-tomatic speech recognition technology for natural language samples of children with and without devel-opmental delays. In 2024 46th Annual International Conference of the IEEE Engineering in Medicine and Biology Society (EMBC) , pages 1–5. IEEE. Lucas Block Medin, Thomas Pellegrini, and Lucile Gelin. 2024. Self-supervised models for phoneme recognition: Applications in children’s speech for reading learning. Interspeech .Aravind Kumar Namasivayam, Deirdre Coleman, Ais-ling O’Dwyer, and Pascal Van Lieshout. 2020. Speech sound disorders in children: An articula-tory phonology perspective. Frontiers in psychology ,10:2998. Jorge Oliveira, Francesco Renna, Paulo Dias Costa, Marcelo Nogueira, Cristina Oliveira, Carlos Ferreira, Alípio Jorge, Sandra Mattos, Thamine Hatem, Thi-ago Tavares, and 1 others. 2021. The circor digiscope dataset: from murmur detection to murmur classifi-cation. IEEE journal of biomedical and health infor-matics , 26(6):2524–2535. Leonardo Pepino, Pablo Riera, and Luciana Ferrer. 2021. Emotion recognition from speech using wav2vec 2.0 embeddings. In Proc. Interspeech 2021 , pages 3400– 3404. Sameer Pradhan, Ronald Cole, and Wayne Ward. 2024. My science tutor (myst)–a large corpus of children’s conversational speech. In Proceedings of the 2024 Joint International Conference on Computational Linguistics, Language Resources and Evaluation (LREC-COLING 2024) , pages 12040–12045. Dhulipalla Venkata Rao, Kodali Radha, Sai Rekha Gu-divaka, and Pranuthi Polipogu. 2024. Children’s speech emotion recognition using feature fusion-based deep neural networks. In 2024 IEEE Inter-national Conference on Intelligent Signal Process-ing and Effective Communication Technologies (IN-SPECT) , pages 1–6. IEEE. Dima Rekesh, Nithin Rao Koluguri, Samuel Kriman, Somshubra Majumdar, Vahid Noroozi, He Huang, Oleksii Hrinchuk, Krishna Puvvada, Ankur Kumar, Jagadeesh Balam, and 1 others. 2023. Fast conformer with linearly scalable attention for efficient speech recognition. In 2023 IEEE Automatic Speech Recog-nition and Understanding Workshop (ASRU) , pages 1–8. IEEE. Manuel Sam Ribeiro, Joanne Cleland, Aciel Eshky, Ko-rin Richmond, and Steve Renals. 2021. Exploiting ul-trasound tongue imaging for the automatic detection of speech articulation errors. Speech Communication ,128:24–34. Bruno M Rocha, Dimitris Filos, Luís Mendes, Gorkem Serbes, Sezer Ulukaya, Yasemin P Kahya, Nikša Jakovljevic, Tatjana L Turukalo, Ioannis M Vogiatzis, Eleni Perantoni, and 1 others. 2019. An open access database for the evaluation of respiratory sound clas-sification algorithms. Physiological measurement ,40(3):035001. Yvan Rose and Brian MacWhinney. 2014. The phon-bank project. The Oxford Handbook of Corpus Phonology , pages 380–401. Vishwanath Pratap Singh, Md Sahidullah, and Tomi H Kinnunen. 2026. Causal analysis of asr errors for children: Quantifying the impact of physiological, cognitive, and extrinsic factors. Computer Speech & Language , 95:101859. Abhijit Sinha, Hemant Kumar Kathania, and Mikko Ku-rimo. 2026. A study on the layer-wise transferabil-ity of self-supervised learning features for children’s speech processing tasks. Speech Communication ,page 103392. Helen Tager-Flusberg, Sally Rogers, Judith Cooper, Re-becca Landa, Catherine Lord, Rhea Paul, Mabel Rice, Carol Stoel-Gammon, Amy Wetherby, and Paul Yo-der. 2009. Defining spoken language benchmarks and selecting measures of expressive language de-velopment for young children with autism spectrum disorders. Journal of Speech, Language, and Hear-ing Research , 52(3):643–652. Changli Tang, Wenyi Yu, Guangzhi Sun, Xianzhao Chen, Tian Tan, Wei Li, Lu Lu, Zejun Ma, and Chao Zhang. 2024. Salmonn: Towards generic hearing abilities for large language models. In International Conference on Learning Representations , volume 2024, pages 16607–16629. Laura Wagner, Sharifa Alghowinhem, Abeer Alwan, Kristina Bowdrie, Cynthia Breazeal, Cynthia G Clop-per, Eric Fosler-Lussier, Izabela A Jamsek, Devan Lander, Rajiv Ramnath, and 1 others. 2025. The ohio child speech corpus. Speech Communication ,170:103206. Anfeng Xu, Tiantian Feng, Somer Bishop, Catherine Lord, and Shrikanth Narayanan. 2026. End-to-end joint asr and speaker role diarization with child-adult interactions. arXiv preprint arXiv:2601.17640 .Anfeng Xu, Rajat Hebbar, Rimita Lahiri, Tiantian Feng, Lindsay Butler, Lue Shen, Helen Tager-Flusberg, and Shrikanth Narayanan. 2023a. Understanding spoken language development of children with asd using pre-trained speech embeddings. Interspeech .Anfeng Xu, Kevin Huang, Tiantian Feng, Lue Shen, He-len Tager-Flusberg, and Shrikanth Narayanan. 2024. Exploring speech foundation models for speaker di-arization in child-adult dyadic interactions. In Proc. Interspeech 2024 , pages 5193–5197. Hainan Xu, Fei Jia, Somshubra Majumdar, He Huang, Shinji Watanabe, and Boris Ginsburg. 2023b. Ef-ficient sequence transduction by jointly predicting tokens and durations. In International Conference on Machine Learning , pages 38462–38484. PMLR. 
+
+17 Anyu Ying, Natarajan Balaji Shankar, Chyi-Jiunn Lin, Mohan Shi, Pu Wang, Hye-jin Shim, Siddhant Arora, Abeer Alwan, Shinji Watanabe, and 1 others. 2025. Benchmarking training paradigms, dataset composi-tion, and model scaling for child asr in espnet. Work-shop on Child Computer Interaction (WOCCI) .Junbo Zhang, Zhiwen Zhang, Yongqing Wang, Zhiyong Yan, Qiong Song, Yukai Huang, Ke Li, Daniel Povey, and Yujun Wang. 2021. speechocean762: An open-source non-native english speech corpus for pronun-ciation assessment. In Proc. Interspeech 2021 , pages 3710–3714. Qing Zhang, Jing Zhang, Jiajun Yuan, Huajie Huang, Yuhang Zhang, Baoqin Zhang, Gaomei Lv, Shuzhu Lin, Na Wang, Xin Liu, and 1 others. 2022. Sprsound: Open-source sjtu paediatric respiratory sound database. IEEE Transactions on Biomedical Circuits and Systems , 16(5):867–881. Theo Zhang, Madurya Suresh, Anne Warluamont, Ka-sia Hitczenko, Alejandrina Cristia, and Margaret Cy-chosz. 2025. Employing self-supervised learning models for cross-linguistic child speech maturity clas-sification. In Interspeech 2025 , pages 2825–2829. 
+
+18

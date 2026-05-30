@@ -1,139 +1,15 @@
 {
-  "generated_at": "2026-05-29T21:58:58.631714+00:00",
-  "updated_date": "20260529",
+  "generated_at": "2026-05-30T20:44:44.090860+00:00",
+  "updated_date": "20260530",
   "carryover_days": 9,
   "tag_states": {
     "speech-model": {
-      "updated_date": "20260529",
+      "updated_date": "20260530",
       "carryover_days": 9,
-      "items": [
-        {
-          "id": "2605.24618v1",
-          "source": "arxiv",
-          "title": "FC-TTS: Style and Timbre Control in Zero-Shot Text-to-Speech with Disentangled Speech Representations",
-          "abstract": "Recent advances in zero-shot text-to-speech (TTS) have enabled accurate imitation of reference speech in terms of both speaking style and speaker timbre. However, achieving disentangled control over these aspects from separate references remains a challenging task. Several studies have proposed disentangled speech representations that decompose speech into interpretable attributes (e.g., timbre, prosody, and content), providing a promising foundation for TTS with attribute control from separate references. Yet, how to effectively integrate such representations into TTS systems to achieve independent and precise control remains underexplored. In this paper, we present FC-TTS, a zero-shot TTS framework that enables disentangled control of style and timbre by conditioning on two distinct reference utterances. Unlike existing systems that inherit limitations from those pre-trained disentangled representations, FC-TTS introduces key design strategies, including architectural choices, training framework, and auxiliary training objectives, which improve the reliability of attribute separation and dual-reference control. Experiments show that FC-TTS achieves high-fidelity synthesis and competitive zero-shot naturalness, while uniquely supporting consistent and independent manipulation of style and timbre. Audio samples are available at https://qualcomm-ai-research.github.io/fc-tts",
-          "authors": [
-            "Yoonhyung Lee",
-            "Hyunsin Park",
-            "Jinhwan Park",
-            "Jinkyu Lee"
-          ],
-          "primary_category": "eess.AS",
-          "categories": [
-            "eess.AS"
-          ],
-          "published": "2026-05-23T15:01:28+00:00",
-          "link": "https://arxiv.org/pdf/2605.24618v1",
-          "tags": [
-            "keyword:WM-VLA-SA",
-            "keyword:speech-model",
-            "query:speech-model"
-          ],
-          "llm_score": 8.0,
-          "llm_evidence_en": "zero-shot TTS with style and timbre control",
-          "llm_evidence_cn": "零样本TTS中的风格和音色控制",
-          "llm_evidence": "零样本TTS中的风格和音色控制",
-          "canonical_evidence": "零样本TTS中的风格和音色控制",
-          "llm_tldr_en": "FC-TTS proposes a zero-shot TTS framework with disentangled speech representations for independent control of speaking style and timbre from separate references.",
-          "llm_tldr_cn": "现有零样本文语转换难以独立控制来自不同参考语音的风格和音色。本文提出FC-TTS框架，利用解耦语音表示实现风格和音色的独立控制，在保留内容的同时精确调控表现力属性。实验表明该方法在风格和音色分离控制上优于基线，为零样本表现力语音合成提供了新思路。",
-          "llm_tldr": "现有零样本文语转换难以独立控制来自不同参考语音的风格和音色。本文提出FC-TTS框架，利用解耦语音表示实现风格和音色的独立控制，在保留内容的同时精确调控表现力属性。实验表明该方法在风格和音色分离控制上优于基线，为零样本表现力语音合成提供了新思路。",
-          "llm_tags": [
-            "query:speech-model"
-          ],
-          "matched_query_tag": "query:speech-model",
-          "matched_query_text": "expressive speech synthesis",
-          "matched_requirement_id": "req-3",
-          "selection_source": "carryover_cache",
-          "paper_id": "2605.24618v1",
-          "carry_days": 1
-        },
-        {
-          "id": "2605.25930v2",
-          "source": "arxiv",
-          "title": "CosyEdit2: Speech-Editing-Oriented Reinforcement Learning Unlocks Better Zero-Shot TTS",
-          "abstract": "Speech editing and zero-shot Text-to-Speech (TTS) share a similar generative foundation conditioned on speech prompts, yet speech editing demands far stricter local acoustic consistency with surrounding unedited content. While prior work has shown that Supervised Fine-Tuning (SFT) enables TTS models to acquire functional editing capability, this approach remains fundamentally bottlenecked by imperfect paired editing data and coarse-grained optimization signals. To address these limitations, we propose CosyEdit2, a speech editing model built on a two-stage post-training framework that progresses from supervised editing initialization to editing-oriented Group Relative Policy Optimization (GRPO) over target-speech-free data. Extensive experiments demonstrate that CosyEdit2 not only substantially advances speech editing performance, but also unlocks better zero-shot TTS capability, revealing a deeper mutual relationship between the two tasks. Audio samples are available at https://cjy1018.github.io/CosyEdit2.",
-          "authors": [
-            "Junyang Chen",
-            "Yuhang Jia",
-            "Hui Wang",
-            "Jiaming Zhou",
-            "Yongchang Gan",
-            "Yong Qin"
-          ],
-          "primary_category": "cs.SD",
-          "categories": [
-            "cs.SD"
-          ],
-          "published": "2026-05-25T15:12:56+00:00",
-          "link": "https://arxiv.org/pdf/2605.25930v2",
-          "tags": [
-            "keyword:speech-model",
-            "query:speech-model"
-          ],
-          "llm_score": 8.0,
-          "llm_evidence_en": "speech-editing RL for zero-shot TTS",
-          "llm_evidence_cn": "面向语音编辑的强化学习增强零样本TTS",
-          "llm_evidence": "面向语音编辑的强化学习增强零样本TTS",
-          "canonical_evidence": "面向语音编辑的强化学习增强零样本TTS",
-          "llm_tldr_en": "CosyEdit2 uses a two-stage post-training with GRPO to improve zero-shot TTS for speech editing, overcoming limitations of supervised fine-tuning.",
-          "llm_tldr_cn": "语音编辑与零样本TTS共享生成基础，但编辑需要更强的局部声学一致性。有监督微调受限于不完美数据。本文提出CosyEdit2，采用两阶段后训练框架，从有监督编辑初始化到基于GRPO的编辑优化，无需目标语音数据。实验表明，CosyEdit2在编辑精度和自然度上显著超越现有方法。",
-          "llm_tldr": "语音编辑与零样本TTS共享生成基础，但编辑需要更强的局部声学一致性。有监督微调受限于不完美数据。本文提出CosyEdit2，采用两阶段后训练框架，从有监督编辑初始化到基于GRPO的编辑优化，无需目标语音数据。实验表明，CosyEdit2在编辑精度和自然度上显著超越现有方法。",
-          "llm_tags": [
-            "query:speech-model"
-          ],
-          "matched_query_tag": "query:speech-model",
-          "matched_query_text": "expressive speech synthesis",
-          "matched_requirement_id": "req-3",
-          "selection_source": "carryover_cache",
-          "paper_id": "2605.25930v2",
-          "carry_days": 1
-        },
-        {
-          "id": "2605.27984v1",
-          "source": "arxiv",
-          "title": "KVoiceBench, KOpenAudioBench, and KMMAU: Agent-Driven Korean Speech Benchmarks for Evaluating SpeechLMs",
-          "abstract": "Speech language models (SpeechLMs) have achieved substantial progress by extending large language models (LLMs) to the speech modality. However, SpeechLM evaluation remains heavily centered on English, limiting reliable assessment of multilingual speech capabilities. Straightforward benchmark transfer through ASR, translation, normalization, and TTS can corrupt language-specific instructions, answer constraints, and spoken forms; for audio understanding, transferring source-language audio also fails to preserve target-language speaker attributes, accents, and paralinguistic properties. To address these limitations, we propose two human-agent benchmark-construction frameworks: one transfers source-language SpokenQA benchmarks into target-language SpokenQA benchmarks, and the other converts target-language ASR corpora into audio understanding benchmarks using transcriptions and speaker metadata. Using these frameworks, we construct and publicly release three Korean speech benchmarks: KVoiceBench and KOpenAudioBench for Korean SpokenQA, and KMMAU for Korean audio understanding, comprising 12,345 samples in total. We evaluate eight recent SpeechLMs and find that English-Korean performance gaps vary substantially across models and task families, and that SpokenQA and audio understanding rankings diverge, revealing complementary weaknesses invisible to English-only evaluation.",
-          "authors": [
-            "Haechan Kim",
-            "Seungjun Chung",
-            "Inkyu Park",
-            "Jihoo Lee",
-            "Jonghyun Lee"
-          ],
-          "primary_category": "cs.CL",
-          "categories": [
-            "cs.CL",
-            "cs.AI"
-          ],
-          "published": "2026-05-27T05:19:38+00:00",
-          "link": "https://arxiv.org/pdf/2605.27984v1",
-          "tags": [
-            "keyword:speech-model",
-            "query:WM-VLA-SA",
-            "query:speech-model"
-          ],
-          "llm_score": 8.0,
-          "llm_evidence_en": "Korean speech benchmarks for SpeechLM, evaluating unified understanding and generation",
-          "llm_evidence_cn": "韩语语音语言模型基准，评估统一理解与生成",
-          "llm_evidence": "韩语语音语言模型基准，评估统一理解与生成",
-          "canonical_evidence": "韩语语音语言模型基准，评估统一理解与生成",
-          "llm_tldr_en": "Proposes human-agent frameworks to create Korean speech benchmarks (KVoiceBench etc.) for evaluating SpeechLMs, addressing limitations of direct benchmark transfer.",
-          "llm_tldr_cn": "语音语言模型的评估多集中在英语，缺乏多语言能力评测。本文提出两种人工-智能体协作的基准构建框架，创建了韩语语音语言模型基准（KVoiceBench等），覆盖语音理解与生成任务。通过保留语言特定指令和说话人特征，更准确地评估模型的统一语音理解与生成能力。实验揭示了直接迁移基准的缺陷。",
-          "llm_tldr": "语音语言模型的评估多集中在英语，缺乏多语言能力评测。本文提出两种人工-智能体协作的基准构建框架，创建了韩语语音语言模型基准（KVoiceBench等），覆盖语音理解与生成任务。通过保留语言特定指令和说话人特征，更准确地评估模型的统一语音理解与生成能力。实验揭示了直接迁移基准的缺陷。",
-          "llm_tags": [
-            "query:speech-model"
-          ],
-          "matched_query_tag": "query:speech-model",
-          "matched_query_text": "unified speech generation and understanding",
-          "matched_requirement_id": "req-4",
-          "selection_source": "carryover_cache",
-          "paper_id": "2605.27984v1",
-          "carry_days": 1
-        }
-      ]
+      "items": []
     },
     "WM-VLA-SA": {
-      "updated_date": "20260529",
+      "updated_date": "20260530",
       "carryover_days": 9,
       "items": []
     }
