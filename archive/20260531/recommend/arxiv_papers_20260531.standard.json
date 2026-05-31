@@ -1,0 +1,306 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-05-31T20:15:57.749302+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 5,
+    "quick_skim_target": 12,
+    "quick_selected": 5
+  },
+  "deep_dive": [
+    {
+      "id": "2605.25343v1",
+      "source": "arxiv",
+      "title": "Toward Native Multimodal Modeling: A Roadmap",
+      "abstract": "Multimodal modeling represents a vital step from modality-agnostic reasoning toward world modeling. While early approaches predominantly rely on late-fusion that assembles encoders and frozen language backbones with output heads, recent efforts have shifted the paradigm toward native multimodal modeling (NMM) with the intrinsic integration of modalities for superior multimodal performance. Despite its potential, the design space of native architectures remains insufficiently defined. In this paper, we present the community with a formalized roadmap for this transition. Specifically, we formally define the architectural nativity, distinguishing mid-fusion and early-fusion from non-native paradigms. We further organize the existing native models through the lens of input-output duality into three categories: (i) Multi-to-Text for cross-modal comprehension with text-only output; (ii) Multi-to-Target for scenario-oriented generation, e.g., image, audio and video generation, and (iii) Multi-to-Multi for unified modeling with symmetric input-output. We deliver a comprehensive and industrial-grade investigation into the transition toward the definitive NMM framework, where understanding and generation seamlessly coexist within a unified transformer paradigm. We systematically unpack the end-to-end pipeline from industrial perspectives from architectural coordination, massive data curation, to full-stack training recipes, inference & deployment, and the comprehensive evaluation for truly native modeling.",
+      "authors": [
+        "Siyu An",
+        "Junru Lu",
+        "Junnan Dong",
+        "Qiufeng Wang",
+        "Yinghui Li",
+        "Weizhi Fei",
+        "Zichao Yu",
+        "Zheng Yuan",
+        "Biao Liu",
+        "Haopeng Wang",
+        "Renzhao Liang",
+        "Yixuan Yang",
+        "Yunhang Shen",
+        "Bo Ke",
+        "Keyu Chen",
+        "Linhao Luo",
+        "Difan Zou",
+        "Xiao Huang",
+        "Di Yin",
+        "Ruizhi Qiao",
+        "Xing Sun"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-25T01:57:43+00:00",
+      "link": "https://arxiv.org/pdf/2605.25343v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "roadmap for native multimodal modeling toward world modeling",
+      "llm_evidence_cn": "面向世界模型的原生多模态建模路线图",
+      "llm_evidence": "面向世界模型的原生多模态建模路线图",
+      "canonical_evidence": "面向世界模型的原生多模态建模路线图",
+      "llm_tldr_en": "Presents a formalized roadmap for transitioning from late-fusion to native multimodal modeling, defining architectural nativity and organizing existing models.",
+      "llm_tldr_cn": "该论文为多模态建模领域提供了从后期融合向原生多模态建模(NMM)过渡的路线图。正式定义了架构原生性，区分中期融合和早期融合与非原生范式，并通过输入-输出维度组织现有原生模型。对于世界模型构建具有重要指导意义，支持需求中的世界模型与VLA结合愿景。",
+      "llm_tldr": "该论文为多模态建模领域提供了从后期融合向原生多模态建模(NMM)过渡的路线图。正式定义了架构原生性，区分中期融合和早期融合与非原生范式，并通过输入-输出维度组织现有原生模型。对于世界模型构建具有重要指导意义，支持需求中的世界模型与VLA结合愿景。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "world model for reinforcement learning and planning",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.26239v1",
+      "source": "arxiv",
+      "title": "Sentinel: Embodied Cooperative Spatial Reasoning and Planning",
+      "abstract": "In this work, we study Cooperative Spatial Intelligence, the ability of decentralized embodied agents to coordinate effectively under dynamic environmental constraints across city-scale outdoor domains. We introduce Sentinel Challenge, a benchmark where multiple decentralized embodied agents must communicate in natural language to agree on a mutually safe and convenient meeting point within large, city-scale outdoor environments. Each agent must then navigate safely while avoiding dynamic sentinels patrolling the area, using a tool that provides coarse spatial information. To address this, we propose CoSaR (Cooperative Spatial Reasoning and Planning), a framework that bridges the high-level communication and planning abilities of foundation models with the precision of classical spatial navigation algorithms. CoSaR enables agents to exchange situational updates, reason over evolving spatial constraints, and collaboratively replan trajectories. Evaluated across 14 city-level scenes with 3-5 agents, CoSaR consistently leads to faster gathering, shorter path lengths, and improved safety. Our results demonstrate that integrating dynamic communication with spatial reasoning is essential for robust multi-agent cooperation. By formalizing this new setting and providing a scalable benchmark, we aim to build a foundation for advancing cooperative spatial intelligence in embodied multi-agent systems. Code and challenge are available at https://github.com/UMass-Embodied-AGI/Sentinel.",
+      "authors": [
+        "Xiangye Lin",
+        "Hongxin Zhang",
+        "Ruxi Deng",
+        "Qinhong Zhou",
+        "Chuang Gan"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.MA"
+      ],
+      "published": "2026-05-25T18:04:41+00:00",
+      "link": "https://arxiv.org/pdf/2605.26239v1",
+      "tags": [
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "embodied spatial reasoning and planning",
+      "llm_evidence_cn": "具身空间推理与规划",
+      "llm_evidence": "具身空间推理与规划",
+      "canonical_evidence": "具身空间推理与规划",
+      "llm_tldr_en": "Introduces a benchmark and framework for cooperative spatial reasoning and planning for embodied agents using foundation models, addressing decentralized coordination and dynamic environments.",
+      "llm_tldr_cn": "该论文研究了具身智能体在城市场景中的协作空间智能问题，提出了Sentinel Challenge基准和CoSaR框架，利用基础模型的语言通信和规划能力，使多个智能体在动态环境中协调选择安全集合点并规划路径。研究为具身智能中的空间推理与规划提供了新视角和方法。",
+      "llm_tldr": "该论文研究了具身智能体在城市场景中的协作空间智能问题，提出了Sentinel Challenge基准和CoSaR框架，利用基础模型的语言通信和规划能力，使多个智能体在动态环境中协调选择安全集合点并规划路径。研究为具身智能中的空间推理与规划提供了新视角和方法。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "world model for reinforcement learning and planning",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.27976v1",
+      "source": "arxiv",
+      "title": "VoiceGiraffe: A Benchmark for Extreme Long-Context Audio-Language Understanding",
+      "abstract": "While large audio language models (LALMs) have achieved remarkable progress in audio processing at the second- or minute-level scale, understanding hour-level audio remains a fundamental bottleneck. Existing benchmarks predominantly rely on short clips or artificially concatenated segments, failing to faithfully assess LALM capacity for long-range information comprehension in real-world scenarios such as podcasts and lengthy speeches. To address this gap, we introduce VoiceGiraffe, a novel benchmark designed to rigorously evaluate LALMs across diverse real-world scenarios, modalities, and languages under long-context settings. It comprises 1500 curated triplets structured into a dual-level taxonomy of single-hop perception and multi-hop reasoning. We evaluate a broad suite of open-source and proprietary LALMs against human performance. Results underscore three fundamental findings. First, VoiceGiraffe remains highly challenging and far from saturation. Second, we show that no single inference paradigm universally dominates. The E2E inference benefits models with native long-context audio understanding, cascaded caption aggregation stabilizes small models overwhelmed by hour-scale audio, and reasoning-enhanced cascading with external LLM helps weaker models but can bottleneck stronger proprietary systems. Third, we reveal long-range memory persistence as a key bottleneck. LALMs are better at answering questions that require connecting salient causal cues than those requiring sustained tracking of sparse events across long audio, whereas humans show the opposite pattern. These findings position VoiceGiraffe as a challenging and diagnostic testbed for long-form audio understanding, highlighting the need for LALMs with persistent memory and robust long-range aggregation.",
+      "authors": [
+        "Jashin Ye",
+        "Dongxiao Wang",
+        "Yixuan Ye",
+        "Sashuai Zhou",
+        "Weihuang Lin",
+        "Mingyang Han",
+        "Kunpeng Wang",
+        "Zeyu Yuan",
+        "Boyu Li",
+        "Haoxiang Shi",
+        "Jingchen Shu",
+        "Jun Song",
+        "Bo Zheng"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD"
+      ],
+      "published": "2026-05-27T05:15:14+00:00",
+      "link": "https://arxiv.org/pdf/2605.27976v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "benchmark for long-context audio-language understanding, relevant to unified speech understanding",
+      "llm_evidence_cn": "长上下文音频语言理解基准，与统一语音理解相关",
+      "llm_evidence": "长上下文音频语言理解基准，与统一语音理解相关",
+      "canonical_evidence": "长上下文音频语言理解基准，与统一语音理解相关",
+      "llm_tldr_en": "Introduces VoiceGiraffe, a benchmark for evaluating large audio language models on hour-level audio with real-world scenarios, covering multiple languages and reasoning types.",
+      "llm_tldr_cn": "现有音频语言模型评估多基于短片段或人工拼接，无法反映小时级音频的真实理解能力。本文提出VoiceGiraffe基准，包含1500个真实场景下的长上下文音频理解任务，涵盖单跳感知和多跳推理。该基准填补了长音频理解评估的空白，对推动统一语音理解模型的研究具有重要意义。",
+      "llm_tldr": "现有音频语言模型评估多基于短片段或人工拼接，无法反映小时级音频的真实理解能力。本文提出VoiceGiraffe基准，包含1500个真实场景下的长上下文音频理解任务，涵盖单跳感知和多跳推理。该基准填补了长音频理解评估的空白，对推动统一语音理解模型的研究具有重要意义。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.29430v1",
+      "source": "arxiv",
+      "title": "Towards Human-Like Interactive Speech Recognition With Agentic Correction and Semantic Evaluation",
+      "abstract": "Automatic speech recognition (ASR) is a core component of human--computer interaction and an increasingly important front-end for LLM-based assistants and agents. However, most current ASR systems still follow a single-pass paradigm, which is poorly aligned with human communication, where misunderstandings are resolved through iterative clarification and refinement. This mismatch makes it difficult to correct meaning-critical errors once they occur. Meanwhile, token-level metrics such as WER or CER cannot adequately reflect such a problem. To address these limitations, we formulate \\emph{Interactive ASR} as a multi-turn refinement task and propose \\textbf{Agentic ASR}, a closed-loop framework that combines a single-pass ASR front-end with semantic correction, intent routing, and reasoning-based editing. We further introduce the \\textbf{Sentence-level Semantic Error Rate} ($S^2ER$), an LLM-based semantic evaluation metric, together with an \\textbf{Interactive Simulation System} for scalable and reproducible benchmarking. Experiments on multilingual, named-entity-intensive, and code-switching benchmarks show that iterative interaction consistently reduces semantic errors, with much larger gains in $S^2ER$ than in conventional token-level metrics. Human--AI alignment and ablation studies further validate the reliability of the semantic judge and the robustness of the proposed framework. The code is available at: https://interactiveasr.github.io/ and the live demo is available at https://i-asr.sjtuxlance.com/",
+      "authors": [
+        "Zixuan Jiang",
+        "Yanqiao Zhu",
+        "Peng Wang",
+        "Qinyuan Chen",
+        "Xinjian Zhao",
+        "Xipeng Qiu",
+        "Wupeng Wang",
+        "Zhifu Gao",
+        "Xiangang Li",
+        "Kai Yu",
+        "Xie Chen"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-05-28T06:23:31+00:00",
+      "link": "https://arxiv.org/pdf/2605.29430v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "interactive speech recognition as refinement",
+      "llm_evidence_cn": "交互式语音识别作为精炼过程",
+      "llm_evidence": "交互式语音识别作为精炼过程",
+      "canonical_evidence": "交互式语音识别作为精炼过程",
+      "llm_tldr_en": "Proposes Agentic ASR, a closed-loop framework for interactive speech recognition with multi-turn refinement and semantic evaluation.",
+      "llm_tldr_cn": "该论文针对语音识别中的意义关键错误难纠正问题，提出交互式ASR范式，将识别建模为多轮精炼任务。设计Agentic ASR闭环框架，结合单遍ASR与智能体纠错，并使用语义评估替代WER/CER。实验表明该方法在识别鲁棒性和纠错能力上显著优于单遍ASR。该工作推动了语音理解向人机协作方向演进。",
+      "llm_tldr": "该论文针对语音识别中的意义关键错误难纠正问题，提出交互式ASR范式，将识别建模为多轮精炼任务。设计Agentic ASR闭环框架，结合单遍ASR与智能体纠错，并使用语义评估替代WER/CER。实验表明该方法在识别鲁棒性和纠错能力上显著优于单遍ASR。该工作推动了语音理解向人机协作方向演进。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.30256v1",
+      "source": "arxiv",
+      "title": "VideoFDB: Evaluating Full-Duplex Vision-Speech Capabilities in Conversational Agents",
+      "abstract": "Natural human conversation is full-duplex and audio-visual: people simultaneously speak and listen while continuously interpreting and producing nonverbal cues, such as nods, smiles, and gestures. To support successful human-agent interaction, agents must model full-duplex audiovisual conversation; however, existing full-duplex benchmarks evaluate only speech. In this work, we present VideoFDB, the first benchmark to evaluate full-duplex audio-visual-to-audio-visual (AV2AV) conversational agents. VideoFDB contributes (i) 237 dyadic clips spanning 11 nonverbal conversational dynamics from real-world video calls, (ii) a taxonomy separating perception from generation behaviors, and (iii) a rubric-based LM-as-judge evaluation framework with interpretable axes for assessing conversational quality with respect to nonverbal conversational dynamics. Across open- and closed-source vision-speech agents, we find systematic failure modes: captioning collapse and visual-stream ignorance, and we show that current systems exploit vision for explicit visual question answering but not for the streaming joint audiovisual grounding required in natural conversation. We further evaluate cascaded speech-to-avatar systems and find that their architecture fundamentally precludes the production of full-duplex nonverbal cues. As the first benchmark for full-duplex AV2AV interaction, VideoFDB establishes a foundation for systematic evaluation and, we hope, will accelerate the advancement and development of next-generation multimodal conversational agents.",
+      "authors": [
+        "Amrita Mazumdar",
+        "Seonwook Park",
+        "Rajarshi Roy",
+        "Nikhil Srihari",
+        "Shengze Wang",
+        "Yuhao Zhou",
+        "Julia Wang",
+        "Koki Nagano",
+        "Shalini De Mello"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.CL",
+        "cs.HC"
+      ],
+      "published": "2026-05-28T17:20:01+00:00",
+      "link": "https://arxiv.org/pdf/2605.30256v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "evaluates full-duplex vision-speech capabilities relevant to unified speech generation and understanding",
+      "llm_evidence_cn": "评估全双工视觉-语音能力，与语音生成与理解统一相关",
+      "llm_evidence": "评估全双工视觉-语音能力，与语音生成与理解统一相关",
+      "canonical_evidence": "评估全双工视觉-语音能力，与语音生成与理解统一相关",
+      "llm_tldr_en": "VideoFDB is the first benchmark for full-duplex audio-visual-to-audio-visual conversational agents, evaluating perception and generation of nonverbal cues, relevant to composite speech-model theme.",
+      "llm_tldr_cn": "针对全双工视听对话智能体的评估问题，现有基准仅覆盖语音模态。本文提出VideoFDB，首个评估全双工视听到视听（AV2AV）对话智能体的基准，包含237段真实视频通话片段，覆盖11种非语言交互动态，并设计了区分感知与生成行为的评估框架。实验表明该基准能有效衡量智能体在同时说听和产生非语言线索方面的能力，推动了语音与视觉统一理解生成的研究。",
+      "llm_tldr": "针对全双工视听对话智能体的评估问题，现有基准仅覆盖语音模态。本文提出VideoFDB，首个评估全双工视听到视听（AV2AV）对话智能体的基准，包含237段真实视频通话片段，覆盖11种非语言交互动态，并设计了区分感知与生成行为的评估框架。实验表明该基准能有效衡量智能体在同时说听和产生非语言线索方面的能力，推动了语音与视觉统一理解生成的研究。",
+      "llm_tags": [
+        "query:speech-model:composite"
+      ],
+      "matched_query_tag": "query:speech-model:composite",
+      "matched_query_text": "Papers central to 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文, especially work that connects or combines: voice translation; speech translation; expressive speech synthesis; unified speech generation and understanding; speech to speech translation; speech to speech translation papers; expressive speech generation research; unified speech generation and understanding models.",
+      "matched_requirement_id": "req-composite-speech-model",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2605.30307v1",
+      "source": "arxiv",
+      "title": "Grounded 3D-Aware Spatial Vision-Language Modeling",
+      "abstract": "We present GR3D, a spatial vision language model equipped with three complementary grounding capabilities--explicit 2D grounding, implicit 2D grounding, and monocular 3D grounding--within a single framework. GR3D introduces an implicit grounding mechanism that identifies entity mentions during generation and inserts the corresponding region tokens into the text stream, allowing the model to reference visual evidence on the fly when producing spatial chain-of-thought responses. In parallel, a region-prompted monocular 3D grounding design predicts 3D bounding boxes in the camera view from grounded region queries, supported by intrinsic-aware normalization and dense geometric supervision. Together, these grounding capabilities enable GR3D to decompose complex spatial understanding problems into grounded 2D perception followed by 3D inference. GR3D achieves consistent improvements across grounded and non-grounded spatial benchmarks, demonstrating grounding as an effective inductive bias for strengthening spatial understanding in VLMs. These grounding capabilities collectively enhance general spatial understanding beyond the grounding task itself.",
+      "authors": [
+        "An-Chieh Cheng",
+        "Yang Fu",
+        "Yatai Ji",
+        "Ligeng Zhu",
+        "Guanqi Zhan",
+        "Zhuoyang Zhang",
+        "Zhaojing Yang",
+        "Song Han",
+        "Yao Lu",
+        "Pavlo Molchanov",
+        "Vidya Nariyambut Murali",
+        "Jan Kautz",
+        "Xiaolong Wang",
+        "Hongxu Yin",
+        "Sifei Liu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-28T17:51:38+00:00",
+      "link": "https://arxiv.org/pdf/2605.30307v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Spatial vision-language model with 3D grounding for VLA",
+      "llm_evidence_cn": "具备3D接地能力用于VLA的空间视觉语言模型",
+      "llm_evidence": "具备3D接地能力用于VLA的空间视觉语言模型",
+      "canonical_evidence": "具备3D接地能力用于VLA的空间视觉语言模型",
+      "llm_tldr_en": "Presents GR3D, a spatial VLM with explicit, implicit, and monocular 3D grounding for complex spatial understanding.",
+      "llm_tldr_cn": "现有视觉语言模型缺乏细粒度空间接地能力。本文提出GR3D，融合显式2D、隐式2D和单目3D接地，通过在生成文本流中插入区域令牌实现实时空间链式推理。在空间VQA和导航任务上显著提升。",
+      "llm_tldr": "现有视觉语言模型缺乏细粒度空间接地能力。本文提出GR3D，融合显式2D、隐式2D和单目3D接地，通过在生成文本流中插入区域令牌实现实时空间链式推理。在空间VQA和导航任务上显著提升。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
