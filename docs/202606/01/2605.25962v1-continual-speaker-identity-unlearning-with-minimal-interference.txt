@@ -1,0 +1,426 @@
+Title: Continual Speaker Identity Unlearning with Minimal Interference
+
+URL Source: https://arxiv.org/pdf/2605.25962v1
+
+Published Time: Tue, 26 May 2026 02:26:56 GMT
+
+Number of Pages: 22
+
+Markdown Content:
+# Continual Speaker Identity Unlearning with Minimal Interference 
+
+Jinju Kim 1 Yunsung Kang 1 Gyeong-Moon Park 2 Jong Hwan Ko 1
+
+> 1
+
+Sungkyunkwan University 2Korea University 
+
+{perla0328, jhko}@skku.edu 
+
+## Abstract 
+
+Machine unlearning removes designated concepts or knowledge from pre-trained models. Recent work has extended this paradigm to speaker identity unlearning in zero-shot text-to-speech (ZS-TTS), the task of selectively erasing a model’s ability to replicate a speaker’s voice. Existing methods, however, quietly assume all unlearning requests arrive at once; an unrealistic assumption, since privacy-motivated removals arrive sequentially over time. We show this assumption breaks state-of-the-art methods: unlearning each new speaker fully revives previously unlearned speakers, reintroducing the very privacy risk unlearning was meant to eliminate. We present Cumulative ORT hogonal Identity Suppression (COR-TIS), the first framework for continual speaker identity unlearning in ZS-TTS that requires no access to previously-unlearned speaker data. CORTIS combines Fisher-information-based parameter masking, which localizes updates to speaker-relevant weights, with orthogonal projection against subspaces spanned by prior unlearning updates. With VoiceBox, CORTIS unlearns each requested speaker while keeping previously unlearned speakers forgotten across long request sequences, substan-tially outperforming sequential application of prior methods. The demo is available at https://cumulativeortis.github.io/ .
+
+## 1 Introduction 
+
+Imagine your family receiving a phone call in your voice saying something you would never say, and never said. Modern Zero-Shot Text-to-Speech (ZS-TTS) systems can now clone a target speaker’s voice from a reference utterance of only a few seconds [ 1– 3]. This capability, while technically impressive, has outpaced the safeguards around it: a short clip from a phone call, a podcast, or a voicemail is sufficient to synthesize convincing speech attributed to an individual who never produced it. In response, data-protection regulations such as the GDPR [ 4] and the CCPA [ 5 ] grant users the right to request removal of personal data from deployed systems, or the right to be forgotten (RTBF) [ 6]. Translating this into a concrete procedure for deployed ZS-TTS systems is the problem we study. Machine unlearning [ 7 ] provides the algorithmic framing. Recent work on speaker identity unlearning in ZS-TTS [8] has shown that a model can be induced to produce random or non-identifying output when prompted with a forget-speaker reference, typically by distilling a randomly-initialized or noise-generating teacher on the forget set while preserving a retain loss. The setting assumed in prior, however, does not match deployment. Prior work assumes that all unlearning requests are known in advance and handled in a single simultaneous unlearning, with forgetting evaluated only against a fixed, persistently maintained forget set. In reality, unlearning requests cannot arrive all at once: one user today, while another next month. Under this realistic setting, prior speaker identity unlearning method quickly falls into data retention paradox. To comply with RTBF and successfully unlearn, the provider must keep every requester’s  
+
+> Preprint.
+> arXiv:2605.25962v1 [cs.SD] 25 May 2026 Generatable speaker pool
+> Prior Works
+> Expectation (Ours)
+> Please don’t generate
+> my voice !
+> Unlearn Requests
+> Generatable speaker pool
+> Unlearn Request:
+> CORTIS (Ours) : succeeds to unlearn all speakers
+> Text -to -Speech
+> Prior Methods : fails to unlearn all speakers across continued requests
+> Simultaneous Unlearning
+> Speaker Identity Unlearning
+> Previous works only assume
+> simultaneous unlearning;
+> unlearning request occurs only once
+> Continual Unlearning
+> Zero -shot Text -to -Speech
+> can mimic anyone’s voice!
+
+Figure 1: Naïvely applying prior speaker identity unlearning methods in continual sequence leads to failure. Ideally, previously unlearned speakers should remain suppressed across subsequent requests. data for a simultaneous unlearning process in the future. Paradoxically, keeping every requester’s data directly contradicts with the right being exercised, RTBF. The natural alternative is to process each request on arrival then discard the data, leaving the unlearned weights safeguarded under release. However, as depicted in Figure 1, applying existing methods in this continual fashion fails, and fails in a way that matters for privacy: unlearning a new speaker causes measurable recovery of speakers that were already unlearned. We refer to this failure mode as catastrophic re-learning ,and trace it to a specific cause. The retain loss that protects model utility on subsequent requests provides no supervision on the parameters previously responsible for forgetting earlier speakers, leaving those parameters free to drift back. To address this, we propose CORTIS, a Cumulative 
+
+ORT hogonal Identity Suppression. CORTIS specifically targets continual speaker identity unlearning with no access to previously-unlearned speakers’ data. We combine two complementary mechanisms. First, contrastive Fisher-information saliency localizes each unlearning update to a small set of parameters most relevant to forgetting the current speaker, while soft-excluding parameters important for prior speakers or for retain quality. Second, inspired by continual learning [ 9, 10 ], we apply orthogonal projection to constrain the direction of the update. Specifically, we project updates onto the orthogonal complement of the cumulative subspace spanned by prior unlearning sequences, so that updates within the localized region cannot drift along directions previously used to forget earlier speakers. On VoiceBox [ 1], CORTIS keeps every forget speaker’s similarity below 0.18 after five sequential unlearning requests, a 75% average reduction from the pretrained baseline, while preserving competitive remain-set quality. To summarize, our main contributions are as follows: • This is the first paper to formalize continual speaker identity unlearning for ZS-TTS under realistic deployment constraints; sequential request arrival and forget-data non-retention. We show that prior methods fail and identify catastrophic re-learning as the central failure mode. • We propose CORTIS, a continual unlearning framework that combines contrastive Fisher-information parameter localization with cumulative orthogonal subspace projection. To our knowledge, this is the first method designed for continual speaker identity unlearning that does not require access to previously-unlearned speakers’ data. • We empirically demonstrate that CORTIS suppresses every previously forgotten speakers across sequential requests while retaining competitive zero-shot TTS quality on remain speakers, where every prior method either reverts forgotten identities or collapses utility. 22 Related Works 
+
+2.1 Machine Unlearning 
+
+Machine unlearning removes the influence of a subset of data or concepts from a trained model, motivated by regulations such as the GDPR Right to Be Forgotten [ 4 , 6 ]. Most existing work assumes a setting in which the entire forget set is specified up front and removed in one optimization pass [ 11 – 13 , 8]. In practice, however, forget requests arrive sequentially over a deployed model’s lifetime [ 14 ]. Naively re-applying the unlearning method for each sequential request repeatedly diminishes model capabilities [ 15 ]. This sequential setting, though only recently studied, is termed continual unlearning [ 16 ]. Recent work has begun to address continual unlearning, primarily in computer vision [ 17 , 18 ] and large language models [ 19 – 21 ], via mechanisms including gradient projection, distillation, orthogonally constrained adapters, and targeted parameter updates. Speaker identity unlearning has only been examined in a limited setting. The first paper introduced the task for ZS-TTS and proposed Teacher-Guided Unlearning (TGU), which updates the model to produce random voices when prompted with forget speakers [ 8 ]. While effective at unlearning speakers jointly, TGU is evaluated only under a single training phase, where the full forget set is known in advance. The continual case where requests arrive sequentially remains unaddressed. 
+
+2.2 Continual Learning 
+
+Continual learning addresses the setting in which a model must learn a sequence of tasks that arrive one at a time, and must maintain performance on all previously seen tasks without retraining from scratch [ 22 , 23 ]. Continual learning requires that updates for task t preserve the model utility and performance for tasks 1, . . . , t − 1. The central obstacle is catastrophic forgetting [ 24 , 25 ]: gradient steps taken to minimize loss on a new task (e.g., ‘washing dishes’) overwrite parameters important for previous tasks (e.g., ‘folding laundry’), causing sharp drops in earlier-task performance despite the network having the capacity to solve all tasks jointly. Existing methods fall into a variation or combination of four approaches. Regularization-based approaches discourage movement of parameters deemed important for prior tasks [ 25 – 28 ]. Arepresentative work EWC [ 25 ] uses the Fisher Information diagonal to weight a quadratic penalty, and hard-masking variants with important Fisher-ranked parameters. Replay-based approaches try to remember the past rather explicitly, using stored or generatively reconstructed samples from past tasks [ 29 , 30 ]. Parameter-isolation approaches minimize interference structurally by allocating disjoint subsets of parameters to each task [ 31 –33 ]. Optimization-based approaches constrain updates directly in gradient space rather than through the loss. This often involves projecting new-task gradients onto subspaces orthogonal to those of prior tasks [ 9, 10 , 34 ]; unlike regularizers, which permit drift into forbidden directions when the loss signal is strong enough, projection strictly removes such components regardless of loss magnitude. 
+
+## 3 Background 
+
+Our goal is to establish a realistic baseline for continual speaker identity unlearning in deployed ZS-TTS systems, where forget requests arrive sequentially over the model’s lifetime rather than at once. In Sec. 3.1, we formalize the objectives of continual speaker identity unlearning, extending the one-shot formulation of prior work [ 8] to a stream of forget requests and articulating practical constraints such as the data retention paradox that distinguish the continual setting from its one-shot counterpart. In Sec. 3.2, we argue that continual speaker identity unlearning is not a straightforward extension from prior speaker identity unlearning but a fundamentally distinct task. We identify catastrophic re-learning of previously unlearned speakers as the central failure mode. 
+
+3.1 Problem Formulation 
+
+Let S denote the set of all generatable speakers, and let Ds = {(xs, y )} denote a dataset of transcribed utterances for speaker s ∈ S , where xs is an audio prompt and y is its transcription. A pre-trained zero-shot TTS model θ0 satisfies θ0(xs, y ) ≈ ˆxspk =sy for any s ∈ S , including speakers unseen during training, where ˆxspk =sy denotes speech delivering text y in the voice of s. We study continual 3speaker identity unlearning under two constraints that reflect realistic Right-To-Be-Forgotten (RTBF) deployment. 
+
+(C1) Sequential arrival. Unlearning requests arrive one at a time. At step i, a request to forget a set of speakers fi ⊆ S \ F i−1, where |fi| ≥ 1, produces a cumulative forget set Fi = Fi−1 ∪ fi
+
+with F0 = ∅, and a corresponding remain set Ri = S \ F i. The system updates θi−1 → θi without knowledge of future requests fi+1 , f i+2 , · · · .
+
+(C2) Forget non-retention. Once step i has been processed, Dfi is discarded and cannot be accessed at any subsequent step i′ > i . This excludes replay-based methods that require access and maintenance of prior forget sets DFi−1 . The current model state θi satisfying the unlearn request and the remain set DRi can persist across steps, whereas prior checkpoints and the forget data they were trained against must be discarded. 
+
+Objective. At each unlearn sequence i, the unlearned model θi must satisfy the following conditions: 
+
+θi(xr , y ) ≈ ˆxspk =ry ∀r ∈ R i, and θi(xf , y )̸ ≈ ˆxspk =fy ∀f ∈ F i, (1) preserving zero-shot synthesis quality for all current remain speakers while refusing to replicate any speaker in the cumulative forget set Fi, not solely the most recent request fi. The central technical challenge under (C1) and (C2) is to maintain the second condition for Fi−1 while unlearning fi,without access to DFi−1 .
+
+3.2 Catastrophic Re-learning 
+
+Continual unlearning typically suffers from catastrophic forgetting or rapid utility collapse, in which the model loses overall capability as new unlearning requests are introduced. To prevent this, strong regularization is the standard remedy across domains [ 17 ]. For continual unlearning in ZS-TTS systems, catastrophic forgetting manifests in a distinctive way. As the model is inherently generalizable to unseen speakers, regularization that protects retain-set utility without an active forget loss on previously unlearned speaker is sufficient to revive that speaker during a subsequent unlearning sequence. We refer to this failure mode as catastrophic re-learning: the standard remedy for catastrophic forgetting in other domains becomes the very mechanism that undoes prior unlearning. One might attempt to address catastrophic re-learning by re-introducing an active forget loss on every previously unlearned speaker at each new request. This appears straightforward, but it leads to two compounding problems. First, this is not meaningful continual unlearning anymore. The whole point of the continual setting is to make small, incremental updates rather than train from scratch. Re-introducing a forget loss on every prior speaker requires retaining all prior forget data, so both the data and the training cost grow with each step ( e.g. , 1K → 2K → 3K → · · · training steps as requests accumulate). Second, and more fundamentally, retaining a forget loss on previously unlearned speakers requires retaining their data. This directly violates the deletion guarantee that motivated unlearning in the first place. Data retention paradox occurs: any method that satisfies durability through retained data fails RTBF compliance, and any method that satisfies RTBF by deleting the data loses the anchor it needs for durability. Speaker identity unlearning demands a fundamentally different treatment of continual unlearning — suppress catastrophic re-learning on previously unlearned speaker identities. 
+
+## 4 Method 
+
+Motivated by the above, we propose CORTIS, a Cumulative ORT hogonal Identity Suppression. Figure 2 illustrates two-step approaches of CORTIS. To prevent catastrophic re-learning, we constrain each unlearning sequence from interfering with prior unlearning sequences via orthogonal projection of the weight updates against an accumulated subspace. Applied to the full model, however, this projection is inefficient: it acts on directions throughout the entire parameter space, including regions unrelated to speaker identity, and unnecessarily restricts updates that pose no risk of reversion. We therefore first localize the update to a small subset of parameters most relevant to forgetting the current speaker, and apply the projection only within this subset. This minimizes interference with retain quality and the protective effect on prior speakers. 4Contrastive Parameter Localization                 
+
+> saliency 𝑖 𝜃 𝑖 −1
+> Eq .(4)
+> 𝑀 𝑖 max 𝐹 ℛ𝑖 ,𝐹 ℱ𝑖 −1
+> max
+> 𝐹 𝑓 𝑖
+> 𝐹 ℛ𝑖
+> 𝐹 ℱ𝑖 −1
+> max
+> +𝜖
+> +𝜖
+> 𝐹 𝑓 𝑖
+> Orthogonal Projection
+> Forget Subspace 𝑓 𝑖
+> Cumulative Forget Subspace 𝑓 1…𝑓 𝑖 −1
+> 𝑀 𝑖 ⨀𝛿 𝑖
+> 𝜃 𝑖
+> 𝜃 𝑖 ∗
+> −𝑈 <𝑖 𝑈 <𝑖
+> ⊤(𝑀 𝑖 ⨀𝛿 𝑖 )
+> Select
+> top -𝑘 %
+> 𝒟 𝑓 𝑖
+> 𝒟 ℛ𝑖
+> 𝒟 ℱ𝑖 −1
+> Fisher Extraction
+
+Figure 2: Method overview. (a) At sequence i, the saliency score (2) compares the Fisher information of the current forget set fi against the maximum across the Fi−1. Selecting the top-k% from saliency map yields the mask Mi, which restricts updates to forget-relevant parameters. On (b), without intervention, the optimizer step δ would move from θi−1 to a configuration outside the orange region (dashed), reverting prior unlearning. We project δ onto the orthogonal complement of U<i , so the resulting θi remains in the intersection of both regions: fi is unlearned without disturbing Fi−1.
+
+4.1 Contrastive Parameter Localization 
+
+State-of-the-art ZS-TTS models exhibit highly entangled representations, as their components are not explicitly modularized to separate speaker identity from content generation and other speech attributes. Continual unlearning is particularly vulnerable in this setting. Without constraint, the optimizer can update parameters unrelated to speaker identity, and more critically, can overwrite parameters that drove successful unlearning on previous speakers. We therefore restrict each update to the forget-relevant subset of parameters to localize updates. This serves a few purposes: it guards interference with previously unlearned speakers, protects current speaker against being overwritten in future updates, and concentrates each unlearning sequence efficiently on most relevant parameters. For each unlearning sequence i, we compute the diagonal Fisher Information Matrix Ffi of the forget loss on speaker set fi’s data, and construct a saliency map that is high where forgetting is important and low where retention or prior unlearning is important: saliency i = Ffi + ϵ
+
+max  FRi , F f1 , . . . , F fi−1
+
+ + ϵ , (2) where FRi is the Fisher Information Matrix computed over the remain data. In practice, FRi does not necessarily have to be obtained from full remain set Ri at each request; a fixed subset suffices and can be reused across sequences. The element-wise max in the denominator acts as the soft guard: any parameter important for retain quality or for any prior forget speaker is pushed toward the bottom of the saliency ranking. The top-k% of saliency i globally defines the trainable mask Mi; remaining parameters are frozen during updates at sequence i.
+
+4.2 Orthogonal Projection on Cumulative Forget Subspace 
+
+Parameter masking concentrates each unlearning step on a forget-relevant region, sustaining prior unlearning at the parameter level while keeping fine-tuning tractable at the scale of modern ZS-TTS models. However, masking does not by itself constrain how parameters within that region are updated. After completing the unlearning run for speaker fi, we extract a rank-R orthonormal basis Ui
+
+summarizing the directions the optimizer used during that run, following gradient-projection memory recipe of OGD [ 9] and GPM [ 10 ]. We collect gradient snapshots at fixed intervals throughout training, stack them, and compute a truncated SVD; the top-R left singular vectors with their singular values 
+
+Σi form the per-speaker artifact. To ensure each new basis captures only directions not already covered by prior speakers, we subtract the prior subspace from each gradient snapshot before SVD, so Ui is orthogonal to U1, . . . , U i−1 by construction. A direct accumulation strategy would form [U1 | · · · | Ui] and orthonormalize. This grows the cumulative basis as P 
+
+> k
+
+rk across speakers, so per-step projection cost increases with the request 5sequence length. In a deployed ZS-TTS system, the number of unlearning requests has no fixed horizon, and unbounded growth of the prior subspace is impractical. We therefore maintain a fixed-rank merged basis: at sequence i + 1 , we form the energy-weighted column stack Φi = [ U1Σ1 | · · · | 
+
+UiΣi], in which each column is scaled by its singular value to encode how much that direction was used during the corresponding speaker’s run, and take the rank-Rmerge truncated SVD of Φi. The resulting U<i has orthonormal columns by construction and bounds projection cost at a constant 
+
+Rmerge regardless of i. After every optimizer step, the weight delta δ in the trainable mask is projected onto the orthogonal complement of U<i :
+
+δ ← δ − U<i U ⊤
+
+> <i
+
+δ. (3) 
+
+## 5 Experiments 
+
+5.1 Evaluation Scenario 
+
+We evaluate CORTIS under the sequential unlearning scenario formalized in Section 3.1. At each unlearning sequence i, the model receives a request to unlearn a speaker fi, and only data from fi is accessible; data for previously forgotten speakers Fi−1 is no longer available. At each sequence, the model is initialized from the previous sequence, θi−1.
+
+Backbone. All methods are applied to VoiceBox [ 1], a flow-matching ZS-TTS model with 24 transformer layers. The pre-trained checkpoint is identical across all baselines and our method to ensure fair comparison. Further training and inference details are provided in Appendix C. 
+
+Datasets. We use LibriHeavy [ 35 ] as the pre-training corpus. Following prior work [ 8 ], we utilize their filtered set of forget speakers, each with approximately 20 minutes of speech audio. We randomize the request order to select forget speaker and sequences, using the LibriHeavy speaker IDs in order of 1166 → 7199 → 3912 → 9437 → 8866 . Remain set evaluation is conducted on LibriSpeech test-clean [ 36 ], following ZS-TTS protocols [ 1 ]. For details on forget set, please refer to Appendix F. 
+
+5.2 Baselines 
+
+We compare CORTIS against four baselines, spanning speaker-identity unlearning methods and continual unlearning methods adapted from the vision domain. Specific implementation details on baselines are elaborated in Appendix D. 
+
+Speaker-identity unlearning baselines. We adopt baselines shown effective for ZS-TTS domain [ 8]. 
+
+Sample-Guided Unlearning (SGU) concatenates a forget-speaker utterance with a remain-speaker utterance and trains the model to predict the masked remain-speaker region, using a sample from the retain set. Teacher-Guided Unlearning (TGU) instead generates a text-aligned random-voice target from the pre-trained teacher conditioned only on the transcript y, and trains the student to match this target when conditioned on the forget speaker’s prompt. Both methods were originally proposed for joint (single-step) unlearning of a fixed forget set. 
+
+Continual unlearning baselines. We additionally adapt two regularizers explored in prior continual unlearning works [ 17 ]. Update Normalization (UN) penalizes the norm of the parameter update relative to the previous checkpoint, ∥θi − θi−1∥, to limit cumulative parameter drift across sequential requests. Selective Fine-tuning (SelFT) restricts updates at each step to the top-k% most important parameters, where importance is computed from gradient magnitudes on the forget data. We compose both regularizers with the TGU to isolate the effect of the regularization mechanism. For other continual unlearning baselines that violate RTBF, please refer to Appendix H. 
+
+5.3 Evaluation Metrics 
+
+We evaluate with two quantitative metrics. Word Error Rate (WER) assesses transcription fidelity of the generated speech. Audio synthesized by θi is transcribed with a HuBERT-Large ASR model [ 37 ]fine-tuned on LibriSpeech, and compared to the ground-truth transcript. We report W-R as WER on the remain set: LibriSpeech test-clean. W-F is WER averaged over all forget sets {f1, . . . , f i}.
+
+Speaker Similarity (SIM) measures the cosine similarity between WavLM-TDCNN [ 38 ] speaker embeddings of the prompt audio and the generated audio. S-R on LibriSpeech test-clean quantifies 6Table 1: Continual unlearning results for sequence ( f1 → f2 → f3). Each group reports metrics evaluated after the corresponding unlearn request. S-fi denotes speaker similarity for forget speaker i;for Request 2, the previously unlearned speaker’s SIM is reported to measure persistence of unlearning. The Original model values reflect the pretrained model’s baseline. Orange marks successful retention preservation (S-R ≥ 0.46 ) and green marks successful forgetting (S-fi < 0.32 ). After Request 1 After Request 2 After Request 3 Method W-R ↓ W-F ↓ S-R ↑ S-f1↓ W-R ↓ W-F ↓ S-R ↑ S-f1↓ S-f2↓ W-R ↓ W-F ↓ S-R ↑ S-f1↓ S-f2↓ S-f3↓                                                                                          
+
+> Original 2.1 2.6 0.649 0.721 2.1 2.5 0.649 0.721 0.674 2.1 2.5 0.649 0.721 0.674 0.866 SGU 2.7 2.5 0.479 0.165 2.8 2.6 0.348 0.178 0.075 2.7 2.2 0.315 0.233 0.101 0.192 TGU 2.3 2.5 0.624 0.164 2.5 3.0 0.563 0.612 0.198 3.0 2.6 0.582 0.603 0.546 0.180 UN 2.8 2.6 0.565 0.229 2.8 2.7 0.545 0.344 0.140 3.0 2.5 0.580 0.638 0.555 0.106 SelFT 2.7 2.5 0.592 0.154 2.8 2.6 0.585 0.482 0.077 2.7 2.3 0.548 0.553 0.434 0.110
+> CORTIS 2.9 2.6 0.602 0.162 2.9 2.6 0.553 0.185 0.122 2.8 2.6 0.557 0.172 0.148 0.124
+
+retention of the model’s zero-shot voice-cloning ability on unseen speakers. For the forget set, we report SIM per forget speaker: S-fi denotes the mean SIM over evaluation samples of forget speaker fi, computed using fi’s own utterances as prompts. Each sample is reported on mean over 3 generation seeds. To interpret these SIM values, we calibrate retention and forgetting thresholds against the real-world speaker similarity distribution; the resulting bounds (S-R < 0.46 a retention failure, S-F > 0.32 a forgetting failure) are used throughout Table 1 and derived in Appendix E. 
+
+5.4 Experimental Results 
+
+Table 1 reports continual unlearning results across three sequential requests. CORTIS is the only method that keeps every previously forgotten speaker forgotten across the full sequence while retaining competitive remain-set quality: after Request 3, all three forget-speaker similarities remain below 0.18 (S-f1=0 .172 , S-f2=0 .148 , S-f3=0 .124 ), while S-R holds at 0.557 . Every baseline collapses on at least one of these axes. 
+
+Are prior speaker identity unlearning methods capable of continual unlearning? TGU achieves strong unlearning at Request 1 (S-f1=0 .164 ), but the previously unlearned speaker reverts sharply once a new request is processed: S-f1 jumps to 0.612 after Request 2 and remains at 0.603 after Request 3, indicating that the identity of f1 has been effectively re-learned by the model. The same pattern recurs for f2 (S-f2=0 .546 at Request 3). SGU avoids this reversion. All forget-speaker similarities stay below 0.24 , but the retain-set quality degrades monotonically across requests, with S-R falling from 0.479 to 0.315 over the sequence. In other words, neither speaker-identity unlearning baseline is stable: TGU exhibits catastrophic re-learning of forgotten speakers, while SGU exhibits catastrophic forgetting of retain-set capability. 
+
+Can’t we simply apply prior continual unlearning methods? The two regularizing methods from image domain [ 17 ] succeed at limiting drift on the retain set. UN holds S-R at 0.580 and SelFT at 0.548 after Request 3, but neither prevents the forgotten speakers from re-emerging. UN’s S-f1 rises to 0.638 at Request 3 (from 0.229 at Re-quest 1), and SelFT’s reaches 0.553 . This isolates the failure: limiting parameter drift 1 2 3 4 5
+
+Unlearn request 
+
+> 0.0
+> 0.1
+> 0.2
+> 0.3
+> 0.4
+> 0.5
+> 0.6
+> 0.7
+> Speaker Similarity
+> S-f1
+> S-f2
+> S-f3
+> S-f4
+> S-f5
+> S-R
+
+Figure 3: CORTIS across 5 sequential un-learning requests. preserves remain-set performance, but is not a suffi-cient mechanism for protecting previously forgotten identities. The directions along which f1’s identity is encoded are not specifically guarded once the unlearn-ing signal switches to f2, f3, and so on. 
+
+Does CORTIS scale on longer sequences? Figure 3 extends CORTIS to a longer sequence of 5 requests. We test whether the stability observed in Table 1 per-sists as more speakers are unlearned. Three observa-tions stand out. First, retain-set quality is maintained when scaled: across requests, S-R does not face a sharp collapse but rather maintains a near-flat segment. This indicates that CORTIS does not compound interference linearly with sequence length. Second, the worst-case 7Table 2: Ablation on orthogonal projection evaluated on sequence ( f1 → f2 → f3). Results at step 1 are omitted as projection is inactive at the first request and values are identical to those in Table 1. After Request 2 After Request 3 Variant W-R ↓ W-F ↓ S-R ↑ S-f1↓ S-f2↓ W-R ↓ W-F ↓ S-R ↑ S-f1↓ S-f2↓ S-f3↓                      
+
+> w/o Projection 2.7 2.4 0.528 0.200 0.103 2.8 2.3 0.546 0.334 0.397 0.120 w. Projection 2.9 2.6 0.553 0.185 0.122 2.8 2.6 0.557 0.172 0.148 0.124
+
+Table 3: Ablation on the mask Mi. Evaluated on sequence ( f1 → f2 → f3). After Request 1 After Request 2 After Request 3 Variant W-R ↓ W-F ↓ S-R ↑ S-f1↓ W-R ↓ W-F ↓ S-R ↑ S-f1↓ S-f2↓ W-R ↓ W-F ↓ S-R ↑ S-f1↓ S-f2↓ S-f3↓                              
+
+> k=20 2.8 2.5 0.625 0.158 2.7 2.6 0.601 0.194 0.112 2.8 2.6 0.523 0.155 0.082 0.132
+> k=30 2.9 2.6 0.602 0.162 2.9 2.6 0.553 0.185 0.122 2.8 2.6 0.557 0.172 0.148 0.124
+
+forget similarity stays bounded across the full sequence: S-F across all forgotten speakers at each step, remains under 0.2 throughout. The per-speaker dots show no individual speaker exceeding this bound even after additional requests have been processed. Third, and most importantly for privacy, the speaker forgotten at Request 1 does not leak as later requests accumulate. Its similarity remains within the same band as recently unlearned speakers, demonstrating that the durability of unlearning is preserved across the entire history. For specific scores at each unlearn request, please refer to Appendix I. 
+
+5.5 Ablation and Analysis 
+
+We conduct ablations to isolate the contribution of components in CORTIS: the rank R of the per-sequence orthonormal basis used for projection, and the necessity of orthogonal projection itself on top of contrastive parameter masking. Both ablations follow the same sequence setup as Table 1. 
+
+Masking without projection. To test whether masking alone is sufficient, we ablate the projection step and retain only the contrastive saliency mask Mi (Table 3). Masking by itself partially mitigates re-learning. It soft-excludes parameters important for prior speakers from the trainable set providing a parameter-level guard, but the effect is incomplete. Within the masked region, gradient updates can still move along directions previously used to forget f1, . . . , f i−1. S-f1 and S-f2 revert back to 0.334 and 0.397, respectively, at Request 3. This indicates that parameter-level localization and direction-level protection are complementary: masking concentrates the update on the right parameters, but only projection prevents those parameters from moving in directions that revert prior unlearning. 
+
+Projection under varied contrastive parameter localization. The previous ablation removes projection while keeping the mask; here we vary the mask while keeping projection fixed, isolating the inverse direction. Table 3 reports results for k ∈ { 20 , 30 }, the fraction of parameters retained as trainable by the contrastive parameter localization. A smaller mask ( k=20 ) restricts the update to a tighter forget-relevant region; a larger mask ( k=30 ) admits more parameters into the trainable set. Both configurations achieve comparable forget-set similarity at every request, indicating that projection successfully prevents catastrophic re-learning across a range of mask sparsities; protection of prior identities is not contingent on a particular mask budget. The cost of a smaller mask appears on the retain side: k=20 degrades S-R from 0.557 to 0.523 at Request 3, reflecting that an over-restricted mask leaves the forget loss with too few parameters to make progress without inducing larger, less surgical updates within the projected subspace. This complements the masking-only ablation: masking and projection address parameter-level and direction-level interference, respectively, and the projection mechanism is robust to the specific choice of mask budget within the regime we tested. 
+
+Practicality. CORTIS adds three sources of overhead beyond a sequential TGU run: (i) Fisher information computation on the forget speaker’s data once per request, (ii) truncated SVD on collected gradient snapshots once per request, and (iii) per-step projection of weight updates against the cumulative basis. Table 4 reports the wall-clock cost and peak GPU memory of each component. The Fisher pass adds approximately 30 minutes per request, the per-speaker SVD on collected gradient snapshots adds 3 seconds, and per-step projection 8Table 4: Computational cost at the third sequential unlearning request ( i=3 ). Peak GPU memory and total time reflect the cost of producing θ3 from θ2
+
+on two NVIDIA A100 80GB.                   
+
+> Method Steps Mem. (GB) Time (hours) TGU (seq.) 10K 30.8 29 TGU (cum.) 30K 30.8 87.5 UN 10K 30.8 29 SelFT 11K 48.5 22
+> CORTIS 3K 49.3 3.5
+
+adds approximately 0.5 s per optimizer step ( i.e. ,8.48 s → 8.76 s, with 4-step gradient accumula-tion), a 3.3% overhead. In aggregate, CORTIS requires 3.5 hours per unlearning request, com-parable to sequential TGU (29 hours) and sub-stantially below the cost of re-running TGU on the cumulative forget set (87.5 hours after 3 re-quests, scaling linearly with i). Crucially, this is the relevant comparison: re-running TGU on cu-mulative data is the only sequential-baseline al-ternative that does not catastrophically re-learn, but it (a) violates forget-data non-retention (C2), and (b) scales quadratically across the model’s lifetime. CORTIS achieves comparable durability at constant per-request cost. For step sizes, please refer to Appendix B. 
+
+## 6 Limitations 
+
+Here we outline several limitations that scope the contributions of this work and suggest natural directions for follow-on study. 
+
+Adversarial robustness. Our threat model assumes a service provider honestly applying unlearning upon receiving an RTBF request. We do not study adversarial scenarios in which the released model parameters are subject to fine-tuning, prompt-engineering, or activation-level attacks that attempt to recover forgotten identities. Empirical robustness of unlearned ZS-TTS models against such attacks is an important open problem and is orthogonal to the durability question we address. 
+
+Backbone scope. To the best of our knowledge, speaker identity unlearning has only been studied on VoiceBox [ 1 , 8], and we follow this setting to enable direct comparison with prior work. The mechanisms underlying CORTIS (Fisher saliency, gradient subspace projection) are architecture-agnostic in principle, but cross-architecture validation on autoregressive codec-based systems such as VALL-E [2] or diffusion-based systems such as NaturalSpeech [3] is left to future work. 
+
+## 7 Societal Impact 
+
+The motivation for this work is fundamentally protective. Zero-shot text-to-speech systems can clone a person’s voice from seconds of reference audio, and the harms enabled by this capability disproportionately affect individuals who never consented to having their voices replicable. Continual speaker identity gives service providers a concrete procedure for honoring removal requests as they arrive, without retaining the voice data the requester asked to have erased. Unlearning durability is a necessary but not sufficient condition for deploying ZS-TTS responsibly; robust evaluation of unlearned models, transparent policies for handling RTBF requests, and adversarial robustness studies are complementary research directions that we believe should accompany continued work in this space. 
+
+## 8 Conclusion 
+
+In this paper, we systematically identify the challenges and formalize the objectives of continual speaker identity unlearning, an underexplored problem setting. Speaker identity unlearning for ZS-TTS models, by virtue of their zero-shot generalizability, are uniquely prone to reviving unlearned speakers. Even simple regularization on later forget requests is sufficient to restore previously erased identities. We demonstrate this empirically and show that unlearning methods successful in other domains fail when adopted for continual speaker identity unlearning. From this diagnosis, we identify the need for minimal interference with previous unlearning along two complementary dimensions. First, parameter-level localization through contrastive saliency masking confines each unlearning sequence to a small set of forget-specific parameters and soft-excludes parameters important to prior speakers. Second, subspace-level protection through pre-computed identity protection subspaces projects gradient updates away from directions associated with prior unlearning. Together, these mechanisms unify a stream of forget requests into a coherent unlearning task. 9References 
+
+[1] Matthew Le, Apoorv Vyas, Bowen Shi, Brian Karrer, Leda Sari, Rashel Moritz, Mary Williamson, Vimal Manohar, Yossi Adi, Jay Mahadeokar, et al. Voicebox: Text-guided multilingual universal speech generation at scale. Advances in neural information processing systems, 36:14005–14034, 2023. [2] Sanyuan Chen, Chengyi Wang, Yu Wu, Ziqiang Zhang, Long Zhou, Shujie Liu, Zhuo Chen, Yanqing Liu, Huaming Wang, Jinyu Li, et al. Neural codec language models are zero-shot text to speech synthesizers. IEEE Transactions on Audio, Speech and Language Processing, 33:705–718, 2025. [3] Xu Tan, Jiawei Chen, Haohe Liu, Jian Cong, Chen Zhang, Yanqing Liu, Xi Wang, Yichong Leng, Yuanhao Yi, Lei He, et al. Naturalspeech: End-to-end text-to-speech synthesis with human-level quality. IEEE Transactions on Pattern Analysis and Machine Intelligence, 46(6):4234–4245, 2024. [4] Paul Voigt and Axel Von dem Bussche. The eu general data protection regulation (gdpr). A practical guide, 1st ed., Cham: Springer International Publishing, 10(3152676):10–5555, 2017. [5] Rob Bonta. California consumer privacy act (ccpa). Retrieved from State of California Department of Justice: https://oag. ca. gov/privacy/ccpa, pages 4–40, 2022. [6] Jeffrey Rosen. The right to be forgotten. Stan. L. Rev. Online, 64:88, 2011. [7] Lucas Bourtoule, Varun Chandrasekaran, Christopher A Choquette-Choo, Hengrui Jia, Adelin Travers, Baiwu Zhang, David Lie, and Nicolas Papernot. Machine unlearning. In 2021 IEEE symposium on security and privacy (SP), pages 141–159. IEEE, 2021. [8] Taesoo Kim, Jinju Kim, Dong Chan Kim, Jong Hwan Ko, and Gyeong-Moon Park. Do not mimic my voice: Speaker identity unlearning for zero-shot text-to-speech. In International Conference on Machine Learning, pages 30176–30198. PMLR, 2025. [9] Mehrdad Farajtabar, Navid Azizan, Alex Mott, and Ang Li. Orthogonal gradient descent for continual learning. In International conference on artificial intelligence and statistics, pages 3762–3773. PMLR, 2020. [10] Gobinda Saha, Isha Garg, and Kaushik Roy. Gradient projection memory for continual learning. In International Conference on Learning Representations, 2021. [11] Rohit Gandikota, Joanna Materzynska, Jaden Fiotto-Kaufman, and David Bau. Erasing concepts from diffusion models. In Proceedings of the IEEE/CVF international conference on computer vision, pages 2426–2436, 2023. [12] Chongyu Fan, Jiancheng Liu, Yihua Zhang, Dennis Wei, Eric Wong, and Sijia Liu. Salun: Empowering machine unlearning via gradient-based weight saliency in both image classification and generation. In International Conference on Learning Representations, 2024. [13] Alvin Heng and Harold Soh. Selective amnesia: A continual learning approach to forgetting in deep generative models. Advances in Neural Information Processing Systems, 36:17170–17194, 2023. [14] A Feder Cooper, Christopher A Choquette-Choo, Miranda Bogen, Matthew Jagielski, Katja Filippova, Ken Liu, Alexandra Chouldechova, Jamie Hayes, Yangsibo Huang, Niloofar Mireshghallah, et al. Machine unlearning doesn’t do what you think: Lessons for generative ai policy, research, and practice. Advances in neural information processing systems, 2025. [15] Sijia Liu, Yuanshun Yao, Jinghan Jia, Stephen Casper, Nathalie Baracaldo, Peter Hase, Yuguang Yao, Chris Yuhao Liu, Xiaojun Xu, Hang Li, et al. Rethinking machine unlearning for large language models. Nature Machine Intelligence, 7(2):181–194, 2025. [16] Joel Jang, Dongkeun Yoon, Sohee Yang, Sungmin Cha, Moontae Lee, Lajanugen Logeswaran, and Minjoon Seo. Knowledge unlearning for mitigating privacy risks in language models. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) ,pages 14389–14408, 2023. [17] Justin Lee, Zheda Mai, Jinsu Yoo, Chongyu Fan, Cheng Zhang, and Wei-Lun Chao. Continual unlearning for text-to-image diffusion models: A regularization perspective. International Conference on Learning Representations, 2026. [18] Naveen George, Naoki Murata, Yuhta Takida, Konda Reddy Mopuri, and Yuki Mitsufuji. Distill, for-get, repeat: A framework for continual unlearning in text-to-image diffusion models. arXiv preprint arXiv:2512.02657, 2025. 
+
+10 [19] Chongyang Gao, Lixu Wang, Kaize Ding, Chenkai Weng, Xiao Wang, and Qi Zhu. On large language model continual unlearning. In The Thirteenth International Conference on Learning Representations, 2025. [20] Xiaoyu Xu, Minxin Du, Kun Fang, Zi Liang, Yaxin Xiao, Zhicong Huang, Cheng Hong, Qingqing Ye, and Haibo Hu. Fit: Defying catastrophic forgetting in continual llm unlearning. arXiv preprint arXiv:2601.21682, 2026. [21] Abudukelimu Wuerkaixi, Qizhou Wang, Sen Cui, Wutong Xu, Bo Han, Gang Niu, Masashi Sugiyama, and Changshui Zhang. Adaptive localization of knowledge negation for continual llm unlearning. In Forty-second International Conference on Machine Learning, 2025. [22] Sebastian Thrun. Lifelong learning algorithms. In Learning to learn, pages 181–209. Springer, 1998. [23] German I Parisi, Ronald Kemker, Jose L Part, Christopher Kanan, and Stefan Wermter. Continual lifelong learning with neural networks: A review. Neural networks, 113:54–71, 2019. [24] Michael McCloskey and Neal J Cohen. Catastrophic interference in connectionist networks: The sequential learning problem. In Psychology of learning and motivation, volume 24, pages 109–165. Elsevier, 1989. [25] James Kirkpatrick, Razvan Pascanu, Neil Rabinowitz, Joel Veness, Guillaume Desjardins, Andrei A Rusu, Kieran Milan, John Quan, Tiago Ramalho, Agnieszka Grabska-Barwinska, et al. Overcoming catastrophic forgetting in neural networks. Proceedings of the national academy of sciences, 114(13):3521–3526, 2017. [26] Jonathan Schwarz, Wojciech Czarnecki, Jelena Luketina, Agnieszka Grabska-Barwinska, Yee Whye Teh, Razvan Pascanu, and Raia Hadsell. Progress & compress: A scalable framework for continual learning. In International conference on machine learning, pages 4528–4537. PMLR, 2018. [27] Rahaf Aljundi, Francesca Babiloni, Mohamed Elhoseiny, Marcus Rohrbach, and Tinne Tuytelaars. Memory aware synapses: Learning what (not) to forget. In Proceedings of the European conference on computer vision (ECCV), pages 139–154, 2018. [28] Friedemann Zenke, Ben Poole, and Surya Ganguli. Continual learning through synaptic intelligence. In International conference on machine learning, pages 3987–3995. Pmlr, 2017. [29] David Rolnick, Arun Ahuja, Jonathan Schwarz, Timothy Lillicrap, and Gregory Wayne. Experience replay for continual learning. Advances in neural information processing systems, 32, 2019. [30] Hanul Shin, Jung Kwon Lee, Jaehong Kim, and Jiwon Kim. Continual learning with deep generative replay. Advances in neural information processing systems, 30, 2017. [31] Andrei A Rusu, Neil C Rabinowitz, Guillaume Desjardins, Hubert Soyer, James Kirkpatrick, Ko-ray Kavukcuoglu, Razvan Pascanu, and Raia Hadsell. Progressive neural networks. arXiv preprint arXiv:1606.04671, 2016. [32] Arun Mallya and Svetlana Lazebnik. Packnet: Adding multiple tasks to a single network by iterative pruning. In Proceedings of the IEEE conference on Computer Vision and Pattern Recognition, pages 7765–7773, 2018. [33] Joan Serra, Didac Suris, Marius Miron, and Alexandros Karatzoglou. Overcoming catastrophic forgetting with hard attention to the task. In International conference on machine learning, pages 4548–4557. PMLR, 2018. [34] Guanxiong Zeng, Yang Chen, Bo Cui, and Shan Yu. Continual learning of context-dependent processing in neural networks. Nature Machine Intelligence, 1(8):364–372, 2019. [35] Wei Kang, Xiaoyu Yang, Zengwei Yao, Fangjun Kuang, Yifan Yang, Liyong Guo, Long Lin, and Daniel Povey. Libriheavy: A 50,000 hours asr corpus with punctuation casing and context. In ICASSP 2024-2024 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pages 10991– 10995. IEEE, 2024. [36] Vassil Panayotov, Guoguo Chen, Daniel Povey, and Sanjeev Khudanpur. Librispeech: an asr corpus based on public domain audio books. In 2015 IEEE international conference on acoustics, speech and signal processing (ICASSP), pages 5206–5210. IEEE, 2015. [37] Wei-Ning Hsu, Yao-Hung Hubert Tsai, Benjamin Bolte, Ruslan Salakhutdinov, and Abdelrahman Mo-hamed. Hubert: How much can a bad teacher benefit asr pre-training? In ICASSP 2021-2021 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pages 6533–6537. IEEE, 2021. 
+
+11 [38] Sanyuan Chen, Chengyi Wang, Zhengyang Chen, Yu Wu, Shujie Liu, Zhuo Chen, Jinyu Li, Naoyuki Kanda, Takuya Yoshioka, Xiong Xiao, et al. Wavlm: Large-scale self-supervised pre-training for full stack speech processing. IEEE Journal of Selected Topics in Signal Processing, 16(6):1505–1518, 2022. [39] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information processing systems, 30, 2017. [40] Alexei Baevski, Yuhao Zhou, Abdelrahman Mohamed, and Michael Auli. wav2vec 2.0: A framework for self-supervised learning of speech representations. Advances in neural information processing systems, 33:12449–12460, 2020. [41] Ofir Press, Noah A Smith, and Mike Lewis. Train short, test long: Attention with linear biases enables input length extrapolation. arXiv preprint arXiv:2108.12409, 2021. [42] Zhifeng Kong, Wei Ping, Jiaji Huang, Kexin Zhao, and Bryan Catanzaro. Diffwave: A versatile diffusion model for audio synthesis. In International Conference on Learning Representations. [43] Nguyen Hung-Quang, Hoang Phan, and Khoa D Doan. Unveiling concept attribution in diffusion models, 2024. [44] Prateek Yadav, Derek Tam, Leshem Choshen, Colin A Raffel, and Mohit Bansal. Ties-merging: Resolving interference when merging models. Advances in neural information processing systems, 36:7093–7115, 2023. 
+
+12 Appendix 
+
+## Contents 
+
+A Numerical Implementation of the Cumulative Subspace 14 B CORTIS Implementation 14 C Zero-shot Text-to-Speech Backbone Implementation 15 
+
+C.1 Backbone: VoiceBox . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 C.2 Model Architecture . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 C.3 Duration Predictor and Vocoder . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 C.4 Pretraining . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15 
+
+D Baseline Implementations 16 
+
+D.1 Sample-Guided Unlearning . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16 D.2 Teacher-Guided Unlearning . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16 D.3 Update Norm . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16 D.4 Selective Fine-tuning . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 16 
+
+E Real-world Speaker Similarities 17 F Forget Speaker Details 18 G Qualitative analysis on Contrastive Parameter Localization 19 H RTBF Incompliant Baselines 20 I Scalability Across Longer Sequences 21 J Statistical Significance 21 K Effect of Subspace Rank R 22 
+
+13 A Numerical Implementation of the Cumulative Subspace 
+
+The truncated SVD of the energy-weighted column stack Mi = [ U1Σ1 | · · · | UiΣi] described in Section 4.2 is straightforward in principle but requires care at the scale of modern ZS-TTS models. With a 30% Fisher mask on a 24-layer transformer, the union of prior masks across s speakers spans 
+
+∼30 M parameters, and explicit construction of Mi in single precision would occupy several gigabytes for even a handful of speakers. We use two implementation tricks to keep the merge tractable. Rather than computing SVD( Mi) directly, we form the Gram matrix Gi = M ⊤ 
+
+> i
+
+Mi ∈ RC×C where 
+
+C = Pij=1 rj is the total column count. For typical rj ≤ 40 and i ≤ 5, C ≤ 200 , so Gi fits in tens of kilobytes regardless of the parameter dimension. We then eigendecompose Gs = V ΛV ⊤ and recover the top-Rmerge left singular vectors via U<i = MiV:Rmerge Λ−1/2:Rmerge . The Gram matrix itself is accumulated by streaming row-chunks of Mi from CPU to GPU, so peak GPU memory is bounded by the chunk size times C rather than the full |Mi|.
+
+## B CORTIS Implementation 
+
+In this section, we provide details to reproduce our suggested method CORTIS. CORTIS is tested on top of TGU unlearning mechanism, which is further specified in Appendix D. At each unlearn sequence, CORTIS is trained with the Adam optimizer (peak learning rate 5e −5,
+
+500 -step linear warm-up followed by linear decay) for initial unlearning sequence i = 1 for 10K steps. Empirically we observe that when projection is not applied, unlearning takes a longer training to cleanly disentangle and unlearn a specific speaker identity. A possible way to minimize step size at 
+
+i = 1 would be to obtain orthonormal basis from gradient snapshots of DR, and project on the first step. For the rest of the process in Table 1 and Figure 3, we apply CORTIS with only 1K steps of training, with peak learning rate 5e −6, 500 -step linear warmup followed by linear decay. For Contrastive Parameter Localization, we report the scores using k = 30 to obtain trainable mask 
+
+Mi at each unlearn request. This results in freezing 70% of model parameters at each unlearn sequence. When applying orthogonal projection on cumulative subset space, two specific steps are requires. At unlearn sequence i, gradients are captured every n steps. Then, at unlearn sequence i + 1 ,the captured gradient artifacts are used to extract a rank-R orthonormal basis Ui. In our experiments, for initial unlearn sequence i = 1 we collect gradients with n = 150 (150 / 10K). For the rest, we collect gradients at n = 15 (15/1K). For the main results in Table 1, we report the scores with R = 40 .The ablation on R is elaborated in Table 8. 14 C Zero-shot Text-to-Speech Backbone Implementation 
+
+In this section, we elaborate our implementation of VoiceBox [ 1] Zero-shot Text-to-Speech model used as backbone throughout our experiments. 
+
+C.1 Backbone: VoiceBox 
+
+VoiceBox is a non-autoregressive model for speech generation and editing that supports multilingual usage. VoiceBox parameterizes a continuous-time transport from a simple prior p0 (typically Gaus-sian) to the speech distribution p1 via Conditional Flow Matching (CFM), where the transformation is described by a time-dependent flow ϕt.A neural network with parameters θ predicts the conditional vector field vt(w, y, x ctx ; θ) that drives this transport. Here, w = (1 − (1 − σmin )t)x0 + tx is the interpolated input at time t, y carries frame-aligned linguistic content, x is the clean speech representation (e.g., mel-spectrogram), and 
+
+xctx = (1 − m) ⊙ x is the masked acoustic context, with m denoting the binary mask. Conditioning on xctx allows the model to capture speaker and prosodic style implicitly, removing the need for explicit style labels. The trajectory of x under the learned field satisfies 
+
+dϕ t(x)
+
+dt = vt(ϕt(x), y, x ctx ); ϕ0(x) = x. (4) The model is optimized by aligning its predicted field with the ground-truth conditional field ut(x | x1)
+
+that points each intermediate sample toward its target x1 with CFM loss. 
+
+C.2 Model Architecture 
+
+All baselines and our proposed method share the same backbone: VoiceBox [ 1], configured iden-tically across runs to isolate the effect of the unlearning algorithm. The acoustic generator is a Transformer [ 39 ] augmented with U-Net-style skip connections between symmetric layers, convolu-tional positional embeddings [ 40 ], and ALiBi attention biases [ 41 ]. We use 24 layers, 16 attention heads, an embedding dimension of 1024, and an FFN inner dimension of 4096. 
+
+C.3 Duration Predictor and Vocoder 
+
+For phoneme-level duration modeling we adopt the regression variant introduced VoiceBox [ 1]. Architecturally it mirrors the acoustic model but is considerably smaller: 8 Transformer layers, 8 heads, embedding dimension 512, and FFN dimension 2048. Training runs for 600K steps with Adam, a peak learning rate of 1e −4, linear warmup over the first 5K steps, and linear decay thereafter. Mel-spectrograms are converted back to waveforms with a Diffwave vocoder [ 42 ] trained on the English subset of LibriHeavy [35]. 
+
+C.4 Pretraining 
+
+The base VoiceBox checkpoint used as the starting point for all unlearning runs is pretrained from scratch for 500K steps [ 1 ]. Each mini-batch contains 75 seconds of audio. Optimization uses Adam in mixed-precision FP16, with a peak learning rate of 1e −4, 5K warmup steps, and linear decay over the remaining steps. 15 D Baseline Implementations 
+
+In this section, we provide implementation details for reproducibility on baselines for Table 1. All baselines share the same Zero-Shot Text-to-Speech backbone initialized from the pretrained VoiceBox [ 1]. Mel-spectrograms are normalized with mean -5.884 and std 2.261. Across all methods, training uses AdamW under fp16 with gradient clipping at 0.2, EMA decay 0.9999, masking ratio sampled from [0.7, 1.0], conditioning dropout probability 0.8. Below we describe the method-specific settings. 
+
+D.1 Sample-Guided Unlearning 
+
+Sample-Guided Unlearning (SGU) [ 8] follows the original released configuration and uses a single unified batch of size 4 with gradient accumulation 4 (effective batch size 16), drawing remain and forget samples at a 0.2 forget ratio. Training runs for 10,000 steps with a warmup of 1,000 steps and learning rate of 1e-5. 
+
+D.2 Teacher-Guided Unlearning 
+
+Teacher-Guided Unlearning (TGU) [ 8 ] follows the original released configuration. For each unlearn request the model is updated for 10,000 steps with 1,000 warmup steps on remain set batch size of 8, forget set batch size of 2 with gradient accumulation 4 (effective 32 / 8). Samples from the forget set are randomly selected with 20% probability. Adam optimizer is implemented with peak learning rate of 5e-5. 
+
+D.3 Update Norm 
+
+Update Norm (UN) [ 17 ], which augments the unlearning loss with a penalty on the parameter update relative to the previous checkpoint: 
+
+Lunlearn (θi, f i) + λ∥θi − θi−1∥1, (5) where θi−1 is the model after the (i−1) -th request and serves as the initialization for θi. The baseline is implemented on top of TGU unlearning. We follow the released configurations used in the paper that introduces UN [ 17 ] and apply L1 norm and set 0.8 as penalty coefficient λ. UN is applied as an add-on to TGU under same configurations as Section D.2. 
+
+D.4 Selective Fine-tuning 
+
+SelFT [ 17 ] refers to general unlearning methods that restricts updates to the top-k% parameters most salient to the forget objective. We follow the formulation [ 43 ] that computes parameter importance via a first-order Taylor approximation, Importance (d) = ∇θi−1[d]Lunlearn (θi, f i) · θi[d] . (6) We select the top 30% of parameters by Importance (d) to form a binary gradient mask for fair comparison with CORTIS. The mask is computed once from θ† and held fixed throughout unlearning. SelFT is applied as an add-on to TGU and uses same configurations as Section D.2 unless specified. 16 E Real-world Speaker Similarities Same Speaker          
+
+> Speech Pair
+> Different Speakers'
+> Speech Pair
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> SIM  Scores
+> Upper: 0.90
+> Mean: 0.71
+> Lower: 0.46
+> Upper: 0.32
+> Mean: 0.10
+> Lower: -0.05
+
+Figure 4: Empirical distribution of speaker similarity (SIM) scores across 200 randomly sampled pairs from LibriSpeech test-clean set. The upper whisker of the different-speaker distribution (0.32) and lower whisker of the same-speaker distribution (0.46) establish interpretive bounds for SIM-F and SIM-R throughout our evaluation. In this section, we provide distribution of speaker similarity (SIM) on LibriSpeech test-clean dataset for an intuition on the vague boundary of: At what SIM, can we say the speakers are well retained or well forgotten? . We visualize in Figure 4 scores obtained with randomly sampled 200 audio pairs. Evaluating the real-world bounds of different speech pairs from same speaker (left), the lower bound and upper bound are 0.46 and 0.90, respectively. For different speakers, the bounds make up a lower of -0.05 and upper of 0.32. Based on this analysis, we set the boundary of "fail case" in retain to S-R < 0.46 , and "fail case" in forget to S-F > 0.32 . We utilize these boundaries in the main experiment in Table 1. 17 1166 7199 3912 9437 8866                     
+
+> 1166 7199 3912 9437 8866
+> 1.000 0.203 0.072 0.132 -0.120
+> 0.203 1.000 0.079 0.158 0.233
+> 0.072 0.079 1.000 0.116 -0.028
+> 0.132 0.158 0.116 1.000 0.170
+> -0.120 0.233 -0.028 0.170 1.000
+> Speaker Similarity (mean embedding per speaker)
+> 0.2
+> 0.0
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+
+Figure 5: Pairwise cosine similarity between mean speaker embeddings for each forget speaker. Off-diagonal values are consistently low, indicating that the five speakers are well separated in embedding space. 
+
+## F Forget Speaker Details 
+
+To characterize the acoustic separability of the five forget speakers used in our continual unlearning sequence ( f1=1166 , f 2=7199 , f 3=3912 , f 4=9437 , f 5=8866 ) we examined their pairwise speaker-embedding similarity. We sampled up to 30 utterances per speaker from the evaluation set. For each speaker, we compute then WavLM-TDCNN [ 38 ] embedding across the utterances. Embeddings were L2-normalized and pairwise cosine similarities were computed across all samples. We report cosine similarities between every pair in Figure 5. The off-diagonal entries are uniformly low, ranging from −0.120 to 0.233 , with most values clustered below 0.20 . Recall that the empirical lower bound for same-speaker SIM on LibriSpeech test-clean is 
+
+0.46 (Appendix E), so all five forget speakers fall comfortably within the different-speaker regime relative to one another. The selected sequence therefore covers a broad region of the speaker embed-ding space rather than a tight cluster of acoustically similar voices, ensuring that each unlearning request poses a distinct target for the model to remove. 18 Figure 6: Pairwise Jaccard overlap between CORTIS saliency masks Mi across the five forget speakers in our continual sequence ( f1=1166 , f 2=7199 , f 3=3912 , f 4=9437 , f 5=8866 ). All off-diagonal values fall below 0.20 , indicating that contrastive saliency assigns each speaker a largely disjoint trainable subset. 
+
+## G Qualitative analysis on Contrastive Parameter Localization 
+
+A central design choice of CORTIS is the contrastive saliency in Eq. 2: each request’s mask Mi is computed by dividing the forget-set Fisher Ffi by the element-wise max of the remain Fisher and all prior forget Fishers, so that parameters important for retention or for any previously unlearned speaker are pushed out of the top-k%. If this mechanism works as intended, the resulting per-speaker masks should localize to largely disjoint subsets of the model’s parameters. We verify this empirically in Figure 6, which reports the pairwise Jaccard index J(Mi, M j ) = 
+
+|Mi ∩ Mj | / |Mi ∪ Mj | between the localized masks generated for the five forget speakers in our continual sequence. Off-diagonal entries are uniformly low, ranging from 0.049 to 0.197 . This confirms that the contrastive denominator successfully decorrelates each request’s mask from prior ones: forgetting fi modifies a different region of the network than forgetting fj , even though all masks share the same top-k% budget. The low overlap also supports the design intuition behind CORTIS. Because prior forget Fishers Ff1 , . . . , F fi−1 enter the denominator of the saliency score, the optimizer is steered away from parameters that drove earlier unlearning, protecting their effect from being overwritten. 19 Table 5: Continual unlearning baselines that fail to fully meet the Right to be Forgotten (RTBF).For TIES-Merge, unlearn request 1 is not provided as they do not merge for only one speaker. After Request 1 After Request 2 After Request 3 Method W-R ↓ S-R ↑ W-F ↓ S-f1↓ W-R ↓ S-R ↑ W-F ↓ S-f1↓ S-f2↓ W-R ↓ S-R ↑ W-F ↓ S-f1↓ S-f2↓ S-f3↓                                             
+
+> Original 2.1 0.649 2.6 0.721 2.1 0.649 2.5 0.721 0.674 2.1 0.649 2.5 0.721 0.674 0.866 TIES-Merge ----2.7 0.558 2.6 0.241 0.110 2.7 0.552 2.8 0.396 0.177 0.563
+> OURS 2.9 0.602 2.6 0.162 2.9 0.553 2.6 0.185 0.122 2.8 0.557 2.6 0.172 0.148 0.124
+
+## H RTBF Incompliant Baselines 
+
+In Table 5, we additionally compare against a model-merging baseline suggested in [ 17 ] in which each speaker is unlearned independently from the pretrained model θ0, yielding per-speaker checkpoints 
+
+θ1, and the resulting weights are combined via TIES-Merging [ 44 ]. Concretely, for every f ∈ F i we run the same single-speaker unlearning procedure on pre-trained model θ0 in isolation, obtaining a per-speaker unlearned checkpoint ˜θf and the corresponding task vector τf = ˜θf − θ0. The deployed model at sequence i is 
+
+θTIES  
+
+> i
+
+= θ0 + λ · τ Fi, (7) where τ Fs is obtained from τf : f ∈ F i by top-k% magnitude trimming, per-element sign election, and disjoint-mean averaging across the surviving entries ( k = 20% , λ = 1 .0, following the original TIES recipe). This baseline violates (C2). The merge formulation requires θ0 as the additive base, so the controller must keep the pretrained model indefinitely; by Eq. (1), θ0 already satisfies θ0(xf , y ) ≈ ˆxspk =fy for every f ∈ F i, and therefore constitutes a fully-functional, pre-trained model held by the controller in direct violation of (C2) the underlying generative capability for every forget identity remains intact in θ0’s weights, regardless of what is suppressed in θTIES  
+
+> i
+
+. Extending the merge to a new request 
+
+f i + 1 further requires retaining either every per-speaker checkpoint ˜θf : f ∈ F i, each a deterministic function of Df , from which the speaker-specific direction τf is trivially recovered as ˜θf − θ0 — or the underlying datasets Df : f ∈ F i themselves; both alternatives violate (C2). We therefore exclude TIES-Merge from the main table as it is not a fair comparison, nor a valid solution to the continual speaker identity unlearning problem for real world deployment of zero-shot text-to-speech models. It is also notable that OURS method performs significantly better even without having to retain model weights that violate (C2). 20 Table 6: Standard deviations across evaluation speakers for the continual unlearning baselines and CORTIS results in main experiment Table 1. After Request 1 After Request 2 After Request 3 Method W-R W-F S-R S-f1 W-R W-F S-R S-f1 S-f2 W-R W-F S-R S-f1 S-f2 S-f3                                             
+
+> UN 0.05 0.04 0.091 0.082 0.04 0.03 0.092 0.158 0.094 0.06 0.04 0.108 0.095 0.107 0.079 SelFT 0.05 0.03 0.086 0.074 0.05 0.03 0.091 0.155 0.100 0.05 0.03 0.110 0.119 0.098 0.071
+> CORTIS 0.05 0.03 0.089 0.074 0.05 0.03 0.112 0.075 0.017 0.06 0.03 0.113 0.080 0.075 0.067
+
+## I Scalability Across Longer Sequences 
+
+Table 7 reports the exact numerical values plotted in Figure 3 (main text), provided here for complete-ness and to support precise comparison across methods at each step of the unlearning sequence. 
+
+## J Statistical Significance 
+
+The values in Table 1 are computed by generating each evaluation sample under three random seeds, taking the per-sample mean, and reporting either the speaker-level (S-fi) or test-set-level (W-R, S-R, W-F) average over these per-sample means. Table 6 reports the corresponding standard deviations across seeds, capturing how consistent each method’s behavior is. 21 Table 7: Continual unlearning results for sequence f1 → f2 → f3 → f4 → f5. Here we report unlearning evaluations at f4 and f5 reported in Figure 3. After Request 4 After Request 5 W-R ↓ S-R ↑ W-F ↓ S-f1↓ S-f2↓ S-f3↓ S-f4↓ W-R ↓ S-R ↑ W-F ↓ S-f1↓ S-f2↓ S-f3↓ S-f4↓ S-f5↓               
+
+> CORTIS 2.8 0.562 2.8 0.198 0.109 0.167 0.193 2.7 0.527 2.3 0.178 0.096 0.170 0.114 0.033
+
+Table 8: Ablation on the rank R of the per-sequence orthonormal basis Ui used for orthogonal projection. Evaluated on sequence ( f1 → f2 → f3). Results at step 1 are omitted as projection is inactive at the first request and values are identical to those in Table 1. After Request 2 After Request 3 Variant W-R ↓ W-F ↓ S-R ↑ S-f1↓ S-f2↓ W-R ↓ W-F ↓ S-R ↑ S-f1↓ S-f2↓ S-f3↓
+
+20 2.7 2.6 0.558 0.169 0.093 2.6 2.6 0.568 0.187 0.090 0.144 30 2.7 2.6 0.556 0.156 0.108 2.8 2.6 0.476 0.140 0.086 0.163 40 2.9 2.6 0.553 0.185 0.122 2.8 2.6 0.557 0.172 0.148 0.124 
+
+## K Effect of Subspace Rank R
+
+The rank R of each per-sequence basis Ui determines how much of the gradient subspace from sequence i is preserved as a constraint on subsequent updates. A small R may leave the protected subspace under-specified, allowing future updates to drift back into directions that revert speaker 
+
+fi; a large R over-constrains later sequences by reserving too many directions, restricting plasticity and degrading both forget effectiveness on fi+1 , . . . and retain quality. Table 8 reports performance under varied R ∈ { 20 , 30 , 40 }.22
