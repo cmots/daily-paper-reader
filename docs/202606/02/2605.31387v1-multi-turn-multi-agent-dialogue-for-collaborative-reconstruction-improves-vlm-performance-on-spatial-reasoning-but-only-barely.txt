@@ -1,0 +1,699 @@
+Title: Multi-Turn Multi-Agent Dialogue for Collaborative Reconstruction Improves VLM Performance on Spatial Reasoning, But Only Barely
+
+URL Source: https://arxiv.org/pdf/2605.31387v1
+
+Published Time: Mon, 01 Jun 2026 01:23:00 GMT
+
+Number of Pages: 25
+
+Markdown Content:
+# Multi-Turn Multi-Agent Dialogue for Collaborative Reconstruction Improves VLM Performance on Spatial Reasoning, But Only Barely 
+
+Chalamalasetti Kranti 1, Sherzod Hakimov 1, David Schlangen 1,21Computational Linguistics, Department of Linguistics University of Potsdam, Germany 
+
+> 2
+
+German Research Center for Artificial Intelligence (DFKI), Berlin, Germany 
+
+{kranti.chalamalasetti, sherzod.hakimov, david.schlangen}@uni-potsdam.de 
+
+Abstract 
+
+Robots operating in diverse environments rely on visual input to interpret objects and spa-tial layouts. In human-collaborative tasks, they are expected to communicate this understand-ing through language. Vision-language models (VLMs) support robotic tasks involving visual interpretation, question answering, and instruc-tion following, but their capabilities in collab-orative dialogue tasks requiring spatial reason-ing remain underexplored. We study this gap through a collaborative structure-building task that combines visual interpretation, grounding, language-guided interaction, and action genera-tion. We develop a framework in which VLMs use dialogue to reconstruct a target structure from visual and textual inputs. We evaluate open-weight and closed VLMs across interac-tion settings, input modalities, and image repre-sentations. Results show that spatial reasoning over visual representations remains difficult for the evaluated VLMs. Detailed text representa-tions of the target yield higher reconstruction success across modality conditions, while de-composed image representations improve per-formance. These findings reveal limits in visual spatial grounding and grounded instruction gen-eration for collaborative VLM agents. 
+
+1 Introduction 
+
+Many robots deployed in human-robot environ-ments use vision as a primary sensory modality. Their ability to act in these settings depends on interpreting visual input and task-relevant envi-ronmental changes, making accurate image in-terpretation necessary for robot control and ef-fective human-robot interaction. Recent devel-opments in large language models (LLMs) have enabled progress in robotic tasks such as task planning (Singh et al., 2023; Liang et al., 2023), robot behavior guidance (Wang et al., 2024; Huang et al., 2024), and physical grounding (Huang et al., 2022; ichter et al., 2023; Zeng et al., 2023). Programmer’s Input: Target Structure 
+
+> Place a washer in cell: 5,6 and nut to its right.
+> Use red washer and green nut.
+> Place a green nut to the right of the washer.
+> …..
+> Updates in Robot’s world
+> {“status”: “clarification”, “details”: “Can I use any colors for washer and nut?” }
+> {“status”: “code”, “details”: “put(board, ‘washer’, ‘red’, x=5,y=6)” }
+> …..
+
+Figure 1: Illustration of the two-agent structure-building task. The Programmer uses the target structure to gen-erate instructions, and the Robot grounds these instruc-tions into executable actions that update its grid state. 
+
+Vision-language models (VLMs) further extend this progress to visual perception by support-ing vision-language tasks such as image caption-ing (Chen et al., 2024b; Cheng et al., 2025) and visual question answering (Chen et al., 2024a). Despite progress in VLM collaboration (Ji et al., 2024; Shi et al., 2024) and dialogue capabili-ties (Liu et al., 2024; Jin et al., 2024), VLMs con-tinue to struggle with spatial reasoning (Chen et al., 2024a; Mayer et al., 2025). However, the source of these failures remains underexplored. Errors may arise from visual perception, language ground-ing, or misinterpretations that propagate across di-alogue turns. Single-turn benchmarks and direct action-generation settings cannot disentangle these sources of failure. To explore these issues in a con-trolled setting, we propose a structure-building task (see Figure 1) in which two VLMs communicate their image interpretations through dialogue. In this task, the models collaborate to recon-struct a target structure on a grid. One VLM acts as the instruction generator, while the other acts as the instruction translator, guiding object manipula-tion on the grid. This role separation allows us to 1
+
+> arXiv:2605.31387v1 [cs.CL] 29 May 2026
+
+systematically analyse whether failures arise from target-structure interpretation, instruction genera-tion, instruction interpretation, or action execution, and how visual and linguistic errors propagate dur-ing collaborative structure building. We instantiate the task using goal structures from an existing grid-based structure-building dataset (Kranti et al., 2024). The dataset is suitable for our proposed setting as it contains assembly-style components arranged on 8 × 8 2.5D 1 grids with vertical stacking, along with Python code for each structure. This code allows us to render target images that resemble top-down views in assem-bly settings, while preserving executable structure specifications for evaluation. We evaluate the task in both single-agent and two-agent settings, vary-ing the input modality across text-only, image-only, and text-and-image conditions. Our contributions are as follows. First, we in-troduce a controlled structure-building framework that separates the stages of VLM collaboration into target interpretation, instruction generation, instruc-tion interpretation, and action execution. Second, we use this framework to evaluate how interac-tion setting, target representation, input modality, and structural complexity affect the reconstruction. Third, we analyze dialogue behaviors, including clarification questions and correction instructions, to study how VLM agents respond to uncertainty and execution errors during task completion. 
+
+2 Related Work 
+
+Robotic Manipulation and Structure-Building Tasks Several works study tasks that require agents to reason about spatial relations (Huet-tenrauch et al., 2006; Bisk et al., 2016; Shrid-har and Hsu, 2018; Lachmy et al., 2022) and ac-tion sequences (Singh et al., 2023; Liang et al., 2023; Kranti et al., 2024) to manipulate the robot’s world (Jayannavar et al., 2020; ichter et al., 2023; Jayannavar et al., 2026). These works focus on grounding goals into executable actions. Our work follows this line of research, but examines how VLM agents communicate visual and spatial infor-mation through dialogue. 
+
+VLMs for Grounding and Spatial Reasoning 
+
+Prior work has studied VLMs on multimodal tasks such as image captioning (Chen et al., 
+
+> 1A 2D grid that also allows vertical stacking of compo-nents.
+
+2024b; Cheng et al., 2025), visual question answer-ing (Chen et al., 2024a; Kim et al., 2024; Kar et al., 2024), physical grounding (Huang et al., 2022; ichter et al., 2023; Zeng et al., 2023), and bench-marking (Krishna et al., 2017; Shridhar et al., 2020; Liu et al., 2024). Despite this progress, VLMs con-tinue to struggle with spatial reasoning tasks (Chen et al., 2024a; Stogiannidis et al., 2025; Jia et al., 2025; Mayer et al., 2025). However, how VLM per-formance changes as scene complexity increases remains underexplored. 
+
+Collaboration and Dialogue Dialogue-based tasks have been used to study how agents exchange information and coordinate toward a shared goal. Kim et al. (2019) proposed Co-Draw , a collabora-tive drawing task in which one agent describes an abstract scene and another reconstructs it. de Vries et al. (2017) introduced GuessWhat , a visually grounded dialogue game in which agents identify a target object through questions and answers. Uda-gawa and Aizawa (2019) studied common ground-ing under continuous and partially observable con-texts, where agents must establish shared under-standing through dialogue. Other works evaluate LLMs in self-play and collaborative settings (Cha-lamalasetti et al., 2023; Chiu et al., 2023; Qiao et al., 2023; Guertler et al., 2025). Our work ex-tends these ideas to structure building task, where VLM agents interpret vision information, commu-nicate spatial information, and reconstruct the tar-get structure over multiple turns. 
+
+3 Methodology 
+
+Our objective is to evaluate the spatial reasoning ca-pabilities of VLMs in collaborative dialogue-based structure-building tasks. We formulate the task as a multi-turn multimodal interaction between two players who collaborate to build a target structure. 
+
+3.1 “Self-Play” for Collaborative Dialogue 
+
+Following recent work on self-play interac-tions (Chalamalasetti et al., 2023; Qiao et al., 2023; Guertler et al., 2025), we set up the proposed task as a two-player VLM self-play interaction. The first player (Player1), referred to as the Program-mer , acts as the instruction giver. The Programmer receives the target structure, the Robot’s current grid state, the environment context, and the dia-logue history. The second player (Player2), re-ferred to as the Robot , acts as the instruction fol-lower. The Robot receives the Programmer’s in-2struction, its current grid state, the environment context, and the dialogue history, but never sees the target structure. The Programmer generates instructions for building the target structure ( e.g., place a yellow washer at the 1st row, 1st column ), while the Robot translates these instructions into executable object-manipulation Python code ( e.g., put(board, ‘washer’, ‘yellow’, row=1, col=1) ); the prompt context indicates the relevant APIs (see Fig-ure 14 in Appendix) to use for object manipulation on the grid. The Robot’s response follows a JSON format with two fields: status and details . The 
+
+status field indicates whether the response con-tains executable code or a clarification question or acknowledgment, and the details field contains the corresponding content. The prompts for both players (see Figure 20 and Figure 22) and ablation studies for the prompt formulation are available in the Appendix A.1.1. We build the two-player interaction based on 
+
+clem:todd (Kranti et al., 2025), where the interac-tion is orchestrated by a Game Master (GM) (see Appendix A.1 for details). The Game Master re-ceives model responses, validates whether they sat-isfy the constraints specified in the prompt, cleans the responses and extracting structured fields, and passes the processed outputs between the players. The GM also handles turn-level coordination. 
+
+3.2 Structure Building Task Setup 
+
+We use goal structures from an existing dataset SARTCo (Kranti et al., 2024). Each goal structure specifies an arrangement of components on a 2.5D 
+
+8 × 8 grid, referred to as a board . For each board, the dataset includes a target structure specification and corresponding Python code. We execute this code to render the component arrangement as a grid-style image using Matplotlib (see Figure 2). We use the rendered images as the target structures in our proposed task. The Programmer is prompted with the target structure, the Robot’s current state, and the environ-ment information. The interaction proceeds over multiple turns. In the first turn, the Robot’s grid is empty, and the Programmer receives the target structure and generates an instruction for building it. The Robot receives the instruction along with its current grid state, which is empty in the first turn. The Robot then either asks a clarification question by indicating the status type as clarification in its response or generates code (status type as code ) to update the grid according to the instruction. The Code Representation 
+
+> def wnb(board, colors, x, y): shapes = ['washer', 'nut', 'bridge-h'] for shape, color, dx, dy in zip(shapes, colors, [0, 0, 0], [0, 1, 0]): put(board, shape, color, x + dx, y + dy)
+> wnb(board, ('red', 'green', 'yellow'), x=5, y=6)
+> Rendered Image
+> Additional rendered examples
+
+Figure 2: Example of a target structure code and its ren-dered representation. The top-left panel shows the code representation used to specify component placements, while the top-right panel shows the corresponding ren-dered grid image. The bottom panels show additional rendered target structures from the dataset. 
+
+GM validates and executes the Robot’s generated code in a virtual simulator, and then shares the up-dated Robot grid state with the Programmer. The Programmer does not observe the Robot’s gener-ated code. Instead it observes the updated grid state and uses it to generate the followup instruction, cor-rection, or termination signal. The interaction stops when the Programmer generates DONE , indicating that the Robot grid matches the target structure, or when the interaction reaches the maximum limit of 
+
+15 turns. The interaction is aborted if the Robot-generated code produces execution errors for three consecutive attempts. 
+
+4 Experimental Setup 
+
+4.1 Dataset 
+
+As mentioned in Section 3, we use SARTCo dataset. The dataset has two styles of boards: simple and regular, for this task we only use simple boards where a single object made by 2–5 elements ar-ranged in a particular style on a 8 × 8 grid (see Figure 2). The test set contains 495 boards in total : 30 with two elements, 102 with three ele-ments, 219 with four elements, and 144 with five elements. We use this test set for all experiment configurations (more details on dataset are avail-able in Appendix A.2). 34.2 Model Selection 
+
+We evaluate two VLMs: an open-weight model, Qwen3-VL-30B-A3B-Instruct, from the Qwen family, and a closed model, GPT-5.2-Chat. We treat this as an illustrative case study, selecting one open-weight and one closed model as repre-sentative of two distinct development paradigms. A single A100 GPU hosts the open-weight model locally, which is queried through a local API end-point, whereas the closed model is accessed using Azure’s API services. In both cases, the tempera-ture is fixed at zero. The models are probed in zero-shot setting and the maximum number of generated tokens is capped at 300 for instruction generation and code generation. 
+
+4.3 Task Variations 4.3.1 Interaction Settings 
+
+We evaluate target-structure reconstruction in 
+
+single-agent and two-agent settings. In the single-agent setting, a VLM receives the target structure and directly generates executable actions to recon-struct it. This setting resembles cases where a robot is given a graphical representation of the intended state and must translate it into actions without natural-language instruction exchange. It evaluates whether VLMs can interpret the target structure, reason about object placements, and com-plete the task without collaborative dialogue. In the two-agent setting, the task is divided be-tween two players. As described in Section 3, the Programmer acts as the instruction giver, and the Robot acts as the instruction follower. This setting resembles cases where a user, or another VLM-powered system, communicates a goal to a robot through instructions. It allows us to analyze how role decomposition affects task performance, target-structure interpretation and instruction quality for the Programmer, and instruction interpretation and action generation for the Robot. We evaluate both settings under single-turn and 
+
+multi-turn variants. In the single-turn variant, the agent(s) generate all actions or instructions in one response. In the multi-turn variant, the interaction proceeds iteratively: agents can use updated grid states, ask clarification questions, and generate cor-rection instructions to refine reconstruction. 
+
+4.3.2 Target Image Representations 
+
+To examine how the Programmer perceives the tar-get structure, we evaluate two image-based settings. Target Structure Layer wise Representation  
+
+> Layer-1 Layer-2
+> Figure 3: Example of the layer-wise target representa-tion. The full target structure is shown alongside images that expose the structure at each stacking level.
+
+The first uses a single target image showing the structure from a top-down view (Figure 3). This set-ting is similar to surface mount technology (SMT) pick-and-place, where a robot observes a board from an overhead camera and infers component placements. In this view, components at interme-diate stacking levels may be occluded, with only some corners or surfaces visible. This allows us to evaluate whether VLMs can accurately perceive the structure and generate corresponding instructions. In the second setting, inspired by (Suo et al., 2025; Fan et al., 2025; Xu et al., 2025) we use 
+
+layer-wise representation for the target image. The Programmer receives the target image along with additional images showing the structure at each stacking level (see Figure 3). For example, the first image shows placements at the ground level, the second image shows placements up to the first stacking level, and so on. These variations al-low us to evaluate which visual representation is more interpretable for VLMs and how interpreta-tion changes with structural complexity. 
+
+4.3.3 Input Modalities 
+
+To study how input modality affects interaction and task performance, we vary the information provided to each agent. The Programmer and the Robot receives input in one of two formats (see Figure 4): image-only or text-only .In the text modality , the Programmer receives textual descriptions of the target structure and the Robot’s current state. These descriptions specify each component’s row, column, color, and stacking level (see T-V and T-T modes in Figure 4). The Programmer also receives a difference grid (see Figure 23 in the Appendix), which marks whether each cell in the target structure and the Robot’s current state is identical, missing, or contains extra components. This modality provides explicit state information, while in the image-only modality the Programmer must infer these details from images. 4Vision-Vision (V-V) Mode Vision-Text (V-T) Mode Text-Vision (T-V) Mode Text-Text (T-T) Mode   
+
+> Target Structure
+> Place a green nut to the right of the washer.
+> Programmer Robot’s Current State
+> Target Structure
+> Robot’s Current State
+> Target Structure
+> Robot’s Current State
+> Target Structure
+> Robot’s Current State
+> Robot Arm Programmer Instruction
+> Robot’s Current State
+> Programmer Instruction
+> Robot’s Current State
+> Programmer Instruction
+> Robot’s Current State
+> Programmer Instruction
+> Robot’s Current State
+> Place a green nut to the right of the washer.
+> Grid levels (bottom to top): Level 1: row: 5, col: 6: {'shapes': ['washer'], 'colors': ['red']}
+> Grid levels (bottom to top): Level 1: row: 5, col: 6: {'shapes': ['washer'], 'colors': ['red']} row: 5, col: 7: {'shapes': ['nut'], 'colors': ['green']} Level 2: row: 5, col: 6: {'shapes': ['bridge-h'], 'colors': ['yellow']}
+> Grid levels (bottom to top): Level 1: row: 5, col: 6: {'shapes': ['washer'], 'colors': ['red']}
+> Grid levels (bottom to top): Level 1: row: 5, col: 6: {'shapes': ['washer'], 'colors': ['red']} row: 5, col: 7: {'shapes': ['nut'], 'colors': ['green']} Level 2: row: 5, col: 6: {'shapes': ['bridge-h'], 'colors': ['yellow']}
+> Grid levels (bottom to top): Level 1: row: 5, col: 6: {'shapes': ['washer'], 'colors': ['red']}
+> Place a green nut to the right of the washer.
+> Place a green nut to the right of the washer.
+> Grid levels (bottom to top): Level 1: row: 5, col: 6: {'shapes': ['washer'], 'colors': ['red']}
+
+Figure 4: Example input representations for the Programmer and Robot across modality conditions. The Programmer receives the target structure and the Robot’s current state, while the Robot receives the Programmer’s instruction and its current state. The Programmer instruction is always provided to the Robot as text. 
+
+Therefore, the text modality serves as an upper-bound reference rather than a direct comparison to image-only input. 
+
+4.4 Evaluation Metrics 
+
+As the main aim of the task is to reconstruct the target structure, we follow the SARTCo task eval-uation protocol. At the end of the dialogue the generated structure (built by executing the code at each turn in the dialogue) is compared against the target structure in terms of each cell value (com-ponent type, color, location and stacking order). This is a binary metric referred to as Reconstruc-tion Success Rate , where success indicates that the generated structure exactly matches the target struc-ture. We report the average success rate across all dialogues in the test set. A higher reconstruction success rate indicates better task performance. 
+
+5 Results 
+
+5.1 Analysing the Single VLM Agent Performance 
+
+Can a single VLM solve the structure-building task? This question helps determine whether dia-logue is necessary for the task. Table 1 shows the re-construction success rate for single-turn and multi-turn interactions with a single VLM agent. Overall performance is low for both models. GPT-5.2-Chat has higher reconstruction success than Qwen3-VL-30B in both single-turn (0.182 vs. 0.036 ) and 
+
+multi-turn (0.218 vs. 0.036 ) settings. The slight difference between single-turn and multi-turn per-formance suggests that the main difficulty is not the number of interaction steps, but the model’s abil-
+
+Model Single-Turn Multi-Turn 
+
+Qwen3-VL-30B 0.036 0.036 
+
+GPT5.2-Chat 0.182 0.218 
+
+Table 1: Overall reconstruction success rate using a single VLM agent for the structure building task. 
+
+Model Single-Turn Multi-Turn 
+
+Qwen3-VL-30B 0.022 0.024 
+
+GPT5.2-Chat 0.004 0.275 
+
+Table 2: Overall reconstruction success rate using two VLMs for the structure building task. 
+
+ity to interpret the target structure and generate a correct reconstruction. We therefore next examine a two-agent setting, where task roles are decom-posed and agents can use clarification questions and correction instructions. 
+
+5.2 Analysing Two Agent Performance 
+
+Can two VLMs collaborate to build a structure, and how does collaboration affect task perfor-mance? We evaluate both models in self-play, where the same model is used as both the Program-mer and the Robot. Table 2 showcases collabora-tive performance. Both models have low success rates in the single-turn setting, suggesting that one-shot instruction generation is not sufficient for this task; we analyze the failure patterns in Section 5.7. GPT-5.2-Chat improves from 0.218 in single-agent multi-turn to 0.275 in two-agent multi-turn, indi-cating that role decomposition contributes to re-construction. However, performance remains con-strained because the Programmer observes only a top-down target image, where intermediate stack-5Model Single-Turn Multi-Turn 
+
+Qwen3-VL-30B 0.065 0.180 
+
+GPT5.2-Chat 0.111 0.493 
+
+GPT-Qwen3 0.115 0.364 
+
+Qwen3-GPT 0.091 0.125 
+
+> Table 3: Overall reconstruction success rate using two VLMs for the structure building task by using decom-posed layer representation; Qwen3: Qwen3-VL-30B; GPT: GPT5.2-Chat; Qwen3-GPT/GPT-Qwen3: Indi-cates the first model is used as Programmer and the second model is used as Robot.
+
+ing levels may be occluded, limiting instruction quality. Qwen3-VL-30B performs poorly in both settings, with failures arising from incorrect instruc-tion generation and spatial grounding. This sug-gests that role decomposition alone is insufficient when both agents struggle with target interpreta-tion and spatial grounding. We therefore examine whether decomposed target images improve recon-struction performance. 
+
+5.3 Analysing Image Representation Impact 
+
+Does providing decomposed target images improve structure reconstruction? We evaluate self-play and cross-model configurations to study the effect of the Programmer model. Table 3 demonstrates reconstruction success rates with decomposed target images. Single-turn success rates improve over the single-target-image setting, but remain low, suggesting that one-shot instruction generation still limits reconstruction. In self-play multi-turn, GPT-5.2-Chat improves from 0.287 to 0.493 , while Qwen3-VL-30B also improves to 0.180 but remains low. In cross-model multi-turn, Qwen3-VL-30B as the Robot reaches 
+
+0.364 with GPT-5.2-Chat as the Programmer, com-pared to 0.180 in self-play. Conversely, GPT-5.2-Chat as the Robot drops to 0.125 from 0.493 in self-play when Qwen3-VL-30B acts as the Pro-grammer. These results suggest that decomposed images improve instruction quality, and that the Programmer role affects reconstruction. These results indicate that decomposed images help the Programmer interpret stacking relations that may be occluded in a top-down target image. The cross-model results further show that instruc-tion generation affects collaborative reconstruction. 
+
+5.4 Analysing Modality Impact 
+
+How does input modality affect reconstruction? 
+
+We evaluate text-only, image-only, and text-and-                  
+
+> Mode Model Single-Turn Multi-Turn
+> T-V Qwen3-VL-30B 0.067 0.227
+> GPT5.2-Chat 0.879 0.910
+> V-T Qwen3-VL-30B 0.091 0.165
+> GPT5.2-Chat 0.145 0.493
+> T-T Qwen3-VL-30B 0.067 0.364
+> GPT5.2-Chat 0.911 0.917
+> Table 4: Overall reconstruction success rate using two VLMs for the structure building task with change in input modalities; T-V: Text-Vision mode; V-T: Vision-Text mode; T-T: Text-Text mode.
+
+image representations to examine how input format affects task performance. Table 4 shows reconstruction success rates across modality conditions. Text-based settings lead to higher success rates than image-only set-tings, since they remove the need to infer struc-ture from images. For GPT-5.2-Chat, the multi-turn Text-Image setting reaches 0.910 , and Text-Text reaches 0.917 . This suggests that when the Programmer receives the target structure in text form, the Robot can translate the resulting instruc-tions into actions using either image-based or text-based state representations. In contrast, Image-Text reaches 0.493 , showing that the Programmer’s in-put modality has a larger effect on reconstruction. For Qwen3-VL-30B, the same pattern appears at lower scores. The Text-Text setting reaches 0.364 
+
+in multi-turn, compared with 0.227 for Text-Image and 0.165 for Image-Text. Across both models and modality conditions, multi-turn interaction im-proves over single-turn, suggesting that iterative instruction exchange helps reconstruction when the input representation eases interpretation process. 
+
+5.5 Analysing the Effect of Structural Complexity 
+
+How does reconstruction performance change as target structures become more complex? We ana-lyze reconstruction success by the number of com-ponents in the target structure. Since the test set contains structures with two to five components, this analysis allows us to examine how performance changes as the number of required placements and stacking relations increases. Figure 5 shows reconstruction success across complexity levels for two-agent multi-turn image-based settings, with and without decomposed target images. For GPT-5.2-Chat, reconstruction success decreases as the number of components increases in both image representation settings, reflecting the need to reason over more component placements, 6Average success rate across test instances with increase in structure complexity Figure 5: Reconstruction success rate across structure complexity levels in two-agent multi-turn image-based settings. Results are shown for target images with and without layer-wise representations. 
+
+stacking relations, and dependencies. Decomposed target images yield higher reconstruction success across all complexity levels, indicating that access to intermediate stacking levels helps the Program-mer generate instructions for structures with more components. For Qwen3-VL-30B, reconstruction success remains low across complexity levels, sug-gesting difficulties with spatial interpretation and instruction following. These results show that structural complex-ity affects reconstruction performance in model-dependent ways. GPT-5.2-Chat degrades with com-plexity but benefits from decomposed target im-ages, while Qwen3-VL-30B remains limited across complexity levels and image representations. 
+
+5.6 Analysing Dialogue Behaviours 
+
+We next analyze dialogue behavior in the two-agent multi-turn image-based settings. We focus on clar-ification questions to understand how agents use dialogue to resolve uncertainty and recover from errors. The analysis on correction instructions is available in the Appendix A.3.3 Clarification questions indicate cases where the Robot cannot translate the Programmer’s instruc-tion into executable actions, either because the instruction is underspecified, or violates environ-ment constraints. Figure 6 shows the percentage of episodes that contain at least one clarification question across structure complexity levels. Without decomposed target images, clarification questions occur in most episodes for both mod-els, with rates close to 97 –100% across complexity levels. This suggests that top-down target images often lead to instructions that require additional grounding before execution. With decomposed tar-get images, the pattern changes. For GPT-5.2-Chat, (b) Average success rate among episodes with clarification questions 
+
+> Average clarification rate across test instances
+
+Figure 6: Percentage of two-agent multi-turn episodes containing clarification questions across structure com-plexity levels, with and without layer-wise target repre-sentations. Average success rate across test instances with clarifications 
+
+Figure 7: Reconstruction success rate for two-agent multi-turn episodes that contain clarification questions, evaluated across structure complexity levels with and without layer-wise target representations. 
+
+the clarification rate decreases as structure com-plexity increases, while for Qwen3-VL-30B, the clarification rate increases with complexity. This difference suggests that the models use clarification questions differently. We now analyse how clarification questions re-late to task success. Figure 7 shows reconstruction success among episodes that contain clarification questions. Qwen3-VL-30B has near-zero success across image representations, indicating that clarifi-cation does not lead to task recovery for this model. GPT-5.2-Chat achieves higher success when de-composed target images are used, especially for lower-complexity structures. However, success de-creases as the number of components increases, suggesting that clarification alone does not resolve failures caused by visual misinterpretation or incor-rect spatial grounding. Overall, decomposed target images contribute more to successful recovery than clarification behavior alone. 7Single Turn    
+
+> At row 3, column 1, place a washer as the base. Then stack a nut directly on top of the washer in the same cell
+> put(board, 'washer', 'green', x=3, y=1) put(board, 'nut', 'blue', x=3, y=1)
+> Ground Truth Generated
+> Colors: Red, Green Colors: Green, Blue
+> Place a green nut at row 2, column 2. Place a yellow horizontal bridge from 2,1 to 2,3 with the centre at 2,2
+> put(board, 'nut', 'green', x=2, y=2) put(board, 'bridge-h', 'yellow', x=2, y=1)
+> Ground Truth Generated
+> Colors: Yellow, Green
+> Execution Failure
+
+Multi-Turn without decomposed images             
+
+> Place a yellow horizontal bridge at 2,2. This is the bottom support. On top of the left cell of the bridge, place a green nut centered over the bridge.
+> A horizontal bridge requires supporting shapes underneath it. Should I place supports first?
+> Place a red nut at row 3, column 2. Then, place ayellow screw on top. Next, place apurple washer at 3,1. Finally a purple bridge-h at 3,1.
+> The instruction mentions purple color components but it is not mentioned in the available colors.
+> Place a red nut at row 3, column 2, red washer at 3,1. Then, stack it with a red horizontal bridge….
+> Red bridge at 3,1 cannot be stacked on same color washer. Stacking same color components is not allowed….
+
+Multi-Turn with decomposed images                
+
+> Yes, horizontal bridge is not the bottom layer. Add two nuts underneath it. These supports are fully hidden in the image.
+> Place a green screw at 3,2 on top of the blue vertical bridge that spans rows 2 to 4 in column 2.
+> put(board, 'screw', 'green', x=3, y=2)
+> Ground Truth Generated
+> Components: bridge-v, screw only screw
+> *hallucinating about hidden components
+> The blue vertical bridge in column 2spanning row:3 to row:4 is the bottomost object. Next, place a green screw stacked on top of the bridge at 3,2.
+> put(board, 'bridge-v', 'blue', x=3, y=2) put(board, 'screw', 'green', x=3, y=2) put(board, 'nut', 'blue', x=2, y=2)
+> Ground Truth Generated
+> Components: bridge-v, screw additional nut
+
+Figure 8: Two-agent failure cases for GPT-5.2-Chat (top-panel) and Qwen3-VL-30B (bottom-panel) across inter-action settings. Failures include missing color information, depth mismatches, clarification loops, and incorrect reconstruction from misinterpreted target structures. 
+
+5.7 Qualitative Analysis 
+
+We analyze two-agent interactions to identify fail-ure patterns (see Figure 8). In GPT-5.2-Chat single-turn interactions, 93% of the executed interactions contain color mismatches between the generated code and the ground truth. This occurs because the Programmer omits color information in the in-structions, forcing the Robot to assume colors. For Qwen3-VL, 75 .6% of episodes abort due to incor-rect stacking depths, missing color information, and component-specific constraint violations. In the GPT-5.2-Chat multi-turn setting with a sin-gle target image, some instructions describe struc-tures that differ from the target. Robot clarification questions often surface these errors, but the ex-change does not always recover as Programmer’s target interpretation is incorrect. For Qwen3-VL, multi-turn interaction reduces aborts, with only seven test episode resulting in an abort. However, 
+
+79 .6% of interactions reach the 15 -turn limit be-cause the Robot repeatedly asks clarification ques-tions without generating executable actions. This suggests that multi-turn interaction can reduce exe-cution aborts but may lead to clarification loops. Even with decomposed images, GPT-5.2-Chat still misinterprets some target structures, leading to execution failures in 20% of instances. Even when the target is interpreted correctly, the Robot misinterprets instructions, causing incorrect stack-ing order, extra components or location errors. For Qwen3-VL, 54% of interactions reach the 15 -turn limit. The Programmer sometimes treats decom-posed images as separate targets and repeats con-struction instructions, while the Robot fails to pre-serve stacking order or object locations. 
+
+6 Conclusion 
+
+This paper explores the collaborative capabilities of VLMs in a structure-building task. To this end, we evaluated single-agent and two-agent settings across multiple modalities and image representa-tions. Our findings show that spatial reasoning remains challenging for the evaluated VLMs. Two-agent collaboration alone provides limited gains, suggesting that role decomposition does not resolve errors in visual interpretation and spatial ground-ing. We observe larger improvements in task per-formance when intermediate stacking-layer image representations are provided. Furthermore, text-based target representations lead to higher recon-struction success across all evaluated modalities. We also find that clarification and correction be-haviors do not always lead to recovery, indicating that failures are often caused by incorrect visual grounding rather than dialogue alone. Future work should focus on improving visual spatial ground-ing and grounded instruction generation for VLM agents in collaborative structure-building tasks. 8Limitations 
+
+Although the proposed framework enables a con-trolled study, it has several limitations. First, our ex-periments focus on simple boards that have a single object on the grid. Although this setup allows us to isolate failures at different stages of the interaction, it does not cover the full range of perception and manipulation challenges in physical robot environ-ments. Second, we use 2.5D target representations, which do not capture the properties of full 3D rep-resentations or their effects on model performance. Third, this work is an illustrative case study rather than a comprehensive benchmark, and evaluates two representative VLMs across open-weight and closed paradigms. Broader generalization of our findings to VLMs as a class would require evalua-tion across a wider range of models. Future work can extend the evaluation to physical robot settings, broader model families, and 3D representations. 
+
+References 
+
+Yonatan Bisk, Deniz Yuret, and Daniel Marcu. 2016. Natural language communication with robots. In 
+
+NAACL HLT 2016, The 2016 Conference of the North American Chapter of the Association for Computa-tional Linguistics: Human Language Technologies, San Diego California, USA, June 12-17, 2016 , pages 751–761. The Association for Computational Lin-guistics. Tom B. Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared Kaplan, and et al. 2020. Language models are few-shot learners. In Advances in Neural Information Processing Systems 33: Annual Confer-ence on Neural Information Processing Systems 2020, NeurIPS 2020, December 6-12, 2020, virtual .Kranti Chalamalasetti, Jana Götze, Sherzod Haki-mov, Brielen Madureira, Philipp Sadler, and David Schlangen. 2023. clembench: Using game play to evaluate chat-optimized language models as conver-sational agents. In Proceedings of the 2023 Confer-ence on Empirical Methods in Natural Language Pro-cessing, EMNLP 2023, Singapore, December 6-10, 2023 , pages 11174–11219. Association for Computa-tional Linguistics. Boyuan Chen, Zhuo Xu, Sean Kirmani, Brian Ichter, Dorsa Sadigh, Leonidas J. Guibas, and Fei Xia. 2024a. Spatialvlm: Endowing vision-language mod-els with spatial reasoning capabilities. In IEEE/CVF Conference on Computer Vision and Pattern Recog-nition, CVPR 2024, Seattle, WA, USA, June 16-22, 2024 , pages 14455–14465. IEEE. Lin Chen, Jinsong Li, Xiaoyi Dong, Pan Zhang, Con-ghui He, Jiaqi Wang, Feng Zhao, and Dahua Lin. 2024b. Sharegpt4v: Improving large multi-modal models with better captions. In Computer Vision - ECCV 2024 - 18th European Conference, Milan, Italy, September 29-October 4, 2024, Proceedings, Part XVII , Lecture Notes in Computer Science, pages 370–387. Springer. Kanzhi Cheng, Wenpo Song, Jiaxin Fan, Zheng Ma, Qiushi Sun, Fangzhi Xu, Chenyang Yan, Nuo Chen, Jianbing Zhang, and Jiajun Chen. 2025. Caparena: Benchmarking and analyzing detailed image caption-ing in the LLM era. In Findings of the Association for Computational Linguistics, ACL 2025, Vienna, Austria, July 27 - August 1, 2025 , Findings of ACL, pages 14077–14094. Association for Computational Linguistics. Justin Chiu, Wenting Zhao, Derek Chen, Saujas Vaduguru, Alexander Rush, and Daniel Fried. 2023. Symbolic planning and code generation for grounded dialogue. In Proceedings of the 2nd Workshop on Pattern-based Approaches to NLP in the Age of Deep Learning , pages 43–53, Singapore. Association for Computational Linguistics. Harm de Vries, Florian Strub, Sarath Chandar, Olivier Pietquin, Hugo Larochelle, and Aaron C. Courville. 2017. Guesswhat?! visual object discovery through multi-modal dialogue. In 2017 IEEE Conference on Computer Vision and Pattern Recognition, CVPR 2017, Honolulu, HI, USA, July 21-26, 2017 , pages 4466–4475. IEEE Computer Society. Cunxin Fan, Xiaosong Jia, Yihang Sun, Yixiao Wang, Jianglan Wei, Ziyang Gong, Xiangyu Zhao, Masayoshi Tomizuka, Xue Yang, Junchi Yan, and Mingyu Ding. 2025. Interleave-vla: Enhancing robot manipulation with interleaved image-text instruc-tions. CoRR , abs/2505.02152. Leon Guertler, Bobby Cheng, Simon Yu, Bo Liu, Leshem Choshen, and Cheston Tan. 2025. Textarena. 
+
+CoRR , abs/2504.11442. Haoxu Huang, Fanqi Lin, Yingdong Hu, Shengjie Wang, and Yang Gao. 2024. Copa: General robotic manipu-lation through spatial constraints of parts with founda-tion models. In IEEE/RSJ International Conference on Intelligent Robots and Systems, IROS 2024, Abu Dhabi, United Arab Emirates, October 14-18, 2024 ,pages 9488–9495. IEEE. Wenlong Huang, Pieter Abbeel, Deepak Pathak, and Igor Mordatch. 2022. Language models as zero-shot planners: Extracting actionable knowledge for embodied agents. In International Conference on Machine Learning, ICML 2022, 17-23 July 2022, Baltimore, Maryland, USA , Proceedings of Machine Learning Research, pages 9118–9147. PMLR. Helge Huettenrauch, Kerstin Severinson Eklundh, An-ders Green, and Elin A. Topp. 2006. Investigating spatial relationships in human-robot interaction. In 
+
+2006 IEEE/RSJ International Conference on Intelli-gent Robots and Systems , pages 5052–5059. 
+
+9brian ichter, Anthony Brohan, Yevgen Chebotar, Chelsea Finn, Karol Hausman, Alexander Herzog, Daniel Ho, Julian Ibarz, Alex Irpan, Eric Jang, Ryan Julian, Dmitry Kalashnikov, Sergey Levine, Yao Lu, Carolina Parada, Kanishka Rao, Pierre Sermanet, Alexander T Toshev, Vincent Vanhoucke, and 26 others. 2023. Do as i can, not as i say: Grounding language in robotic affordances. In Proceedings of The 6th Conference on Robot Learning , volume 205 of Proceedings of Machine Learning Research , pages 287–318. PMLR. Prashant Jayannavar, Anjali Narayan-Chen, and Julia Hockenmaier. 2020. Learning to execute instruc-tions in a minecraft dialogue. In Proceedings of the 58th Annual Meeting of the Association for Compu-tational Linguistics, ACL 2020, Online, July 5-10, 2020 , pages 2589–2602. Association for Computa-tional Linguistics. Prashant Jayannavar, Liliang Ren, Marisa Hudspeth, Risham Sidhu, Charlotte Lambert, Ariel Cordes, Eliz-abeth Kaplan, Anjali Narayan-Chen, and Julia Hock-enmaier. 2026. Bap v2: An enhanced task frame-work for instruction following in minecraft dialogues. 
+
+Computational Linguistics , pages 1–57. Yuchen Ji, Zequn Zhang, Dunbing Tang, Yi Zheng, Changchun Liu, Zhen Zhao, and Xinghui Li. 2024. Foundation models assist in human–robot collabora-tion assembly. Scientific Reports , 14(1):24828. Mengdi Jia, Zekun Qi, Shaochen Zhang, Wenyao Zhang, Xinqiang Yu, Jiawei He, He Wang, and Li Yi. 2025. Omnispatial: Towards comprehensive spatial reason-ing benchmark for vision language models. CoRR ,abs/2506.03135. Peng Jin, Ryuichi Takanobu, Wancai Zhang, Xiaochun Cao, and Li Yuan. 2024. Chat-univi: Unified visual representation empowers large language models with image and video understanding. In IEEE/CVF Con-ference on Computer Vision and Pattern Recognition, CVPR 2024, Seattle, WA, USA, June 16-22, 2024 ,pages 13700–13710. IEEE. Oguzhan Fatih Kar, Alessio Tonioni, Petra Poklukar, Achin Kulshrestha, Amir Zamir, and Federico Tombari. 2024. BRAVE: broadening the visual en-coding of vision-language models. In Computer Vi-sion - ECCV 2024 - 18th European Conference, Mi-lan, Italy, September 29-October 4, 2024, Proceed-ings, Part XVI , Lecture Notes in Computer Science, pages 113–132. Springer. Omar Khattab, Arnav Singhvi, Paridhi Maheshwari, Zhiyuan Zhang, Keshav Santhanam, Sri Vard-hamanan, Saiful Haq, Ashutosh Sharma, Thomas T. Joshi, Hanna Moazam, Heather Miller, Matei Za-haria, and Christopher Potts. 2023. Dspy: Compiling declarative language model calls into self-improving pipelines. CoRR , abs/2310.03714. Jin-Hwa Kim, Nikita Kitaev, Xinlei Chen, Marcus Rohrbach, Byoung-Tak Zhang, Yuandong Tian, Dhruv Batra, and Devi Parikh. 2019. Codraw: Col-laborative drawing as a testbed for grounded goal-driven communication. In Proceedings of the 57th Conference of the Association for Computational Lin-guistics, ACL 2019, Florence, Italy, July 28- August 2, 2019, Volume 1: Long Papers , pages 6495–6513. Association for Computational Linguistics. Wonkyun Kim, Changin Choi, Wonseok Lee, and Won-jong Rhee. 2024. An image grid can be worth a video: Zero-shot video question answering using a VLM. IEEE Access , 12:193057–193075. Chalamalasetti Kranti, Sherzod Hakimov, and David Schlangen. 2024. Towards no-code programming of cobots: Experiments with code synthesis by large code models for conversational programming. arXiv preprint arXiv:2409.11041 .Chalamalasetti Kranti, Sherzod Hakimov, and David Schlangen. 2025. clem:todd: A framework for the systematic benchmarking of LLM-based task-oriented dialogue system realisations. In Proceed-ings of the 26th Annual Meeting of the Special Inter-est Group on Discourse and Dialogue , pages 62–92, Avignon, France. Association for Computational Lin-guistics. Ranjay Krishna, Yuke Zhu, Oliver Groth, Justin John-son, Kenji Hata, Joshua Kravitz, Stephanie Chen, Yannis Kalantidis, Li-Jia Li, David A. Shamma, Michael S. Bernstein, and Li Fei-Fei. 2017. Vi-sual genome: Connecting language and vision us-ing crowdsourced dense image annotations. Int. J. Comput. Vis. , 123(1):32–73. Royi Lachmy, Valentina Pyatkin, Avshalom Manevich, and Reut Tsarfaty. 2022. Draw me a flower: Process-ing and grounding abstraction in natural language. 
+
+Trans. Assoc. Comput. Linguistics , 10:1341–1356. Jacky Liang, Wenlong Huang, Fei Xia, Peng Xu, Karol Hausman, Brian Ichter, Pete Florence, and Andy Zeng. 2023. Code as policies: Language model pro-grams for embodied control. In IEEE International Conference on Robotics and Automation, ICRA 2023, London, UK, May 29 - June 2, 2023 , pages 9493– 9500. IEEE. Pengfei Liu, Weizhe Yuan, Jinlan Fu, Zhengbao Jiang, Hiroaki Hayashi, and Graham Neubig. 2023. Pre-train, prompt, and predict: A systematic survey of prompting methods in natural language processing. 
+
+ACM Comput. Surv. , 55(9):195:1–195:35. Shuo Liu, Kaining Ying, Hao Zhang, Yue Yang, Yuqi Lin, Tianle Zhang, Chuanhao Li, Yu Qiao, Ping Luo, Wenqi Shao, and Kaipeng Zhang. 2024. Con-vbench: A multi-turn conversation evaluation bench-mark with hierarchical ablation capability for large vision-language models. In Advances in Neural In-formation Processing Systems 38: Annual Confer-ence on Neural Information Processing Systems 2024, NeurIPS 2024, Vancouver, BC, Canada, December 10 - 15, 2024 .
+
+10 Julius Mayer, Mohamad Ballout, Serwan Jassim, Far-bod Nosrat Nezami, and Elia Bruni. 2025. ivispar - an interactive visual-spatial reasoning benchmark for vlms. In Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing, EMNLP 2025, Suzhou, China, November 4-9, 2025 ,pages 26757–26781. Association for Computational Linguistics. Dan Qiao, Chenfei Wu, Yaobo Liang, Juntao Li, and Nan Duan. 2023. Gameeval: Evaluating llms on conversational games. CoRR , abs/2308.10032. Lucy Xiaoyang Shi, Zheyuan Hu, Tony Z. Zhao, Archit Sharma, Karl Pertsch, Jianlan Luo, Sergey Levine, and Chelsea Finn. 2024. Yell at your robot: Im-proving on-the-fly from language corrections. In 
+
+Robotics: Science and Systems XX, Delft, The Nether-lands, July 15-19, 2024 .Mohit Shridhar and David Hsu. 2018. Interactive visual grounding of referring expressions for human-robot interaction. In Robotics: Science and Systems XIV, Carnegie Mellon University, Pittsburgh, Pennsylva-nia, USA, June 26-30, 2018 .Mohit Shridhar, Jesse Thomason, Daniel Gordon, Yonatan Bisk, Winson Han, Roozbeh Mottaghi, Luke Zettlemoyer, and Dieter Fox. 2020. ALFRED: A benchmark for interpreting grounded instructions for everyday tasks. In 2020 IEEE/CVF Conference on Computer Vision and Pattern Recognition, CVPR 2020, Seattle, WA, USA, June 13-19, 2020 , pages 10737–10746. Computer Vision Foundation / IEEE. Ishika Singh, Valts Blukis, Arsalan Mousavian, Ankit Goyal, Danfei Xu, Jonathan Tremblay, Dieter Fox, Jesse Thomason, and Animesh Garg. 2023. Prog-prompt: Generating situated robot task plans using large language models. In IEEE International Con-ference on Robotics and Automation, ICRA 2023, London, UK, May 29 - June 2, 2023 , pages 11523– 11530. IEEE. Ilias Stogiannidis, Steven McDonagh, and Sotirios A. Tsaftaris. 2025. Mind the gap: Benchmarking spa-tial reasoning in vision-language models. CoRR ,abs/2503.19707. Yucheng Suo, Fan Ma, Kaixin Shen, Linchao Zhu, and Yi Yang. 2025. Long-horizon visual instruction gen-eration with logic and attribute self-reflection. In 
+
+The Thirteenth International Conference on Learn-ing Representations, ICLR 2025, Singapore, April 24-28, 2025 . OpenReview.net. Takuma Udagawa and Akiko Aizawa. 2019. A nat-ural language corpus of common grounding under continuous and partially-observable context. In The Thirty-Third AAAI Conference on Artificial Intelli-gence, AAAI 2019, The Thirty-First Innovative Ap-plications of Artificial Intelligence Conference, IAAI 2019, The Ninth AAAI Symposium on Educational Advances in Artificial Intelligence, EAAI 2019, Hon-olulu, Hawaii, USA, January 27 - February 1, 2019 ,pages 7120–7127. AAAI Press. Lirui Wang, Yiyang Ling, Zhecheng Yuan, Mohit Shrid-har, Chen Bao, Yuzhe Qin, Bailin Wang, Huazhe Xu, and Xiaolong Wang. 2024. Gensim: Generating robotic simulation tasks via large language models. In The Twelfth International Conference on Learning Representations, ICLR 2024, Vienna, Austria, May 7-11, 2024 . OpenReview.net. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Brian Ichter, Fei Xia, Ed H. Chi, Quoc V. Le, and Denny Zhou. 2022. Chain-of-thought prompting elicits reasoning in large language models. In Ad-vances in Neural Information Processing Systems 35: Annual Conference on Neural Information Process-ing Systems 2022, NeurIPS 2022, New Orleans, LA, USA, November 28 - December 9, 2022 .Yi Xu, Chengzu Li, Han Zhou, Xingchen Wan, Caiqi Zhang, Anna Korhonen, and Ivan Vulic. 2025. Vi-sual planning: Let’s think only with images. CoRR ,abs/2505.11409. Andy Zeng, Maria Attarian, Brian Ichter, Krzysztof Marcin Choromanski, Adrian Wong, Stefan Welker, Federico Tombari, Aveek Purohit, Michael S. Ryoo, Vikas Sindhwani, Johnny Lee, Vin-cent Vanhoucke, and Pete Florence. 2023. Socratic models: Composing zero-shot multimodal reasoning with language. In The Eleventh International Conference on Learning Representations, ICLR 2023, Kigali, Rwanda, May 1-5, 2023 . OpenReview.net. 
+
+A Appendix 
+
+A.1 Interaction Framework 
+
+As described in Section 3.1, we build the two-player interaction using the clem:todd frame-work (Kranti et al., 2025). Player 1, the Program-mer , acts as the instruction giver, similar to a simu-lated user. Player 2, the Robot , acts as the instruc-tion follower and translator, similar to a dialogue system. Both players are VLMs. In self-play, the same VLM plays both roles, while in cross-play, different VLMs are assigned to the Programmer and Robot roles. The interaction is orchestrated by a Game Mas-ter (GM), which handles turn-level coordination. The GM first prompts the Programmer, which is ex-pected to return only a natural-language instruction marked by response anchors; details on the anchors are available in Appendix A.1.1. The GM removes the anchors, verifies that the response is textual, and passes the instruction to the Robot. The Robot is prompted to return a JSON response with two keys: status and details . The status field can take one of three values: code , clarification ,or acknowledgement . The details field contains the corresponding code, clarification question, or 11 acknowledgement text. The GM removes anchors, validates the JSON structure, checks whether the 
+
+status value is valid, extracts the details field, and routes the response to the next step. If the Robot returns code , the GM sends the code to a virtual simulator, which executes it and pro-duces an updated grid-state image. The GM then passes this image to the Programmer as the result of the Robot’s action. If execution fails, the GM sends the error feedback to the Robot so that it can revise the code. If the Robot returns clarification or 
+
+acknowledgement , the GM forwards the response to the Programmer without modification. The Pro-grammer does not observe the Robot-generated code directly; it only observes the updated grid state after execution. The interaction ends when the Programmer out-puts DONE or when the turn limit is reached. After termination, the GM compares the Robot’s final grid state with the target structure and marks the episode as successful only if they match exactly. The comparison is performed at the cell level and checks component type, color, location, and stack-ing order. 
+
+Virtual Simulator The virtual simulator exe-cutes the Robot-generated Python code and pro-duces both an image and an ASCII representation of the Robot’s current grid state. Depending on the experimental setting, the GM passes the rele-vant representation to the Programmer. The sim-ulator also provides APIs to compute an ASCII difference grid between the target structure and the Robot’s current grid state, marking matches, missing components, and extra components at each stacking level. We use this difference grid in the Text-Text setting to provide explicit feedback about the Robot’s current grid state to the Programmer. 
+
+A.1.1 Prompt Templates 
+
+Following standard prompting approaches (Brown et al., 2020; Wei et al., 2022; Liu et al., 2023), we use zero-shot prompts for all experiments. The prompts vary by agent role and experimen-tal setting, but follow a common structure: system message, task description, environment informa-tion, rules, constraints, and the previous response from the other player. Inspired by DSPy (Khat-tab et al., 2023), we add response anchors [[ ## instruction ## ]] , [[ ## player_response ## ]] and [[ ## completed ## ]] to have con-sistent model outputs. The Programmer prompt describes the task, en-vironment information, and constraints. It also includes a reference image with component labels, the target structure, and the Robot’s current state (see Figure 9). The Robot prompt contains the task description, environment information, constraints, the Programmer’s instruction, a reference image with component labels, and the Robot’s current state (see Figure 10). The response format dif-fers by role: the Programmer produces a natural-language instruction, while the Robot returns a JSON response containing status and details .
+
+Ablation Studies We conducted preliminary ex-periments to refine the prompt templates and re-sponse formats. Based on these observations, we added clarification and acknowledgement as Robot response statuses, allowing the Robot to in-dicate ambiguity or acknowledge an instruction in addition to code generation. We also added execution-error feedback for the Robot, allowing up to three revision attempts before aborting an episode. This feedback allows the Robot to correct code errors or ask relevant clarification questions. We fixed the maximum tokens at 300 tokens and interaction turns as 15 . In preliminary runs, this limit did not lead to response truncation, dialogue aborts, or incorrect outputs, so we used it across all final experiments. 
+
+A.2 Dataset 
+
+As described in Section 4, we use goal structures from the SARTCo dataset (Kranti et al., 2024). The dataset represents boards as arrangements of com-ponents on a 2.5D 8 × 8 grid. The components mimic assembly settings and include washers, nuts, horizontal bridges, vertical bridges, and screws. Each component is available in four colors: red, blue, green, and yellow. Components can be con-nected on the grid in arrangements that conceptu-ally allow electricity to flow through them. Each such connected arrangement is referred to as an 
+
+object , and the placement of objects on the grid is referred to as a board . Each object contains between two and five components. The component arrangements are represented using Python programs. Each board is also paired with synthetic instructions generated from a tem-plate grammar. Thus, each board is associated with both Python code and synthetic instructions that describe the same target structure. The component arrangements follow predefined 12 Programmer’s Prompt   
+
+> Your input fields are: 1. ‘prompt‘ (str): Prompt with reference image and target image Your output fields are: 1. ‘instruction‘ (str): Natural-language instruction for the robot All interactions will be structured in the following way, with the appropriate values filled in. [[ ## instruction ## ]] instruction [[ ## completed ## ]] …
+> The full prompt is available in Figure 20.
+> (a) Reference image with labels (b) Target Structure (c) Robot’s Current State
+
+Figure 9: Programmer Prompt Overview Robot’s Prompt 
+
+> Your input fields are: 1. ‘prompt‘ (str): Prompt with Instruction from User and current grid state Your output fields are: 1. ‘player_response‘ (str): A JSON object with keys ’status’ and ’details’ as described above All interactions will be structured in the following way, with the appropriate values filled in. [[ ## player_response ## ]] player_response [[ ## completed ## ]] …
+
+The full prompt is available in Figure 22. 
+
+(a) Reference image with labels (b) Robot’s Current State 
+
+Figure 10: Robot Prompt Overview 
+
+constraints: (a) horizontal and vertical bridges oc-cupy two cells, while other components occupy one cell; (b) cells support vertical stacking; (c) a screw can only be placed at the top, and no other com-ponent can be stacked on it; (d) bridge placement must satisfy depth constraints; and (e) components with the same color or type cannot be stacked on each other. The boards are categorized into two types based on the number of objects on the board. Boards with a single object are grouped as simple boards, while boards with multiple objects arranged in different patterns are grouped as regular boards. In this work, we use only the target structures from the simple boards. The simple-board subset is split into train, validation, and test sets. The train set contains 165 boards, while the validation and test sets contain 495 boards each. We use the test set for all experiments. We execute the Python code associated with each board to render the com-ponent arrangement using Matplotlib, and use the generated images as goal structures for our task. We also use the Python code during evaluation to compare cell values between the target structure and the Robot-generated structure, including com-ponent type, color, location, and stacking order. Al-though the dataset includes synthetic instructions, we did not use them because instructions are gener-ated by the instruction giver (Programmer) during interaction. 
+
+A.3 Quantitative Analysis 
+
+In addition to reconstruction success, we analyze interaction aborts and execution failures to better understand the interaction. An episode is marked as aborted if either player’s response violates the required response constraints, or if the Robot-generated code produces execution errors for three consecutive attempts. All episodes that are not aborted are compared against the target structure. An episode is marked as successful only if the final structure matches the target exactly; otherwise, it is marked as a failure. 
+
+A.3.1 Single Agent Setting Single-Turn In the single-agent, single-turn set-ting, 60% of Qwen3-VL-30B episodes are aborted. Among these aborts, 54% are caused by depth mis-matches during bridge placement, and 83% of these occur for structures with four or five components. Among the failed episodes, 91 .6% contain loca-tion mismatches between the generated and target structures. For GPT-5.2-Chat, 37% of episodes are aborted. The main causes are invalid bridge placement at the top level ( 39% ), horizontal-bridge depth mis-matches ( 22 .7% ), and same-color stacking errors (21 .6% ). Among failed episodes, 66% contain lo-cation mismatches, while 15 .5% contain extra com-ponents in the generated structure. Other failures include missing components, color mismatches, and stacking-order errors. 13 Model Single Turn Multi-Turn Abort Failure Success Abort Failure Success 
+
+Qwen3-VL-30B 0.604 0.360 0.036 0.913 0.051 0.036 
+
+GPT5.2-Chat 0.374 0.444 0.182 0.479 0.303 0.218 
+
+> Table 5: Detailed statistics for single agent settings
+
+Model Single Turn Multi-Turn Abort Failure Success Abort Failure Success 
+
+Qwen3-VL-30B 0.756 0.222 0.022 0.913 0.063 0.024 
+
+GPT5.2-Chat 0.372 0.624 0.004 0.386 0.339 0.275 
+
+> Table 6: Detailed statistics for two VLM agents (V-V mode with single target image)
+
+Among successful Qwen3-VL-30B episodes, 
+
+67% are from two-component structures and the rest are from three-component structures. For GPT-5.2-Chat for two-components 56 .7% of the in-stances are successful, for three components 31 .4% 
+
+of the instances are successful, for four components 
+
+13 .2% of the instances are successful, and for five components 8.3% of the instances are successful. 
+
+Multi-Turn In the single-agent, multi-turn set-ting, 91 .3% of Qwen3-VL-30B episodes are aborted. Among these aborts, 37 .1% are caused by not following environment constraints (stacking same shapes, on top of screw) and 35% are caused by depth mismatches during bridge placement. For GPT-5.2-Chat, 47 .9% of episodes are aborted. The main causes are due to not fol-lowing environment constraints ( 51 .9% ) followed by 17 .7% depth-mismatch errors for horizontal bridges. Among failed episodes, 63 .1% contain lo-cation mismatches, while 14 .8% contain extra com-ponents in the generated structure. Other failures include missing components, color mismatches, and stacking-order errors. Among successful Qwen3-VL-30B episodes, 
+
+55 .5% are from two-component structures and the rest are from three-component structures. For GPT-5.2-Chat, for two-components 83 .33% are success-ful, for three components 40 .19% are successful, four components 14 .61% are successful, and for five components 6.9% structures are successful. Overall, in the single-agent settings, both models struggle with element count, location, color, and stacking order, especially for structures with three or more components. This suggests that top-down target images are difficult to interpret in one turn, where the model cannot revise its reconstruction based on feedback. 
+
+A.3.2 Two Agent Settings Single-Turn We now analyse the two-agent in-teraction with single target image representation. In the single-turn setting, 75 .6% of Qwen3-VL-30B episodes are aborted. Among these aborts, 
+
+65 .7% are caused by depth mismatches during bridge placement, and 76 .35% of these occur for structures with four or five components. Among the failed episodes, 91 .6% contain location mis-matches between the generated and target struc-tures. For GPT-5.2-Chat, 37% of episodes are aborted. The main causes are same-color stacking errors (37 .5% ) and invalid bridge placement at the top level ( 35 .3% ). Among failed episodes, 93% con-tain color mismatches, while 6.1% contain extra components in the generated structure. Other fail-ures include location mismatches, and stacking-order errors. 
+
+Multi-Turn In the multi-turn setting, 91 .3% of Qwen3-VL-30B episodes are aborted. Among these aborts, 37 .2% are caused by depth mis-matches during bridge placement and 40 .0% are caused by not following environment constraints (stacking same shapes, stacking on top of screw, placing bridges at the top-most layer). For GPT-5.2-Chat, 38 .6% of episodes are aborted. Out of these aborts, 37 .2% are caused by depth mismatches during bridge placement and 
+
+40 .0% are caused by not following environment constraints (stacking same shapes, stacking on top of screw, placing bridges at the top-most layer). Among successful Qwen3-VL-30B episodes, 
+
+55 .5% are from two-component structures and the rest are from three-component structures. For GPT-5.2-Chat, for two-components 93 .33% are success-ful, for three components 42 .16% are successful, 14 Model Single Turn Multi-Turn Abort Failure Success Abort Failure Success 
+
+Qwen3-VL-30B 0.691 0.244 0.065 0.014 0.806 0.180 
+
+GPT5.2-Chat 0.236 0.653 0.111 0.188 0.319 0.493 
+
+Table 7: Two VLM Agents (V-V mode with layerwise representation) Detailed Statistics Average correction rate across test instances 
+
+Figure 11: Percentage of two-agent multi-turn episodes containing corrections across structure complexity lev-els, with and without layer-wise target representations. 
+
+four components 21 .92% are successful, and for five components 11 .8% structures are successful. 
+
+A.3.3 Analysing Dialogue Behaviours 
+
+We analyze correction instructions in the two-agent multi-turn image-based settings. Correction in-structions occur when the Programmer observes the updated Robot grid and attempts to revise an incorrect or incomplete action. Figure 11 shows the percentage of episodes that contain correction instructions across structure complexity levels. GPT-5.2-Chat produces correction instructions more often than Qwen3-VL-30B. Qwen3-VL-30B produces no correction instructions in either image representation, suggesting that it does not identify or act on errors in the updated grid state. For GPT-5.2-Chat, correction rates vary with image repre-sentation and structure complexity. For two- and three-component structures, correction instructions occur more often with decomposed target images than with top-down images. For four- and five-component structures, correction instructions occur more often without decomposed target images. Figure 12 reports reconstruction success among episodes with correction instructions. Qwen3-VL-30B has no correction episodes, so no recovery through correction is observed for this model. GPT-5.2-Chat achieves higher reconstruction success in correction episodes when decomposed target im-ages are used. This suggests that corrections are Average success rate across test instances with corrections 
+
+Figure 12: Reconstruction success rate for two-agent multi-turn episodes that contain corrections, evaluated across structure complexity levels with and without layer-wise target representations. 
+
+more effective when the Programmer has access to visual representations that expose intermediate stacking levels. However, success remains lim-ited for structures with more components, indicat-ing that correction alone does not resolve failures caused by earlier visual or spatial reasoning errors. 15 TEMPLATE A.3.1 
+
+Your input fields are: 1. ‘prompt‘ (str): Prompt with goal grid Your output fields are: 1. ‘player_response‘ (str): A JSON object with keys ’status’ and ’details’ as described above All interactions will be structured in the following way, with the appropriate values filled in. [[ ## player_response ## ]] player_response [[ ## completed ## ]] In adhering to this structure, your objective is: You are the robot in a structure reconstructing game. You will be shown two images: 
+
+• Image 1 is a reference legend — it shows each shape alongside its label. Use this to identify and name shapes correctly that appear in Image 2. 
+
+• Image 2 is the gold truth — the target structure that must be reconstructed. 
+
+• Using the labels from Image 1, interpret Image 2 accurately. Identify each placed shape, reason carefully about its grid position, occupied cells, and stacking order. Then generate action sequence to reconstruct the target structure. The response should be a JSON object as described in the Output Format section below. Grid Orientation 
+
+• Rows are numbered 1 to 8, top to bottom 
+
+• Columns are numbered 1 to 8, left to right 
+
+• A cell is always described as row, column — strictly in that order. Do not confuse rows and columns. row:3, col:4 and row:4, col:3 are different cells and must not be confused. Shape identification 
+
+• Nut: a square shape occupying exactly one cell. 
+
+• bridge-h: a horizontal bar occupying two adjacent cells in the same row. 
+
+• Do not interpret a bridge-h as two separate nuts placed side by side. If relevant, also distinguish vertical extensions similarly when visible. Interpretation Mode: 
+
+• Always generate actions from bottom to top: supporting objects must be placed before any objects that rest on them. Ordering Constraints (MANDATORY): 
+
+• Actions must respect stacking dependencies. 
+
+• Always place supporting (lower-level) shapes before shapes that rest on them. 
+
+• Never place a top-level shape before its support exists. Partially occluded stacked shapes handling: 
+
+• When shapes are stacked, lower shapes may be partially or fully hidden. Use these cues to identify them. 
+
+• Infer the hidden shape from visible evidence: Visible corners — If only the corners of a diamond are visible, the hidden shape is likely a washer. Half of a shape extending — If part of a shape extends into the next cell horizontally, it is likely a bridge-h. Half of a shape extending — If part of a shape extends into the next cell vertically, it is likely a bridge-v. When colors match across layers, do not assume it is a single shape — interpret the stack carefully in bottom-to-top order 
+
+Figure 13: Part-1 of the prompt template used for the single agent VLM in single-turn setting. 
+
+16 TEMPLATE A.3.2 
+
+Available APIs: - put(board: np.ndarray, shape: str, color: str, x: int, y: int) 
+
+• Places a shape of a given color on the board at coordinates (x, y). - move(board: np.ndarray, x1: int, y1: int, x2: int, y2:int, shapes_list: List = None) 
+
+• To move a shape (or stack of shapes) from coordinates (x1, y1) to coordinates (x2, y2) on the board 
+
+• Do not use same coordinates for source and destination 
+
+• Do not use this function to remove shapes from the board, use removeshape instead 
+
+• Use x1, y1 as source coordinates and x2, y2 as destination coordinates 
+
+• Use x1, y1, x2 and y2 do not use same names for source and destination 
+
+• x1, x2: Row values 
+
+• y1, y2: Column values 
+
+• shape_list: (List, optional): List of shapes from bottom → top to move. If None, only the topmost shape in the stack is moved. - removeshape(board: np.ndarray, x: int, y: int, shape, color) 
+
+• To remove a shape from coordinates (x1, y1) on the board 
+
+• Do not use this function to move shapes, use move instead 
+
+• Use this function only when there is a placement error. If a shape already exists in the target cell, ask whether it should be removed before placing a new one. In most cases, you will be stacking a new shape in the same cell, which doesn’t require removeShape();just call put() for the new shape. 
+
+• The shape and color must match the topmost shape in the stack at (x, y) • x: Row (If you want to remove a shape from "row = 3", then use x = 3) 
+
+• y: Column (If you want to remove a shape from "column = 1", then use y = 1) 
+
+• shape_list: (List, optional): List of shapes from bottom → top to move. If None, only the topmost shape in the stack is moved. - clear(board: np.ndarray) 
+
+• To clear all the shapes on the board - undo(board: np.ndarray) 
+
+• To undo last placement action(s) on the board 
+
+• If multiple shapes were placed as part of the previous operation, all of them will be cleared from the board. — AVAILABLE SHAPES - washer - nut - screw - bridge (vertical, horizontal) ← special shape 
+
+• Use **’bridge-h’** for horizontal bridges and **’bridge-v’** for vertical ones. AVAILABLE COLORS - green - red - blue - yellow SHAPE OCCUPANCY 
+
+• All shapes occupy **exactly one cell**, **except the "bridge"**. 
+
+• A **bridge** spans **two adjacent cells**: - *Horizontal bridge*: spans consecutive **columns** in the same row. - *Vertical bridge*: spans consecutive **rows** in the same column. 
+
+• A bridge **requires two other shapes** underneath it (referred as depth) for support while stacking, one under each end of the bridge. 
+
+Figure 14: Part-2 of the prompt template used for the single agent VLM in single-turn setting. 
+
+17 TEMPLATE A.3.3 
+
+BRIDGE REPRESENTATION RULES 
+
+• Bridges span two cells and appear in the target grid as: - bridge-v-top / bridge-v-bottom → one vertical bridge - bridge-h-left / bridge-h-right → one horizontal bridge - ’bridge-h-left’ and ’bridge-h-right’ are display labels representing the two halves of a single horizontal bridge (bridge-h). A horizontal bridge always occupies two adjacent cells in the same row. When generating code or interpreting grid , always refer to the shape as bridge-h, not the left/right variants. - Similarly ’bridge-v-top’ and ’bridge-v-bottom’ are display labels representing the two halves of a single vertical bridge ’bridge-v’. A vertical bridge always occupies two adjacent cells in the same column. When generating code or interpreting grid , always refer to the shape as bridge-v, not the top/bottom variants. 
+
+• Example: 
+
+→ Code: put(board, ’bridge-h’, ’green’, 8, 1) 
+
+→ Current-Grid would become: Grid levels (bottom to top): Level 1: row: 8, col: 1: ’shapes’: [’bridge-h-left’], ’colors’: [’green’] row: 8, col: 2: ’shapes’: [’bridge-h-right’], ’colors’: [’green’] 
+
+→ To remove this shape: removeshape(board, x=8, y=1, shape=’bridge-h’, color=’green’) 
+
+→ Code: put(board, ’bridge-v’, ’blue’, 2, 8) 
+
+→ Current-Grid would become: Grid levels (bottom to top): Level 1: row: 2, col: 8: ’shapes’: [’bridge-v-top’], ’colors’: [’blue’] row: 3, col: 8: ’shapes’: [’bridge-v-bottom’], ’colors’: [’blue’] 
+
+→ To remove this shape: removeshape(board, x=2, y=8, shape=’bridge-v’, color=’blue’) STACKING & DEPTH RULES 
+
+• Shapes can be stacked vertically within the same cell. 
+
+• Stacking is only allowed if all shapes share the **same depth**. 
+
+• Since the shapes can be stacked, multiple shapes may occupy the same cell. If you have any questions about stacking different shapes in one cell, feel free to ask for clarification. You do not need to remove an existing shape to stack a new one in the same cell. 
+
+• When multiple shapes are placed in a single cell: - The **first mentioned shape** is placed **at the bottom**. - Later shapes stack **on top**. 
+
+• Do not stack same shapes in the same cell. Example: Correct: put(board, shape=’washer’, color=’red’, x=1, y=1) put(board, shape=’nut’, color=’green’, x=1, y=1) Incorrect: put(board, shape=’washer’, color=’red’, x=1, y=1) put(board, shape=’washer’, color=’green’, x=1, y=1) —IMPLEMENTATION DETAILS 
+
+• When placing **multiple shapes**, use **loops** or repeated ‘put‘ calls as needed. Example: for row in [1,4]: put(board, shape, color, row, y) for col in [2,5]: put(board, shape, color, x, col) for row in [1,3]: for col in [1,4]: put(board, shape, color, row, col) — 
+
+Figure 15: Part-3 of the prompt template used for the single agent VLM in single-turn setting. 
+
+18 TEMPLATE A.3.4 
+
+Given: - prompt: Prompt with the following details: - Two images: Image1 (reference legend for shapes), Image2 (gold structure of placements) Output Format: - Respond with a JSON object: Format: {"status": "<string>", # e.g. "code" "details": "<string>", # Python code }Example: {"status": "code", "details": "put(board, ’washer’, ’green’, x=1, y=1) put(board, ’nut’, ’blue’, x=3, y=2)" }Make sure the JSON is valid and parsable by Python json.loads(). Respond with the corresponding output fields, starting with the field ‘[[ ## player_response ## ]]‘, and then ending with the marker for ‘[[ ## completed ## ]]‘. 
+
+Figure 16: Part-4 of the prompt template used for the single agent VLM in single-turn setting.  
+
+> TEMPLATE
+
+A.3.5 
+
+Your input fields are: 1. ‘prompt‘ (str): Prompt with goal grid and current grid state Your output fields are: 1. ‘player_response‘ (str): A JSON object with keys ’status’ and ’details’ as described above All interactions will be structured in the following way, with the appropriate values filled in. [[ ## player_response ## ]] player_response [[ ## completed ## ]] In adhering to this structure, your objective is: You are the robot in a structure reconstructing game. You will be shown three images: 
+
+• Image 1 is a reference legend — it shows each shape alongside its label. Use this to identify and name shapes correctly that appear in Image 2. 
+
+• Image 2 is the gold truth — the target structure that must be reconstructed. 
+
+• Image 3 shows the current state of placements on an 8 ×8 grid — it reflects all placements made so far. At the start of the game, the grid is empty. 
+
+• Using the labels from Image 1, interpret Image 2 accurately. Identify each placed shape, reason carefully about its grid position, occupied cells, and stacking order. Then generate action sequence to reconstruct the target structure. The response should be a JSON object as described in the Output Format section below. The rest of the prompt about environmental constraints, API usage and the response format is same as the prompt used for single agent VLM in single turn. 
+
+Figure 17: Prompt template used for the single agent VLM in multi-turn. 
+
+19 TEMPLATE A.3.6 
+
+Your input fields are: 1. ‘prompt‘ (str): Prompt with reference image and target image Your output fields are: 1. ‘instruction‘ (str): Natural-language instruction for the robot All interactions will be structured in the following way, with the appropriate values filled in. [[ ## instruction ## ]] instruction [[ ## completed ## ]] In adhering to this structure, your objective is: You are the human user. Your task is to instruct a robot to reconstruct the given goal structure in Image2. You will have to generate all the necessary instructions at once. You will be shown two images: 
+
+• Image 1 is a reference legend — it shows each shape alongside its label. Use this to identify and name shapes correctly that appear in Image 2. 
+
+• Image 2 is the gold truth — the target structure that must be reconstructed. 
+
+• Using the labels from Image 1, interpret Image 2 accurately. Identify each placed shape, reason carefully about its grid position, occupied cells, and stacking order. Then generate textual placement instructions that would reconstruct the object shown in Image 2 from scratch on an empty grid. Grid Orientation 
+
+• Rows are numbered 1 to 8, top to bottom 
+
+• Columns are numbered 1 to 8, left to right 
+
+• A cell is always described as row, column — strictly in that order. Do not confuse rows and columns. row:3, col:4 and row:4, col:3 are different cells and must not be confused. Shape identification 
+
+• Nut: a square shape occupying exactly one cell. 
+
+• bridge-h: a horizontal bar occupying two adjacent cells in the same row. 
+
+• Do not interpret a bridge-h as two separate nuts placed side by side. If relevant, also distinguish vertical extensions similarly when visible. Preferred Instruction Style: 
+
+• Describe shapes, regions, and patterns. 
+
+• Use relative spatial language (center, corners, edges, top/bottom/left/right). 
+
+• Use symmetry, repetition, and grouping where possible. 
+
+• Describe what the grid should look like, and how to reconstruct it Communication Strategy: 
+
+• Assume the follower understands shapes and patterns. 
+
+Figure 18: Part-1 of prompt template used for the Programmer in two-agent VLM in single-turn. 
+
+20 TEMPLATE A.3.7 
+
+Stacking constraints: 
+
+• Instructions must respect stacking dependencies. 
+
+• Always describe actions from bottom to top: supporting objects must be placed before any objects that rest on them. 
+
+• Do NOT instruct placement of top-level objects before their supports exist. 
+
+• Violating this order may lead to incorrect reconstruction. Partially occluded stacked shapes handling: 
+
+• When shapes are stacked, lower shapes may be partially or fully hidden. Use these cues to identify them. 
+
+• Infer the hidden shape from visible evidence: Visible corners — If only the corners of a diamond are visible, the hidden shape is likely a washer. Half of a shape extending — If part of a shape extends into the next cell horizontally, it is likely a bridge-h. Half of a shape extending — If part of a shape extends into the next cell vertically, it is likely a bridge-v. When colors match across layers, do not assume it is a single shape — interpret the stack carefully in bottom-to-top order Rules: 
+
+• Rows spread from top to bottom vertically ranged from 1 to 8; Columns spread from left to right horizontally ranged from 1 to 8 
+
+• ’Nut’ is a square; ’bridge-h’ is a long horizontal bar, do not confuse it with Nut. ’Nut’ occupies a single cell and ’bridge-h’ occupies two cells. 
+
+• If a region or pattern is already correct, do not mention it. Examples: "Create a vertical stack with a red washer below a blue screw." "Attach a yellow nut to the right side of green horizontal bridge." "Mirror the structure on the left side onto the right side." "First place the nut, then place screw on top of it." Inputs: - prompt: Prompt with the following details: - Image 1 contains reference legend for the shapes used in an object. - Image 2 contains a target object on a 8x8 grid. Outputs: - Your goal is to generate natural language instructions to construct the target object in Image2 - Do not generate anything else Respond with the corresponding output fields, starting with the field ‘[[ ## instruction ## ]]‘, and then ending with the marker for ‘[[ ## completed ## ]]‘. 
+
+Figure 19: Part-2 of prompt template used for the Programmer in two-agent VLM in single-turn. 
+
+21 TEMPLATE A.3.8 
+
+Your input fields are: 1. ‘prompt‘ (str): Prompt with reference image, target image and Robot’s current grid. Your output fields are: 1. ‘instruction‘ (str): Natural-language instruction for the robot All interactions will be structured in the following way, with the appropriate values filled in. [[ ## instruction ## ]] instruction [[ ## completed ## ]] In adhering to this structure, your objective is: You are the human user. Your task is to collaborate with a robot to reconstruct the given goal structure in Image2 by generating natural language instructions. You will be shown three images: 
+
+• Image 1 is a reference legend — it shows each shape alongside its label. Use this to identify and name shapes correctly that appear in Image 2. 
+
+• Image 2 is the gold truth — the target structure that must be reconstructed. 
+
+• Image 3 shows the current state of robot reconstruction on an 8 ×8 grid — it reflects all placements made so far. At the start of the game, the grid is empty. 
+
+• Using the labels from Image 1, interpret Image 2 accurately. Identify each placed shape, reason carefully about its grid position, occupied cells, and stacking order. Then generate textual placement instructions that would reconstruct the object shown in Image 2 from scratch on an empty grid. Grid Orientation 
+
+• Rows are numbered 1 to 8, top to bottom 
+
+• Columns are numbered 1 to 8, left to right 
+
+• A cell is always described as row, column — strictly in that order. Do not confuse rows and columns. row:3, col:4 and row:4, col:3 are different cells and must not be confused. Shape identification 
+
+• Nut: a square shape occupying exactly one cell. 
+
+• bridge-h: a horizontal bar occupying two adjacent cells in the same row. 
+
+• Do not interpret a bridge-h as two separate nuts placed side by side. If relevant, also distinguish vertical extensions similarly when visible. Preferred Instruction Style: 
+
+• Describe shapes, regions, and patterns. 
+
+• Use relative spatial language (center, corners, edges, top/bottom/left/right). 
+
+• Use symmetry, repetition, and grouping where possible. 
+
+• Describe what the grid should look like, and how to reconstruct it Communication Strategy: 
+
+• Focus on completing one meaningful pattern or region at a time. 
+
+• Assume the follower understands shapes and patterns. 
+
+Figure 20: Part-1 of prompt template used for the Programmer in two-agent VLM in multi-turn. 
+
+22 TEMPLATE A.3.9 
+
+Stacking constraints: 
+
+• Instructions must respect stacking dependencies. 
+
+• Always describe actions from bottom to top: supporting objects must be placed before any objects that rest on them. 
+
+• Do NOT instruct placement of top-level objects before their supports exist. 
+
+• Violating this order may lead to incorrect reconstruction. Partially occluded stacked shapes handling: 
+
+• When shapes are stacked, lower shapes may be partially or fully hidden. Use these cues to identify them. 
+
+• Infer the hidden shape from visible evidence: Visible corners — If only the corners of a diamond are visible, the hidden shape is likely a washer. Half of a shape extending — If part of a shape extends into the next cell horizontally, it is likely a bridge-h. Half of a shape extending — If part of a shape extends into the next cell vertically, it is likely a bridge-v. When colors match across layers, do not assume it is a single shape — interpret the stack carefully in bottom-to-top order Rules: 
+
+• Rows spread from top to bottom vertically ranged from 1 to 8; Columns spread from left to right horizontally ranged from 1 to 8 
+
+• ’Nut’ is a square; ’bridge-h’ is a long horizontal bar, do not confuse it with Nut. ’Nut’ occupies a single cell and ’bridge-h’ occupies two cells. 
+
+• Use the robot grid to identify which high-level patterns or regions are incomplete. 
+
+• If a region or pattern is already correct, do not mention it. 
+
+• Generates the instructions to build incorrect or missing elements. 
+
+• If clarification input is non-empty, address it directly and clearly. 
+
+• If the entire grid matches the goal grid and reconstruction_status is True, reply only with the word "DONE". 
+
+• Otherwise, generate instructions that advances the reconstruction 
+
+• Always output either an instruction or "DONE" — nothing else. Examples: "Create a vertical stack with a red washer below a blue screw." "Attach a yellow nut to the right side of green horizontal bridge." "Mirror the structure on the left side onto the right side." "First place the nut, then place screw on top of it." Inputs: - prompt: Prompt with the following details: - Image 1 contains reference legend for the shapes used in an object. - Image 2 contains a target object on a 8x8 grid. - Image 3 contains the current grid status filled by the robot; At the beginning of the game, the grid would be empty. - clarification: Optional question received from the robot; may be empty. - acknowledgement: Optional message received from the robot; may be empty. Outputs: - Your goal is to generate natural language instructions to construct the target object in Image2 - Do not generate anything else Respond with the corresponding output fields, starting with the field ‘[[ ## instruction ## ]]‘, and then ending with the marker for ‘[[ ## completed ## ]]‘. 
+
+Figure 21: Part-2 of prompt template used for the Programmer in two-agent in multi-turn. 
+
+23 TEMPLATE A.3.10 
+
+Your input fields are: 1. ‘prompt‘ (str): Prompt with Instruction from User and current grid state Your output fields are: 1. ‘player_response‘ (str): A JSON object with keys ’status’ and ’details’ as described above All interactions will be structured in the following way, with the appropriate values filled in. [[ ## player_response ## ]] player_response [[ ## completed ## ]] In adhering to this structure, your objective is: You are the robot (the instruction follower) in a collaborative grid-filling game. You will be shown three images: 
+
+• Image 1 is a reference legend — it shows each shape alongside its label. Use this to identify and name shapes correctly that appear in Image 2. 
+
+• Image 2 shows the current state of placements on an 8 ×8 grid — it reflects all placements made so far. At the start of the game, the grid is empty. 
+
+• Using the labels from Image 1, interpret Image 2 accurately. Identify each placed shape, reason carefully about its grid position, occupied cells, and stacking order. Then respond with a JSON object as described in the Output Format section below. The rest of the prompt about environmental constraints and API usage is same as the prompt used for single agent VLM in single turn. The response format is changed and is shown below. Given: - prompt: Prompt with the following details: - Two images: Image1 (reference legend for shapes), Image2 (current state of placements) - The instruction from the user describing what to do Output Format: - Respond with a JSON object: Format: "status": "<string>", # e.g. "clarification" or "code" "details": "<string>", # Python code when status="code", or plain text when status="clarification" If clarification needed: "status": "clarification", "details": "Which color washer should I use?" If providing acknowledgement: "status": "acknowledgement", "details": "Yes, I know" If executing code: "status": "code", "details": "put(board, ’washer’, ’green’, x=1, y=1) put(board, ’nut’, ’blue’, x=3, y=2)" Make sure the JSON is valid and parsable by Python json.loads(). Respond with the corresponding output fields, starting with the field ‘[[ ## player_response ## ]]‘, and then ending with the marker for ‘[[ ## completed ## ]]‘. 
+
+Figure 22: Prompt template used for the Robot in two-agent VLM in multi-turn. 
+
+24 TEMPLATE A.3.11 
+
+Goal:Grid levels (bottom to top): Level 1: row: 3, col: 1: ’shapes’: [’washer’], ’colors’: [’red’] row: 3, col: 2: ’shapes’: [’washer’], ’colors’: [’red’] Level 2: row: 3, col: 1: ’shapes’: [’bridge-h’], ’colors’: [’green’] Level 3: row: 3, col: 1: ’shapes’: [’nut’], ’colors’: [’yellow’] Difference grid: Differences between target grid and player’s grid (bottom to top): Level 1: row: 3, col: 1: Identical row: 3, col: 2: Identical Level 2: row: 3, col: 1: Identical row: 3, col: 2: Extra ’shapes’: [’screw’], ’colors’: [’blue’] Level 3: row: 3, col: 1: Missing ’shapes’: [’nut’], ’colors’: [’yellow’] 
+
+Figure 23: Example difference grid: Textual information for the Programmer on where the Robot’s current grid matches and differs 
+
+25
