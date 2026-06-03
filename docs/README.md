@@ -6,100 +6,62 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-02
-- 运行时间：2026-06-02 22:57:50 UTC
+- 最新运行日期：2026-06-03
+- 运行时间：2026-06-03 22:55:57 UTC
 - 运行状态：成功
-- 本次总论文数：26
-- 精读区：14
-- 速读区：12
+- 本次总论文数：14
+- 精读区：7
+- 速读区：7
 
 ### 今日简报（AI）
-今日精选26篇论文，具身智能与规划泛化研究惊艳全场。
-最值得关注的两大方向：《OneVLA》统一框架攻克具身多任务（10分），《Learning to Search》揭示搜索与学习的协同泛化机制（9分）。
-建议短期关注具身智能统一架构的演进，同时留意搜索-学习耦合在机器人规划中的落地突破。
-- 详情：[/202606/02/README](/202606/02/README)
+今日推荐精读两篇10分论文，聚焦机器人操作与语音翻译前沿。重点关注《Revisiting Embodied Chain-of-Thought for Generalizable Robot Manipulation》和《AlignAtt4LLM: Fast AlignAtt for Decoder-Only LLMs at IWSLT 2026 Simultaneous Speech Translation Task》，分别突破机器人泛化操控与流式语音翻译效率。建议优先精读这两篇，并留意速读中《SALSA》等语音自适应LLM的潜在应用。
+- 详情：[/202606/03/README](/202606/03/README)
 
 ### 精读区论文标签
-1. [OneVLA: A Unified Framework for Embodied Tasks](/202606/02/2606.01241v1-onevla-a-unified-framework-for-embodied-tasks)  
+1. [Revisiting Embodied Chain-of-Thought for Generalizable Robot Manipulation](/202606/03/2606.03784v1-revisiting-embodied-chain-of-thought-for-generalizable-robot-manipulation)  
    标签：评分：10.0/10、query:wm-vla-sa
-   evidence：提出面向导航与操作任务的统一VLA框架
-2. [Learning to Search and Searching to Learn for Generalization in Planning](/202606/02/2605.25720v1-learning-to-search-and-searching-to-learn-for-generalization-in-planning)  
-   标签：评分：9.0/10、query:wm-vla-sa
-   evidence：强化学习，规划，通过启发式进行世界模型
-3. [HoliTok:A Coutinuous Holistic Tokenization with Robust Dual Capabilities of Speech Generation and Understanding](/202606/02/2605.29948v2-holitoka-coutinuous-holistic-tokenization-with-robust-dual-capabilities-of-speech-generation-and-understanding)  
+   evidence：用于VLA机器人操作的具身思维链
+2. [AlignAtt4LLM: Fast AlignAtt for Decoder-Only LLMs at IWSLT 2026 Simultaneous Speech Translation Task](/202606/03/2606.03967v1-alignatt4llm-fast-alignatt-for-decoder-only-llms-at-iwslt-2026-simultaneous-speech-translation-task)  
+   标签：评分：10.0/10、query:speech-model
+   evidence：用于IWSLT 2026的同传系统
+3. [UNISON: A Unified Sound Generation and Editing Framework via Deep LLM Fusion](/202606/03/2605.31530v2-unison-a-unified-sound-generation-and-editing-framework-via-deep-llm-fusion)  
    标签：评分：9.0/10、query:speech-model
-   evidence：统一语音生成与理解的分词模型
-4. [Qwen-VLA: Unifying Vision-Language-Action Modeling across Tasks, Environments, and Robot Embodiments](/202606/02/2605.30280v2-qwen-vla-unifying-vision-language-action-modeling-across-tasks-environments-and-robot-embodiments)  
-   标签：评分：9.0/10、query:wm-vla-sa
-   evidence：用于机器人的视觉-语言-动作模型
-5. [Physical Object Understanding with a Physically Controllable World Model](/202606/02/2606.00439v1-physical-object-understanding-with-a-physically-controllable-world-model)  
-   标签：评分：9.0/10、query:wm-vla-sa
-   evidence：概率世界模型用于物理对象理解
-6. [SafeVLA-Bench: A Benchmark for the Success-Safety Gap in Vision-Language-Action Models](/202606/02/2606.00773v1-safevla-bench-a-benchmark-for-the-success-safety-gap-in-vision-language-action-models)  
-   标签：评分：9.0/10、query:wm-vla-sa
-   evidence：提出VLA模型安全评估基准
-7. [Behavior-Invariant Task Representation Learning with Transformer-based World Models for Offline Meta-Reinforcement Learning](/202606/02/2606.00780v1-behavior-invariant-task-representation-learning-with-transformer-based-world-models-for-offline-meta-reinforcement-learning)  
-   标签：评分：9.0/10、query:wm-vla-sa
-   evidence：基于Transformer的世界模型用于离线元强化学习
-8. [MBench: A Comprehensive Benchmark on Memory Capability for Video World Models](/202606/02/2606.00793v1-mbench-a-comprehensive-benchmark-on-memory-capability-for-video-world-models)  
-   标签：评分：9.0/10、query:wm-vla-sa
-   evidence：视频世界模型记忆能力基准
-9. [Sympatheia: Emotionally Adaptive Voice Assistant with Continuous Affect Conditioning](/202606/02/2606.00851v1-sympatheia-emotionally-adaptive-voice-assistant-with-continuous-affect-conditioning)  
+   evidence：统一语音生成和编辑框架
+4. [Sympatheia: Emotionally Adaptive Voice Assistant with Continuous Affect Conditioning](/202606/03/2606.00851v1-sympatheia-emotionally-adaptive-voice-assistant-with-continuous-affect-conditioning)  
    标签：评分：9.0/10、query:speech-model
-   evidence：情感自适应的语音对话框架，支持表现力语音生成
-10. [Beyond Task Success: Behavioral and Representational Diagnostics for WAM and VLA](/202606/02/2606.01095v1-beyond-task-success-behavioral-and-representational-diagnostics-for-wam-and-vla)  
-   标签：评分：9.0/10、query:wm-vla-sa
-   evidence：直接比较世界动作模型和视觉语言动作模型用于具身AI
-11. [ImagineUAV: Aerial Vision-Language Navigation via World-Action Modeling and Kinodynamic Planning](/202606/02/2606.01205v1-imagineuav-aerial-vision-language-navigation-via-world-action-modeling-and-kinodynamic-planning)  
-   标签：评分：9.0/10、query:wm-vla-sa
-   evidence：结合世界动作建模与VLA的无人机导航
-12. [Sparse Autoencoders for Interpretable Emotion Control in Text-to-Speech](/202606/02/2606.01479v1-sparse-autoencoders-for-interpretable-emotion-control-in-text-to-speech)  
+   evidence：情感自适应语音助手与连续情感控制
+5. [Benchmarking Speech-to-Speech Translation Models](/202606/03/2606.03241v1-benchmarking-speech-to-speech-translation-models)  
    标签：评分：9.0/10、query:speech-model
-   evidence：通过稀疏自编码器实现可解释的情感控制的富有表现力的语音合成
-13. [UniVocal: Unified Speech-Singing Code-Switching Synthesis](/202606/02/2606.01677v1-univocal-unified-speech-singing-code-switching-synthesis)  
+   evidence：语音到语音翻译模型基准测试
+6. [A Pocket Offline Model for Simultaneous Speech Translation as CUNI Submission to IWSLT 2026](/202606/03/2606.03948v1-a-pocket-offline-model-for-simultaneous-speech-translation-as-cuni-submission-to-iwslt-2026)  
    标签：评分：9.0/10、query:speech-model
-   evidence：统一的语音-歌唱代码切换合成，隐式推断发声模式
-14. [RoboSemanticBench: Diagnosing Semantic Grounding in Action Prediction for VLA Models](/202606/02/2606.02277v1-robosemanticbench-diagnosing-semantic-grounding-in-action-prediction-for-vla-models)  
-   标签：评分：9.0/10、query:wm-vla-sa
-   evidence：VLA模型，语义基础，机器人动作预测
+   evidence：同时语音翻译模型
+7. [EntangleCodec: A Unified Discrete Audio Tokenizer via Semantic-Acoustic Entanglement](/202606/03/2606.02739v1-entanglecodec-a-unified-discrete-audio-tokenizer-via-semantic-acoustic-entanglement)  
+   标签：评分：8.0/10、query:speech-model
+   evidence：统一离散音频分词器，同时支持语音理解和生成
 
 ### 速读区论文标签
-1. [Chatterbox-Flash: Prior-Calibrated Block Diffusion for Streaming Zero-Shot TTS](/202606/02/2605.30748v2-chatterbox-flash-prior-calibrated-block-diffusion-for-streaming-zero-shot-tts)  
-   标签：评分：8.0/10、query:speech-model
-   evidence：基于块扩散的零样本TTS
-2. [Hierarchical Semantic-Augmented Navigation: Optimal Transport and Graph-Driven Reasoning for Vision-Language Navigation](/202606/02/2606.01565v1-hierarchical-semantic-augmented-navigation-optimal-transport-and-graph-driven-reasoning-for-vision-language-navigation)  
-   标签：评分：8.0/10、query:wm-vla-sa
-   evidence：视觉语言导航中的层次语义图
-3. [Goal2Pixel: Grounding Goals to Pixels for Vision-Language Navigation](/202606/02/2606.01621v1-goal2pixel-grounding-goals-to-pixels-for-vision-language-navigation)  
-   标签：评分：8.0/10、query:wm-vla-sa
-   evidence：基于VLM的像素接地用于连续环境视觉语言导航
-4. [SpeechEditBench: A Bilingual Multi-Attribute Benchmark for Instruction-Guided Speech Editing](/202606/02/2606.01804v1-speecheditbench-a-bilingual-multi-attribute-benchmark-for-instruction-guided-speech-editing)  
-   标签：评分：8.0/10、query:speech-model
-   evidence：指令引导语音编辑基准，涵盖生成与理解
-5. [Bridging the 2D-3D Gap: A Hierarchical Semantic-Geometric Map for Vision Language Navigation](/202606/02/2606.00095v1-bridging-the-2d-3d-gap-a-hierarchical-semantic-geometric-map-for-vision-language-navigation)  
-   标签：评分：7.0/10、query:wm-vla-sa
-   evidence：为视觉语言导航提供层次语义几何地图，与VLA导航相关
-6. [Privacy-preserving Prosody Representation Learning](/202606/02/2606.00407v1-privacy-preserving-prosody-representation-learning)  
+1. [CapTalk: Text-Guided Stylization and Speech-Driven 3D Head Animation](/202606/03/2605.29316v1-captalk-text-guided-stylization-and-speech-driven-3d-head-animation)  
    标签：评分：7.0/10、query:speech-model
-   evidence：韵律表示学习，支撑表现力语音生成
-7. [Lagrangian Perturbation Diffusion Steering: Latent Reinforcement Learning for Generative Policies](/202606/02/2606.01151v1-lagrangian-perturbation-diffusion-steering-latent-reinforcement-learning-for-generative-policies)  
-   标签：评分：7.0/10、query:wm-vla-sa
-   evidence：强化学习用于生成策略，机器人
-8. [Thaka at KSAA-2026 Task 2: Regularized Fine-Tuning for Arabic Speech Diacritization](/202606/02/2605.25928v1-thaka-at-ksaa-2026-task-2-regularized-fine-tuning-for-arabic-speech-diacritization)  
+   evidence：语音驱动的3D头部动画与风格控制
+2. [SALSA: Speech Aware LLM Adaptation via Learned Steering Activation Vectors](/202606/03/2606.00460v1-salsa-speech-aware-llm-adaptation-via-learned-steering-activation-vectors)  
+   标签：评分：7.0/10、query:speech-model
+   evidence：语音感知的LLM适配方法
+3. [SpeechEditBench: A Bilingual Multi-Attribute Benchmark for Instruction-Guided Speech Editing](/202606/03/2606.01804v1-speecheditbench-a-bilingual-multi-attribute-benchmark-for-instruction-guided-speech-editing)  
+   标签：评分：7.0/10、query:speech-model
+   evidence：指令引导语音编辑基准，与统一语音理解相关
+4. [SiamCTC: Learning Speech Representations through Monotonic Temporal Alignment](/202606/03/2606.02220v1-siamctc-learning-speech-representations-through-monotonic-temporal-alignment)  
+   标签：评分：7.0/10、query:speech-model
+   evidence：使用CTC的自监督语音表示学习
+5. [SoulX-Transcriber: A Robust End-to-End Framework for Multi-Speaker Speech Transcription](/202606/03/2606.02400v1-soulx-transcriber-a-robust-end-to-end-framework-for-multi-speaker-speech-transcription)  
+   标签：评分：7.0/10、query:speech-model
+   evidence：统一多说话人转录系统，融合说话人日志和ASR
+6. [Foley-Omni: A Unified Multimodal Generation Model from Task-Level Audio Synthesis to Complete Video Soundtrack Generation](/202606/03/2606.03672v1-foley-omni-a-unified-multimodal-generation-model-from-task-level-audio-synthesis-to-complete-video-soundtrack-generation)  
+   标签：评分：7.0/10、query:speech-model
+   evidence：统一多模态生成，包含语音、音效和音乐
+7. [Audio-Mind: An Auditable Agentic Framework for Audio Understanding](/202606/03/2605.28480v1-audio-mind-an-auditable-agentic-framework-for-audio-understanding)  
    标签：评分：6.0/10、query:speech-model
-   evidence：语音变音符化是语音理解任务，属于统一语音模型
-9. [Do Audio LLMs Listen or Read? Analyzing and Mitigating Paralinguistic Failures with VoxParadox](/202606/02/2605.27772v1-do-audio-llms-listen-or-read-analyzing-and-mitigating-paralinguistic-failures-with-voxparadox)  
-   标签：评分：6.0/10、query:speech-model
-   evidence：通过合成语音研究副语言理解
-10. [Multi-Turn Multi-Agent Dialogue for Collaborative Reconstruction Improves VLM Performance on Spatial Reasoning, But Only Barely](/202606/02/2605.31387v1-multi-turn-multi-agent-dialogue-for-collaborative-reconstruction-improves-vlm-performance-on-spatial-reasoning-but-only-barely)  
-   标签：评分：6.0/10、query:wm-vla-sa
-   evidence：使用多智能体对话与视觉语言模型在机器人中进行空间推理和动作生成
-11. [LaSR: Context-Aware Speech Recognition via Latent Reasoning](/202606/02/2606.00507v1-lasr-context-aware-speech-recognition-via-latent-reasoning)  
-   标签：评分：6.0/10、query:speech-model
-   evidence：提出基于潜在推理的上下文感知语音识别，为统一模型提供语音理解能力
-12. [MOSS-Audio Technical Report](/202606/02/2606.01802v1-moss-audio-technical-report)  
-   标签：评分：6.0/10、query:speech-model
-   evidence：统一音频语言模型，支持语音理解等多种任务
+   evidence：音频理解代理框架，支持统一音频任务
 
 
 <div class="dpr-home-promo-card">

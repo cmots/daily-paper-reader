@@ -1,0 +1,611 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-03T22:50:14.571676+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 7,
+    "deep_cap": 7,
+    "deep_selected": 7,
+    "quick_candidates": 7,
+    "quick_skim_target": 12,
+    "quick_selected": 7
+  },
+  "deep_dive": [
+    {
+      "id": "2606.03784v1",
+      "source": "arxiv",
+      "title": "Revisiting Embodied Chain-of-Thought for Generalizable Robot Manipulation",
+      "abstract": "Embodied chain-of-thought (CoT) aims to bridge linguistic reasoning and robotic control, but its effective form and integration strategy remain underexplored. In this paper, we revisit embodied CoT for vision-language-action (VLA) models at large scale. We construct the largest embodied CoT corpus to date, comprising 978,743 trajectories, 226.3M samples, and 2592.5 hours of robot data. Through extensive experiments, we find that effective embodied CoT should ground high-level semantic understanding into concrete action guidance, such as end-effector movement descriptions and image-space trajectories, while high-level reasoning alone brings only marginal gains. We further show that explicit CoT does not scale reliably when used as an autoregressive action prefix, as it suffers from compounding inference errors and unstable reasoning-action coupling. To address these limitations, we propose ERVLA, a VLA model that uses embodied CoT as representation-shaping supervision rather than mandatory test-time reasoning. ERVLA is trained with a reasoning-dropout strategy, enabling the model to absorb rich reasoning traces during training while predicting actions directly without CoT decoding during inference. This design improves scalability with increasing pre-training data and avoids autoregressive instability. ERVLA achieves state-of-the-art performance on LIBERO-Plus with an 86.9% success rate and reaches 53.2% success rate on VLABench, demonstrating strong out-of-distribution generalization. In real-robot experiments, ERVLA further outperforms competitive state-of-the-art baselines, especially on tasks requiring semantic disambiguation and long-horizon execution. Code, data, and model checkpoints will be released.",
+      "authors": [
+        "Nan Sun",
+        "Yuan Zhang",
+        "Yongkun Yang",
+        "Wentao Zhao",
+        "Peiyan Li",
+        "Jun Guo",
+        "Wenxuan Song",
+        "Pengxiang Ding",
+        "Runze Suo",
+        "Yifei Su",
+        "Xin Xiao",
+        "Xinghang Li",
+        "Huaping Liu"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-02T15:37:59+00:00",
+      "link": "https://arxiv.org/pdf/2606.03784v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Embodied Chain-of-Thought for VLA models in robot manipulation",
+      "llm_evidence_cn": "用于VLA机器人操作的具身思维链",
+      "llm_evidence": "用于VLA机器人操作的具身思维链",
+      "canonical_evidence": "用于VLA机器人操作的具身思维链",
+      "llm_tldr_en": "Revisits embodied CoT for VLA models at scale, constructing a large corpus and finding that grounding into concrete action guidance is crucial.",
+      "llm_tldr_cn": "该论文重新审视了具身思维链（CoT）在视觉语言动作（VLA）模型中的作用，构建了包含97万条轨迹、2.26亿样本的大型具身CoT语料库。通过大量实验发现，有效的具身CoT应将高层语义理解落地为具体行动指导（如末端执行器移动描述、图像空间轨迹），而单纯的高层推理收益甚微。此外，显式CoT作为自回归前缀时扩展性不可靠，为VLA模型训练提供了重要经验。",
+      "llm_tldr": "该论文重新审视了具身思维链（CoT）在视觉语言动作（VLA）模型中的作用，构建了包含97万条轨迹、2.26亿样本的大型具身CoT语料库。通过大量实验发现，有效的具身CoT应将高层语义理解落地为具体行动指导（如末端执行器移动描述、图像空间轨迹），而单纯的高层推理收益甚微。此外，显式CoT作为自回归前缀时扩展性不可靠，为VLA模型训练提供了重要经验。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.03967v1",
+      "source": "arxiv",
+      "title": "AlignAtt4LLM: Fast AlignAtt for Decoder-Only LLMs at IWSLT 2026 Simultaneous Speech Translation Task",
+      "abstract": "We describe AlignAtt4LLM, an IWSLT 2026 simultaneous speech translation system for English to German, Italian, and Chinese. The system is a synchronous cascade: Qwen3-ASR with forced alignment produces an incrementally updated source transcript, and Gemma-4 E4B-it translates that prefix under an MT-side AlignAtt policy.   To our knowledge, this is the first application of AlignAtt to a decoder-only LLM, where the encoder-decoder cross-attention used by earlier AlignAtt systems is absent. We recover a usable policy by proposing (1) an explicit source span in the prompt, (2) offline selection of translation-specific alignment heads, (3) selective qk-fast replay of the draft-to-source attention block, and (4) runtime query/key capture that preserves model outputs bit-identically.   On the IWSLT 2026 development set, AlignAtt4LLM outperforms the supplied baselines for the European target languages, English to German and English to Italian, in both the low-latency regime around 2 seconds and the high-latency regime below 4 seconds CU-LongYAAL. Results for English to Chinese are more mixed, but the method is not tied to Gemma-4: because AlignAtt4LLM only requires a deterministic prompt layout, calibrated attention heads, and query/key capture, the same policy can be reapplied to stronger translation-focused decoder-only MT backbones for non-European target languages.",
+      "authors": [
+        "Quentin Fuxa",
+        "Dominik Macháček"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published": "2026-06-02T17:52:18+00:00",
+      "link": "https://arxiv.org/pdf/2606.03967v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Simultaneous speech translation system for IWSLT 2026",
+      "llm_evidence_cn": "用于IWSLT 2026的同传系统",
+      "llm_evidence": "用于IWSLT 2026的同传系统",
+      "canonical_evidence": "用于IWSLT 2026的同传系统",
+      "llm_tldr_en": "AlignAtt4LLM applies AlignAtt policy to decoder-only LLMs for simultaneous speech translation, using ASR alignments and selective attention replay.",
+      "llm_tldr_cn": "该论文针对同时语音翻译任务，提出AlignAtt4LLM系统，首次将AlignAtt策略应用于纯解码器LLM。系统由Qwen3-ASR（含强制对齐）和Gemma-4 E4B-it翻译模型构成同步级联。通过显式源文本跨度、离线选择翻译相关注意力头、选择性qk快速重放和运行时查询/键注入，在IWSLT 2026英译德、意、中任务上实现了低延迟下的高质量翻译。",
+      "llm_tldr": "该论文针对同时语音翻译任务，提出AlignAtt4LLM系统，首次将AlignAtt策略应用于纯解码器LLM。系统由Qwen3-ASR（含强制对齐）和Gemma-4 E4B-it翻译模型构成同步级联。通过显式源文本跨度、离线选择翻译相关注意力头、选择性qk快速重放和运行时查询/键注入，在IWSLT 2026英译德、意、中任务上实现了低延迟下的高质量翻译。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2605.31530v2",
+      "source": "arxiv",
+      "title": "UNISON: A Unified Sound Generation and Editing Framework via Deep LLM Fusion",
+      "abstract": "We present UNISON, a latent diffusion framework that unifies speech generation, sound generation, and audio editing within a single model. A single model handles text-to-audio, text-to-speech, zero-shot speaker cloning, mixed speech-and-sound generation, scene-level audio editing, speech-in-scene editing, and timed temporal composition, all of which share a single set of weights. Our architecture features two core designs: (1) Layer-wise deep LLM fusion, which injects hidden states from uniformly sampled layers of a frozen MLLM into corresponding MM-DiT blocks via learned projections, providing depth-matched semantic conditioning that improves instruction following over single-layer baselines; and (2) a unified multi-task architecture where task identity is encoded solely by a channel-wise mask and source audio is provided through VAE-encoded channel concatenation. Training is stabilized by an online GPU-side multi-task data synthesis pipeline with task-homogeneous batching and a two-stage curriculum. With 621M--732M trainable parameters, UNISON achieves results competitive with or exceeding task-specialist models across evaluated domains, while being roughly $4\\times$ smaller than comparable unified systems.",
+      "authors": [
+        "Zhaoqing Li",
+        "Haoning Xu",
+        "Jingran Su",
+        "Yaofang Liu",
+        "Zhefan Rao",
+        "Huimeng Wang",
+        "Jiajun Deng",
+        "Tianzi Wang",
+        "Zengrui Jin",
+        "Rui Liu",
+        "Haoxuan Che",
+        "Xunying Liu"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.SD"
+      ],
+      "published": "2026-05-29T16:43:07+00:00",
+      "link": "https://arxiv.org/pdf/2605.31530v2",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "unified speech generation and editing framework",
+      "llm_evidence_cn": "统一语音生成和编辑框架",
+      "llm_evidence": "统一语音生成和编辑框架",
+      "canonical_evidence": "统一语音生成和编辑框架",
+      "llm_tldr_en": "UNISON unifies speech generation, sound generation, and audio editing in a single latent diffusion model with deep LLM fusion, achieving multi-task capability with shared weights.",
+      "llm_tldr_cn": "UNISON提出了一个统一的潜在扩散框架，通过深度LLM融合将语音生成、声音生成和音频编辑整合到一个模型中。该模型以单一权重处理文本到音频、文本到语音、零样本说话人克隆等多种任务，并通过层间LLM融合增强语义条件控制。实验表明其在多个任务上达到或超越专用模型性能，展示了统一语音生成与理解的可能性。",
+      "llm_tldr": "UNISON提出了一个统一的潜在扩散框架，通过深度LLM融合将语音生成、声音生成和音频编辑整合到一个模型中。该模型以单一权重处理文本到音频、文本到语音、零样本说话人克隆等多种任务，并通过层间LLM融合增强语义条件控制。实验表明其在多个任务上达到或超越专用模型性能，展示了统一语音生成与理解的可能性。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.00851v1",
+      "source": "arxiv",
+      "title": "Sympatheia: Emotionally Adaptive Voice Assistant with Continuous Affect Conditioning",
+      "abstract": "Empathetic spoken dialogue systems must infer a user's emotional state to respond appropriately, yet everyday speech often carries weak, neutral, or ambiguous affective cues. To address this, we introduce Sympatheia, a speech-to-speech dialogue framework conditioned on affect inferred from the user's speech and, when available, explicit affect specifications provided as a continuous valence--arousal (VA) control signal by a multimodal sensing module or user interface. To train our model, we construct Sympatheia-18k, an emotion-conditioned synthetic spoken dialogue corpus with 12 emotion anchors. This dataset includes an emotional split for learning affective speech behavior, and a neutral split that pairs emotionally neutral queries with multiple emotion-conditioned responses to isolate explicit emotion control in emotionally ambiguous cases. Empirical results show that Sympatheia outperforms speech conversational baselines in generating responses whose semantic content and spoken delivery are both emotionally appropriate. We further show that the same VA interface can integrate emotion estimates from diverse sensing modules, including facial expression, biosignals, and textual affect descriptions, improving response alignment when speech alone provides limited emotional evidence. These results suggest that continuous affect conditioning is an effective practical step for building emotionally adaptive voice assistants.",
+      "authors": [
+        "Sukru Samet Dindar",
+        "Riki Shimizu",
+        "Xilin Jiang",
+        "Nima Mesgarani"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.CL",
+        "cs.HC",
+        "cs.LG",
+        "eess.AS"
+      ],
+      "published": "2026-05-30T18:53:35+00:00",
+      "link": "https://arxiv.org/pdf/2606.00851v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "emotionally adaptive voice assistant with affect conditioning",
+      "llm_evidence_cn": "情感自适应语音助手与连续情感控制",
+      "llm_evidence": "情感自适应语音助手与连续情感控制",
+      "canonical_evidence": "情感自适应语音助手与连续情感控制",
+      "llm_tldr_en": "Sympatheia is a speech-to-speech dialogue framework conditioned on user affect, enabling emotionally adaptive responses with continuous valence-arousal control.",
+      "llm_tldr_cn": "日常语音情感信号微弱，现有对话系统难以适应。Sympatheia提出基于连续情感条件（效价-唤醒）的语音到语音对话框架，并构建了18k合成对话语料库。实验表明模型能根据用户情绪调整语音风格，实现更具共情力的交互，在情感语音生成方面取得显著进展。",
+      "llm_tldr": "日常语音情感信号微弱，现有对话系统难以适应。Sympatheia提出基于连续情感条件（效价-唤醒）的语音到语音对话框架，并构建了18k合成对话语料库。实验表明模型能根据用户情绪调整语音风格，实现更具共情力的交互，在情感语音生成方面取得显著进展。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech synthesis",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.03241v1",
+      "source": "arxiv",
+      "title": "Benchmarking Speech-to-Speech Translation Models",
+      "abstract": "Speech-to-speech translation (S2ST) has advanced rapidly, but offline evaluation lacks a unified protocol: studies report non-overlapping metric subsets, preventing direct comparisons. We introduce COMPASS, a unified and reproducible benchmarking framework integrating 46 metrics across eight dimensions, and deploy it on 1,248 model-language configurations from FLEURS and CVSS, spanning cascaded and end-to-end architectures over ten language pairs. Architectures exhibit complementary strengths: best-vs-worst gaps exceed 30\\% on naturalness and speaker preservation but remain within a few points on translation quality, so single-metric rankings systematically misrepresent system quality. Correlation filtering reduces 46 metrics to 10 per direction, with three axes requiring different metrics across X$\\to$EN and EN$\\to$X (e.g., TER/UTMOS vs. ChrF++/NISQA-MOS); these subsets preserve rankings (Spearman's $ρ>0.80$) while cutting evaluation time by $\\approx 2.5\\times$. Human validation across dubbing, podcasts, and medical domains shows standalone MOS predictors fail to predict listener preference, while top domain-specific metrics correlate with human judgment ($ρ\\geq 0.90$). We release COMPASS as a foundation for domain-aware S2ST evaluation.",
+      "authors": [
+        "Alkis Koudounas",
+        "Hayato Futami",
+        "Quentin Jodelet",
+        "Osamu Take",
+        "Shinji Watanabe",
+        "Emiru Tsunoo"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "eess.AS"
+      ],
+      "published": "2026-06-02T07:01:33+00:00",
+      "link": "https://arxiv.org/pdf/2606.03241v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "benchmarking speech-to-speech translation models",
+      "llm_evidence_cn": "语音到语音翻译模型基准测试",
+      "llm_evidence": "语音到语音翻译模型基准测试",
+      "canonical_evidence": "语音到语音翻译模型基准测试",
+      "llm_tldr_en": "COMPASS benchmarking framework evaluates speech-to-speech translation models across 46 metrics, revealing complementary strengths and limitations of single-metric rankings.",
+      "llm_tldr_cn": "针对语音到语音翻译评估缺乏统一协议的问题，提出COMPASS基准框架，集成46项指标在8个维度上评估1248个模型配置，发现不同架构在自然度和说话人保持上差异显著，而翻译质量差异较小，单一指标排名会误导系统评估。",
+      "llm_tldr": "针对语音到语音翻译评估缺乏统一协议的问题，提出COMPASS基准框架，集成46项指标在8个维度上评估1248个模型配置，发现不同架构在自然度和说话人保持上差异显著，而翻译质量差异较小，单一指标排名会误导系统评估。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech to speech translation",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.03948v1",
+      "source": "arxiv",
+      "title": "A Pocket Offline Model for Simultaneous Speech Translation as CUNI Submission to IWSLT 2026",
+      "abstract": "We implement simultaneous translation capability with the offline direct speech-to-text translation model Canary, using the state-of-the-art policy AlignAtt, and submit it to IWSLT 2026 Simultaneous Speech Translation Shared task for Czech to English and English to German and Italian.   The strengths of our system are: (1) high translation quality, outperforming similarly sized baselines both in low- and high-latency regimes in computationally unaware simulations; (2) low computational requirements, as the model has only 1B parameters; (3) multilinguality -- support of 25 source and 25 target languages.",
+      "authors": [
+        "Aziz Sharipov Ortega",
+        "Dominik Macháček"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-06-02T17:37:11+00:00",
+      "link": "https://arxiv.org/pdf/2606.03948v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "simultaneous speech translation model",
+      "llm_evidence_cn": "同时语音翻译模型",
+      "llm_evidence": "同时语音翻译模型",
+      "canonical_evidence": "同时语音翻译模型",
+      "llm_tldr_en": "A pocket offline model for simultaneous speech translation using Canary with AlignAtt policy, achieving high quality with 1B parameters and multilingual support.",
+      "llm_tldr_cn": "提出一个轻量级同时语音翻译系统，基于离线直接语音到文本翻译模型Canary，采用AlignAtt策略，仅1B参数即实现高翻译质量，支持25种源语言和25种目标语言，在IWSLT 2026共享任务中提交，兼顾低延迟与高精度。",
+      "llm_tldr": "提出一个轻量级同时语音翻译系统，基于离线直接语音到文本翻译模型Canary，采用AlignAtt策略，仅1B参数即实现高翻译质量，支持25种源语言和25种目标语言，在IWSLT 2026共享任务中提交，兼顾低延迟与高精度。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.02739v1",
+      "source": "arxiv",
+      "title": "EntangleCodec: A Unified Discrete Audio Tokenizer via Semantic-Acoustic Entanglement",
+      "abstract": "Audio tokenizers serve as the discrete interface between continuous audio and Audio Language Models (ALMs), but existing tokenizers often struggle to support both understanding and generation. Reconstruction-oriented codecs preserve acoustic fidelity but lack rich semantics, while semantic-aware tokenizers typically rely on separate semantic and acoustic streams, introducing redundancy or misalignment.   We propose \\textbf{EntangleCodec}, a unified discrete audio tokenizer that learns caption-aligned semantic-acoustic representations before quantization. By aligning audio with rich captions rather than ASR transcripts, EntangleCodec captures linguistic content, speaker identity, emotion, prosody, and acoustic scenes within a compact token stream. A flow-matching diffusion decoder further enables high-quality reconstruction across speech, music, and general audio.   EntangleCodec achieves reconstruction quality competitive with specialized codecs, outperforms all codec-based baselines on audio understanding by up to \\textbf{+7.4\\%} on MMAR, and supports both TTS and TTA generation in a unified framework. Furthermore, EntangleCodec-based audio language models demonstrate strong scaling behavior: even at \\textit{0.6B} parameters, the model surpasses specialized continuous-representation LLMs with over \\textit{13B} parameters across three benchmarks using \\textbf{22$\\times$} fewer parameters; scaling to \\textit{8B} further establishes new state-of-the-art results on MMAR, highlighting that representation quality is as critical as model scale in audio language modeling. Code and model weights are available at https://github.com/luckyerr/EntangleCodec.",
+      "authors": [
+        "Hui Li",
+        "Yangfan Gao",
+        "Junlin Shang",
+        "Changhao Jiang",
+        "Tao Gui",
+        "Qi Zhang",
+        "Xuanjing Huang"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.AI",
+        "eess.AS"
+      ],
+      "published": "2026-06-01T18:05:18+00:00",
+      "link": "https://arxiv.org/pdf/2606.02739v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "unified discrete audio tokenizer for both speech understanding and generation",
+      "llm_evidence_cn": "统一离散音频分词器，同时支持语音理解和生成",
+      "llm_evidence": "统一离散音频分词器，同时支持语音理解和生成",
+      "canonical_evidence": "统一离散音频分词器，同时支持语音理解和生成",
+      "llm_tldr_en": "EntangleCodec learns caption-aligned semantic-acoustic representations before quantization, enabling a unified tokenizer that captures linguistic content, emotion, prosody, and scenes for Audio Language Models.",
+      "llm_tldr_cn": "现有音频分词器难以兼顾理解与生成。EntangleCodec通过将音频与丰富标题对齐，在量化前学习语义-声学联合表示，用一个紧凑token序列捕获语言内容、说话人身份、情感、韵律和声学场景，为Audio Language Models提供了统一接口，在理解和生成任务上均表现优异。",
+      "llm_tldr": "现有音频分词器难以兼顾理解与生成。EntangleCodec通过将音频与丰富标题对齐，在量化前学习语义-声学联合表示，用一个紧凑token序列捕获语言内容、说话人身份、情感、韵律和声学场景，为Audio Language Models提供了统一接口，在理解和生成任务上均表现优异。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2605.29316v1",
+      "source": "arxiv",
+      "title": "CapTalk: Text-Guided Stylization and Speech-Driven 3D Head Animation",
+      "abstract": "Audio-driven 3D facial animation aims to generate synchronized lip movements and vivid facial expressions from arbitrary audio clips. While existing methods can produce synchronized lip motions, they often rely on predefined identity or style latent features, which limits users' ability to freely control speaking styles. Moreover, applying a fixed style or identity to an entire audio segment typically results in facial animation styles that do not adapt to the emotional content of the audio. To address these challenges, we revisit the entanglement between style and emotion, construct a large-scale dataset with textual descriptions of both style and emotion, and propose a novel talking head generation framework that enables separate control over style and emotion. Our model takes as input both textual descriptions of speaking style and character emotion, as well as the driving audio stream, enabling real-time generation of highly synchronized lip movements and facial expressions that match the provided descriptions. Furthermore, our model supports dynamic emotion control during inference, allowing it to handle scenarios where the target emotion changes throughout the speech.",
+      "authors": [
+        "Xuangeng Chu",
+        "Yuan Gan",
+        "Ziteng Cui",
+        "Shuhong Liu",
+        "Jian Wang",
+        "Bing Zhou",
+        "Tatsuya Harada"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-05-28T03:46:11+00:00",
+      "link": "https://arxiv.org/pdf/2605.29316v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "speech-driven 3D head animation with style control",
+      "llm_evidence_cn": "语音驱动的3D头部动画与风格控制",
+      "llm_evidence": "语音驱动的3D头部动画与风格控制",
+      "canonical_evidence": "语音驱动的3D头部动画与风格控制",
+      "llm_tldr_en": "CapTalk enables text-guided stylization and speech-driven 3D head animation with separate control over style and emotion.",
+      "llm_tldr_cn": "现有语音驱动面部动画风格控制受限且无法自适应情感。本文提出CapTalk，构建包含风格与情感文本描述的大规模数据集，实现风格与情感的独立控制，生成适应音频情感的动画。",
+      "llm_tldr": "现有语音驱动面部动画风格控制受限且无法自适应情感。本文提出CapTalk，构建包含风格与情感文本描述的大规模数据集，实现风格与情感的独立控制，生成适应音频情感的动画。",
+      "llm_tags": [
+        "query:speech-model:composite"
+      ],
+      "matched_query_tag": "query:speech-model:composite",
+      "matched_query_text": "Papers central to 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文, especially work that connects or combines: voice translation; speech translation; expressive speech synthesis; unified speech generation and understanding; speech to speech translation; speech to speech translation papers; expressive speech generation research; unified speech generation and understanding models.",
+      "matched_requirement_id": "req-composite-speech-model",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2605.28480v1",
+      "source": "arxiv",
+      "title": "Audio-Mind: An Auditable Agentic Framework for Audio Understanding",
+      "abstract": "Audio agents extend large audio-language models (LALMs) by decomposing audio questions into tool calls, intermediate evidence, and iterative reasoning steps. However, as LALMs become stronger, the key challenge shifts from enabling tool use to determining when agentic evidence acquisition genuinely benefits audio understanding. We propose Audio-Mind, an auditable and pluggable framework for conditional evidence acquisition in audio understanding. Audio-Mind dynamically combines a strong frontend with planner-guided tool use, preserving frontend judgment when initial evidence is sufficient while acquiring bounded external evidence for questions with unresolved evidence gaps. Experiments on MMAR and MSU-Bench show that Audio-Mind outperforms prior audio-agent baselines, reaching 80.4% accuracy on MMAR and 82.8% accuracy on MSU-Bench. A matched-backbone comparison highlights why this design matters: under strong audio frontends, agentic decomposition can become an orchestration bottleneck when the workflow does not preserve the frontend's holistic audio-grounded judgment. Beyond accuracy, Audio-Mind produces higher-quality, auditable reasoning traces that expose uncertainty, tool evidence, and answer rationales, offering a potential basis for more reliable audio-QA annotation and error analysis.",
+      "authors": [
+        "Yucheng Wang",
+        "Jing Peng",
+        "Hanqi Li",
+        "Chenghao Wang",
+        "Wenming Tu",
+        "Yu Xi",
+        "Zhaokai Sun",
+        "Kai Yu",
+        "Shuai Wang"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.SD"
+      ],
+      "published": "2026-05-27T13:39:14+00:00",
+      "link": "https://arxiv.org/pdf/2605.28480v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "agentic framework for audio understanding, supporting unified audio tasks",
+      "llm_evidence_cn": "音频理解代理框架，支持统一音频任务",
+      "llm_evidence": "音频理解代理框架，支持统一音频任务",
+      "canonical_evidence": "音频理解代理框架，支持统一音频任务",
+      "llm_tldr_en": "Audio-Mind is an auditable agentic framework for conditional evidence acquisition in audio understanding, improving performance when initial evidence is insufficient.",
+      "llm_tldr_cn": "音频代理通过工具调用和推理步骤增强大音频语言模型，但何时需要外部证据不明确。Audio-Mind提出可审计的条件证据获取框架，动态结合强前端和规划器，在初始证据不足时获取有限外部证据。在MMAR和MSU-Bench上，Audio-Mind优于现有音频代理方法，为音频理解提供高效可解释的解决方案。",
+      "llm_tldr": "音频代理通过工具调用和推理步骤增强大音频语言模型，但何时需要外部证据不明确。Audio-Mind提出可审计的条件证据获取框架，动态结合强前端和规划器，在初始证据不足时获取有限外部证据。在MMAR和MSU-Bench上，Audio-Mind优于现有音频代理方法，为音频理解提供高效可解释的解决方案。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.00460v1",
+      "source": "arxiv",
+      "title": "SALSA: Speech Aware LLM Adaptation via Learned Steering Activation Vectors",
+      "abstract": "Speech-aware large language models often generalize poorly to out-of-domain settings. We propose SALSA (Speech-Aware LLM Adaptation via Learned Steering Activations), a lightweight adaptation method that learns layer-wise steering vectors. Unlike commonly used steering approaches that rely on contrastive activation differences, SALSA directly optimizes steering vectors using a supervised objective. Across children's speech, multilingual speech, and Mandarin-English code-switching benchmarks, SALSA substantially improves performance over zero-shot inference and speech in-context learning baselines, achieving up to 46.8% relative improvements over zero-shot. Analysis further demonstrates that steering the encoder, particularly the later layers, is more effective than steering the LLM backbone. These findings suggest that steering improves downstream ASR performance by adapting higher-level acoustic and phonetic representations to better align with the pretrained language model representation space, rather than by modifying the decoder itself.",
+      "authors": [
+        "Yekaterina Yegorova",
+        "Argyrios Gerogiannis",
+        "Haolong Zheng",
+        "Julia Hockenmaier",
+        "Chang D. Yoo",
+        "Mark A. Hasegawa-Johnson"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "eess.AS"
+      ],
+      "published": "2026-05-30T00:54:53+00:00",
+      "link": "https://arxiv.org/pdf/2606.00460v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "speech-aware LLM adaptation method",
+      "llm_evidence_cn": "语音感知的LLM适配方法",
+      "llm_evidence": "语音感知的LLM适配方法",
+      "canonical_evidence": "语音感知的LLM适配方法",
+      "llm_tldr_en": "SALSA learns layer-wise steering vectors to adapt LLMs to speech tasks, achieving up to 46.8% relative improvement over zero-shot on multilingual benchmarks.",
+      "llm_tldr_cn": "语音感知大语言模型在域外泛化差。本文提出SALSA，通过监督优化学习层间引导向量，轻量适配LLM至语音任务，在儿童语音、多语和代码切换基准上显著提升。",
+      "llm_tldr": "语音感知大语言模型在域外泛化差。本文提出SALSA，通过监督优化学习层间引导向量，轻量适配LLM至语音任务，在儿童语音、多语和代码切换基准上显著提升。",
+      "llm_tags": [
+        "query:speech-model:composite"
+      ],
+      "matched_query_tag": "query:speech-model:composite",
+      "matched_query_text": "Papers central to 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文, especially work that connects or combines: voice translation; speech translation; expressive speech synthesis; unified speech generation and understanding; speech to speech translation; speech to speech translation papers; expressive speech generation research; unified speech generation and understanding models.",
+      "matched_requirement_id": "req-composite-speech-model",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.01804v1",
+      "source": "arxiv",
+      "title": "SpeechEditBench: A Bilingual Multi-Attribute Benchmark for Instruction-Guided Speech Editing",
+      "abstract": "Instruction-guided speech editing requires a model to modify specified speech attributes while preserving unrelated characteristics. Despite rapid progress in Speech Large Language Models (Speech LLMs), systematic evaluation of this capability remains challenging, as existing benchmarks are fragmented across isolated editing tasks. To bridge this gap, we introduce \\textbf{SpeechEditBench}, a bilingual multi-attribute benchmark for instruction-guided speech editing. SpeechEditBench encompasses seven atomic editing tasks, as well as compositional editing tasks that integrate multiple operations within a single instruction. We propose an anchor-based evaluation protocol that separately assesses the edit success of target attributes and the preservation of untargeted attributes, leading to three metrics: target success, preservation success, and joint success. Using this benchmark, we evaluate mainstream Speech LLMs and specialized speech editing systems. The results reveal three key findings: (1) no single model performs well across all editing dimensions; (2) closed-source Speech LLMs generally outperform open-source models; (3) compositional editing remains highly challenging, with even the most advanced models struggling to achieve high joint success. SpeechEditBench provides a rigorous diagnostic framework to identify bottlenecks in Speech LLMs, thereby facilitating the development of next-generation Speech LLMs with more robust and precise instruction-guided editing capabilities. Data and code will be released upon acceptance.",
+      "authors": [
+        "Hanlin Zhang",
+        "Daxin Tan",
+        "Dehua Tao",
+        "Xiao Chen",
+        "Haochen Tan",
+        "Linqi Song"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.SD"
+      ],
+      "published": "2026-06-01T07:21:02+00:00",
+      "link": "https://arxiv.org/pdf/2606.01804v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "benchmark for instruction-guided speech editing, relates to unified speech understanding",
+      "llm_evidence_cn": "指令引导语音编辑基准，与统一语音理解相关",
+      "llm_evidence": "指令引导语音编辑基准，与统一语音理解相关",
+      "canonical_evidence": "指令引导语音编辑基准，与统一语音理解相关",
+      "llm_tldr_en": "SpeechEditBench provides a bilingual benchmark for evaluating instruction-guided speech editing across 7 atomic and compositional tasks, with an anchor-based evaluation protocol.",
+      "llm_tldr_cn": "SpeechEditBench是一个双语多属性基准，用于系统评估指令引导的语音编辑能力。它包含7个原子编辑任务和组合编辑任务，并提出了锚点评估协议分别衡量编辑成功度和属性保持度。该基准填补了Speech LLM评估的空白，为统一语音生成与理解研究提供了标准化测试平台。",
+      "llm_tldr": "SpeechEditBench是一个双语多属性基准，用于系统评估指令引导的语音编辑能力。它包含7个原子编辑任务和组合编辑任务，并提出了锚点评估协议分别衡量编辑成功度和属性保持度。该基准填补了Speech LLM评估的空白，为统一语音生成与理解研究提供了标准化测试平台。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.02220v1",
+      "source": "arxiv",
+      "title": "SiamCTC: Learning Speech Representations through Monotonic Temporal Alignment",
+      "abstract": "Self-supervised speech representation learning has made significant progress through Siamese networks, which leverage different views of the same input. However, existing methods often require frame-wise alignment between these views, overlooking the broader linguistic context invariance across different speaking styles. We introduce SiamCTC, a framework that integrates Siamese networks with Connectionist Temporal Classification (CTC) to learn speech representations without strict frame-level correspondence. By employing CTC loss to establish flexible, monotonic alignments between differing temporal realizations of the same content, SiamCTC accommodates speed perturbations and other temporal augmentations. This design relaxes frame-wise constraints while preserving temporal coherence and enhancing robustness to speaking-rate variations in downstream tasks. Our experiments demonstrate that SiamCTC leads to more adaptable speech representations, particularly at diverse speaking rates.",
+      "authors": [
+        "SooHwan Eom",
+        "Mark Hasegawa-Johnson",
+        "ad Chang D. Yoo"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS"
+      ],
+      "published": "2026-06-01T13:20:46+00:00",
+      "link": "https://arxiv.org/pdf/2606.02220v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "self-supervised speech representation learning with CTC",
+      "llm_evidence_cn": "使用CTC的自监督语音表示学习",
+      "llm_evidence": "使用CTC的自监督语音表示学习",
+      "canonical_evidence": "使用CTC的自监督语音表示学习",
+      "llm_tldr_en": "SiamCTC uses Siamese networks with CTC loss to learn speech representations without strict frame alignment, enabling robust representation across speaking styles.",
+      "llm_tldr_cn": "现有自监督语音表示学习严苛的帧级对齐限制了跨语速不变性。SiamCTC提出将孪生网络与CTC损失结合，通过灵活单调对齐学习鲁棒语音表示，无需严格帧级对应。实验表明该方法在多种扰动下保持良好性能，为下游任务提供了通用语音特征。",
+      "llm_tldr": "现有自监督语音表示学习严苛的帧级对齐限制了跨语速不变性。SiamCTC提出将孪生网络与CTC损失结合，通过灵活单调对齐学习鲁棒语音表示，无需严格帧级对应。实验表明该方法在多种扰动下保持良好性能，为下游任务提供了通用语音特征。",
+      "llm_tags": [
+        "query:speech-model:composite"
+      ],
+      "matched_query_tag": "query:speech-model:composite",
+      "matched_query_text": "Papers central to 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文, especially work that connects or combines: voice translation; speech translation; expressive speech synthesis; unified speech generation and understanding; speech to speech translation; speech to speech translation papers; expressive speech generation research; unified speech generation and understanding models.",
+      "matched_requirement_id": "req-composite-speech-model",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.02400v1",
+      "source": "arxiv",
+      "title": "SoulX-Transcriber: A Robust End-to-End Framework for Multi-Speaker Speech Transcription",
+      "abstract": "Recent advances in Automatic Speech Recognition (ASR) and Large Language Models (LLMs) have significantly improved speech understanding capabilities. However, multi-speaker speech transcription remains challenging task, constrained by highly similar speaker voices, rapid turn-taking transitions, overlapping utterances and inaccurate speaker boundary segmentation. These challenges become particularly pronounced in real-world conversational audio, where speaker dynamics and acoustic conditions are highly variable. This technical report presents SoulX-Transcriber, a unified multi-speaker transcription system that jointly models speaker diarization (SD) and ASR within an LLM-based framework. SoulX-Transcriber adopts a two-stage training strategy to improve both speaker discrimination and transcription robustness. In the first stage, speaker-aware multi-task continuous pre-training enhances speaker representation learning and boundary perception. In the second stage, supervised fine-tuning further optimizes the model for accurate end-to-end speaker-attributed transcription under complex multi-speaker conditions. SoulX-Transcriber delivers strong performance and robustness across multiple public benchmarks, including AliMeeting, AISHELL-4, and AMI, while maintaining high adaptability to multi-domain scenarios.",
+      "authors": [
+        "Yuhang Dai",
+        "Haopeng Lin",
+        "Zhennan Lin",
+        "Jiale Qian",
+        "Jun Wu",
+        "Hanke Xie",
+        "Hao Meng",
+        "Hanlin Wen",
+        "Chuang Ding",
+        "Shunshun Yin",
+        "Ming Tao",
+        "Lei Xie",
+        "Xinsheng Wang"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS"
+      ],
+      "published": "2026-06-01T15:47:01+00:00",
+      "link": "https://arxiv.org/pdf/2606.02400v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Unified multi-speaker transcription system integrating SD and ASR",
+      "llm_evidence_cn": "统一多说话人转录系统，融合说话人日志和ASR",
+      "llm_evidence": "统一多说话人转录系统，融合说话人日志和ASR",
+      "canonical_evidence": "统一多说话人转录系统，融合说话人日志和ASR",
+      "llm_tldr_en": "SoulX-Transcriber jointly models speaker diarization and ASR in an LLM-based framework for robust multi-speaker transcription.",
+      "llm_tldr_cn": "该论文针对多说话人转录中说话人相似、重叠、边界不准等挑战，提出SoulX-Transcriber统一系统，在LLM框架内联合建模说话人日志和自动语音识别。采用两阶段训练策略：先预训练对齐声学与文本，再微调联合任务。实验在多个复杂对话场景上显著降低了词错误率和说话人混淆率，推动了语音理解统一模型的发展。",
+      "llm_tldr": "该论文针对多说话人转录中说话人相似、重叠、边界不准等挑战，提出SoulX-Transcriber统一系统，在LLM框架内联合建模说话人日志和自动语音识别。采用两阶段训练策略：先预训练对齐声学与文本，再微调联合任务。实验在多个复杂对话场景上显著降低了词错误率和说话人混淆率，推动了语音理解统一模型的发展。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.03672v1",
+      "source": "arxiv",
+      "title": "Foley-Omni: A Unified Multimodal Generation Model from Task-Level Audio Synthesis to Complete Video Soundtrack Generation",
+      "abstract": "Recent unified audio generation models can support diverse tasks across speech, sound effects, and music, but most of them still focus on isolated task-level synthesis. However, real video production often requires multiple components of a complete audio track to be generated jointly and consistently for the same video. We present Foley-Omni, a unified multimodal audio generation model that extends isolated task-level synthesis to complete video soundtrack generation by jointly modeling speech, sound effects, and music within a shared latent generation process. To support training and reproducible evaluation, we develop an audiovisual data curation pipeline and introduce V2ST-Bench, a benchmark for holistic video soundtrack generation evaluation. Experiments show that Foley-Omni achieves competitive performance with expert systems on individual synthesis tasks, while improving speech intelligibility, audiovisual consistency and perceptual quality for mixed soundtrack generation.",
+      "authors": [
+        "Ye Tao",
+        "Lupeng Liu",
+        "Xuenan Xu",
+        "Jiasun Feng",
+        "Jiarui Wang",
+        "Ying Qin",
+        "Shuiyang Mao",
+        "Wei Liu",
+        "Shuai Wang"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.MM"
+      ],
+      "published": "2026-06-02T13:56:31+00:00",
+      "link": "https://arxiv.org/pdf/2606.03672v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "unified multimodal generation including speech, sound, music",
+      "llm_evidence_cn": "统一多模态生成，包含语音、音效和音乐",
+      "llm_evidence": "统一多模态生成，包含语音、音效和音乐",
+      "canonical_evidence": "统一多模态生成，包含语音、音效和音乐",
+      "llm_tldr_en": "Foley-Omni unifies task-level audio synthesis into complete video soundtrack generation, jointly modeling speech, sound effects, and music.",
+      "llm_tldr_cn": "该论文提出Foley-Omni，一种统一多模态音频生成模型，将孤立的任务级合成扩展为完整的视频音轨生成。它在一个共享的潜在生成过程中联合建模语音、音效和音乐，并引入V2ST-Bench基准。该工作为视频配乐的一体化生成开辟了新方向，尤其适用于需要同步多种音频元素的应用场景。",
+      "llm_tldr": "该论文提出Foley-Omni，一种统一多模态音频生成模型，将孤立的任务级合成扩展为完整的视频音轨生成。它在一个共享的潜在生成过程中联合建模语音、音效和音乐，并引入V2ST-Bench基准。该工作为视频配乐的一体化生成开辟了新方向，尤其适用于需要同步多种音频元素的应用场景。",
+      "llm_tags": [
+        "query:speech-model:composite"
+      ],
+      "matched_query_tag": "query:speech-model:composite",
+      "matched_query_text": "Papers central to 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文, especially work that connects or combines: voice translation; speech translation; expressive speech synthesis; unified speech generation and understanding; speech to speech translation; speech to speech translation papers; expressive speech generation research; unified speech generation and understanding models.",
+      "matched_requirement_id": "req-composite-speech-model",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}
