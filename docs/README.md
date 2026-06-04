@@ -6,62 +6,71 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-03
-- 运行时间：2026-06-03 22:55:57 UTC
+- 最新运行日期：2026-06-04
+- 运行时间：2026-06-04 21:57:15 UTC
 - 运行状态：成功
-- 本次总论文数：14
-- 精读区：7
-- 速读区：7
+- 本次总论文数：17
+- 精读区：8
+- 速读区：9
 
 ### 今日简报（AI）
-今日推荐精读两篇10分论文，聚焦机器人操作与语音翻译前沿。重点关注《Revisiting Embodied Chain-of-Thought for Generalizable Robot Manipulation》和《AlignAtt4LLM: Fast AlignAtt for Decoder-Only LLMs at IWSLT 2026 Simultaneous Speech Translation Task》，分别突破机器人泛化操控与流式语音翻译效率。建议优先精读这两篇，并留意速读中《SALSA》等语音自适应LLM的潜在应用。
-- 详情：[/202606/03/README](/202606/03/README)
+今日17篇论文中精选8篇精读，焦点集中于多模态感知与具身智能控制。建议优先阅读《GeoSem-WAM》的几何语义融合世界模型与《OneVLA》的具身任务统一框架，两者分别从移动决策和任务泛化展示了颠覆性进展。速读可关注《Foley-Omni》等三篇多模态生成论文，未来可探索将此类音频/视频生成能力集成至具身系统。
+- 详情：[/202606/04/README](/202606/04/README)
 
 ### 精读区论文标签
-1. [Revisiting Embodied Chain-of-Thought for Generalizable Robot Manipulation](/202606/03/2606.03784v1-revisiting-embodied-chain-of-thought-for-generalizable-robot-manipulation)  
+1. [GeoSem-WAM: Geometry- and Semantic-Aware World Action Models](/202606/04/2606.03188v1-geosem-wam-geometry--and-semantic-aware-world-action-models)  
    标签：评分：10.0/10、query:wm-vla-sa
-   evidence：用于VLA机器人操作的具身思维链
-2. [AlignAtt4LLM: Fast AlignAtt for Decoder-Only LLMs at IWSLT 2026 Simultaneous Speech Translation Task](/202606/03/2606.03967v1-alignatt4llm-fast-alignatt-for-decoder-only-llms-at-iwslt-2026-simultaneous-speech-translation-task)  
-   标签：评分：10.0/10、query:speech-model
-   evidence：用于IWSLT 2026的同传系统
-3. [UNISON: A Unified Sound Generation and Editing Framework via Deep LLM Fusion](/202606/03/2605.31530v2-unison-a-unified-sound-generation-and-editing-framework-via-deep-llm-fusion)  
+   evidence：具有几何和语义感知的世界动作模型
+2. [OneVLA: A Unified Framework for Embodied Tasks](/202606/04/2606.01241v2-onevla-a-unified-framework-for-embodied-tasks)  
+   标签：评分：9.0/10、query:wm-vla-sa
+   evidence：统一的VLA架构，支持导航和操作
+3. [GeoAlign: Beyond Semantics with State-Guided Spatial Alignment in VLA Models](/202606/04/2606.03240v1-geoalign-beyond-semantics-with-state-guided-spatial-alignment-in-vla-models)  
+   标签：评分：9.0/10、query:wm-vla-sa
+   evidence：基于状态引导的空间对齐VLA策略学习方法
+4. [AirDreamer: Generalist Drone Navigation with World Models](/202606/04/2606.03252v1-airdreamer-generalist-drone-navigation-with-world-models)  
+   标签：评分：9.0/10、query:wm-vla-sa
+   evidence：基于世界模型和强化学习的无人机导航
+5. [3DThinkVLA: Endowing Vision-Language-Action Models with Latent 3D Priors via 3D-Thinking-Guided Co-training](/202606/04/2606.04436v1-3dthinkvla-endowing-vision-language-action-models-with-latent-3d-priors-via-3d-thinking-guided-co-training)  
+   标签：评分：9.0/10、query:wm-vla-sa
+   evidence：赋予视觉语言动作模型潜在3D先验以进行3D空间推理
+6. [Flow-HOA: Generative Joint Optimization for Ambisonics Encoding via Flow Matching](/202606/04/2606.04570v1-flow-hoa-generative-joint-optimization-for-ambisonics-encoding-via-flow-matching)  
+   标签：评分：9.0/10、query:wm-vla-sa
+   evidence：空间音频高阶Ambisonics编码，使用流匹配生成
+7. [SHB-AE: Spherical harmonic beamforming based Ambisonics encoding and upscaling method for smartphone microphone array](/202606/04/2606.04584v1-shb-ae-spherical-harmonic-beamforming-based-ambisonics-encoding-and-upscaling-method-for-smartphone-microphone-array)  
+   标签：评分：9.0/10、query:wm-vla-sa
+   evidence：使用球谐波束形成的空间音频编码
+8. [Audio Interaction Model](/202606/04/2606.05121v1-audio-interaction-model)  
    标签：评分：9.0/10、query:speech-model
-   evidence：统一语音生成和编辑框架
-4. [Sympatheia: Emotionally Adaptive Voice Assistant with Continuous Affect Conditioning](/202606/03/2606.00851v1-sympatheia-emotionally-adaptive-voice-assistant-with-continuous-affect-conditioning)  
-   标签：评分：9.0/10、query:speech-model
-   evidence：情感自适应语音助手与连续情感控制
-5. [Benchmarking Speech-to-Speech Translation Models](/202606/03/2606.03241v1-benchmarking-speech-to-speech-translation-models)  
-   标签：评分：9.0/10、query:speech-model
-   evidence：语音到语音翻译模型基准测试
-6. [A Pocket Offline Model for Simultaneous Speech Translation as CUNI Submission to IWSLT 2026](/202606/03/2606.03948v1-a-pocket-offline-model-for-simultaneous-speech-translation-as-cuni-submission-to-iwslt-2026)  
-   标签：评分：9.0/10、query:speech-model
-   evidence：同时语音翻译模型
-7. [EntangleCodec: A Unified Discrete Audio Tokenizer via Semantic-Acoustic Entanglement](/202606/03/2606.02739v1-entanglecodec-a-unified-discrete-audio-tokenizer-via-semantic-acoustic-entanglement)  
-   标签：评分：8.0/10、query:speech-model
-   evidence：统一离散音频分词器，同时支持语音理解和生成
+   evidence：统一流式音频模型，支持理解和生成
 
 ### 速读区论文标签
-1. [CapTalk: Text-Guided Stylization and Speech-Driven 3D Head Animation](/202606/03/2605.29316v1-captalk-text-guided-stylization-and-speech-driven-3d-head-animation)  
+1. [SpeechEditBench: A Bilingual Multi-Attribute Benchmark for Instruction-Guided Speech Editing](/202606/04/2606.01804v2-speecheditbench-a-bilingual-multi-attribute-benchmark-for-instruction-guided-speech-editing)  
+   标签：评分：8.0/10、query:speech-model
+   evidence：指令引导的语音编辑基准
+2. [Audio Spotforming via Post-Filtering Using Cross-Array Non-target Estimates](/202606/04/2606.03028v1-audio-spotforming-via-post-filtering-using-cross-array-non-target-estimates)  
+   标签：评分：8.0/10、query:wm-vla-sa
+   evidence：利用交叉阵列后滤波的音频点成形，用于空间音频提取
+3. [Foley-Omni: A Unified Multimodal Generation Model from Task-Level Audio Synthesis to Complete Video Soundtrack Generation](/202606/04/2606.03672v1-foley-omni-a-unified-multimodal-generation-model-from-task-level-audio-synthesis-to-complete-video-soundtrack-generation)  
+   标签：评分：8.0/10、query:speech-model
+   evidence：统一的语音、音效和音乐多模态音频生成
+4. [DyaPlex: Full-Duplex Speech-Motion Model for Dyadic Interaction](/202606/04/2606.03874v1-dyaplex-full-duplex-speech-motion-model-for-dyadic-interaction)  
+   标签：评分：8.0/10、query:speech-model
+   evidence：全双工语音模型统一生成和理解
+5. [UAT: Unified Audio-Text Diffusion for Audio Generation, Editing, and Captioning](/202606/04/2606.04939v1-uat-unified-audio-text-diffusion-for-audio-generation-editing-and-captioning)  
+   标签：评分：8.0/10、query:speech-model
+   evidence：统一的音频生成与描述框架
+6. [Multilingual Long-Form Speech Instruction Following: KIT's Submission to IWSLT 2026](/202606/04/2606.04730v1-multilingual-long-form-speech-instruction-following-kits-submission-to-iwslt-2026)  
    标签：评分：7.0/10、query:speech-model
-   evidence：语音驱动的3D头部动画与风格控制
-2. [SALSA: Speech Aware LLM Adaptation via Learned Steering Activation Vectors](/202606/03/2606.00460v1-salsa-speech-aware-llm-adaptation-via-learned-steering-activation-vectors)  
-   标签：评分：7.0/10、query:speech-model
-   evidence：语音感知的LLM适配方法
-3. [SpeechEditBench: A Bilingual Multi-Attribute Benchmark for Instruction-Guided Speech Editing](/202606/03/2606.01804v1-speecheditbench-a-bilingual-multi-attribute-benchmark-for-instruction-guided-speech-editing)  
-   标签：评分：7.0/10、query:speech-model
-   evidence：指令引导语音编辑基准，与统一语音理解相关
-4. [SiamCTC: Learning Speech Representations through Monotonic Temporal Alignment](/202606/03/2606.02220v1-siamctc-learning-speech-representations-through-monotonic-temporal-alignment)  
-   标签：评分：7.0/10、query:speech-model
-   evidence：使用CTC的自监督语音表示学习
-5. [SoulX-Transcriber: A Robust End-to-End Framework for Multi-Speaker Speech Transcription](/202606/03/2606.02400v1-soulx-transcriber-a-robust-end-to-end-framework-for-multi-speaker-speech-transcription)  
-   标签：评分：7.0/10、query:speech-model
-   evidence：统一多说话人转录系统，融合说话人日志和ASR
-6. [Foley-Omni: A Unified Multimodal Generation Model from Task-Level Audio Synthesis to Complete Video Soundtrack Generation](/202606/03/2606.03672v1-foley-omni-a-unified-multimodal-generation-model-from-task-level-audio-synthesis-to-complete-video-soundtrack-generation)  
-   标签：评分：7.0/10、query:speech-model
-   evidence：统一多模态生成，包含语音、音效和音乐
-7. [Audio-Mind: An Auditable Agentic Framework for Audio Understanding](/202606/03/2605.28480v1-audio-mind-an-auditable-agentic-framework-for-audio-understanding)  
+   evidence：多语言语音指令跟随与跨语言翻译
+7. [PolySpeech-100: A Large-Scale Benchmark for Speech Understanding Across 100+ Languages and Dialects](/202606/04/2606.01016v1-polyspeech-100-a-large-scale-benchmark-for-speech-understanding-across-100-languages-and-dialects)  
    标签：评分：6.0/10、query:speech-model
-   evidence：音频理解代理框架，支持统一音频任务
+   evidence：多语言语音理解基准，支持语音模型评估
+8. [SoulX-Transcriber: A Robust End-to-End Framework for Multi-Speaker Speech Transcription](/202606/04/2606.02400v2-soulx-transcriber-a-robust-end-to-end-framework-for-multi-speaker-speech-transcription)  
+   标签：评分：6.0/10、query:speech-model
+   evidence：多说话人转录框架，使用LLM，促进统一语音理解
+9. [Read What You Hear: Reference-Free Hypotheses Evaluation with Acoustic Discrepancy](/202606/04/2606.04680v1-read-what-you-hear-reference-free-hypotheses-evaluation-with-acoustic-discrepancy)  
+   标签：评分：6.0/10、query:speech-model
+   evidence：利用TTS模型的无参考ASR评估
 
 
 <div class="dpr-home-promo-card">

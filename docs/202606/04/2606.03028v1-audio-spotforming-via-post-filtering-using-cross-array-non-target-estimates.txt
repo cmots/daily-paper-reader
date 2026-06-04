@@ -1,0 +1,684 @@
+Title: Audio Spotforming via Post-Filtering Using Cross-Array Non-target Estimates
+
+URL Source: https://arxiv.org/pdf/2606.03028v1
+
+Published Time: Wed, 03 Jun 2026 00:25:48 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# Audio Spotforming via Post-Filtering Using Cross-Array Non-target Estimates 
+
+Yuto Ishikawa ∗† , Li Li ∗, Shogo Seki ∗, and Kouei Yamaoka †∗CyberAgent, Inc., Japan 
+
+†The University of Tokyo, Japan 
+
+Abstract —Audio spotforming is a technique for extracting target speech from noisy mixtures by utilizing multiple micro-phone arrays. Conventional methods estimate a shared target speech component from linearly separated signals obtained by each array using low-rank approximations and apply post filtering (PF) based on this estimated low-rank representation. However, owing to the mismatch between low-rank models and the complex structure of speech signals, directly relying on low-rank approximations for PF can degrade the speech extraction performance. In this study, we leverage the observation that non-target components located in the target speech direction from the perspective of one array can be spatially separated when viewed from other arrays. This insight motivates a new spotforming method for efficient post-filter estimation using non-target estimates across arrays instead of relying on low-rank approximations. Experiments demonstrate that the proposed method outperforms conventional spotforming methods. 
+
+Index Terms —Target speech extraction, audio spotforming, distributed microphone arrays, acoustic sensor network. 
+
+I. I NTRODUCTION 
+
+Multichannel target speech extraction (TSE) is a technique designed to isolate a target speech signal from multichannel recordings that contain interfering speech signals or back-ground noise [1]. TSE has a wide range of applications, such as the preprocessing of hearable devices and automatic speech recognition in robot dialogue systems. As a representative TSE approach, beamforming [2] using a single microphone array has been studied extensively for decades and is widely employed. Beamforming forms spatial directivity toward the target speaker by exploiting the phase differences among microphones. However, when non-target components (e.g., interfering speakers) are located in the same direction as the target speaker relative to the microphone array, beamform-ing struggles to spatially separate the target and non-target components [3]. Consequently, the TSE performance of the beamforming can be significantly degraded. To address this limitation, recent studies introduced methods to enhance a specific spatial region [4]–[9]. One approach, audio spotforming , leverages the ability of multiple distributed microphone arrays to capture different spatial characteristics. For instance, [7] and [8] utilize the pres-ence of a target speech component across all the microphone arrays and employ a two-stage framework. This involves a spatial filtering (SF) stage to enhance the signals arriving from the target speech direction at each microphone array, and a 
+
+Corresponding author: Yuto Ishikawa (yuto ishikawa.jp@ieee.org). This work was conducted during Yuto’s internship at CyberAgent. 
+
+Fig. 1. Key concept of the proposed method. From the left microphone array, it is difficult to spatially separate the black target speaker and the green interfering speaker arriving from the same direction. By contrast, from the right microphone array, these two speakers are spatially separable. The proposed method exploits this property to extract only the target speech. 
+
+post filtering (PF) stage to extract the target speech component shared across the microphone arrays from the outputs of the SF stage. In [7], nonnegative matrix factorization (NMF) [10], a well-known low-rank approximation method, is incorporated into the PF stage to estimate the target speech component, based on the assumption that the spectral patterns of the target speech co-occur across multiple arrays. To enhance model interpretability and robustness against signal misalignment among microphone arrays, [8] employs nonnegative tensor factorization (NTF) [11] to represent the target and non-target components as distinct spectral patterns. This relaxes the co-occurrence assumption and achieves high TSE performance. These conventional methods assume a low-rank structure for the target speech signal and directly use the estimated low-rank representation to construct the post filters. However, it is difficult to accurately represent the complex structure of speech signals using low-rank approximations [12]. In practice, [8] reported that relaxing the low-rank approximation is necessary to achieve high performance, which increases the computational complexity and may reduce the efficiency in practical implementations. To achieve high TSE performance while reducing compu-tational complexity, we propose a new spotforming method for efficient post-filter estimation that uses non-target com-ponents across microphone arrays. Fig. 1 illustrates the key concept of the proposed method. In scenarios where a method based on linear demixing filters is applied and an interfering speaker or diffuse noise is present in the same direction as the target speaker from the perspective of one array, the 
+
+> arXiv:2606.03028v1 [cs.SD] 2 Jun 2026
+
+spatial separation of the target and non-target components is fundamentally challenging. However, these components can be spatially separated from other microphone arrays. The proposed method exploits this property to estimate both the target and non-target components arriving from the target speech direction without relying on a low-rank structure. Finally, a multichannel Wiener filter is constructed and applied to the observed signals at each microphone array. Experiments demonstrated that the proposed method can extract a target speech signal more accurately than conventional spotforming methods. II. R ELATED WORK : A UDIO SPOTFORMING [7], [8] Let xbij = ( xbij 1, ..., x bijM )T ∈ CM be the short-time Fourier transform (STFT) coefficients of an observed signal. Here, b ∈ {1, ..., B }, i ∈ {1, ..., I }, j ∈ {1, ..., J }, and 
+
+m ∈ { 1, ..., M } are the indices of the microphone arrays, frequency bins, time frames, and microphones, respectively, and T denotes the transpose. In the situation where the non-target components (e.g., interfering speakers and diffuse noise) exist around the target speaker, the observed signal at each microphone array can be approximately modeled as 
+
+xbij = sbij + nbij , where sbij ∈ CM denotes the source image of the target speech indicated by positional information, and nbij ∈ CM represents the sum of the source images of all remaining non-target components. In particular, if a point-source interfering component is located in the same direction as the target speaker from the perspective of a microphone array, it is fundamentally difficult to spatially separate the target and non-target components [3]. To address this limitation, spotforming methods [7], [8] extract the target speech signal in two stages: the SF and PF stages. In the SF stage, a spatial filter is applied to the observed signals at each microphone array to enhance signals arriving from the target speech direction using beamforming or methods based on linear demixing filters. In the PF stage, a post filter is applied to the outputs of the SF stage to further suppress the residual non-target components and enhance the target speech components shared across arrays. Conventional methods [7], [8] use low-rank approximations to estimate the post filter. Specifically, [7] employs NMF, whereas [8] uses NTF to model the common spectral structure of the target speech. A Wiener filter is then constructed based on the estimated low-rank representation. Finally, the extracted signal is obtained by synchronously averaging the outputs of the PF stage. III. P ROPOSED METHOD 
+
+A. Motivations 
+
+Conventional spotforming methods [7], [8] successfully model the spectral structures of the target speech shared across arrays using low-rank approximations. However, their perfor-mance highly depends on the model complexity, particularly the selection of the number of bases, owing to the direct use of the estimated low-rank representation to construct post filters. This dependency was experimentally confirmed in [8], which reported that a large number of bases were necessary to achieve adequate modeling accuracy. Instead of relying on low-rank approximations, we exploit the observation that when a method based on linear demixing filters is applied to the mixtures observed at each array, non-target components arriving from the target speech direction in one array can be spatially separated in other arrays. This insight motivates a new spotforming method that utilizes cross-array non-target estimates rather than low-rank models. 
+
+B. Requirements for SF stage 
+
+Unlike conventional spotforming methods, which utilize only spatially separated signals corresponding to the target speech in the PF stage, the proposed method additionally requires non-target components estimated in the SF stage. For this purpose, we employ a method based on linear demixing filters, such as independent low-rank matrix analysis (ILRMA) [12], rather than a conventional beamformer. Let us consider time-invariant methods, where two types of spatial filters are obtained: a spatial filter wbim (t) ∈ CM
+
+derived to enhance the source(s) located in the target speech direction, and M − 1 spatial filters wbim ∈ CM (m̸ = m(t) )
+
+aimed at suppressing the signal at the target speech direction while enhancing the dominant non-target components. Here, 
+
+m(t) denotes the channel index corresponding to the target speech direction. For convenience, we represent the set of spatial filters at the bth array as Wbi := ( wbi 1, ..., wbiM )H ∈
+
+CM ×M , where H denotes the Hermitian transpose. To ensure that a specific spatial filter consistently corresponds to the target speech direction, we employ spatially regularized linear demixing filter-based methods. Specifically, we adopt the geometrically constrained ILRMA (GC-ILRMA) [13], which is an ILRMA variant regularized by a direction-based spatial prior. 
+
+C. Formulation in PF stage 
+
+We assume that the observed signal follows a zero-mean multivariate complex Gaussian distribution as 
+
+xbij ∼ N MC 
+
+ 0M , R(x) 
+
+> bij
+
+, (1) where R(x)  
+
+> bij
+
+∈ CM ×M is the covariance matrix of the observed signal. To represent the non-target component arriving from the target speech direction, we model R(x)  
+
+> bij
+
+as follows: 
+
+R(x)  
+
+> bij
+
+= Abi Dbij AH
+
+> bi
+
+, (2) 
+
+Dbij = r(t)  
+
+> ij
+
+em(t) eH 
+
+> m(t)
+
++ diag  r(n) 
+
+> bij 1
+
+, ..., r (n) 
+
+> bijM
+
+, (3) where em ∈ RM is a one-hot vector whose mth element is one and the others are zero, Abi := W −1 
+
+> bi
+
+∈ CM ×M represents the time-invariant spatial characteristics from the perspective of the bth microphone array estimated in the SF stage, and 
+
+r(t)  
+
+> ij
+
+> 0 and r(n)  
+
+> bijm
+
+> 0 denote the time-varying variances of the target speech and non-target components, respectively. Here, r(n)  
+
+> bijm (t)
+
+corresponds to the non-target component located in the target speech direction. To distinguish the target speech from non-target components arriving in the same direction, we model r(n)  
+
+> bijm (t)
+
+using the non-target components from the perspective of the other B − 1 microphone arrays, as 
+
+r(n)  
+
+> bijm (t)
+
+= X 
+
+> b′̸=b,m ̸=m(t)
+
+λbb ′mr(n) 
+
+> b′ijm
+
+, (4) where λbb ′m ≥ 0 is a scalar variable. As in [14], we further introduce the inverse gamma distribution as a prior distribution for r(t)  
+
+> ij
+
+to induce sparsity of the target speech, given as 
+
+r(t)  
+
+> ij
+
+∼ IG (α, β ), (5) where α > 0 and β > 0 are the shape and scale parameters of the inverse gamma distribution, respectively. The cost function L is defined as the negative log-posterior of the observed signal over all microphone arrays with the prior distribution of r(t)  
+
+> ij
+
+:
+
+L = X
+
+> b,i,j
+
+h
+
+xH
+
+> bij
+
+ R(x) 
+
+> bij
+
+−1xbij + log det R(x) 
+
+> bij
+
+i
+
++ X
+
+> i,j
+
+"
+
+(α + 1) log r(t)  
+
+> ij
+
++ βr(t) 
+
+> ij
+
+#
+
+. (6) Here, r(t)  
+
+> ij
+
+, r(n) 
+
+> bijm
+
+, and λbb ′m (b′̸ = b, m ̸ = m(t) ) are objective variables to be estimated. Note that, for simplicity, we exclude terms independent of the objective variables. By defining the spatially separated signal estimated in the SF stage ybij =(ybij 1, ..., y bijM )T ∈ CM as 
+
+ybij = Wbi xbij , (7) and substituting (2)–(4) and (7) into (6), L can be rewritten as 
+
+L = X
+
+> b,i,j
+
+" |ybijm (t) |2
+
+r(t)  
+
+> ij
+
++ P   
+
+> b′̸=b,m ′̸=m(t)
+
+λbb ′m′ r(n) 
+
+> b′ijm ′
+
++ X
+
+> m̸=m(t)
+
+|ybijm |2
+
+r(n) 
+
+> bijm
+
++ log 
+
+
+
+r(t)  
+
+> ij
+
++ X  
+
+> b′̸=b,m ′̸=m(t)
+
+λbb ′m′ r(n) 
+
+> b′ijm ′
+
+
+
++ X
+
+> m̸=m(t)
+
+log r(n)  
+
+> bijm
+
++ log det  Abi AH
+
+> bi
+
+#
+
++ X
+
+> i,j
+
+"
+
+(α + 1) log r(t)  
+
+> ij
+
++ βr(t) 
+
+> ij
+
+#
+
+. (8) After estimating the parameters, we extract the source image of the target speech signal using a multichannel Wiener filter: 
+
+ˆsbij = r(t)  
+
+> ij
+
+Abi em(t) eH 
+
+> m(t)
+
+AH
+
+> bi
+
+ R(x) 
+
+> bij
+
+−1xbij 
+
+= r(t) 
+
+> ij
+
+r(t)  
+
+> ij
+
++ P  
+
+> b′̸=b,m ̸=m(t)
+
+λbb ′mr(n) 
+
+> b′ijm
+
+ybij . (9) The final output is obtained by synchronously averaging the extracted signals across all microphone arrays in the time domain. 
+
+D. Derivation of update rules for iterative algorithm 
+
+Since it is difficult to directly minimize the cost function, we employ the majorization-equalization (ME) algorithm [15] and estimate the objective variables in an iterative manner. By utilizing Jensen’s inequality and the relationship between a concave function and its tangent line, log x ≤ (x − c)/c +log c (∀x, c ∈ R≥0), we design the following auxiliary function of L:
+
+¯L = X
+
+> b,i,j
+
+" |ybijm (t) |2θ2
+
+> bij
+
+r(t) 
+
+> ij
+
++ X  
+
+> b′̸=b,m ′̸=m(t)
+
+|ybijm (t) |2(1 − θbij )2ϕ2
+
+> bb ′ijm ′
+
+λbb ′m′ r(n) 
+
+> b′ijm ′
+
++ X
+
+> m̸=m(t)
+
+|ybijm |2
+
+r(n) 
+
+> bijm
+
++ r(t)  
+
+> ij
+
++ P   
+
+> b′̸=b,m ′̸=m(t)
+
+λbb ′m′ r(n)  
+
+> b′ijm ′
+
+− ηbij 
+
+ηbij 
+
++ log ηbij 
+
++ X
+
+> m̸=m(t)
+
+r(n)  
+
+> bijm
+
+− ζbijm 
+
+ζbijm 
+
++ log ζbijm 
+
+!
+
++ log det  Abi AH
+
+> bi
+
+#
+
++ X
+
+> i,j
+
+"
+
+(α + 1) r(t)  
+
+> ij
+
+− ψij 
+
+ψij 
+
++ log ψij 
+
+!
+
++ βr(t) 
+
+> ij
+
+#
+
+, (10) where θbij ∈ [0 , 1] , ϕbb ′ijm ∈ [0 , 1] , ηbij > 0, ζbijm 
+
+> 0, and ψij > 0 are auxiliary variables satisfying P  
+
+> b′̸=b,m ̸=m(t)
+
+ϕbb ′ijm = 1 . The equality ¯L = L holds if and only if the following conditions hold: 
+
+θbij = r(t) 
+
+> ij
+
+r(t)  
+
+> ij
+
++ P   
+
+> b′̸=b,m ′̸=m(t)
+
+λbb ′m′ r(n) 
+
+> b′ijm ′
+
+, (11) 
+
+ϕbb ′ijm = λbb ′mr(n) 
+
+> b′ijm
+
+P   
+
+> b′′ ̸=b,m ′̸=m(t)
+
+λbb ′′ m′ r(n) 
+
+> b′′ ijm ′
+
+, (12) 
+
+ηbij = r(t)  
+
+> ij
+
++ X  
+
+> b′̸=b,m ′̸=m(t)
+
+λbb ′m′ r(n)  
+
+> b′ijm ′
+
+, (13) 
+
+ζbijm = r(n) 
+
+> bijm
+
+, (14) 
+
+ψij = r(t)  
+
+> ij
+
+. (15) Here, the auxiliary function ¯L consists of linear and reciprocal terms with respect to each objective variable, and has the same form as the auxiliary function in [14]. Therefore, the update rules based on the ME algorithm can be derived in the same manner as in [14]. Using (11)–(15), we finally obtain the following update rules: 
+
+r(t)  
+
+> ij
+
+← r(t) 
+
+> ij
+
+P 
+
+> b
+
+|ybijm (t) |2 ˜r−2 
+
+> bij
+
++ β r(t) 
+
+> ij
+
+−2
+
+P 
+
+> b
+
+˜r−1 
+
+> bij
+
++ ( α + 1)  r(t) 
+
+> ij
+
+−1
+
+!
+
+, (16) 
+
+r(n)  
+
+> bijm
+
+← r(n) 
+
+> bijm
+
+·
+
+P  
+
+> b′̸=b
+
+|yb′ijm (t) |2λb′bm ˜r−2 
+
+> b′ij
+
++ |ybijm |2 r(n) 
+
+> bijm
+
+−2
+
+P  
+
+> b′̸=b
+
+λb′bm ˜r−1 
+
+> b′ij
+
++  r(n) 
+
+> bijm
+
+−1
+
+!
+
+,
+
+(17) 
+
+λbb ′m ← λbb ′m
+
+P 
+
+> i,j
+
+|ybijm (t) |2r(n)  
+
+> b′ijm
+
+˜r−2
+
+> bij
+
+P 
+
+> i,j
+
+r(n)  
+
+> b′ijm
+
+˜r−1
+
+> bij
+
+!
+
+, (18) where ˜rbij is an intermediate variable defined as 
+
+˜rbij = r(t)  
+
+> ij
+
++ X 
+
+> b′̸=b,m ̸=m(t)
+
+λbb ′mr(n)  
+
+> b′ijm
+
+(19) and is recalculated after each update of the objective variables. For the initialization, we use the signal output at the SF stage as follows: 
+
+r(t)  
+
+> ij
+
+= 1
+
+B
+
+X
+
+> b
+
+|ybijm (t) |2, (20) 
+
+r(n)  
+
+> bijm
+
+= |ybijm |2, (m̸ = m(t) ) (21) 
+
+λbb ′m =
+
+(
+
+(B − 1) −1, (if b′̸ = b and m̸ = m(t) )
+
+0. (otherwise) (22) IV. E XPERIMENTS 
+
+A. Experimental settings 
+
+We conducted four experiments by combining the two reverberation conditions with two different numbers of mi-crophones per array. Speech signals from 100 speakers in the JVS dataset [16] were used in this study. For each target speaker, three speakers were randomly selected as the inter-ference speakers. A 5-s-long dry-source signal was created for each speaker by concatenating multiple utterances. All speech signals were convolved with room impulse responses generated using the image source method implemented in Pyroomacoustics [17]. We assume that the sampling time/rate offsets among the distributed microphone arrays have been roughly compensated in advance, and residual asynchrony due to synchronization errors remains small. To simulate this resid-ual asynchrony, a random temporal shift of up to 10 samples was applied to the source images at each array. The target and non-target signals were then mixed with equal power, where the power was computed by averaging over all microphones across all arrays. In total, 100 samples were created for each case. Fig. 2 shows the room layout used in the simulations. The reverberation time T60 was set to approximately 0 ms for cases (i) and (iii) to verify the theoretical performance limitation, and to 200 ms for cases (ii) and (iv) to simulate realistic scenarios. The number of microphone arrays was set to three, with three microphones per array in cases (i) and (ii), and four microphones per array in cases (iii) and (iv). The microphones were arranged with a spacing of 2.83 cm. The sampling rate was set to 16 kHz. The STFT was performed using a 64-ms-long Hann window with a shift length of 32 ms. We compared three methods: Conv. (NMF) and Conv. (NTF) , which are conventional methods using NMF [7] and NTF [8], respectively, and Prop. , which is the proposed method. All the compared methods utilized GC-ILRMA in the SF stage. The number of bases in GC-ILRMA was set to 10. For the PF stage, the number of bases was set to 50 for Conv. (NMF) and 300 for Conv. (NTF) on the basis of the experimental results reported in [8]. The number of iterations was set to 100 for GC-ILRMA and for the PF stage of the conventional methods as in [8]. That for the PF stage of the proposed method was experimentally set to 20. The target channel index m(t) was set to M . For GC-ILRMA in  
+
+> Fig. 2. Room layout for simulating impulse responses.
+
+the SF stage, the prior steering vector of the target speech was computed under free-field propagation with distance-based attenuation, using the same horizontal configuration as that of the simulated target speaker. For the inverse gamma distribution used in Prop., the scale parameter β was fixed to 10 −16 , and the shape parameter α was set to 1, 10 −1,
+
+10 −2, and 10 −3. In addition, the proposed method without a prior distribution was evaluated for ablation. The basis and activation variables of the NMF and NTF were initialized with uniformly distributed random values in the range of [10 −10 , 1] .To account for the initialization dependence of the NMF and NTF variables, we used 10 random seeds for each sample. The spatial filter Wbi was initialized as the inverse of a matrix consisting of the prior steering vector of the target speech and its orthogonal complements. For evaluation metrics, we used the source-to-distortion ratio (SDR), source-to-interferences ratio (SIR) [18], percep-tual evaluation of speech quality (PESQ) [19], and short-time objective intelligibility (STOI) [20]. These metrics were computed for each array using the corresponding reference signals and then averaged across all the arrays for each sample. 
+
+B. Comparison with conventional methods 
+
+Tables I and II summarize the evaluation scores for cases (i) and (ii), and cases (iii) and (iv), respectively. The values are presented as the mean ± standard deviation across 1000 scores. Here, “w/o prior” refers to the variant of the proposed method without the prior distribution. The highest scores for each metric are highlighted in bold. In most cases, Prop. achieved higher performance than the conventional methods. Specifically, Prop. (w/o prior) tended to achieve higher SDR, PESQ, and STOI scores, whereas Prop. with a prior dis-tribution ( α = 1, ..., 10 −3) yielded higher SIR scores. By inducing sparsity in the time-varying variance of the target speech through the prior distribution, non-target components can be effectively suppressed. However, the use of a larger shape parameter excessively enforces sparsity, which may also attenuate the target speech component itself and introduce distortion into the extracted signal. This trade-off explains the observed differences in the evaluation metrics. 
+
+C. Discussion for computational complexity 
+
+Next, we evaluate the computational costs of the proposed and conventional methods. If we naively count the number of arithmetic operations in the update rules per iteration, the com-putational complexity can be approximated as O(B2M IJ ) for TABLE I RESULTS IN CASES (I) AND (II ): 3 MICROPHONES PER ARRAY , WITH T60 ≈ 0 AND 200 MS , RESPECTIVELY .Method Case (i) Case (ii) SDR [dB] SIR [dB] PESQ STOI [%] SDR [dB] SIR [dB] PESQ STOI [%] Input 0.13 ± 0.12 0.13 ± 0.12 1.10 ± 0.05 53.12 ± 6.21 0.13 ± 0.13 0.13 ± 0.13 1.12 ± 0.05 51.01 ± 6.28 Conv. (NMF) [7] 15.79 ± 0.53 18.89 ± 0.78 1.96 ± 0.25 89.80 ± 3.13 7.13 ± 1.42 13.19 ± 1.76 1.32 ± 0.14 64.01 ± 5.89 Conv. (NTF) [8] 16.88 ± 1.78 29.79 ± 2.38 3.06 ± 0.28 94.74 ± 2.40 7.47 ± 1.61 20.03 ± 2.03 1.44 ± 0.16 64.32 ± 6.23 Prop. 
+
+α = 1 15.73 ± 2.07 29.51 ± 2.62 2.21 ± 0.34 91.58 ± 2.49 5.58 ± 1.75 20.54 ± 3.99 1.15 ± 0.06 58.27 ± 1.78 
+
+α = 10 −1 18.42 ± 1.94 30.99 ± 2.57 2.62 ± 0.32 94.41 ± 1.84 6.96 ± 1.82 19.56 ± 3.79 1.25 ± 0.11 63.44 ± 6.41 
+
+α = 10 −2 18.71 ± 1.90 31.10 ± 2.54 2.67 ± 0.31 94.68 ± 1.77 7.10 ± 1.82 19.42 ± 3.75 1.26 ± 0.11 63.96 ± 6.38 
+
+α = 10 −3 18.75 ± 1.90 31.10 ± 2.54 2.67 ± 0.31 94.70 ± 1.77 7.11 ± 1.82 19.40 ± 3.74 1.27 ± 0.11 64.01 ± 6.38 w/o prior 22.68 ± 1.62 29.91 ± 2.35 3.23 ± 0.32 97.57 ± 1.60 8.13 ± 1.63 15.44 ± 2.59 1.39 ± 0.18 67.97 ± 5.98 
+
+TABLE II RESULTS IN CASES (III ) AND (IV ): 4 MICROPHONES PER ARRAY , WITH T60 ≈ 0 AND 200 MS , RESPECTIVELY .Method Case (iii) Case (iv) SDR [dB] SIR [dB] PESQ STOI [%] SDR [dB] SIR [dB] PESQ STOI [%] Input 0.13 ± 0.12 0.13 ± 0.12 1.10 ± 0.04 53.10 ± 6.21 0.13 ± 0.13 0.13 ± 0.13 1.12 ± 0.05 51.30 ± 6.24 Conv. (NMF) [7] 15.91 ± 0.70 19.25 ± 0.82 1.97 ± 0.25 90.00 ± 3.06 7.85 ± 1.34 14.18 ± 1.57 1.37 ± 0.15 64.59 ± 5.45 Conv. (NTF) [8] 16.72 ± 2.00 29.97 ± 2.45 3.05 ± 0.30 94.61 ± 2.46 7.94 ± 1.49 21.42 ± 1.94 1.53 ± 0.16 67.82 ± 5.69 Prop. 
+
+α = 1 15.88 ± 2.21 29.66 ± 2.70 2.23 ± 0.35 91.81 ± 2.50 6.86 ± 1.75 22.68 ± 3.56 1.20 ± 0.08 63.81 ± 5.78 
+
+α = 10 −1 18.46 ± 2.11 31.12 ± 2.52 2.63 ± 0.33 94.49 ± 1.87 8.23 ± 1.74 21.82 ± 3.42 1.32 ± 0.12 68.36 ± 5.55 
+
+α = 10 −2 18.74 ± 2.08 31.23 ± 2.47 2.68 ± 0.32 94.75 ± 1.80 8.36 ± 1.74 21.64 ± 3.39 1.34 ± 0.12 68.74 ± 5.54 
+
+α = 10 −3 18.77 ± 2.08 31.23 ± 2.46 2.68 ± 0.32 94.78 ± 1.79 8.37 ± 1.74 21.62 ± 3.39 1.34 ± 0.12 68.78 ± 5.54 w/o prior 22.85 ± 1.61 30.39 ± 2.19 3.27 ± 0.29 97.66 ± 1.43 8.97 ± 1.50 16.60 ± 2.24 1.47 ± 0.20 70.95 ± 5.11 
+
+Prop., O(KNMF BIJ ) for Conv. (NMF), and O(KNTF BIJ )
+
+for Conv. (NTF), where KNMF and KNTF denote the numbers of bases in the PF stages of Conv. (NMF) and Conv. (NTF), respectively. As reported in [8], sufficiently large numbers of bases are required when using NMF or NTF to achieve high performance. Consequently, the computational cost increases linearly with the number of bases. By contrast, Prop. does not rely on low-rank approximations and depends only on the number of arrays and microphones, which are fixed experimental parameters and typically much smaller than the numbers of bases required by conventional methods. These results indicate that the proposed method can achieve superior performance with a substantially lower computational cost. V. C ONCLUSION 
+
+In this paper, we propose a new spotforming method for ef-ficient post-filter estimation by utilizing cross-array non-target components. The proposed method exploits the observation that non-target components aligned with the target speech direction in one array can be spatially separated when viewed from other arrays. The experimental results demonstrated that the proposed method outperforms conventional methods and confirmed the effectiveness of the prior distribution. REFERENCES [1] Y. Takahashi et al., “Blind spatial subtraction array for speech enhance-ment in noisy environment,” IEEE TASLP , vol. 17, no. 4, pp. 650–664, 2009. [2] H. L. Van Trees, Optimum array processing: Part IV of detection, estimation, and modulation theory . John Wiley & Sons, 2004. [3] S. Araki et al., “Equivalence between frequency-domain blind source separation and frequency-domain adaptive beamforming for convolutive mixtures,” EURASIP JASP , vol. 2003, no. 11, pp. 1–10, 2003. [4] Y. R. Zheng et al., “Robust near-field adaptive beamforming with distance discrimination,” IEEE TASLP , vol. 12, no. 5, pp. 478–488, 2004. [5] J. Martinez et al., “A robust region-based near-field beamformer,” in 
+
+Proc. ICASSP , 2015, pp. 2494–2498. [6] M. Taseska and E. A. P. Habets, “Spotforming: Spatial filtering with distributed arrays for position-selective sound acquisition,” IEEE/ACM TASLP , vol. 24, no. 7, pp. 1291–1304, 2016. [7] Y. Kagimoto et al., “Spotforming by NMF using multiple microphone arrays,” in Proc. IROS , 2022, pp. 9253–9258. [8] S. Ayano et al., “Audio spotforming using nonnegative tensor factoriza-tion with attractor-based regularization,” in Proc. EUSIPCO , 2024, pp. 121–125. [9] R. Gu and Y. Luo, “ReZero: Region-customizable sound extraction,” 
+
+IEEE/ACM TASLP , vol. 32, pp. 2576–2589, 2024. [10] D. D. Lee and H. S. Seung, “Learning the parts of objects by non-negative matrix factorization,” Nature , vol. 401, no. 6755, pp. 788–791, 1999. [11] A. Cichocki et al., “Novel multi-layer non-negative tensor factorization with sparsity constraints,” in Proc. ICANNGA , 2007, pp. 271–280. [12] D. Kitamura et al., “Determined blind source separation unifying independent vector analysis and nonnegative matrix factorization,” 
+
+IEEE/ACM TASLP , vol. 24, no. 9, pp. 1626–1641, 2016. [13] Y. Mitsui et al., “Vectorwise coordinate descent algorithm for spatially regularized independent low-rank matrix analysis,” in Proc. ICASSP ,2018, pp. 746–750. [14] Y. Kubo et al., “Blind speech extraction based on rank-constrained spa-tial covariance matrix estimation with multivariate generalized gaussian distribution,” IEEE/ACM TASLP , vol. 28, pp. 1948–1963, 2020. [15] C. F` evotte and J. Idier, “Algorithms for nonnegative matrix factorization with the β-divergence,” Neural Comput. , vol. 23, no. 9, pp. 2421–2456, 2011. [16] S. Takamichi et al., “JSUT and JVS: Free Japanese voice corpora for accelerating speech synthesis research,” AST , vol. 41, no. 5, pp. 761– 768, 2020. [17] R. Scheibler et al., “Pyroomacoustics: A python package for audio room simulation and array processing algorithms,” in Proc. ICASSP , 2018, pp. 351–355. [18] E. Vincent et al., “Performance measurement in blind audio source separation,” IEEE TASLP , vol. 14, no. 4, pp. 1462–1469, 2006. [19] A. W. Rix et al., “Perceptual evaluation of speech quality (PESQ)-a new method for speech quality assessment of telephone networks and codecs,” in Proc. ICASSP , vol. 2, 2001, pp. 749–752. [20] C. H. Taal et al., “An algorithm for intelligibility prediction of time-frequency weighted noisy speech,” IEEE TASLP , vol. 19, no. 7, pp. 2125–2136, 2011.

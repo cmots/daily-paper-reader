@@ -1,0 +1,461 @@
+Title: SHB-AE: Spherical harmonic beamforming based Ambisonics encoding and upscaling method for smartphone microphone array
+
+URL Source: https://arxiv.org/pdf/2606.04584v1
+
+Published Time: Thu, 04 Jun 2026 00:57:56 GMT
+
+Number of Pages: 9
+
+Markdown Content:
+SHB-AE: SPHERICAL HARMONIC BEAMFORMING BASED AMBISONICS ENCODING AND UPSCALING METHOD FOR SMARTPHONE MICROPHONE ARRAY 
+
+Yuhuan You 1, Yufan Qian 1, Tianshu Qu 1, Bin Wang 2, Xueyang Lv 3
+
+> 1
+
+Peking University 
+
+> 2
+
+Beijing Xiaomi Mobile Software Co., Ltd 
+
+> 3
+
+Xiaomi Communications Co., Ltd 
+
+> Accepted for presentation at AES Europe 2025 Convention (AES 158th Convention) Warsaw, Poland, May 22-24, 2025. This is the authors’ version prepared without AES graphical style or template.
+
+ABSTRACT 
+
+With the rapid development of virtual reality (VR) and aug-mented reality (AR), spatial audio recording and reproduc-tion have gained increasing research interest. Higher Order Ambisonics (HOA) stands out for its adaptability to various playback devices and its ability to integrate head orienta-tion. However, current HOA recordings often rely on bulky spherical microphone arrays (SMA), and portable devices like smartphones are limited by array configuration and number of microphones. We propose SHB-AE, a spherical harmonic beamforming based method for Ambisonics encoding using a smartphone microphone array (SPMA). By designing beam-formers for each order of spherical harmonic functions based on the array manifold, the method enables Ambisonics encod-ing and up-scaling. Validation on a real SPMA and its simu-lated free-field counterpart in noisy and reverberant conditions showed that the method successfully encodes and up-scales Ambisonics up to the fourth order with just four irregularly arranged microphones. 
+
+1. INTRODUCTION 
+
+With the rapid development of augmented reality (AR) and virtual reality (VR) technologies, the demand for immersive spatial audio experiences has been continuously rising, leading to growing attention on spatial audio capture and reproduction technologies. Among these, encoding microphone-captured sound pressure signals into Higher-Order Ambisonics (HOA) format offers multiple advantages[ 1]. HOA signals are device-independent and can be used in various playback environments, such as headphones and loudspeaker arrays. Additionally, HOA signals can be conveniently implemented with head rota-tion and the head-related transfer function (HRTF) through the Wigner-D function and spherical harmonic coefficients [2]. However, existing Ambisonics encoding algorithms typ-ically rely on bulky spherical microphone arrays to capture sound pressure signals [ 1], making them difficult to adapt to portable electronic devices not specifically designed for spa-tial sound capture, such as smartphones, glasses, and other wearable devices [ 3]. These devices often have irregular microphone arrangements, limited microphone counts, and complex sound scattering, which limits accurate Ambisonics encoding [4]. To address these challenges, several approaches have been proposed for Ambisonics encoding with irregular arrays [ 5 –9 ]. These methods can be broadly classified into data-driven and model-driven approaches. Heikkinen et al. [ 5] introduced a data-driven method for Neural Ambisonics Encoding, where a U-net structured neural network is trained to directly encode Ambisonics from sound pressure signals captured by irregular microphone arrays in an end-to-end manner. Building on this, Qiao et al. [ 6] regularized inter-channel correlations of the Ambisonics signals and utilized a circular microphone array for Ambisonics encoding of multi-speaker speech signals. However, like many data-driven methods, these approaches face challenges related to generalization errors in the absence of actual microphone-captured signals, which are difficult to obtain. One type of model-driven approach is based on analyz-ing the captured sound field. For example, McCormack et al. [ 7] introduced a primary-ambience directional model of the sound field, using spatial filtering techniques to divide the captured sound field into its individual source and direc-tional ambient components, which are then encoded into the Ambisonics format at an arbitrary order. However, these meth-ods rely not only on prior assumptions about the sound field but also on the impact of direction-of-arrival (DOA) estimation and source separation results. Accurate DOA estimation and source separation with SPMA is a challenging task, and most studies assume high-precision HOA recordings as input for these tasks [10, 11]. Another type of model-driven approach is signal-independent encoding, which directly formulates a system of equations linking HOA coefficients and captured sound 
+
+> arXiv:2606.04584v1 [cs.SD] 3 Jun 2026
+
+pressure signals [ 8], solving for the optimal encoding matrix in the least squares sense. Bastine et al. [ 12 ] directly formulated a linear system of equations between HOA coefficients and the array manifold of head-wearable devices to achieve encoding for microphone arrays on such devices. Geyer et al. [ 9]further introduced Tikhonov regularization [ 13 ] to improve the performance of encoded HOA signals in binaural rendering tasks. However, these methods are still constrained by the number of microphones Q in the array, with the limitation 
+
+Q ≥ (N + 1) 2 [4]. Gao et al. [ 14 ], correspondingly, designed beamformers to achieve Ambisonics encoding, utilizing 2.5D spherical harmonic functions as target beam patterns. We propose SHB-AE, a beamforming-based method for Ambisonics encoding and upscaling. Inspired by prior beamforming work [ 14 ], we design beamformers correspond-ing to spherical harmonic functions as target beam patterns, enabling direct output of HOA coefficients for each order without being limited by microphone array configuration or microphone numbers. The limitation of microphone numbers is converted into the limitation of the number of measured steering vectors, which allows the up-scaling of Ambisonics encoding. Experimental results demonstrate superior perfor-mance over conventional least-square HOA encoding across various reverberant environments and noise conditions. The remainder of the paper is organized as follows. Section 2 introduces the fundamental knowledge of Ambisonics encod-ing and the proposed method. Section 3 presents experimental validation of the method’s effectiveness across simulated and measured array manifolds of an SPMA under multiple condi-tions. Section 4 concludes the paper. 
+
+2. METHODS 2.1. Ambisonics Encoding 
+
+Ambisonics is a spatial audio technique that allows for the reproduction of three-dimensional sound fields using spherical harmonics. This method enables immersive sound experiences by representing sound from various directions, which can be accurately reproduced across different listening environments. Consider a plane wave eik·rq in spherical coordinates where k = ( k, θ k, ϕ k) stands for a plane wave arriving from 
+
+(θk, ϕ k), the sound pressure p(k, rq ) at the q-th microphone 
+
+rq = ( rq , θ q , ϕ q ) is [4] 
+
+eik·rq = p(k, r q , θ q , ϕ q )= 4 π
+
+> N
+
+X
+
+> n=0
+> n
+
+X
+
+> m=−n
+
+bn(kr q )Bmn (θk, ϕ k)Y mn (θq , ϕ q ) (1) where bn(kr ) = injn(kr ), jn(kr ) denotes the spherical Bessel function. When the truncation order N → ∞ , the above equation holds. The spherical harmonics Y mn (θ, ϕ ) are defined as 
+
+Y mn (θ, ϕ ) ≡
+
+s
+
+2n + 1 4π
+
+(n − m)! (n + m)! P mn (cos θ)e imϕ (2) with P mn being the associated Legendre functions. Within this framework, the theoretical Ambisonics coefficient Bmn (θk, ϕ k)
+
+is given by 
+
+Bmn (θk, ϕ k) = [ Y mn (θk, ϕ k)] ∗ (3) In practice, Ambisonics signals are obtained using amicrophone array and projected onto spherical harmonic bases as 
+
+Bmn = 14π
+
+> Q
+
+X
+
+> q=1
+
+wq p(θq , ϕ q )[ Y mn (θq , ϕ q )] ∗ (4) where Q is the number of microphones, q = 1 , · · · , Q and wq
+
+denote the microphone index and its sampling weight respec-tively. In our simulation and practical scenarios, Q = 4 , while 
+
+p, b n(kr q ), Y mn (θk, ϕ k) can be calculated from available data. Therefore, for each sound source direction (θk, ϕ k), we can use Equation 1 to express the sound pressure at all four microphones, thus establishing a linear equations system for the coefficients Bmn of different orders. When the truncation order N = 1 (First Order Ambisonics), the system is well-determined with an exact solution, though severely affected by spatial aliasing. For higher truncation orders, the system becomes underdetermined, thus we employ pseudo-inverse to obtain the minimum norm solution 
+
+ˆBmn = ( A†p)(n,m ), (5) where p is the sound pressure vector. A† denotes the Moore-Penrose pseudo-inverse of A, serving as the Ambisonics en-coding matrix, while matrix A has elements 
+
+Aq, (n,m ) = 4 πb n(kr q )Y mn (θq , ϕ q ) (6) 
+
+2.2. Beamforming Based Ambisonics Encoding 
+
+Consider an array of Q omni-directional microphones at 
+
+(rq , θ q , ϕ q ) and a set of K plane waves arriving from (θk, ϕ k),the array manifold matrix is denoted as D(ω) with dimen-sions Q × K, where each element [D(ω)] q,k represents the frequency response of the plane wave source k to microphone 
+
+q. The sound pressure measured by the array can be expressed as 
+
+p(ω) = D(ω)s(ω) + n(ω), (7) where p(ω) = [ p1(ω), · · · , p Q(ω)] T is the sound pressure vector, s(ω) = [ s1(ω), · · · , s K (ω)] T is the source signal vec-tor and n(ω) = [ n1(ω), · · · , n Q(ω)] T is the noise vector. Through applying beamforming to the signals, the beamformer outputs 
+
+Z(ω) = h(ω)p(ω), (8) where h(ω) = [h1(ω), · · · , h Q(ω)] is the beamforming weight vector. Comparing equation (8) and equation (4) leads to the finding that Ambisonics encoding can be done through designing a beamformer with the target beam pattern being the spherical harmonics. Neglecting the noise vector, vectoring the spherical harmonics ymn = [ Y mn (θ1, ϕ 1), · · · , Y mn (θK , ϕ K )] ,substituting equation (4) into equation (8) and omitting source signal s(ω) reveals that 
+
+h(ω)D(ω) = ymn . (9) Furthermore, although the Q microphones are not necessar-ily distributed evenly on a sphere, the steering vectors (each column of V) for K arriving plane waves can be measured following a specific spherical distribution, analogous to the measurement process of head-related transfer functions. This spatial distribution enables us to apply discrete spherical har-monic transform (DSHT) [ 4] to simplify the right side of equation (9) into a one-hot vector as 
+
+h(ω)D(ω)ST = [0 , · · · , 1|{z} 
+
+> l=n2+n+m+1
+
+, · · · , 0] T , (10) where S is the DSHT matrix in [ 4], consisting of spherical harmonic function values and sampling weights based on sam-pling scheme, and l = n2 + n + m + 1 stands for the one di-mensional index of spherical harmonics. Since DSHT projects the signal on the basis of spherical harmonics, the orthogonal-ity of spherical harmonics ensures the validity of the formula 
+
+ymn S = [0 , · · · , 1, · · · , 0] T . Through these derivations, we transform the Ambisonics encoding problem into a simple beamformer design problem. Moreover, this approach is not restricted by specific spherical harmonic orders. For irregular arrays such as SPMA, the complexity of the array manifold can potentially be exploited to achieve higher-order encoding with a limited number of beamforming weights. As mentioned in Equation 3, which is precisely our beamforming target, we can directly obtain the HOA coeffi-cients for plane waves from any incident direction through the beamforming filter: 
+
+ˆBmn = ph ∗ (11) After determining the (ns, m s)-order beamformer, we project the input signal through the obtained beamformer to acquire the Ambisonics component of that order. This process needs to be repeated for each order of Ambisonics, and by combin-ing the results from all orders, we complete the Ambisonics encoding of the entire sound field. Nevertheless, by incorporating spatial aliasing considera-tions, we draw inspiration from time-domain alignment tech-niques in binaural rendering [ 15 ], extending this concept to high-frequency array manifolds. Our approach performs time-domain alignment through replacing the original array mani-fold with its absolute value above the frequency threshold ωth ,which essentially preserves magnitude responses while sup-pressing erroneous inter-microphone phase differences. This strategy achieves dual benefits: 1) Focusing beamformer op-timization on compensating amplitude distortions given the array’s inherent performance limits; 2) Reducing the spherical harmonic order required for manifold representation, thereby mitigating spatial aliasing errors. We hypothesize that the observed anti-aliasing improve-ment stems from exploiting the array’s local density advantage - though traditional spherical harmonic decomposition fails to leverage this benefit due to numerical ill-conditioning in global surface fitting, the localized phase alignment in our method inherently utilizes the higher spatial sampling density within subarray regions. However, such performance gains are likely direction-dependent, as the effective local density varies with the direction of arrival (DOA). This directionality aspect warrants further investigation to quantify how specific DOA patterns interact with the array’s geometric configuration. For implementation, after determining ωth based on array geometry, we replace high-frequency manifold components (above ωth ) with their absolute values. While this operation reduces simulated plane-wave manifolds to constant magni-tudes (by eliminating pure phase variations), it effectively preserves real-world measured manifold characteristics where scattering-induced amplitude variations remain meaningful. 
+
+3. EXPERIMENTS 3.1. Configuration 
+
+In our application scenario, four microphones are asymmetri-cally positioned on a mobile phone: two at the bottom (one primary and one secondary microphone), one at the top, and one on the rear surface. Their specific coordinates and relative positions are illustrated in Fig. 1. For filter design, as described in [ 4], we selected 50 source directions following a Gaussian distribution to recover HOA coefficients up to the 4th order ( K = 2( N + 1) 2): elevation angles θ = {25 .02 ◦, 57 .42 ◦, 90 .00 ◦, 122 .58 ◦, 154 .98 ◦}, with azimuth angles ϕ sampled at 36 ◦ intervals. 
+
+3.2. Evaluation Metrics 
+
+3.2.1. Spatial Correlation & Intensity Difference 
+
+Following [16], we evaluate the spatial correlation R:
+
+R = ⟨B, ˆB⟩∥B∥ · ∥ ˆB∥ (12) -75 -50 -25 025 50 75                     
+
+> X(mm)
+> -75 -50 -25 025 50 75
+> Y(mm)
+> -75 -50 -25 025 50 75
+> Z (mm)
+> XYZ
+> L= 161 .4 mm
+> W= 9 .5 mm
+> H= 75 .3 mm
+> Microphone Array Positions
+> Mic A (80 .7,−0.4,−10 .1) Mic B (80 .7,−0.2,11 .0) Mic C ( −74 .1,−4.8,7.4) Mic D ( −19 .2,4.8,0.0)
+
+Fig. 1 . Microphone Array Configurations of the SPMA uti-lized. and the intensity difference LL = 10 log 10 
+
+
+
+ˆB
+
+∥B∥
+
+ (13) where B = [ B00 , B −11 , B 01 , B 11 , . . . , B −NN , . . . , B NN ]T is the coefficient vector, bB is the estimated HOA coefficients and B
+
+is the ideal HOA coefficients. 
+
+3.2.2. Signal-to-Distortion Ratio 
+
+The Signal-to-Distortion Ratio (SDR) evaluates the quality of HOA coefficient estimation[ 17 ]. For each spherical harmonic coefficient of order n and degree m, SDR is defined as 
+
+SDR ( Bmn ) = 10 log 10 
+
+|Bmn |2
+
+Bmn − ˆBmn
+
+2 (14) where Bmn represents the ideal HOA and ˆBmn is its estimated value. This metric provides a coefficient-wise assessment of the estimation accuracy, complementing the global metrics of spatial correlation and intensity difference. 
+
+3.2.3. Pressure Reconstruction Error 
+
+Inspired by [ 17 ], the normalized mean square error (NMSE) between the truncated theoretical sound pressure ptrunc and the reconstructed approximated pressure ˆp on a spherical surface of radius R is defined as 
+
+εerror (k, R ) := ∥ˆp − ptrunc ∥2
+
+S
+
+∥ptrunc ∥2
+
+S
+
+, (15) 0.0
+
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> |pSHT |/|ptheoretical |
+
+Average Pressure Reconstruction Analysis at r = 75 .0 mm       
+
+> Order 0 Order 1 Order 2 Order 3 Order 4 Order 5
+> 100 200 500 1k 2k 5k 10k
+> Frequency (Hz)
+> 0.00
+> 0.25
+> 0.50
+> 0.75
+> 1.00
+> cos  6 (pSHT , p theoretical )
+> Order 0 Order 1 Order 2 Order 3 Order 4 Order 5
+
+Fig. 2 . Sound field reconstruction accuracy for different upscal-ing orders. Top: Pressure amplitude ratio |pnew |/|ptheor .|; Bot-tom: Pressure vector cosine similarity cos ∠(pnew , p theor .).0.20                
+
+> 0.25
+> 0.30
+> 0.35
+> 0.40
+> Spatial Correlation ( R) No Transform
+> NT= 3
+> NT= 4
+> NT= 5
+> NT= 6
+> 500 1k 2k 5k 10k 20k
+> Frequency (Hz)
+> −4
+> −2
+> 0
+> Intensity Difference ( L, dB)
+> No Transform
+> NT= 3
+> NT= 4
+> NT= 5
+> NT= 6
+> Transform Order Analysis at r= 75 .0 mm
+
+Fig. 3 . Spatial correlation R and intensity difference L be-tween HOA vector ˆB and B for different transform orders. where ∥·∥ 2
+
+S represents the squared L2-norm over the spherical surface S with dS = R2 sin θdθdϕ .Leveraging spherical harmonic orthogonality, NMSE can be expressed as 
+
+εerror (k, R ) = 
+
+4P
+
+n=0 
+
+nP
+
+m=−n
+
+| ˆBmn − Bmn |2|jn(kR )|24P
+
+n=0 
+
+nP
+
+m=−n
+
+|Bmn |2|jn(kR )|2
+
+. (16) 
+
+3.3. Ablation Experiment 
+
+3.3.1. Order Upscaling 
+
+As described in Section 2.2, beamforming filter hms
+
+ns (ω) is de-signed for each spherical harmonic function separately. This ar-chitecture ensures mutual independence between filters across upscaling orders—even with limited number of microphones or sparse source directions in the array manifold matrix. This leads us to investigate how our method affects sound field reconstruction as the maximum expansion order increases. We employ the methodology outlined in Section 2.2 to an SPMA as depicted in Fig. 1. Different maximum orders of upscaling are set and the sound pressure is reconstructed on a r = 0 .075 m sphere to judge the performance. Positions of reconstructed sound pressure θRec , ϕ Rec and the directions of arriving plane wave θk, ϕ k are both obtained through Fi-bonacci sphere uniform sampling[ 18 ] of one thousand points. We average the corresponding metrics to produce the figures below. Evaluation metrics include the ratio of the reconstructed sound pressure amplitude to the ideal sound pressure ampli-tude ⟨| pnew |/|ptheoretical |⟩ and the cosine angle between the reconstructed sound pressure vector and the ideal sound pres-sure vector ⟨cos ∠(pnew , p theoretical )⟩.Fig. 2 shows notable improvement through upscaling to order 4. Further upscaling yields negligible improvements. Therefore, we will focus on order 4 as an example for the analysis of HOA coefficient estimation. 
+
+3.3.2. DSHT Order of Array Manifold Matrix 
+
+Next, we need to determine the order of DSHT utilized in Section 2.2, incorporating the array manifold matrix into the SHD. Though mathematically the order of DSHT is only lim-ited by the spatial sampling scheme [ 4 ], which in this section corresponds to the number of steering vectors simulated or measured. In real applications, appropriate truncation helps prevent spatial aliasing in steering vectors, thus improving the following Ambisonics encoding process. As depicted in Fig. 3, we compare the spatial correlation and intensity difference for different DSHT orders NT = 3 , 4, 5, 6 and determine that an appropriate DSHT order is N = 4 , as both R and L metrics show no notable improvement with further increasing N .
+
+3.4. Simple Condition 
+
+3.4.1. Simulation Experiments 
+
+In this section, we conduct a detailed comparison between the baseline method in Section 2.1 and our method across different metrics. We simulate the theoretical sound pressure at each microphone for a total of K plane wave sound sources with different directions of arrival θk, ϕ k, resulting in the steering vector given by 
+
+d(ω, θ k, ϕ k) = [ p1(θk, ϕ k), . . . , p Q(θk, ϕ k)] T . (17) Through substituting d(ω, θ k, ϕ k) into D and solving Equa-tion 10 for each spherical harmonic function, the beamforming weight hmn (ω) is obtained and Equation 11 can be used for Ambisonics encoding. As illustrated in Fig. 4, both the baseline and our method exhibit similar estimates of the vector angles in the overall 500 1k 2k 5k 10k 20k Frequency (Hz)         
+
+> 0.20
+> 0.25
+> 0.30
+> 0.35
+> 0.40 Spatial Correlation ( |R|) Baseline SHB-AE
+> 500 1k 2k 5k 10k 20k Frequency (Hz)
+> −2.5
+> 0.0
+> 2.5
+> 5.0Intensity Difference ( L, dB)
+> Baseline SHB-AE
+> ˆBVector Comparison at r= 75 .0 mm
+
+Fig. 4 . ˆB vector estimation comparison between baseline method and our method. 500 1k 2k 5k 10k 20k                     
+
+> Frequency (Hz)
+> −10
+> 0
+> 10
+> 20
+> 30
+> SDR (dB)
+> Average SDR by Order vs Frequency
+> Baseline n= 0 Baseline n= 1 Baseline n= 2 Baseline n= 3 Baseline n= 4 SHB-AE n= 0 SHB-AE n= 1 SHB-AE n= 2 SHB-AE n= 3 SHB-AE n= 4
+
+Fig. 5 . Average SDR by order( n). HOA estimation. However, the baseline begins to exhibit sig-nificant amplitude deviations in the mid-to-high frequency range. It is also reflected in Fig. 5, where the SDR metric of the baseline method is not only significantly lower than that of our approach in terms of overall mean but also displays a more pronounced downward trend in the mid to high fre-quencies, indicating its divergence from the theoretical HOA coefficients. We believe that the reason for the phenomenon lies on the aliasing frequency of the SPMA, indicating the difficulty of encoding high frequency HOA. By calculating the half-wavelength frequencies corresponding to the distances between microphones in our setup, we find that four out of the six distances correspond to frequencies below 2 kHz, re-sulting in significant spatial aliasing in the high-frequency range. In contrast, our method focuses on the number of sound source directions (steering vectors) rather than the number of microphones, making our system of linear equations overde-termined. Furthermore, as the equations are transformed into the spherical harmonic domain (SHD), our method exhibits improved robustness. We can also judge the estimation of the HOA coefficients 0π/ 4              
+
+> 1π/ 4
+> 2π/ 4
+> 3π/ 4
+> 4π/ 4
+> 5π/ 4
+> 6π/ 4
+> 7π/ 4
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> n= 0 , m = 0 , φ = 0 ◦
+> 0π/ 4
+> 1π/ 4
+> 2π/ 4
+> 3π/ 4
+> 4π/ 4
+> 5π/ 4
+> 6π/ 4
+> 7π/ 4
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> n= 1 , m =−1, φ = 0 ◦
+> 0π/ 4
+> 1π/ 4
+> 2π/ 4
+> 3π/ 4
+> 4π/ 4
+> 5π/ 4
+> 6π/ 4
+> 7π/ 4
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> n= 1 , m = 0 , φ = 0 ◦
+> 0π/ 4
+> 1π/ 4
+> 2π/ 4
+> 3π/ 4
+> 4π/ 4
+> 5π/ 4
+> 6π/ 4
+> 7π/ 4
+> 0.2
+> 0.4
+> 0.6
+> 0.8
+> 1.0
+> n= 2 , m =−2, φ = 0 ◦
+> Beam Pattern Comparison
+> 500 Hz 1000 Hz 5000 Hz 7000 Hz Desired
+
+Fig. 6 . Beam pattern examples. n, m denotes the order and degree of the harmonic function, while ϕ denotes the azimuth angle. and beamforming in a more intuitive way. Fig. 6 presents beam patterns for different spherical harmonic orders at various fre-quencies within the same plane, illustrating that our method effectively achieves the task of mitigating the spherical har-monics through beamforming. Furthermore, the beam patterns at low frequencies are generally smoother, while rougher at higher frequencies, because of the constraints corresponding to the fixed source direction becoming more pronounced, indicat-ing a weakening of the smoothing effect of spherical harmonic transformations on beam formation. This phenomenon can also be attributed to high-frequency aliasing caused by insuffi-cient element spacing. Additionally, it is a plausible theoretical explanation that the low-order spherical harmonic basis func-tions exhibit slow spatial variation, rendering them incapable of adequately expressing the details of high-frequency acoustic fields. It is important to note that both the baseline method and our approach have limited frequency-dependent characteristics in their least squares solutions, which cannot be simply attributed to the high condition number at high frequencies. In fact, the condition numbers of the two linear systems fluctuate with frequency and do not exhibit a clear monotonicity. 
+
+3.4.2. Practical Experiments 
+
+We also conduct experiments using data collected from real microphones. In the anechoic chamber depicted in Fig. 7, impulse responses of the SPMA are measured through expo-
+
+Fig. 7 . The acoustic system utilized for measuring the impulse responses of the SPMA 500 1k 2k 5k 10k 20k        
+
+> 0.16
+> 0.18
+> 0.20
+> 0.22 Spatial Correlation ( |R|)
+> Baseline SHB-AE
+> 500 1k 2k 5k 10k 20k Frequency (Hz)
+> 2
+> 4
+> 6
+> εerror
+> Baseline SHB-AE
+> Comparisons on Real Mic at r= 75 .0 mm
+
+Fig. 8 . R and εerror evaluation on real microphone arrays. nential sine sweep signals exciting a loudspeaker [19]. We obtain the sound pressure vector through convolution of the impulse responses with sound source signals. In simu-lation, the baseline construction of the encoding matrix relies solely on theoretical calculations from Equation 6, which fails to utilize the manifold information from the real SPMA, thus preventing effective adjustment of actual sound pressure en-coding. Therefore, in our actual experiments, the baseline method is considered to further separate the radial and angular compo-nents in the encoding matrix A, which is essentially equivalent to the beamforming assumption we introduced. Our method performs DSHT and frequency division operations based on this assumption, and our actual experiments focus on this comparison. Figures 8 and 9 demonstrate the performance metrics in our physical experiments. We set ωth = 2kHz by experiments. Due to the influence of various external factors on the actual collected data, we performed a uniform energy normalization when calculating the HOA coefficients. This normalization renders the L metric ineffective, but does not affect the evaluation results of other metrics. 500 1k 2k 5k 10k 20k                     
+
+> Frequency (Hz)
+> −15
+> −10
+> −5
+> 0
+> 5
+> SDR (dB)
+> SDR Comparison on Real Mic by Order
+> Baseline n= 0 Baseline n= 1 Baseline n= 2 Baseline n= 3 Baseline n= 4 SHB-AE n= 0 SHB-AE n= 1 SHB-AE n= 2 SHB-AE n= 3 SHB-AE n= 4
+
+Fig. 9 . SDR evaluation on real microphone arrays. 
+
+Table 1 . Simulation results under noise with different SNR(dB). 
+
+SNR Method εerror ↓ R ↑ L → 0 SDR ↑
+
+30 Baseline 1.90 0.32 -1.38 -1.74 SHB-AE 0.70 0.30 -3.43 0.02 
+
+20 Baseline 1.98 0.29 -0.76 -2.29 SHB-AE 0.75 0.28 -2.82 -0.46 
+
+10 Baseline 2.79 0.25 0.71 -3.45 SHB-AE 1.29 0.25 -1.36 -1.52 
+
+0 Baseline 10.90 0.20 3.50 -5.97 SHB-AE 6.69 0.20 1.42 -3.59 
+
+The experimental results shows that our method achieves significant improvements in spatial correlation within the 2-5 kHz range, accompanied by a notable reduction in reconstruc-tion error. In the high-frequency band, the frequency-divided curves exhibit relatively stable behavior, while the baseline method shows substantial fluctuations. These findings con-firm that our frequency division strategy above 2 kHz achieves its intended purpose—maintaining frequency consistency is more effective when withholding phase information rather than providing incorrect phase information. SHT also contributes to this high-frequency stability characteristic, which is well reflected in the SDR metrics. 
+
+3.5. Complex Conditions 
+
+Furthermore, we conduct additional simulation and practi-cal experiments in different noise levels and reverberation time scenarios to judge the robustness of methods. Consis-tent with the previous sections, in the simulation experiments, we compared the results of the baseline with those obtained through beamforming and spherical harmonic transformation. In the practical experiments, we compared the outcomes of beamforming alone with those of spherical harmonic transfor-mation coupled with frequency division. 
+
+3.5.1. Noise 
+
+To test the robustness of methods against additive, spatially white Gaussian noise under different Signal-to-Noise Ratio (SNR) is utilized. The experimental results demonstrate that the proposed method exhibits strong robustness across various 
+
+Table 2 . Practical experimental results under noise with differ-ent SNR(dB). 
+
+SNR Method εerror ↓ R ↑ SDR ↑
+
+30.0 Baseline 2.02 0.18 -9.53 
+
+SHB-AE 2.16 0.18 -9.54 20.0 Baseline 1.86 0.18 -9.49 
+
+SHB-AE 1.99 0.18 -9.52 10.0 Baseline 1.66 0.18 -9.39 
+
+SHB-AE 1.76 0.19 -9.42 0.0 Baseline 1.63 0.19 -9.37 SHB-AE 1.71 0.18 -9.36 
+
+Table 3 . Simulation results under reverberation with different RT60(s). 
+
+RT60 Method εerror ↓ R ↑ L → 0 SDR ↑
+
+0.2 Baseline 3.36 0.21 -10.29 -0.50 SHB-AE 1.89 0.21 -12.30 -0.29 
+
+0.5 Baseline 156.53 0.21 -1.65 -2.78 SHB-AE 48.39 0.22 -3.75 -1.27 
+
+1.0 Baseline 551.44 0.22 0.91 -4.61 SHB-AE 163.68 0.22 -1.20 -2.26 
+
+2.0 Baseline 1020.52 0.22 2.16 -5.75 SHB-AE 300.26 0.22 0.04 -2.99 
+
+noise levels. In simulation experiments, as SNR decreases from 30 dB to 0 dB, the proposed method consistently outper-forms the baseline method in terms of εerror , particularly under low SNR conditions (0 dB), where the proposed method’s error (6.69) is significantly lower than that of the baseline method (10.90), indicating its excellent noise resistance capability. Regarding the correlation coefficient R, both methods show similar performance that R declines as the SNR decreases as expected. In terms of the SDR, the proposed method outper-forms the baseline across all SNR levels, indicating superior signal fidelity. In practical experiments, the performance difference be-tween the proposed method and traditional beamforming tech-niques is not as obvious, suggesting that the introduction of SHT and frequency division only leads to limited advantages. In fact, results of different frequencies fluctuate significantly for both methods but the reason remains unknown. The compa-rable measurement metrics indicate that both methods exhibit similar noise resistance performance in practical applications. 
+
+3.5.2. Reverberation 
+
+In the experiments conducted under reverberation conditions, a typical 3D shoebox room with different Reverberation Time 60 (RT60) is utilized. After simulating the room impulse responses with pyroomacoustics [ 20 ], convolution between them and simulated or measured steering vectors is done for mitigating the room reverberation nature. The simulation results demonstrate that system perfor-mance degrades with increasing RT60, primarily manifested Table 4 . Practical experimental results under reverberation with different RT60(s).                                    
+
+> RT60 Method εerror ↓R↑SDR ↑
+> 0.2 Baseline 2.39 0.20 -9.91 SHB-AE 1.75 0.19 -9.40
+> 0.5 Baseline 2.00 0.19 -9.83 SHB-AE 1.79 0.18 -9.45
+> 1.0 Baseline 1.89 0.19 -9.81 SHB-AE 1.83 0.18 -9.46
+> 2.0 Baseline 1.86 0.19 -9.81 SHB-AE 1.85 0.18 -9.46
+
+in the significant rise of the error metric εerror . However, com-pared to the baseline method, the proposed approach exhibits superior robustness against reverberation. Under mild reverber-ation conditions (RT60=0.2s), the proposed method reduces the error from 3.36 to 1.89 and in highly reverberant envi-ronments (RT60=2.0s), the proposed method maintains the error at 300.26 compared to 1020.52 of the baseline method, showcasing substantial performance advantages. In practical experiments, although the overall error levels are lower than simulation results due to normalization, our method consistently maintains its performance advantages. Specifically, across all RT60 conditions, our method outper-forms the beamforming approach in both εerror and SDR met-rics. Notably, the impact of RT60 variations on system perfor-mance in real environments is considerably less pronounced than observed in simulations, which may be attributed to the more complex acoustic characteristics in practical settings. Additionally, the R-value remains relatively stable across dif-ferent conditions, indicating its insensitivity to reverberant conditions. 
+
+4. SUMMARY 
+
+For the task of Ambisonics encoding and upsacling on SPMA, we propose SHB-AE, a spherical harmonic beamforming-based method which designs beamformers for each spherical harmonic function based on the array manifold and introducing DSHT together with frequency division operations. Experi-mental validation was conducted on both simulated and real SPMA across varying reverberant and noisy environments. Results demonstrated that our method achieved superior per-formance in various metrics and successfully encodes and up-scales HOA. Its robustness in high-frequency ranges and complex conditions is also obvious. This approach offers a practical solution for spatial audio recording using portable de-vices, potentially enabling wider adoption of immersive audio capture in AR/VR applications. 
+
+# Acknowledgment 
+
+This work is supported by the National Key Research and De-velopment Program of China (No.2024YFB2808902), and the High-performance Computing Platform of Peking University. 
+
+# References 
+
+[1] Franz Zotter and Matthias Frank, Ambisonics: A prac-tical 3D audio theory for recording, studio production, sound reinforcement, and virtual reality , Springer Nature, 2019. [2] Tetsu Magariyachi and Yuki Mitsufuji, “Analytic error control methods for efficient rotation in dynamic binaural rendering of ambisonics,” The Journal of the Acoustical Society of America , vol. 147, no. 1, pp. 218–230, Jan 2020. [3] Dumidu S. Talagala, Wen Zhang, and Thushara D. Ab-hayapala, “Broadband doa estimation using sensor arrays on complex-shaped rigid bodies,” IEEE Transactions on Audio, Speech, and Language Processing , vol. 21, no. 8, pp. 1573–1585, Aug 2013. [4] Boaz Rafaely, Fundamentals of spherical array process-ing , vol. 8, Springer, 2015. [5] Mikko Heikkinen, Archontis Politis, and Tuomas Virta-nen, “Neural ambisonics encoding for compact irregular microphone arrays,” in ICASSP 2024-2024 IEEE Inter-national Conference on Acoustics, Speech and Signal Processing (ICASSP) . IEEE, 2024, pp. 701–705. [6] Yue Qiao, Vinay Kothapally, Meng Yu, and Dong Yu, “Neural ambisonic encoding for multi-speaker scenar-ios using a circular microphone array,” arXiv preprint arXiv:2409.06954 , 2024. [7] Leo McCormack, Archontis Politis, Raimundo Gonzalez, Tapio Lokki, and Ville Pulkki, “Parametric ambisonic encoding of arbitrary microphone arrays,” CERN Euro-pean Organization for Nuclear Research - Zenodo,CERN European Organization for Nuclear Research - Zenodo ,Mar 2022. [8] Amy Bastine, Lachlan Birnie, Thushara D. Abhaya-pala, Prasanga Samarasinghe, and Vladimir Tourbabin, “Ambisonics capture using microphones on head-worn device of arbitrary geometry,” in 2022 30th European Signal Processing Conference (EUSIPCO) , Aug 2022, p. 309–313. [9] Yhonatan Gayer, Vladimir Tourbabin, Zamir Ben-Hur, Jacob Donley, and Boaz Rafaely, “Ambisonics encod-ing for arbitrary microphone arrays incorporating resid-ual channels for binaural reproduction,” arXiv preprint arXiv:2402.17362 , 2024. [10] Donghang Wu, Xihong Wu, and Tianshu Qu, “Leverag-ing moving sound source trajectories for universal sound separation,” arXiv preprint arXiv:2409.04843 , 2024. [11] Donghang Wu, Xihong Wu, and Tianshu Qu, “Exploit-ing motion information in sound source localization and tracking,” Journal of the Audio Engineering Society , , no. 10687, january 2024. [12] Amy Bastine, Lachlan Birnie, Thushara D Abhaya-pala, Prasanga Samarasinghe, and Vladimir Tourbabin, “Ambisonics capture using microphones on head-worn device of arbitrary geometry,” in 2022 30th European Signal Processing Conference (EUSIPCO) . IEEE, 2022, pp. 309–313. [13] Gene H. Golub, Per Christian Hansen, and Dianne P. O’Leary, “Tikhonov regularization and total least squares,” SIAM Journal on Matrix Analysis and Ap-plications , p. 185–194, Jan 1999. [14] Shan Gao, Xihong Wu, and Tianshu Qu, “High order ambisonics encoding method using differential microphone array,” in Audio Engineering Society Con-vention 144 . Audio Engineering Society, 2018. [15] Michael J Evans, James AS Angus, and Anthony I Tew, “Analyzing head-related transfer function measurements using surface spherical harmonics,” The Journal of the Acoustical Society of America , vol. 104, no. 4, pp. 2400– 2411, 1998. [16] St ´ephanie Bertet, J ´er ˆome Daniel, and S ´ebastien Moreau, “3d sound field recording with higher order ambisonics-objective measurements and validation of spherical microphone,” in Audio Engineering Society Convention 120 . Audio Engineering Society, 2006. [17] Lingkun Zhang, Xiaochen Wang, Ruimin Hu, Dengshi Li, and Weipin Tu, “Estimation of spherical harmonic coefficients in sound field recording using feed-forward neural networks,” Multimedia Tools and Applications ,vol. 80, no. 6, pp. 1–16, 2021. [18] A Gonzalez, “Measurement of areas on a sphere using fibonacci and latitude-longitude lattices,” Mathematical geosciences , , no. 1, pp. 42, 2010. [19] Angelo Farina, “Advancements in impulse response mea-surements by sine sweeps,” in Audio engineering society convention 122 . Audio Engineering Society, 2007. [20] Robin Scheibler, Eric Bezzam, and Ivan Dokmani ´c, “Py-roomacoustics: A python package for audio room simu-lation and array processing algorithms,” in 2018 IEEE international conference on acoustics, speech and signal processing (ICASSP) . IEEE, 2018, pp. 351–355.
