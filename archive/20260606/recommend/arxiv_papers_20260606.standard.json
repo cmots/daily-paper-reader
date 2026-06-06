@@ -1,0 +1,206 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-06T21:14:07.952969+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 3,
+    "quick_skim_target": 12,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2606.01802v2",
+      "source": "arxiv",
+      "title": "MOSS-Audio Technical Report",
+      "abstract": "MOSS-Audio is a unified audio-language model for speech, environmental sound, and music understanding, supporting audio captioning, time-aware question answering, timestamped transcription, and audio-grounded reasoning. MOSS-Audio couples a dedicated audio encoder with a modality adapter and a large language model: the encoder produces 12.5 Hz temporal representations, the adapter projects them into the decoder space, and the decoder generates autoregressive text outputs. Two design choices are central to the system: \\textbf{DeepStack cross-layer feature injection}, which exposes the decoder to acoustic information from multiple encoder depths, and \\textbf{time markers}, which provide explicit temporal cues by inserting timestamp markers into the audio-token stream. At the data level, we design an event-preserving audio annotation pipeline that segments raw audio at coherent event boundaries, applies branch-specific annotation to speech, music, and general audio, and merges the results into unified captions for pretraining. The intermediate branch-specific captions are further retained to support the construction of task-oriented SFT data. The model is pretrained on large-scale audio-language data, with time-aware objectives incorporated to support temporal grounding, and then undergoes multi-stage post-training to enhance instruction following and audio-grounded reasoning. We release 4B and 8B variants in both Instruct and Thinking configurations. MOSS-Audio achieves strong performance across general audio understanding, speech captioning, ASR, and timestamped ASR, positioning it as a promising understanding foundation for future voice agents.",
+      "authors": [
+        "Chen Yang",
+        "Chufan Yu",
+        "Hanfu Chen",
+        "Jie Zhu",
+        "Jingqi Chen",
+        "Ke Chen",
+        "Wenxuan Wang",
+        "Yang Wang",
+        "Yaozhou Jiang",
+        "Yi Jiang",
+        "Zhengyuan Lin",
+        "Ziqi Chen",
+        "Zhaoye Fei",
+        "Chenghao Liu",
+        "Jun Zhan",
+        "Kang Yu",
+        "Kexin Huang",
+        "Mingshu Chen",
+        "Qinyuan Cheng",
+        "Ruixiao Li",
+        "Shimin Li",
+        "Songlin Wang",
+        "Yitian Gong",
+        "Yang Gao",
+        "Yiyang Zhang",
+        "Xipeng Qiu"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.AI"
+      ],
+      "published": "2026-06-01T07:19:22+00:00",
+      "link": "https://arxiv.org/pdf/2606.01802v2",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "unified audio-language model for speech understanding and captioning, relevant to unified speech generation and understanding",
+      "llm_evidence_cn": "统一的音频-语言模型，支持语音理解与描述，与统一语音生成与理解相关",
+      "llm_evidence": "统一的音频-语言模型，支持语音理解与描述，与统一语音生成与理解相关",
+      "canonical_evidence": "统一的音频-语言模型，支持语音理解与描述，与统一语音生成与理解相关",
+      "llm_tldr_en": "Presents MOSS-Audio, a unified model for speech, environmental sound, and music understanding with captioning, QA, and timestamped transcription.",
+      "llm_tldr_cn": "本文报告MOSS-Audio，一个统一的音频-语言模型，可处理语音、环境声和音乐，支持音频描述、时间问答、带时间戳转录等任务。采用DeepStack跨层特征注入和时间标记，在多个基准上表现优异。",
+      "llm_tldr": "本文报告MOSS-Audio，一个统一的音频-语言模型，可处理语音、环境声和音乐，支持音频描述、时间问答、带时间戳转录等任务。采用DeepStack跨层特征注入和时间标记，在多个基准上表现优异。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.02220v1",
+      "source": "arxiv",
+      "title": "SiamCTC: Learning Speech Representations through Monotonic Temporal Alignment",
+      "abstract": "Self-supervised speech representation learning has made significant progress through Siamese networks, which leverage different views of the same input. However, existing methods often require frame-wise alignment between these views, overlooking the broader linguistic context invariance across different speaking styles. We introduce SiamCTC, a framework that integrates Siamese networks with Connectionist Temporal Classification (CTC) to learn speech representations without strict frame-level correspondence. By employing CTC loss to establish flexible, monotonic alignments between differing temporal realizations of the same content, SiamCTC accommodates speed perturbations and other temporal augmentations. This design relaxes frame-wise constraints while preserving temporal coherence and enhancing robustness to speaking-rate variations in downstream tasks. Our experiments demonstrate that SiamCTC leads to more adaptable speech representations, particularly at diverse speaking rates.",
+      "authors": [
+        "SooHwan Eom",
+        "Mark Hasegawa-Johnson",
+        "ad Chang D. Yoo"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS"
+      ],
+      "published": "2026-06-01T13:20:46+00:00",
+      "link": "https://arxiv.org/pdf/2606.02220v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "self-supervised speech representation learning via CTC alignment for unified speech generation and understanding",
+      "llm_evidence_cn": "通过CTC对齐的自监督语音表示学习，可用于统一语音生成与理解",
+      "llm_evidence": "通过CTC对齐的自监督语音表示学习，可用于统一语音生成与理解",
+      "canonical_evidence": "通过CTC对齐的自监督语音表示学习，可用于统一语音生成与理解",
+      "llm_tldr_en": "SiamCTC integrates Siamese networks with CTC loss to learn speech representations without strict frame-level correspondence, enabling flexible temporal alignment and supporting unified speech tasks.",
+      "llm_tldr_cn": "自监督语音表示学习通常需要严格的帧级对齐，限制了跨风格鲁棒性。本文提出SiamCTC框架，利用CTC损失建立灵活的单调对齐，无需帧级对应，适应速度扰动等时域增强。该方法学习到的表示兼具生成与理解潜力，为统一语音模型提供基础。",
+      "llm_tldr": "自监督语音表示学习通常需要严格的帧级对齐，限制了跨风格鲁棒性。本文提出SiamCTC框架，利用CTC损失建立灵活的单调对齐，无需帧级对应，适应速度扰动等时域增强。该方法学习到的表示兼具生成与理解潜力，为统一语音模型提供基础。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding models",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.03988v2",
+      "source": "arxiv",
+      "title": "Imaginative Perception Tokens Enhance Spatial Reasoning in Multimodal Language Models",
+      "abstract": "Vision language models (VLMs) excel at many tasks but still struggle with spatial reasoning when critical information is not directly observable. Many such problems require imaginative perception: inferring what would be seen from an unseen viewpoint, tracing paths through occluded spaces, or integrating partial observations into a coherent spatial representation. We introduce Imaginative Perception Tokens (IPT), intermediate perceptual representations that externalize what a VLM would perceive under alternative spatial configurations while remaining consistent with the observed input.   To study this capability, we formulate three tasks, Perspective Taking (PET), Path Tracing (PT), and Multiview Counting (MVC), and construct datasets of approximately 20K examples with ground truth imaginations, answers, and evaluation benchmarks. Using the unified VLM BAGEL as the backbone, IPT supervision consistently improves spatial reasoning and often outperforms textual chain of thought training, even without generating images at inference time. On MVC, IPT improves accuracy by 3.4% and achieves competitive performance with strong closed-source models on PT. We further find that combining IPT and label-only supervision yields additional gains, whereas textual chain of thought can substantially degrade performance, suggesting a modality mismatch when spatial computation is forced through language. Overall, IPT provides a principled supervision signal for reasoning about unobserved spatial structure, improving generalization while producing interpretable intermediate representations.",
+      "authors": [
+        "Mahtab Bigverdi",
+        "Linjie Li",
+        "Weikai Huang",
+        "Yiming Liu",
+        "Jaemin Cho",
+        "Jieyu Zhang",
+        "Tuhin Kundu",
+        "Chris Dangjoo Kim",
+        "Zelun Luo",
+        "Linda Shapiro",
+        "Ranjay Krishna"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-06-02T17:59:17+00:00",
+      "link": "https://arxiv.org/pdf/2606.03988v2",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "spatial reasoning tokens for vision-language models, related to embodied AI",
+      "llm_evidence_cn": "用于视觉语言模型的空间推理标记，与具身AI相关",
+      "llm_evidence": "用于视觉语言模型的空间推理标记，与具身AI相关",
+      "canonical_evidence": "用于视觉语言模型的空间推理标记，与具身AI相关",
+      "llm_tldr_en": "Imaginative Perception Tokens enhance spatial reasoning in VLMs by externalizing perception under alternative spatial configurations.",
+      "llm_tldr_cn": "本文针对视觉语言模型在遮挡或未观测视角下的空间推理不足，提出想象感知标记（IPT），通过外部化替代空间配置下的感知表示来增强推理能力。在构建的视角推理、路径追踪和多视角计数任务上，IPT显著提升了空间理解准确率，为具身AI中的规划提供了关键支持。",
+      "llm_tldr": "本文针对视觉语言模型在遮挡或未观测视角下的空间推理不足，提出想象感知标记（IPT），通过外部化替代空间配置下的感知表示来增强推理能力。在构建的视角推理、路径追踪和多视角计数任务上，IPT显著提升了空间理解准确率，为具身AI中的规划提供了关键支持。",
+      "llm_tags": [
+        "query:wm-vla-sa:composite"
+      ],
+      "matched_query_tag": "query:wm-vla-sa:composite",
+      "matched_query_text": "Papers central to 查找世界模型、VLA、空间音频的论文, especially work that connects or combines: world model for reinforcement learning and planning; vision language action model for robotics; spatial audio processing and rendering techniques; Find research papers on world models, Vision Language Action models, and spatial audio; Search for papers that combine world models with vision language action models for embodied AI; Explore spatial audio techniques in world model based autonomous agents.",
+      "matched_requirement_id": "req-composite-wm-vla-sa",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.06444v1",
+      "source": "arxiv",
+      "title": "USAD 2.0: Scaling Representation Distillation for Universal Audio Understanding",
+      "abstract": "Audio encoders are critical to modern audio applications as large language models (LLMs) increasingly rely on a single encoder for diverse inputs. While self-supervised learning (SSL) has yielded strong domain-specific encoders like speech or music experts, multi-domain approaches like USAD and SPEAR remain limited in coverage and evaluation. Recent studies also suggest supervised encoders align better with audio LLMs. We present USAD 2.0, a universal encoder integrating knowledge from both SSL and supervised foundation models. USAD 2.0 introduces domain-aware distillation to address teacher mismatch, extends coverage to the music domain, and adds second-stage supervised distillation for downstream use. We further scale the model to one billion parameters via depth scaling. Experiments show USAD 2.0 achieves strong or state-of-the-art performance across probing and LLM-based evaluations.",
+      "authors": [
+        "Heng-Jui Chang",
+        "Alexander H. Liu",
+        "Saurabhchand Bhati",
+        "Mrudula Athi",
+        "Anton Ratnarajah",
+        "Amit Chhetri",
+        "James Glass"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.CL",
+        "cs.SD"
+      ],
+      "published": "2026-06-04T17:42:05+00:00",
+      "link": "https://arxiv.org/pdf/2606.06444v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "universal audio encoder for speech, music, and environmental sound understanding",
+      "llm_evidence_cn": "通用音频编码器，支持语音、音乐和环境声音理解",
+      "llm_evidence": "通用音频编码器，支持语音、音乐和环境声音理解",
+      "canonical_evidence": "通用音频编码器，支持语音、音乐和环境声音理解",
+      "llm_tldr_en": "USAD 2.0 scales representation distillation for universal audio understanding, using domain-aware distillation from SSL and supervised models, and extending coverage to music with a billion-parameter encoder.",
+      "llm_tldr_cn": "现有音频编码器在域覆盖和评估上有限，USAD 2.0通过域感知蒸馏从自监督和监督基础模型中整合知识，扩展至音乐领域并引入第二阶段监督蒸馏，最终缩放至十亿参数，提升通用音频理解性能。",
+      "llm_tldr": "现有音频编码器在域覆盖和评估上有限，USAD 2.0通过域感知蒸馏从自监督和监督基础模型中整合知识，扩展至音乐领域并引入第二阶段监督蒸馏，最终缩放至十亿参数，提升通用音频理解性能。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

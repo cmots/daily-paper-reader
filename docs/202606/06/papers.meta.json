@@ -1,0 +1,69 @@
+{
+  "label": "2026-06-06",
+  "date": "2026-06-06",
+  "generated_at": "2026-06-06T21:17:43",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202606/06/2606.01802v2-moss-audio-technical-report",
+      "section": "deep",
+      "title_en": "MOSS-Audio Technical Report",
+      "authors": "Chen Yang, Chufan Yu, Hanfu Chen, Jie Zhu, Jingqi Chen, Ke Chen, Wenxuan Wang, Yang Wang, Yaozhou Jiang, Yi Jiang, Zhengyuan Lin, Ziqi Chen, Zhaoye Fei, Chenghao Liu, Jun Zhan, Kang Yu, Kexin Huang, Mingshu Chen, Qinyuan Cheng, Ruixiao Li, Shimin Li, Songlin Wang, Yitian Gong, Yang Gao, Yiyang Zhang, Xipeng Qiu",
+      "date": "2026-06-01",
+      "pdf": "https://arxiv.org/pdf/2606.01802v2",
+      "score": "8.0",
+      "evidence": "统一的音频-语言模型，支持语音理解与描述，与统一语音生成与理解相关",
+      "tldr": "现有音频语言模型在统一处理语音、环境音和音乐方面存在不足，且缺乏时间定位能力。MOSS-Audio提出DeepStack交叉层特征注入和时间标记机制，结合事件保留的标注管道，通过时间感知预训练和多阶段后训练，实现了音频描述、时间感知问答、带时间戳转录等任务。在通用音频理解、语音描述、ASR和带时间戳ASR上取得优异性能，为未来语音代理奠定了理解基础。",
+      "tags": "query:speech-model",
+      "abstract_en": "MOSS-Audio is a unified audio-language model for speech, environmental sound, and music understanding, supporting audio captioning, time-aware question answering, timestamped transcription, and audio-grounded reasoning. MOSS-Audio couples a dedicated audio encoder with a modality adapter and a large language model: the encoder produces 12.5 Hz temporal representations, the adapter projects them into the decoder space, and the decoder generates autoregressive text outputs. Two design choices are central to the system: \\textbf{DeepStack cross-layer feature injection}, which exposes the decoder to acoustic information from multiple encoder depths, and \\textbf{time markers}, which provide explicit temporal cues by inserting timestamp markers into the audio-token stream. At the data level, we design an event-preserving audio annotation pipeline that segments raw audio at coherent event boundaries, applies branch-specific annotation to speech, music, and general audio, and merges the results into unified captions for pretraining. The intermediate branch-specific captions are further retained to support the construction of task-oriented SFT data. The model is pretrained on large-scale audio-language data, with time-aware objectives incorporated to support temporal grounding, and then undergoes multi-stage post-training to enhance instruction following and audio-grounded reasoning. We release 4B and 8B variants in both Instruct and Thinking configurations. MOSS-Audio achieves strong performance across general audio understanding, speech captioning, ASR, and timestamped ASR, positioning it as a promising understanding foundation for future voice agents.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/06/2606.02220v1-siamctc-learning-speech-representations-through-monotonic-temporal-alignment",
+      "section": "quick",
+      "title_en": "SiamCTC: Learning Speech Representations through Monotonic Temporal Alignment",
+      "authors": "SooHwan Eom, Mark Hasegawa-Johnson, ad Chang D. Yoo",
+      "date": "2026-06-01",
+      "pdf": "https://arxiv.org/pdf/2606.02220v1",
+      "score": "7.0",
+      "evidence": "通过CTC对齐的自监督语音表示学习，可用于统一语音生成与理解",
+      "tldr": "现有自监督语音表征学习要求帧级对齐，忽略了不同说话风格下的上下文不变性，限制了表征对语速变化的适应性。本文提出SiamCTC，融合Siamese网络与CTC损失，通过单调时间对齐建立灵活对应，无需严格帧级匹配，从而适应速度扰动等时间增强。实验表明，SiamCTC学习到的表征在不同语速场景下均表现出更强的鲁棒性，在下游任务中显著优于基线方法。该工作为放松帧级约束、提升语音表征的通用性提供了新思路。",
+      "tags": "query:speech-model",
+      "abstract_en": "Self-supervised speech representation learning has made significant progress through Siamese networks, which leverage different views of the same input. However, existing methods often require frame-wise alignment between these views, overlooking the broader linguistic context invariance across different speaking styles. We introduce SiamCTC, a framework that integrates Siamese networks with Connectionist Temporal Classification (CTC) to learn speech representations without strict frame-level correspondence. By employing CTC loss to establish flexible, monotonic alignments between differing temporal realizations of the same content, SiamCTC accommodates speed perturbations and other temporal augmentations. This design relaxes frame-wise constraints while preserving temporal coherence and enhancing robustness to speaking-rate variations in downstream tasks. Our experiments demonstrate that SiamCTC leads to more adaptable speech representations, particularly at diverse speaking rates.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/06/2606.03988v2-imaginative-perception-tokens-enhance-spatial-reasoning-in-multimodal-language-models",
+      "section": "quick",
+      "title_en": "Imaginative Perception Tokens Enhance Spatial Reasoning in Multimodal Language Models",
+      "authors": "Mahtab Bigverdi, Linjie Li, Weikai Huang, Yiming Liu, Jaemin Cho, Jieyu Zhang, Tuhin Kundu, Chris Dangjoo Kim, Zelun Luo, Linda Shapiro, Ranjay Krishna",
+      "date": "2026-06-02",
+      "pdf": "https://arxiv.org/pdf/2606.03988v2",
+      "score": "7.0",
+      "evidence": "用于视觉语言模型的空间推理标记，与具身AI相关",
+      "tldr": "多模态语言模型在空间推理中难以处理不可直接观察的信息，如从未见视角看或追踪遮挡路径。本文提出想象感知标记（IPT），通过外部化模型在替代空间配置下的感知作为中间表征，使模型保持与输入一致。在透视、路径跟踪和多视图计数三个任务（约20K样本）上，IPT监督训练显著提升空间推理，精度提升3.4%，且无需推理时生成图像；IPT与标签监督结合效果更佳，而文本思维链可能降低性能。IPT为空间推理提供了可解释的中间监督信号，改善泛化能力。",
+      "tags": "query:wm-vla-sa",
+      "abstract_en": "Vision language models (VLMs) excel at many tasks but still struggle with spatial reasoning when critical information is not directly observable. Many such problems require imaginative perception: inferring what would be seen from an unseen viewpoint, tracing paths through occluded spaces, or integrating partial observations into a coherent spatial representation. We introduce Imaginative Perception Tokens (IPT), intermediate perceptual representations that externalize what a VLM would perceive under alternative spatial configurations while remaining consistent with the observed input.   To study this capability, we formulate three tasks, Perspective Taking (PET), Path Tracing (PT), and Multiview Counting (MVC), and construct datasets of approximately 20K examples with ground truth imaginations, answers, and evaluation benchmarks. Using the unified VLM BAGEL as the backbone, IPT supervision consistently improves spatial reasoning and often outperforms textual chain of thought training, even without generating images at inference time. On MVC, IPT improves accuracy by 3.4% and achieves competitive performance with strong closed-source models on PT. We further find that combining IPT and label-only supervision yields additional gains, whereas textual chain of thought can substantially degrade performance, suggesting a modality mismatch when spatial computation is forced through language. Overall, IPT provides a principled supervision signal for reasoning about unobserved spatial structure, improving generalization while producing interpretable intermediate representations.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202606/06/2606.06444v1-usad-20-scaling-representation-distillation-for-universal-audio-understanding",
+      "section": "quick",
+      "title_en": "USAD 2.0: Scaling Representation Distillation for Universal Audio Understanding",
+      "authors": "Heng-Jui Chang, Alexander H. Liu, Saurabhchand Bhati, Mrudula Athi, Anton Ratnarajah, Amit Chhetri, James Glass",
+      "date": "2026-06-04",
+      "pdf": "https://arxiv.org/pdf/2606.06444v1",
+      "score": "7.0",
+      "evidence": "通用音频编码器，支持语音、音乐和环境声音理解",
+      "tldr": "现有音频编码器多为领域专精，而通用编码器覆盖不足。USAD 2.0提出域感知蒸馏整合自监督与监督教师，扩展至音乐域，并通过深度缩放将模型规模提升至十亿参数。实验表明在探测和LLM评估中达到强或最优性能。该工作推动了通用音频理解的表示蒸馏规模化。",
+      "tags": "query:speech-model",
+      "abstract_en": "Audio encoders are critical to modern audio applications as large language models (LLMs) increasingly rely on a single encoder for diverse inputs. While self-supervised learning (SSL) has yielded strong domain-specific encoders like speech or music experts, multi-domain approaches like USAD and SPEAR remain limited in coverage and evaluation. Recent studies also suggest supervised encoders align better with audio LLMs. We present USAD 2.0, a universal encoder integrating knowledge from both SSL and supervised foundation models. USAD 2.0 introduces domain-aware distillation to address teacher mismatch, extends coverage to the music domain, and adds second-stage supervised distillation for downstream use. We further scale the model to one billion parameters via depth scaling. Experiments show USAD 2.0 achieves strong or state-of-the-art performance across probing and LLM-based evaluations.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
