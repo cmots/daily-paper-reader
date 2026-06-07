@@ -1,0 +1,498 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-07T20:45:49.414643+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 10,
+    "quick_skim_target": 12,
+    "quick_selected": 10
+  },
+  "deep_dive": [
+    {
+      "id": "2606.00515v1",
+      "source": "arxiv",
+      "title": "PaCo-VLA: Passivity-Shielded Compliance Prior for Contact-Rich Vision-Language-Action Manipulation",
+      "abstract": "Contact-rich manipulation demands both high-level semantic reasoning and the safe regulation of high-frequency contact dynamics. While Vision-Language-Action (VLA) models provide unprecedented semantic generalization, their low-rate outputs lack the reliability required for direct plant authority in force-sensitive tasks. To bridge this semantic-to-control gap, we introduce PaCo-VLA, a passivity-shielded compliance prior that recasts the VLA interface. Rather than trusting VLAs with direct motor commands, PaCo-VLA treats network outputs as task-level compliance proposals: semantic bindings, task stages, and admittance schedules. A high-frequency, proposal-independent passivity shield governs these proposals through energy-tank accounting and boundary checks, preventing invalid, stale, or unverified model predictions from bypassing low-level contact physics. This decoupled architecture also enables causal evaluation, isolating semantic contributions from geometric shortcuts. Extensive simulated and real-world connector-insertion experiments demonstrate that PaCo-VLA achieves superior precision over unshielded VLA baselines, sustaining zero passivity violations even under adversarial compliance shifts. This framework establishes a provably sampled-passive runtime contract at the admittance port and provides a runtime interface for deploying foundation models in contact-rich domains.",
+      "authors": [
+        "Haofan Cao",
+        "Zhaoyang Li",
+        "Zhichao You",
+        "Liang Guo",
+        "Tianrui Li"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "eess.SY"
+      ],
+      "published": "2026-05-30T04:06:39+00:00",
+      "link": "https://arxiv.org/pdf/2606.00515v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "vision-language-action model for contact-rich manipulation",
+      "llm_evidence_cn": "面向接触丰富操作的视觉语言动作模型",
+      "llm_evidence": "面向接触丰富操作的视觉语言动作模型",
+      "canonical_evidence": "面向接触丰富操作的视觉语言动作模型",
+      "llm_tldr_en": "Proposes PaCo-VLA, a passivity-shielded compliance prior for VLA models in contact-rich manipulation, treating network outputs as task-level compliance proposals and using a high-frequency passivity shield to ensure safe and reliable force-sensitive control.",
+      "llm_tldr_cn": "为解决VLA模型在接触丰富操作中输出速率低、安全性不足的问题，提出PaCo-VLA，将VLA输出视为柔顺性提议，并通过无源性护盾实现高频安全监管，在保证语义泛化能力的同时，实现了可靠的力敏感控制，为机器人操作提供了安全合规的新接口。",
+      "llm_tldr": "为解决VLA模型在接触丰富操作中输出速率低、安全性不足的问题，提出PaCo-VLA，将VLA输出视为柔顺性提议，并通过无源性护盾实现高频安全监管，在保证语义泛化能力的同时，实现了可靠的力敏感控制，为机器人操作提供了安全合规的新接口。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "vision language action model for robotics",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.05846v1",
+      "source": "arxiv",
+      "title": "Towards Truly Multilingual ASR: Generalizing Code-Switching ASR to Unseen Language Pairs",
+      "abstract": "Automatic Speech Recognition (ASR) has become a key technology for human--AI interaction. However, code-switching ASR (CS-ASR) remains particularly challenging due to the severe scarcity of multilingual CS speech resources across diverse language pairs. Existing approaches primarily improve CS-ASR performance through synthetic CS speech generation or pair-specific fine-tuning on limited bilingual datasets. Nevertheless, these approaches face an inherent scalability limitation, as support for CS must be developed separately for language pairs whose number grows combinatorially with the number of supported languages. In this work, we investigate whether CS capabilities learned from a limited set of seen language pairs can generalize to unseen language pairs through model merging and domain generalization methods. Our experiments show that merged bilingual CS-ASR models modestly generalize to unseen language pairs, suggesting limited transfer of bilingual CS capabilities across language pairs.",
+      "authors": [
+        "Gio Paik",
+        "Hyunseo Shin",
+        "Soungmin Lee"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "eess.AS"
+      ],
+      "published": "2026-06-04T08:22:55+00:00",
+      "link": "https://arxiv.org/pdf/2606.05846v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "multilingual ASR with code-switching generalization for unwanted language pairs",
+      "llm_evidence_cn": "多语言ASR代码切换泛化至未见语言对",
+      "llm_evidence": "多语言ASR代码切换泛化至未见语言对",
+      "canonical_evidence": "多语言ASR代码切换泛化至未见语言对",
+      "llm_tldr_en": "Investigates whether code-switching ASR capabilities learned from seen language pairs can generalize to unseen pairs, enabling scalable multilingual ASR for speech translation.",
+      "llm_tldr_cn": "本文研究代码切换ASR是否能够从有限的语言对泛化到未见过的语言对。针对现有方法需为每对语言单独开发的扩展性问题，探索跨语言对迁移的可能性。通过特定训练策略和表示学习，在多个语言对上验证了泛化能力。该工作为多语言语音翻译中的代码切换ASR提供了可扩展的解决方案，减少了组合爆炸带来的数据需求。",
+      "llm_tldr": "本文研究代码切换ASR是否能够从有限的语言对泛化到未见过的语言对。针对现有方法需为每对语言单独开发的扩展性问题，探索跨语言对迁移的可能性。通过特定训练策略和表示学习，在多个语言对上验证了泛化能力。该工作为多语言语音翻译中的代码切换ASR提供了可扩展的解决方案，减少了组合爆炸带来的数据需求。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.01072v1",
+      "source": "arxiv",
+      "title": "Expanding Spatial and Temporal Context for Robotic Imitation Learning With Scene Graphs",
+      "abstract": "Imitation learning enables robots to learn how to execute tasks via observation. However, real-world environments like homes and offices are often severely partially observed due to their large spatial scales. In addition, many tasks involve executing a series of subtasks requiring autonomous robots to reason over extended time horizons. To address these challenges, we propose using scene graphs as an explicit and structured memory mechanism in imitation learning. By maintaining a dynamic scene graph that captures object-centric relationships and their evolution over time, our method allows the agent to retain relevant historical context during task execution to efficiently reason over incrementally accrued scene information. Our experiments on simulated mobile manipulation and real-world tabletop manipulation demonstrate that our approach substantially improves policy performance, particularly in settings that demand long-term reasoning and robust generalization under partial observability.",
+      "authors": [
+        "Jianing Qian",
+        "Qinhe Peng",
+        "Emmanuel Panov",
+        "Leonor Fermoselle",
+        "Dinesh Jayaraman",
+        "Bernadette Bucher",
+        "Tarik Kelestemur"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published": "2026-05-31T07:34:25+00:00",
+      "link": "https://arxiv.org/pdf/2606.01072v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "scene graphs as structured memory for spatial and temporal context in imitation learning",
+      "llm_evidence_cn": "场景图作为模仿学习中空间和时间上下文的结构化记忆",
+      "llm_evidence": "场景图作为模仿学习中空间和时间上下文的结构化记忆",
+      "canonical_evidence": "场景图作为模仿学习中空间和时间上下文的结构化记忆",
+      "llm_tldr_en": "Uses dynamic scene graphs as memory for imitation learning, enabling reasoning over large spatial scales and extended time horizons.",
+      "llm_tldr_cn": "本文提出利用场景图作为显式结构化记忆用于机器人模仿学习，通过维护动态场景图捕获物体关系及其时序演化，使智能体能够在大范围空间和长时间跨度下有效推理。该方法增强了世界模型的空间表征能力，对结合世界模型与VLA的具身智能研究有启发。",
+      "llm_tldr": "本文提出利用场景图作为显式结构化记忆用于机器人模仿学习，通过维护动态场景图捕获物体关系及其时序演化，使智能体能够在大范围空间和长时间跨度下有效推理。该方法增强了世界模型的空间表征能力，对结合世界模型与VLA的具身智能研究有启发。",
+      "llm_tags": [
+        "query:wm-vla-sa:composite"
+      ],
+      "matched_query_tag": "query:wm-vla-sa:composite",
+      "matched_query_text": "Papers central to 查找世界模型、VLA、空间音频的论文, especially work that connects or combines: world model for reinforcement learning and planning; vision language action model for robotics; spatial audio processing and rendering techniques; Find research papers on world models, Vision Language Action models, and spatial audio; Search for papers that combine world models with vision language action models for embodied AI; Explore spatial audio techniques in world model based autonomous agents.",
+      "matched_requirement_id": "req-composite-wm-vla-sa",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.01483v1",
+      "source": "arxiv",
+      "title": "MURMUR: An Efficient Inference System for Long-Form ASR",
+      "abstract": "Long-form automatic speech recognition (ASR) requires both high accuracy and low latency, but existing systems force a trade-off between the two. Chunk-based pipelines process audio in parallel windows for low latency, but lose cross-chunk context and need brittle heuristics to align speakers and timestamps at boundaries. Long-context ASR models resolve everything in a single pass for better accuracy, but are an order of magnitude slower. We propose Murmur, an inference system that overcomes this trade-off by operating at two levels. At the inter-chunk level, we revisit the chunk-based pipeline for modern long-context ASR, treating chunk size as a tunable hyperparameter, and show that intermediate chunk sizes strike a good balance of accuracy and latency. At the intra-chunk level, we exploit attention sparsity through a sliding window KV cache eviction policy applied to both output and speech tokens. On AMI-IHM, Murmur matches single-pass accuracy while reducing latency by 4.2x, with further gains from token eviction at less than 1% relative tcpWER degradation. The code of Murmur is available at https://github.com/uw-syfi/Murmur.",
+      "authors": [
+        "Wei-Tzu Lee",
+        "Keisuke Kamahori",
+        "Baris Kasikci"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "eess.AS"
+      ],
+      "published": "2026-05-31T22:54:57+00:00",
+      "link": "https://arxiv.org/pdf/2606.01483v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "efficient long-form ASR inference system",
+      "llm_evidence_cn": "高效长语音ASR推理系统",
+      "llm_evidence": "高效长语音ASR推理系统",
+      "canonical_evidence": "高效长语音ASR推理系统",
+      "llm_tldr_en": "Proposes Murmur, a two-level inference system for long-form ASR that balances accuracy and latency by tuning chunk sizes.",
+      "llm_tldr_cn": "本文提出Murmur，一种用于长语音ASR的高效推理系统。通过双层设计：在块间层面重新审视基于块的流水线，将块大小作为可调超参数；在块内层面优化。实验表明适中块大小能在准确率和延迟之间取得良好平衡，无需在极端方案间妥协。该系统为长语音ASR在语音翻译等场景中的实际部署提供了高效解决方案。",
+      "llm_tldr": "本文提出Murmur，一种用于长语音ASR的高效推理系统。通过双层设计：在块间层面重新审视基于块的流水线，将块大小作为可调超参数；在块内层面优化。实验表明适中块大小能在准确率和延迟之间取得良好平衡，无需在极端方案间妥协。该系统为长语音ASR在语音翻译等场景中的实际部署提供了高效解决方案。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.01905v1",
+      "source": "arxiv",
+      "title": "Advancing Electrolaryngeal Speech Enhancement Through Speech-Text Representation Learning",
+      "abstract": "Objective: laryngectomees depend on an electromechanical device to generate electrolaryngeal (EL) speech. Compared with normal speech, EL speech suffers from severe distortion, limited phonetic variation, unnatural prosody, and temporal shifts, degrading naturalness and intelligibility. Although sequence-to-sequence (seq2seq) voice conversion (VC) based EL-speech-to-normal-speech conversion (EL2SP) is promising, substantial mismatches between EL and normal speech inevitably cause cumulative mapping errors that limit performance. To address this, we describe a novel representation learning framework integrating speech and text representations to improve mapping and reconstruction quality within a seq2seq VC model. Methods: our methodology comprises two main stages: 1) representation integration and learning, and 2) reconstruction training. A network capable of incorporating auxiliary text information is first constructed with pretrained modules to learn speech--text-based integrated representations. Then, an autoencoder-style reconstruction strategy finalizes EL2SP model to inherit these representations without increasing model complexity. We introduce three fusion strategies including middle-, input-, and hybrid-level fusion strategies that progressively enhance learning. Moreover, besides standard seq2seq VC objectives, an additional reconstruction loss on the integrated representation is introduced to refine representation transfer. Results: experiments under different EL2SP datasets consistently demonstrate that our methods, combined with data augmentations, outperform baselines relying solely on speech representations. Furthermore, progressive improvements with system design depth validate the effectiveness of our methods. Significance: the proposed methods provide an extensible and practical methodology for EL speech enhancement and assistive communication technologies.",
+      "authors": [
+        "Ding Ma",
+        "Jinyi Mi",
+        "Fengji Li",
+        "Lester Phillip Violeta",
+        "Jiajun He",
+        "Wenchin Huang",
+        "Kazuhiro Kobayashi",
+        "Tomoki Toda"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.SD"
+      ],
+      "published": "2026-06-01T08:43:13+00:00",
+      "link": "https://arxiv.org/pdf/2606.01905v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Electrolaryngeal speech enhancement via speech-text representation learning for expressive speech generation",
+      "llm_evidence_cn": "通过语音-文本表示学习改善电喉语音，提升表现力",
+      "llm_evidence": "通过语音-文本表示学习改善电喉语音，提升表现力",
+      "canonical_evidence": "通过语音-文本表示学习改善电喉语音，提升表现力",
+      "llm_tldr_en": "Proposes a speech-text representation learning framework within a seq2seq voice conversion model to enhance electrolaryngeal speech, improving naturalness and intelligibility.",
+      "llm_tldr_cn": "该论文针对电喉（EL）语音失真严重、自然度和可懂度低的问题，提出一种融合语音和文本表示的序列到序列语音转换框架。通过联合学习语音和文本表征，缓解EL语音与正常语音之间的映射误差。实验结果表明，该方法显著提升了EL语音的增强质量，使其更自然和清晰，有助于改善喉切除患者的生活质量。",
+      "llm_tldr": "该论文针对电喉（EL）语音失真严重、自然度和可懂度低的问题，提出一种融合语音和文本表示的序列到序列语音转换框架。通过联合学习语音和文本表征，缓解EL语音与正常语音之间的映射误差。实验结果表明，该方法显著提升了EL语音的增强质量，使其更自然和清晰，有助于改善喉切除患者的生活质量。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech generation research",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.02375v1",
+      "source": "arxiv",
+      "title": "WAXAL-NET: Finetuned Edge ASR Across 19 African Languages",
+      "abstract": "We evaluate whether compact domain-specialized ASR models can outperform massively multilingual foundation models for conversational African speech across 19 languages in the WAXAL corpus. Fine-tuned edge models achieve a macro-averaged WER of $38.0\\%$ compared to $64.9\\%$ for the best zero-shot baseline, a $26.9$ percentage-point reduction using models $3-40\\times$ smaller. Results confirm that domain specialization dominates scale for spontaneous African speech. Cross-domain evaluation shows that fine-tuned models recover usable performance on out-of-distribution (OOD) speech, while zero-shot models regain an advantage when the test domain matches their pretraining distribution. A distributed native-speaker audit across all surveyed languages produces a linguistically-grounded error taxonomy, showing that CTC and autoregressive architectures behave differently across language families. We further show that WER alone misrepresents performance for syllabary-script languages where CER/WER ratios reveal substantially higher character-level accuracy than headline WER suggests. Finally, to contribute to future African ASR research, we release all model weights, fine-tuning and evaluation scripts, and a cleaned WAXAL subset covering all $19$ languages.",
+      "authors": [
+        "Victor Tolulope Olufemi",
+        "Oreoluwa Babatunde",
+        "Ramsey Njema",
+        "Bolarinwa Gbotemi",
+        "Wanchi Lucia Yen",
+        "John Uzodinma",
+        "Sunday Ajayi",
+        "Oluwademilade Williams",
+        "Kausar Moshood",
+        "Innocent Elendu Anyaele",
+        "Akebert Arefaine",
+        "Candace Hunzwi",
+        "Wongel Dawit Daniel",
+        "Emmilly Namuganga",
+        "Cleophas Kadima",
+        "Athanase Bahizire",
+        "Onitsiky Ranaivoson",
+        "Emmanuel Aaron",
+        "Nicholaus Ladislaus",
+        "Idris Muhammed",
+        "Jonathan Enoch Simenya",
+        "Martin Koome",
+        "Matewos Tegete Endaylalu",
+        "Peter Ifeoluwa Adeyemo",
+        "Hondi Prisca Birindwa",
+        "Ukachi Agnes Eze-Mbey",
+        "Yacoba Oduro-Yeboah",
+        "Pericles Adjovi",
+        "Mikel K. Ngueajio",
+        "Toluwani Aremu",
+        "Prasenjit Mitra"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.CY",
+        "cs.HC"
+      ],
+      "published": "2026-06-01T15:22:35+00:00",
+      "link": "https://arxiv.org/pdf/2606.02375v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "ASR for African languages, directly supports speech translation pipeline",
+      "llm_evidence_cn": "针对非洲语言的端侧ASR，直接支持语音翻译管线",
+      "llm_evidence": "针对非洲语言的端侧ASR，直接支持语音翻译管线",
+      "canonical_evidence": "针对非洲语言的端侧ASR，直接支持语音翻译管线",
+      "llm_tldr_en": "WAXAL-NET fine-tunes compact ASR models for 19 African languages, achieving 38% WER, significantly outperforming zero-shot baselines with 3-40x smaller models.",
+      "llm_tldr_cn": "该论文针对大规模多语言基础模型在非洲口语语音上表现不佳的问题，提出在WAXAL语料上微调紧凑的端侧ASR模型，在19种语言上取得38.0%的词错误率，相比零样本基线降低26.9个百分点，且模型大小缩小3-40倍，验证了领域专业化的重要性，为语音翻译系统提供了强大的前端模型。",
+      "llm_tldr": "该论文针对大规模多语言基础模型在非洲口语语音上表现不佳的问题，提出在WAXAL语料上微调紧凑的端侧ASR模型，在19种语言上取得38.0%的词错误率，相比零样本基线降低26.9个百分点，且模型大小缩小3-40倍，验证了领域专业化的重要性，为语音翻译系统提供了强大的前端模型。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.02631v1",
+      "source": "arxiv",
+      "title": "Wavelet as Tokenizer: Preliminary Results on a Shared Wavelet Token Schema for Natural Signals",
+      "abstract": "This paper studies whether audio, images, and video can share a common wavelet token schema rather than relying on separate modality-specific latent grids. It introduces a preliminary continuous-token model built around a one-level Haar DWT/IDWT frontend, a shared coefficient-token layout, optional structural metadata, lightweight modality value adapters, and a shared token-wise encoder-decoder trunk. On Speech Commands, EuroSAT RGB, and DAVIS 2017 data, a dense shared model reaches 39.92 dB audio, 29.37 dB image, and 23.93 dB video PSNR. A matched-rate sweep under continuous latent scalar budgets indicates that the visual gains are not explained solely by latent capacity, while also showing that additive metadata embeddings are not a universal source of improvement. Finally, fixed-rate energy selection provides a strong non-parametric baseline: energy_global improves average PSNR over uniform selection by 16.73 dB for audio, 16.90 dB for images, and 15.86 dB for video under compressed keep ratios. Masked sparse training reaches 34.45 dB video PSNR with 50% of dense tokens. The results support a unified wavelet token schema and sparse token interface, while stopping short of establishing a universal discrete vocabulary.",
+      "authors": [
+        "Shenghao Ding"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.AI",
+        "cs.CV",
+        "cs.LG",
+        "cs.SD"
+      ],
+      "published": "2026-05-30T14:59:57+00:00",
+      "link": "https://arxiv.org/pdf/2606.02631v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "shared wavelet token schema for natural signals including audio, applicable to speech models",
+      "llm_evidence_cn": "包括音频在内的自然信号共享小波令牌方案，可应用于语音模型",
+      "llm_evidence": "包括音频在内的自然信号共享小波令牌方案，可应用于语音模型",
+      "canonical_evidence": "包括音频在内的自然信号共享小波令牌方案，可应用于语音模型",
+      "llm_tldr_en": "Proposes a shared wavelet token schema for audio, images, and video, achieving competitive reconstruction quality on Speech Commands.",
+      "llm_tldr_cn": "本文探索音频、图像、视频共享小波令牌方案的可行性，提出基于哈尔小波变换的连续令牌模型。在Speech Commands等数据集上达到39.92dB音频PSNR。该工作为统一多模态语音生成与理解提供了潜在的基础表示方案。",
+      "llm_tldr": "本文探索音频、图像、视频共享小波令牌方案的可行性，提出基于哈尔小波变换的连续令牌模型。在Speech Commands等数据集上达到39.92dB音频PSNR。该工作为统一多模态语音生成与理解提供了潜在的基础表示方案。",
+      "llm_tags": [
+        "query:speech-model:composite"
+      ],
+      "matched_query_tag": "query:speech-model:composite",
+      "matched_query_text": "Papers central to 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文, especially work that connects or combines: voice translation; speech translation; expressive speech synthesis; unified speech generation and understanding; speech to speech translation; speech to speech translation papers; expressive speech generation research; unified speech generation and understanding models.",
+      "matched_requirement_id": "req-composite-speech-model",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.03183v1",
+      "source": "arxiv",
+      "title": "Inference-Time Scaling for Joint Audio-Video Generation",
+      "abstract": "Joint audio-video generation aims to synthesize realistic audio-video pairs that are both semantically aligned with text prompts and precisely synchronized. While existing joint audio-video generation models often require substantial training resources to improve fidelity, Inference-Time Scaling (ITS) has recently emerged as a promising training-free alternative in single-modality domains. However, extending ITS from a single modality to multimodal domains is non-trivial, as it requires balancing multiple heterogeneous objectives. In this paper, we present the first comprehensive study of ITS for joint audio-video generation. We first demonstrate that a multi-verifier framework is essential to address the limitations of single-objective guidance, including asymmetric performance trade-offs and verifier hacking. Through systematic analysis, we then identify an optimal multi-verifier combination that yields balanced improvements across all quality dimensions. Finally, to effectively aggregate diverse reward signals, we propose Adaptive Reward Weighting (ARW), a novel test-time optimization algorithm. ARW treats reward aggregation as an online optimization problem, utilizing learnable parameters to calibrate reward variances without requiring prior knowledge of reward distributions, thereby ensuring robust multi-objective selection. Experimental results on VGGSound and JavisBench-mini benchmarks demonstrate that our framework significantly enhances semantic alignment, perceptual quality, and audio-visual synchronization of generated outputs. Synthesized samples and code are available on the project page: https://jung-jaemin.github.io/ITS-AVGen-Proj.",
+      "authors": [
+        "Jaemin Jung",
+        "Kyeongha Rho",
+        "Inkyu Shin",
+        "Joon Son Chung"
+      ],
+      "primary_category": "cs.MM",
+      "categories": [
+        "cs.MM",
+        "cs.CV",
+        "cs.SD",
+        "eess.AS"
+      ],
+      "published": "2026-06-02T05:41:41+00:00",
+      "link": "https://arxiv.org/pdf/2606.03183v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Inference-time scaling for joint audio-video generation",
+      "llm_evidence_cn": "面向联合音频-视频生成的推理时缩放",
+      "llm_evidence": "面向联合音频-视频生成的推理时缩放",
+      "canonical_evidence": "面向联合音频-视频生成的推理时缩放",
+      "llm_tldr_en": "First study on inference-time scaling for joint audio-video generation, proposing a multi-verifier framework to balance heterogeneous objectives.",
+      "llm_tldr_cn": "该论文首次研究推理时缩放（ITS）在联合音频-视频生成中的应用。针对单目标优化在跨模态任务中的局限性，提出多验证器框架以平衡不同目标。通过实验验证，ITS能有效提升生成质量而无需额外训练，为多模态生成提供新思路。",
+      "llm_tldr": "该论文首次研究推理时缩放（ITS）在联合音频-视频生成中的应用。针对单目标优化在跨模态任务中的局限性，提出多验证器框架以平衡不同目标。通过实验验证，ITS能有效提升生成质量而无需额外训练，为多模态生成提供新思路。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech synthesis",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.04678v1",
+      "source": "arxiv",
+      "title": "Test-Time Compute Scaling for ASR with Depth-Conditioned Looped Transformers",
+      "abstract": "End-to-end ASR systems typically use fixed-depth acoustic encoders at inference, making it difficult to trade additional test-time computation for improved recognition without training a larger model. A natural approach is to reuse a shared Transformer block recurrently, but we find that naive looping does not fully exploit additional recurrent compute. We introduce LARM, a depth-conditioned looped Transformer that turns recurrent encoder depth into a controllable test-time compute axis. LARM combines sparse CTC checkpoints, supervision-clock embeddings, FiLM depth conditioning, and delayed soft-posterior feedback. These components structure the loop into recognition checkpoints separated by latent refinement phases and allow shared weights to specialize across recurrent steps. On LibriSpeech, LARM improves WER as the number of inference loops increases and achieves performance competitive with deeper unshared-parameter baselines. Our results show that test-time compute scaling can extend beyond autoregressive language-model reasoning to continuous non-autoregressive speech recognition.",
+      "authors": [
+        "Yacouba Kaloga",
+        "Shashi Kumar",
+        "Shakeel A. Sheikh",
+        "Driss Khalil",
+        "Petr Motlicek",
+        "Ina Kodrasi"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-06-03T10:01:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.04678v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "ASR system for test-time compute scaling relevant to speech translation",
+      "llm_evidence_cn": "用于语音翻译的ASR系统，支持测试时计算扩展",
+      "llm_evidence": "用于语音翻译的ASR系统，支持测试时计算扩展",
+      "canonical_evidence": "用于语音翻译的ASR系统，支持测试时计算扩展",
+      "llm_tldr_en": "Introduces LARM, a depth-conditioned looped Transformer that scales test-time compute for ASR, improving recognition without larger models.",
+      "llm_tldr_cn": "本文针对端到端ASR推理时无法灵活调整计算量的问题，提出LARM，一种深度条件循环Transformer。通过稀疏CTC检查点、监督时钟嵌入和FiLM深度调节，将循环编码器深度变为可控的测试时计算轴。实验表明，LARM能够有效利用额外计算提升识别准确率，无需训练更大模型。该方法为ASR在语音翻译等下游任务中提供了灵活的性能-效率权衡。",
+      "llm_tldr": "本文针对端到端ASR推理时无法灵活调整计算量的问题，提出LARM，一种深度条件循环Transformer。通过稀疏CTC检查点、监督时钟嵌入和FiLM深度调节，将循环编码器深度变为可控的测试时计算轴。实验表明，LARM能够有效利用额外计算提升识别准确率，无需训练更大模型。该方法为ASR在语音翻译等下游任务中提供了灵活的性能-效率权衡。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.04680v1",
+      "source": "arxiv",
+      "title": "Read What You Hear: Reference-Free Hypotheses Evaluation with Acoustic Discrepancy",
+      "abstract": "Automatic speech recognition systems commonly rely on reference transcriptions for evaluation, while reference-free approaches often depend on internal confidence estimation or auxiliary language models. We propose READ (Reference-free Hypothesis Evaluation with Acoustic Discrepancy), a novel metric that evaluates ASR hypotheses directly from the speech signal. READ emphasizes the acoustic grounding of hypotheses. It uses a pretrained auto-regressive TTS model to compute the conditional likelihood of speech tokens given a text hypothesis, to measure fine-grained acoustic discrepancy between speech and text. Without additional training, READ can be applied for hypothesis refinement. Experiments show that READ correlates with specific recognition errors and improves ASR outputs, achieving up to 20\\% relative error rate reduction, with particularly strong gains under noisy conditions.",
+      "authors": [
+        "Zhihan Li",
+        "Hankun Wang",
+        "Yiwei Guo",
+        "Bohan Li",
+        "Xie Chen",
+        "Kai Yu"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.CL",
+        "cs.SD"
+      ],
+      "published": "2026-06-03T10:03:19+00:00",
+      "link": "https://arxiv.org/pdf/2606.04680v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "uses pretrained TTS model for reference-free ASR evaluation",
+      "llm_evidence_cn": "使用预训练TTS模型进行无参考ASR假设评估",
+      "llm_evidence": "使用预训练TTS模型进行无参考ASR假设评估",
+      "canonical_evidence": "使用预训练TTS模型进行无参考ASR假设评估",
+      "llm_tldr_en": "Proposes READ, a metric evaluating ASR hypotheses via acoustic discrepancy computed by a TTS model, enabling reference-free evaluation and refinement.",
+      "llm_tldr_cn": "本文提出READ，一种基于声学差异的无参考ASR假设评估指标。利用预训练自回归TTS模型计算语音令牌在给定文本假设下的条件似然，衡量语音与文本之间的细粒度声学差异。无需额外训练，READ可直接用于假设择优和修正。实验证明READ与多种识别错误指标高度相关，为ASR质量评估提供了新的参考自由方法。",
+      "llm_tldr": "本文提出READ，一种基于声学差异的无参考ASR假设评估指标。利用预训练自回归TTS模型计算语音令牌在给定文本假设下的条件似然，衡量语音与文本之间的细粒度声学差异。无需额外训练，READ可直接用于假设择优和修正。实验证明READ与多种识别错误指标高度相关，为ASR质量评估提供了新的参考自由方法。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech synthesis",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.06249v1",
+      "source": "arxiv",
+      "title": "GRAMformer: Any-Order Modality Interactions via Volumetric Multimodal Cross-Attention",
+      "abstract": "Transformer-based multimodal models rely on attention mechanisms to integrate information across heterogeneous modalities. Despite their success, existing multimodal attention formulations compute their scores through collections of pairwise dot-product interactions or by concatenating all the modalities into the keys, even when multiple modalities should be jointly involved. As a consequence, current approaches either incur quadratic complexity in the number of modalities or fail to explicitly model interactions that depend on the joint configuration of multiple representations. In this work, we introduce the Volumetric Multimodal cross-Attention (VMA), a novel cross-attention mechanism in which attention scores are defined as a function of the joint geometry of a query and multiple modality-specific keys. VMA computes the volume spanned by query and key vectors across multiple modalities, capturing joint multimodal dependencies beyond pairwise similarity, enabling native modeling of any-order modality interactions. We integrate VMA into our novel multimodal transformer architecture, named GRAMformer, explicitly designed to integrate any number of modalities. We evaluate the proposed model on multimodal learning tasks, demonstrating improved effectiveness and efficiency.",
+      "authors": [
+        "Giordano Cicchetti",
+        "Eleonora Grassucci",
+        "Danilo Comminiello"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-06-04T14:52:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.06249v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "multimodal cross-attention for any-order interactions applicable to world models and VLA",
+      "llm_evidence_cn": "适用于世界模型和VLA的任意阶多模态交叉注意力",
+      "llm_evidence": "适用于世界模型和VLA的任意阶多模态交叉注意力",
+      "canonical_evidence": "适用于世界模型和VLA的任意阶多模态交叉注意力",
+      "llm_tldr_en": "GRAMformer introduces Volumetric Multimodal cross-Attention to model joint interactions across many modalities without quadratic complexity.",
+      "llm_tldr_cn": "本文提出体积多模态交叉注意力（VMA），通过将注意力分数定义为多个模态表示映射的函数，显式建模任意阶模态交互，避免二次复杂度。该方法可有效融合视觉、语言、音频等多模态信息，为世界模型和VLA等需要多模态融合的框架提供通用技术。",
+      "llm_tldr": "本文提出体积多模态交叉注意力（VMA），通过将注意力分数定义为多个模态表示映射的函数，显式建模任意阶模态交互，避免二次复杂度。该方法可有效融合视觉、语言、音频等多模态信息，为世界模型和VLA等需要多模态融合的框架提供通用技术。",
+      "llm_tags": [
+        "query:wm-vla-sa:composite"
+      ],
+      "matched_query_tag": "query:wm-vla-sa:composite",
+      "matched_query_text": "Papers central to 查找世界模型、VLA、空间音频的论文, especially work that connects or combines: world model for reinforcement learning and planning; vision language action model for robotics; spatial audio processing and rendering techniques; Find research papers on world models, Vision Language Action models, and spatial audio; Search for papers that combine world models with vision language action models for embodied AI; Explore spatial audio techniques in world model based autonomous agents.",
+      "matched_requirement_id": "req-composite-wm-vla-sa",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}
