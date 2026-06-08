@@ -1,0 +1,861 @@
+Title: Temporally-Aligned Evaluation for Audio-Driven Talking Head Generation
+
+URL Source: https://arxiv.org/pdf/2606.01031v1
+
+Published Time: Tue, 02 Jun 2026 01:13:56 GMT
+
+Number of Pages: 28
+
+Markdown Content:
+# Temporally-Aligned Evaluation for Audio-Driven Talking Head Generation 
+
+Zhicheng Zhang 1†, Lei Wang 2,3 †, Yu Zhang 1* , Yongsheng Gao 2* 
+
+> 1
+
+School of Business, University of New South Wales (UNSW), Australia. 
+
+> 2
+
+School of Engineering and Built Environment, Griffith University, Australia. 
+
+> 3
+
+Data61/CSIRO, Australia. *Corresponding author(s). E-mail(s): m.yuzhang@unsw.edu.au; yongsheng.gao@griffith.edu.au; Contributing authors: zhicheng.zhang2@unsw.edu.au; l.wang4@griffith.edu.au; 
+
+> †
+
+Zhicheng Zhang and Lei Wang contributed equally to this work and are co-first authors. 
+
+Abstract 
+
+Audio-driven talking-head generation has advanced rapidly, yet existing evalu-ation protocols mainly rely on frame-wise metrics that assume strict temporal correspondence between generated and reference videos. This assumption does not match speech-driven facial motion, which naturally includes slight timing shifts, different speaking speeds, and stylistic variations. As a result, conven-tional metrics may treat harmless timing differences as quality errors, making it harder to fairly compare methods and understand their trade-offs. In this work, we argue that evaluation of dynamic generative models should be formulated as a sequence-alignment problem rather than independent frame comparison. We introduce a unified sequence-level reformulation that integrates Soft Dynamic Time Warping into established evaluation pipelines. By aligning feature trajecto-ries while preserving temporal order, the proposed framework provides robustness to bounded temporal misalignments without altering the underlying perceptual, identity, or synchronization encoders. We show that frame-wise evaluation can be viewed as a special case under rigid alignment, while sequence-level alignment provides improved stability, lower sensitivity to timing differences, and clearer separation between modeling paradigms. Building on this principled formula-tion, we conduct a large-scale benchmark of 20 methods across seven datasets spanning canonical, in-the-wild, and style-diverse scenarios under standardized 
+
+1 
+
+> arXiv:2606.01031v1 [cs.GR] 31 May 2026 protocols. Extensive experiments show that temporally aligned metrics are more robust to timing differences, provide more consistent results across datasets, and better reveal systematic trade-offs between modeling paradigms, such as syn-chronization versus realism and expressiveness versus stability. By redefining talking-head evaluation as trajectory-level alignment, this work highlights tem-poral correspondence as an essential principle for evaluating dynamic generative models and provides a solid foundation for future research in audio-driven facial animation.
+> Keywords: Audio-driven talking heads, audio-to-video synthesis, temporal evaluation, sequence lignment, perceptual similarity, identity preservation, motion realism.
+
+# 1 Introduction 
+
+Audio-driven talking-head generation has progressed rapidly in recent years, fueled by advances in generative modeling [1–5], motion representation learning [6–8], and audio-visual alignment [9–11]. Contemporary approaches can synthesize photorealistic facial animations from speech with high lip-sync accuracy and expressive dynamics, enabling applications in virtual avatars[7, 8, 12], digital dubbing[13, 14], telepresence[15, 16], and interactive media[17, 18]. Despite these advances, progress in the field remains difficult to assess in a prin-cipled and consistent manner[19–21]. Existing studies typically evaluate models on isolated datasets, adopt heterogeneous preprocessing pipelines, and report results under inconsistent metric configurations[22–24]. More fundamentally, widely used eval-uation metrics, such as Learned Perceptual Image Patch Similarity (LPIPS)[25, 26] for perceptual similarity, Cosine Similarity (CSIM)[27] for identity preservation, SyncNet-based synchronization scores[28], and interpolation-based motion smoothness[29], share a common structural limitation: they operate under rigid frame-wise alignment assumptions[30]. Specifically, these metrics compute similarity between temporally corresponding frame pairs and aggregate the results by simple averaging. This formulation implic-itly assumes that generated and reference videos are strictly synchronized, have equal length, maintain stable identity, and exhibit consistent audio-visual correspondence. However, in practical audio-driven generation, even high-quality models may introduce slight temporal phase shifts, rhythm variations, pose changes, or local articulation delays. While such variations are often perceptually acceptable, they can dispropor-tionately distort frame-level evaluation scores. As a result, current metrics may reflect sensitivity to temporal misalignment rather than intrinsic generation quality[31]. This structural issue becomes increasingly problematic as the field diversifies into multiple modeling paradigms, including lip-centric pipelines[9, 32–34], motion-space disentangled frameworks[3, 8, 35–38], multi-condition fusion strategies[39–41], and holistic full-motion architectures[2, 42–47]. Without temporally robust evaluation, it remains unclear which paradigms truly excel in realism, synchronization, identity stability, or motion naturalness, and which trade-offs are intrinsic to their design. 2(a)  (b)  (c) Fig. 1 : Comparison of datasets across columns: existing benchmarks with diverse real identities (1st); our Wild dataset with occlusions, exaggerated motions, and dynamic expressions (2nd); our Avatar dataset including AI-generated photorealistic and 3D faces, animated characters, 2D cartoons, sculptures, artistic portraits, sketch-style renderings, animals, and humanoids (3rd-4th columns). Although several metrics incorporate limited temporal modeling, they do not address the structural misalignment problem inherent in frame-constrained evalua-tion. For example, Fr´ echet Video Distance (FVD) evaluates distributional similarity using spatiotemporal features extracted from pretrained video recognition networks. While FVD captures global temporal statistics, it operates at the distribution level rather than establishing explicit alignment between generated and reference sequences. Consequently, it cannot distinguish perceptually acceptable phase shifts from genuine motion inconsistencies. Similarly, some works adopt sliding-window averaging, short temporal smoothing, or local aggregation strategies to reduce frame-level noise. These approaches mitigate high-frequency fluctuations but still assume fixed temporal correspondence and cannot accommodate non-linear timing variations. Cross-correlation-based synchronization metrics partially account for temporal offsets by measuring alignment peaks across short windows; however, they lack monotonic alignment constraints and are limited to specific modalities such as lip synchronization. In contrast, audio-driven talking-head generation involves structured, monotonic temporal evolution governed by speech dynamics. Evaluation therefore requires a mechanism that preserves temporal order while allowing elastic alignment under perceptually tolerable timing variations. This observation motivates our reformulation of talking-head evaluation as sequence-level trajectory alignment, rather than distribution matching or local smoothing. In this work, we identify rigid frame-wise alignment as a fundamental bottleneck in talking-head evaluation and propose a unified temporal reformulation of existing met-rics. Instead of treating evaluation as independent frame comparisons, we reinterpret 3Table 1 : Overview of representative audio-driven talking-head generation methods and their public implementations. For each method, we report the publication venue and year, the availability of official GitHub code, and the number of GitHub stars (collected Jun 01, 2026), providing a consolidated view of methodological coverage and practical adoption. The hierarchical semantic taxonomy in the last column was built via unsupervised hierarchi-cal clustering of paper titles and abstracts using TF-IDF representations and Ward linkage. The horizontal axis denotes linkage distance, reflecting seman-tic dissimilarity between methods. This taxonomy offers a structured view of how existing approaches differ in motion modeling, conditioning mecha-nisms, and system-level design. 
+
+Method Venue GitHub Stars Hierarchical semantic taxonomy 
+
+2025 Ditto (ACM MM 2025) 
+
+> AniTalker (ACM MM 2024)
+> JoyVASA (arXiv 2024)
+> EDTalk (ECCV 2024)
+> Audio2Head (IJCAI 2021)
+> SadTalker (CVPR 2023)
+> DreamTalk (arXiv 2023)
+> MuseTalk (arXiv 2024)
+> TalkLip (CVPR 2023)
+> Wav2Lip (ACM MM 2020)
+> V-Express (arXiv 2024)
+> EchoMimic (AAAI 2025)
+> IP-LAP (CVPR 2023)
+> FLOAT (ICCV 2025)
+> Hallo3 (CVPR 2025)
+> Hallo2 (ICLR 2025)
+> Hallo (arXiv 2024)
+> MEMO (arXiv 2024)
+> AniPortrait (arXiv 2024)
+> Sonic (CVPR 2025)
+> 0.0 0.5 1.0 1.5
+> Motion-space
+> disentangled
+> Lip-centric
+> Multi-condition
+> fusion
+> Holistic
+> full-motion
+
+Ditto [35] ACM MM Code 805 EchoMimic [40] AAAI Code 4200 FLOAT [42] ICCV Code 474 Hallo3 [45] CVPR Code 1440 Sonic [47] CVPR Code 3200 Hallo2 [44] ICLR Code 3741 
+
+2024 
+
+Hallo [43] arXiv Code 8600 AniPortrait [2] arXiv Code 5018 MuseTalk [33] arXiv Code 5900 V-Express [39] arXiv Code 2430 AniTalker [36] ACM MM Code 1600 MEMO [46] arXiv Code 1118 JoyVASA [37] arXiv Code 870 EDTalk [38] ECCV Code 469 
+
+2023 
+
+SadTalker [3] CVPR Code 13905 DreamTalk [32] arXiv Code 1834 IP-LAP [41] CVPR Code 740 TalkLip [34] CVPR Code 428 
+
+2022–2020 
+
+Audio2Head [8] IJCAI Code 353 Wav2Lip [9] ACM MM Code 13000 
+
+it as sequence-level trajectory matching in feature space. Concretely, we introduce a Soft Dynamic Time Warping (Soft-DTW) based alignment mechanism that preserves temporal order while allowing flexible correspondence between generated and refer-ence sequences. Importantly, this reformulation does not alter feature encoders. The modification occurs solely at the metric level, transforming frame-wise averaging into temporally aligned sequence matching. In addition, we redesign motion smoothness evaluation by shifting from pixel-space interpolation errors to explicit semantic motion trajectory modeling using disentangled head pose and expression features, further enhancing interpretability and robustness. Built upon this unified temporal evaluation framework, we conduct a large-scale benchmark of 20 high-impact pretrained methods across seven datasets under stan-dardized protocols. Our analysis reveals consistent paradigm-level trade-offs and 4demonstrates that temporally aware metrics provide more stable, discriminative, and practically meaningful comparisons. By establishing temporal alignment as a first-class principle in evaluation, this work provides a fair and robust foundation for future research in audio-driven talking-head generation. Our contributions are threefold: i. A unified temporal reformulation of evaluation metrics. We identify rigid frame-wise alignment as a structural limitation in existing talking-head evaluation protocols and reformulate perceptual similarity (LPIPS), identity preservation (CSIM), and audio-visual synchronization (SyncNet) as sequence-level trajectory matching prob-lems using Soft-DTW. This modification introduces temporal robustness without altering feature encoders. ii. Semantic motion trajectory modeling for expression naturalness. We redesign motion smoothness evaluation by replacing interpolation-based pixel reconstruc-tion errors with explicit semantic motion features extracted from a motion encoder, disentangling rigid head pose and non-rigid expression deformation. Combined with Soft-DTW alignment, this formulation provides interpretable and temporally robust motion evaluation. iii. A standardized large-scale benchmark with paradigm-level insights. We evaluate 20 high-impact audio-driven talking-head models across seven canonical and real-world datasets under unified protocols. Our temporally aware metrics reveal consistent paradigm-specific trade-offs across realism, synchronization, identity stability, and motion naturalness, offering actionable guidance for model design and deployment. 
+
+# 2 Related Work 
+
+Surveys and reviews. Several studies [48] summarize the landscape of audio-driven talking-head generation, reviewing architectures, motion representations, and disen-tanglement strategies. While useful for method selection, these surveys are largely qualitative and descriptive, lacking quantitative, cross-dataset evaluation or temporal alignment considerations. As a result, they cannot reveal systematic trade-offs between paradigms under realistic generation conditions. 
+
+Existing evaluations and benchmarks. A few works [1, 3] perform bench-marking using metrics such as LPIPS, Fr´ echet Inception Distance (FID), PSNR, CSIM, or SyncNet-based lip-sync scores on one or two datasets. Although informa-tive, these studies are limited in scope, covering a small subset of methods, datasets, and evaluation dimensions. Most metrics assume strict frame-wise alignment, ignor-ing minor phase shifts, rhythm variations, or temporal dynamics that are perceptually acceptable yet critical for faithful video assessment. Moreover, prior evaluations rarely integrate multiple semantic dimensions ( e.g ., perceptual quality, identity, synchroniza-tion, motion smoothness) into a single, interpretable framework, making it difficult to compare paradigms, quantify trade-offs, or assess robustness across datasets and styles. 
+
+Datasets. Evaluation quality critically depends on dataset diversity and prepro-cessing. Widely used 2D talking-head datasets, including HDTF [22], VoxCeleb2 [23], CelebV-HQ [49], MEAD [24], and RAVDESS [50], are often employed selectively, with 5heterogeneous preprocessing, limited subsets, and insufficient style, pose, or light-ing variations. Smaller domain-shift datasets [35, 40, 45] mainly support qualitative validation. To address these limitations, we construct a comprehensive benchmark spanning seven datasets, including two curated subsets (see Fig. 1): (i) Wild , empha-sizing challenging real-world conditions, occlusions, expressive speech, and diverse head motion; and (ii) Avatar , covering AI-generated photorealistic, 2D/3D animated, artistic, and non-human faces. This strategy enables cross-dataset and cross-style eval-uation, revealing robustness and generalization trends beyond conventional laboratory conditions. 
+
+Evaluation metrics. Previous metrics are fragmented and mostly frame-constrained. Perceptual measures (LPIPS, IQA, FID, FVD, VQA, CPBD) assess visual realism, while pixel-level metrics (PSNR, SSIM, MS-SSIM, L1) quantify reconstruction fidelity. Identity preservation (CSIM), audio-visual synchronization (Sync-C/D), motion naturalness (Smooth), and computational efficiency (FPS) are evaluated independently, often with limited temporal awareness. Our framework unifies all metrics under a Soft-DTW-based, sequence-level alignment approach, accounting for minor temporal misalignments, sequence length variations, and rhythm differences. This produces temporally-aware, interpretable, and comparable scores across all semantic dimensions. 
+
+# 3 Benchmark Design and Construction 
+
+We construct a benchmark for audio-driven talking-head generation to enable fair and reproducible comparison of methods across diverse datasets and scenarios. 
+
+3.1 Method Selection and Paradigm Taxonomy 
+
+Method selection criteria. We conduct a systematic survey of audio-driven 2D talking-head generation methods published between 2020 and 2025, focusing specif-ically on the audio-to-video setting. An initial pool of 117 candidate methods [48] was collected from arXiv and major peer-reviewed venues. To ensure reproducibil-ity and fair cross-method comparison, we apply explicit filtering criteria along three dimensions: publication quality, public accessibility of source code, and availability of pretrained checkpoints. Restricting inclusion to methods with released implemen-tations enables consistent re-evaluation under a unified preprocessing, inference, and metric pipeline, minimizing discrepancies arising from undocumented reimplemen-tations. This criterion prioritizes transparency and experimental verifiability over popularity or citation count, ensuring that all evaluated models can be independently reproduced under identical conditions. After filtering, 20 representative methods remain, summarized in Table 1. These methods span diverse architectural paradigms and modeling strategies, forming a reproducible and standardized foundation for our paradigm-level benchmark analysis. 
+
+Motion-modeling paradigm taxonomy. We organize audio-driven talking-head methods according to their motion modeling philosophy, reflecting the core assumptions each approach makes about representing and generating facial dynamics. While architectural choices, training protocols, and auxiliary objectives vary widely, 6these underlying principles provide a more meaningful axis for comparison than surface-level components. Specifically, motion-space disentangled methods explicitly decompose facial motion into interpretable components, such as 3D coefficients, latent motion bases, or dense motion fields [3, 8, 35, 36], enhancing controllability, iden-tity preservation, and cross-identity transfer. Lip-centric methods prioritize accurate audio-lip synchronization by modeling mouth dynamics as the primary driver [9, 32– 34], often achieving high lip accuracy at the expense of full-face realism or temporal coherence. Multi-condition fusion methods integrate audio with additional signals such as identity embeddings, landmarks, emotions, or pose parameters [39–41], improving expressiveness and generalization, though cross-dataset robustness and temporal con-sistency are less frequently evaluated. Finally, holistic full-motion methods map audio (and optional conditioning inputs) directly to complete spatiotemporal facial motion without explicit structural factorization [2, 42–44, 46], producing coherent expressions and smooth dynamics, but may be more susceptible to subtle synchronization errors or identity drift. 
+
+Semantic clustering validation. To examine whether our taxonomy reflects intrinsic structure within the literature rather than subjective grouping, we perform unsupervised semantic analysis (see Table 1, last column). Specifically, TF-IDF repre-sentations are constructed from the title and abstract of each selected paper, followed by hierarchical clustering using Ward linkage [51]. This procedure groups methods based solely on textual semantic similarity without manual supervision. The resulting dendrogram reveals two high-level semantic divisions: one centered on motion repre-sentation and disentanglement, and the other on generation pipelines and system-level modeling. These divisions further decompose into four primary clusters that align closely with the four paradigms identified above. The correspondence between manual paradigm identification and unsupervised semantic clustering provides empirical sup-port for the proposed taxonomy, reducing subjective bias and reinforcing its structural validity. 
+
+3.2 Dataset Selection and Construction 
+
+At the dataset level, we adopt two complementary design principles: literature rel-evance and robustness coverage. We identify the five most frequently used public benchmarks for 2D audio-driven talking-head generation, HDTF, VoxCeleb2, CelebV-HQ, MEAD, and RAVDESS, and construct standardized evaluation subsets under unified preprocessing protocols. This ensures compatibility with prior work while enabling controlled and reproducible cross-method comparison. For HDTF, VoxCeleb2, and CelebV-HQ, we select 100 videos per dataset, with VoxCeleb2 restricted to high-quality interview recordings to reduce uncontrolled com-pression artifacts. For RAVDESS, both speaking and singing scenarios are included, selecting at least two videos per identity to yield 100 videos. For MEAD, 47 identities are sampled with a minimum of two videos per identity, again resulting in 100 videos. All videos are trimmed to 4-10 seconds to emphasize dynamic facial motion while pre-serving identity diversity. For each sample, the initial frame and corresponding audio track are extracted, and audio is resampled to 16 kHz to ensure consistent input conditions. Following common practices in prior works [11, 34, 52], we ensure that 7evaluation results are comparable across methods while focusing on dynamic aspects critical to talking-head generation. The selected subsets balance coverage of motion variability and computational feasibility, without relying on the full test set, which may include excessively long, static, or low-quality sequences unsuitable for robust analy-sis. While these canonical benchmarks are widely adopted, they primarily consist of frontal, well-lit, human subjects captured under relatively controlled recording condi-tions. Such characteristics, although beneficial for training and in-domain evaluation, may underrepresent challenging motion dynamics, occlusions, cross-style variation, and distribution shifts encountered in real-world deployment. Consequently, paradigm-level robustness and generalization behavior may remain insufficiently characterized under standard benchmark settings. To address this limitation, we construct two additional evaluation subsets specif-ically designed to stress robustness and out-of-distribution generalization. The Wild 
+
+subset (60 videos) emphasizes scenarios with rapid head motion, occlusions, diverse speaking and singing styles, and strong emotional expressions. These conditions amplify temporal variability and motion amplitude, providing a more stringent test of dynamic stability and synchronization robustness. The Avatar subset (40 videos) includes photorealistic AI-generated faces, 2D and 3D animated characters, artis-tic avatars and sculptures, sketch-style renderings, and non-human subjects. This subset intentionally introduces substantial appearance distribution shifts to evaluate cross-style transferability and feature-level robustness. This two-level dataset design, combining canonical benchmarks with robustness-oriented subsets, enables system-atic evaluation under both controlled and distribution-shifted conditions. It facilitates analysis of paradigm-specific behavior not only in terms of in-domain performance but also under challenging motion, expression, and appearance variations. Such design is particularly important for temporally-aware evaluation, as distribution shifts often exacerbate temporal instability and alignment sensitivity that remain obscured under conventional in-domain benchmarks. 
+
+3.3 Evaluation Framework 
+
+Evaluating audio-driven talking-head generation requires metrics that capture both visual and temporal aspects. We adopt a unified, sequence-aware framework combining complementary metrics with standardized testing protocols. 
+
+Metric taxonomy and design rationale. Audio-driven talking-head generation involves multiple quality aspects, which we capture using six complementary metric categories. 
+
+Perceptual visual quality captures how realistic and visually convincing generated content appears. Metrics such as FID and FVD measure distributional similarity at image and video levels, respectively, quantifying global realism. LPIPS evaluates per-ceptual similarity between generated and reference frames in learned feature spaces. Image Quality Assessment (IQA) and Video Quality Assessment (VQA) assess percep-tual quality at image and video scales, while Cumulative Probability of Blur Detection (CPBD) estimates perceptual sharpness. Together, these metrics provide a multi-scale, perceptually grounded assessment of visual fidelity, reflecting human judgments of 8FID 
+
+> FVD
+> IQA
+> LPIPS
+> CSIM
+> CPBD
+> PSNR
+> SSIM
+> MS-SSIM
+> L1
+> Sync-C
+> Sync-D
+> VQA
+> Smooth
+> FPS
+> LPIPS seq
+> CSIM seq
+> Sync-D seq
+> Smooth pose seq
+> Smooth expr seq
+
+FID 
+
+FVD 
+
+IQA 
+
+LPIPS 
+
+CSIM 
+
+CPBD 
+
+PSNR 
+
+SSIM 
+
+MS-SSIM 
+
+L1 
+
+Sync-C 
+
+Sync-D 
+
+VQA 
+
+Smooth 
+
+FPS 
+
+LPIPS seq 
+
+CSIM seq 
+
+Sync-D seq 
+
+Smooth pose seq 
+
+Smooth expr seq 
+
+1.00 0.80 0.43 0.59 0.59 0.13 0.66 0.60 0.64 0.60 0.12 0.09 0.42 -0.29 -0.43 0.64 0.59 0.19 0.01 -0.30 
+
+0.80 1.00 0.37 0.85 0.74 0.22 0.88 0.84 0.82 0.85 0.19 0.20 0.32 -0.15 -0.25 0.88 0.77 0.18 0.11 -0.03 
+
+0.43 0.37 1.00 0.34 0.26 0.22 0.31 0.27 0.24 0.32 -0.02 -0.04 0.98 -0.18 -0.38 0.32 0.31 -0.01 0.23 0.12 
+
+0.59 0.85 0.34 1.00 0.79 0.18 0.94 0.91 0.95 0.99 0.25 0.26 0.31 0.16 -0.01 0.98 0.80 0.15 -0.15 0.04 
+
+0.59 0.74 0.26 0.79 1.00 0.04 0.69 0.80 0.71 0.76 -0.04 -0.01 0.27 0.11 -0.17 0.83 0.98 -0.01 -0.11 0.10 
+
+0.13 0.22 0.22 0.18 0.04 1.00 0.22 0.27 0.12 0.24 0.11 0.14 0.24 -0.06 0.31 0.14 0.06 0.01 0.24 0.35 
+
+0.66 0.88 0.31 0.94 0.69 0.22 1.00 0.91 0.97 0.96 0.24 0.24 0.28 0.00 -0.14 0.93 0.72 0.19 -0.12 0.02 
+
+0.60 0.84 0.27 0.91 0.80 0.27 0.91 1.00 0.90 0.91 0.03 0.05 0.26 0.16 -0.06 0.91 0.86 -0.05 -0.07 0.10 
+
+0.64 0.82 0.24 0.95 0.71 0.12 0.97 0.90 1.00 0.96 0.26 0.28 0.23 0.11 -0.05 0.94 0.72 0.20 -0.28 -0.05 
+
+0.60 0.85 0.32 0.99 0.76 0.24 0.96 0.91 0.96 1.00 0.28 0.29 0.29 0.14 0.04 0.97 0.77 0.19 -0.12 0.11 
+
+0.12 0.19 -0.02 0.25 -0.04 0.11 0.24 0.03 0.26 0.28 1.00 0.98 0.00 0.07 0.16 0.20 -0.11 0.92 -0.17 -0.29 
+
+0.09 0.20 -0.04 0.26 -0.01 0.14 0.24 0.05 0.28 0.29 0.98 1.00 -0.01 0.05 0.22 0.21 -0.08 0.91 -0.20 -0.23 
+
+0.42 0.32 0.98 0.31 0.27 0.24 0.28 0.26 0.23 0.29 0.00 -0.01 1.00 -0.18 -0.34 0.29 0.30 0.02 0.19 0.11 
+
+-0.29 -0.15 -0.18 0.16 0.11 -0.06 0.00 0.16 0.11 0.14 0.07 0.05 -0.18 1.00 0.49 0.13 0.12 -0.13 -0.32 0.07 
+
+-0.43 -0.25 -0.38 -0.01 -0.17 0.31 -0.14 -0.06 -0.05 0.04 0.16 0.22 -0.34 0.49 1.00 -0.06 -0.24 -0.03 -0.11 0.23 
+
+0.64 0.88 0.32 0.98 0.83 0.14 0.93 0.91 0.94 0.97 0.20 0.21 0.29 0.13 -0.06 1.00 0.84 0.12 -0.11 0.08 
+
+0.59 0.77 0.31 0.80 0.98 0.06 0.72 0.86 0.72 0.77 -0.11 -0.08 0.30 0.12 -0.24 0.84 1.00 -0.10 -0.07 0.12 
+
+0.19 0.18 -0.01 0.15 -0.01 0.01 0.19 -0.05 0.20 0.19 0.92 0.91 0.02 -0.13 -0.03 0.12 -0.10 1.00 -0.22 -0.28 
+
+0.01 0.11 0.23 -0.15 -0.11 0.24 -0.12 -0.07 -0.28 -0.12 -0.17 -0.20 0.19 -0.32 -0.11 -0.11 -0.07 -0.22 1.00 0.42 
+
+-0.30 -0.03 0.12 0.04 0.10 0.35 0.02 0.10 -0.05 0.11 -0.29 -0.23 0.11 0.07 0.23 0.08 0.12 -0.28 0.42 1.00 Fig. 2 : Spearman rank correlation matrix computed from normalized metric scores averaged across datasets. Each method is ranked per metric, and the correlation measures monotonic agreement. Frame-level metrics show strong correlation, while sequence-level metrics are less correlated, highlighting complementary temporal evalu-ation. The gray bounding box corresponds to conventional frame-level metrics, whereas the gold bounding box highlights the proposed Soft-DTW-based sequence-level met-rics. realism and image quality. Pixel-level reconstruction fidelity evaluates low-level sig-nal consistency between generated and ground-truth frames. Metrics such as PSNR, SSIM, MS-SSIM, and L1 capture structural and numerical reconstruction accuracy. While they do not necessarily align with perceptual realism, they remain essential for understanding model performance in preserving fine-grained details and structural consistency. 914710 13 16 
+
+Average rank (frame-level metrics) 
+
+> 1
+> 4
+> 7
+> 10
+> 13
+> 16
+> Average rank (sequence-level metrics)
+
+Motion-space disentangled 
+
+Lip-centric 
+
+Multi-condition fusion 
+
+Holistic full-motion Fig. 3 : Ranking consistency between frame-level and sequence-level metrics. Each point represents a method, with the x-axis showing average rank across original met-rics (LPIPS, CSIM, Sync-D, Smooth) and the y-axis showing average rank across sequence-level counterparts. Lower ranks (closer to 1) indicate better performance. The dashed diagonal indicates perfect agreement; points above (below) show meth-ods that improve (decline) under sequence-level evaluation. Points are color-coded by paradigm, highlighting both overall correlations and paradigm-specific shifts due to temporal alignment. 
+
+Identity preservation is critical in talking-head generation to prevent semantic drift over time. CSIM measures cosine similarity in a high-dimensional face embedding space, quantifying whether the generated sequence maintains the subject’s iden-tity consistently across frames. This semantic-level evaluation complements visual 10 fidelity metrics, ensuring that identity is preserved even in the presence of expres-sive or extreme motions. Audio-visual synchronization assesses cross-modal alignment between speech signals and lip motion. Sync confidence (Sync-C) and Sync distance (Sync-D) quantify temporal coherence between audio and visual streams, capturing a defining characteristic of audio-driven methods. Accurate synchronization is necessary for perceptual realism and intelligibility, particularly in dialogue or singing scenarios. 
+
+Expression and motion naturalness evaluates the plausibility of temporal dynamics. The Smooth metric measures continuity and stability in pose and expression trajecto-ries, emphasizing biomechanical realism and natural evolution of motion. This category focuses on temporal dynamics that are not captured by appearance-based or pixel-level metrics, highlighting differences in modeling strategies for motion generation. 
+
+Computational efficiency reflects practical deployment considerations. FPS measures inference speed, providing insight into real-time capability and resource requirements, which is critical for applications ranging from virtual avatars to telepresence. 
+
+3.4 Temporally-Aware Evaluation Metrics 
+
+Rethinking evaluation. While existing metrics capture complementary aspects of video quality, they assume strict frame-to-frame correspondence. This makes them overly sensitive to small temporal offsets, phase shifts, or speaking-rate variations, which can distort comparisons and obscure meaningful differences between methods. These observations suggest that evaluation for talking-head generation should satisfy two fundamental properties: (i) temporal order preservation , ensuring that motion remains causally consistent; and (ii) temporal elasticity , allowing flexible alignment under perceptually tolerable timing variations. Conventional frame-wise metrics satisfy neither property. We now present our temporally-aware evaluation metrics. 
+
+From frame alignment to trajectory alignment. Conventional frame-wise metrics assume strict temporal correspondence and equal sequence lengths. Given a generated video X = {xt}Tt=1 and a reference video Y = {yt}Tt=1 , frame-wise evaluation computes the average feature distance: Dist frame (X, Y) = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+d ϕ(xt), ϕ (yt), (1) where ϕ(·) is a task-specific feature extractor ( e.g ., perceptual, identity, synchro-nization, or motion embeddings) and d(·, ·) is a feature-space distance, typically the squared ℓ2 norm. While simple, this formulation is highly sensitive to minor tem-poral offsets, phase shifts, or rhythm variations commonly encountered in generated talking-head videos. To overcome these limitations, we treat each video as a trajectory in feature space and compute a sequence-level similarity using Soft-DTW [31]. Let F = {ϕ(xt)}Tt=1 ,
+
+G = {ϕ(ys)}Ss=1 denote the feature sequences of the generated and reference videos. 11 Fig. 4 : Head pose and expression control representation. The top row shows head pose variations via three rotations: pitch (up-down about the lateral axis), yaw (left-right about the vertical axis), and roll (in-plane about the longitudinal axis). The bottom row illustrates expression control using a 63-dimensional latent keypoint representation (21 3D keypoints) for modeling non-rigid facial deformation. Red regions mainly affect eyebrow motion, while blue regions control mouth expressions. Adjusting keypoints enables diverse facial expressions. Soft-DTW computes a differentiable, globally-aligned distance between sequences: Soft-DTW γ (F, G) = −γ log X
+
+> π∈Π
+
+exp − 1
+
+γ
+
+X
+
+> (t,s )∈π
+
+d(Ft, Gs)
+
+!
+
+, (2) where Π is the set of all monotonic alignment paths, and γ > 0 controls the trade-off between strict alignment ( γ → 0) and flexible matching ( γ large). By considering all possible monotonic alignments, Soft-DTW is robust to minor temporal misalignments, capturing global temporal coherence and sequence-level structure across the video. To ensure comparability across sequences of different lengths, we define a normal-ized distance: Dist seq (X, Y) = Soft-DTW γ (F, G)
+
+Tmax 
+
+, (3) where Tmax = max( T, S ). This formulation treats each video as a continuous trajectory in feature space, preserving temporal order while allowing non-linear alignment. This sequence-level perspective drives our evaluation framework. 12 Dimension-specific instantiations. Within this unified framework, different evaluation aspects correspond to different feature extractors ϕ(·). For visual perceptual quality , ϕ maps each frame to LPIPS feature embeddings extracted from pretrained perceptual networks[53]. Sequence alignment in this embedding space measures global perceptual consistency while tolerating minor temporal phase shifts. For identity preservation , ϕ corresponds to ℓ2-normalized facial embeddings from a pretrained face recognition model ( e.g ., InsightFace[27]). Trajectory alignment captures identity stability across time, mitigating sensitivity to transient pose changes or occasional detection noise. For audio-visual synchronization , ϕ produces paired audio and visual embeddings from a pretrained synchronization network ( e.g ., SyncNet[11]). Soft-DTW alignment between audio and visual embedding sequences quantifies global audiovi-sual coherence under variable speaking rates and small asynchronies. For expression and motion naturalness , we decompose facial motion into two separate feature trajec-tories: rigid head pose and non-rigid expression deformation (see Fig. 4). Specifically, for each video frame, a 70-dimensional motion feature vector is extracted from the motion encoder[54]: i. Head pose motion (7D) : The first seven dimensions model global rigid head move-ment, consisting of three rotation angles (pitch, yaw, roll; 3D), one global scaling factor (1D), and a 3D translation vector t = ( tx, t y , t z ) representing spatial displace-ment. These parameters form a 7D rigid transformation capturing 3D orientation, scale, and position relative to the camera. ii. Expression deformation (63D) : The remaining 63 dimensions encode non-rigid facial deformations via 21 keypoints, each with 3D coordinates ( X, Y, Z ). These keypoints span facial regions including the forehead, eyebrows, cheeks, eyes, nose, mouth, chin, and neck, providing an interpretable representation of expression dynamics such as eyebrow raising, lip protrusion, eye gaze shifts, and head or neck motion. Let the pose trajectories be P = {ϕpose (xt)}Tt=1 and Pref = {ϕpose (ys)}Ss=1 , and the expression trajectories be K = {ϕexpr (xt)}Tt=1 and Kref = {ϕexpr (ys)}Ss=1 , representing the pose and expression sequences extracted from the generated video X and reference video Y, respectively. Each trajectory is independently aligned using Soft-DTW: Dist pose seq (X, Y) = Soft-DTW γ (P, Pref )
+
+Tmax 
+
+, (4) Dist expr seq (X, Y) = Soft-DTW γ (K, Kref )
+
+Tmax 
+
+. (5) Separating pose and expression allows interpretable evaluation of global head motion and fine-grained facial dynamics while remaining robust to frame rate variations, minor temporal offsets, and local jitter. This trajectory-level analysis pro-vides physically meaningful, temporally-aware measures of motion smoothness and expression naturalness. By unifying heterogeneous frame-wise metrics into a trajectory-alignment frame-work, our approach shifts evaluation from isolated frames to full-sequence analysis, 13 Wild Avatar 
+
+> 2
+> 0
+> 2(a) CSIM
+
+Wild Avatar  
+
+> 2
+> 0
+> 2(b) LPIPS
+
+Wild Avatar  
+
+> 0.5
+> 1.0
+> 1.5
+> 2.0 (c) Sync-D
+
+Wild Avatar 
+
+> 0
+> 2
+> 4
+> (d) Smooth pose
+
+Wild Avatar  
+
+> 0
+> 1(e) Smooth expr Original
+> = 0.0001
+> = 0.001
+> = 0.01
+> = 0.05
+> = 0.1
+> = 0.5
+
+Fig. 5 : Comparison of baseline and Soft-DTW variants under different γ values across multiple evaluation metrics. Since the metrics exhibit different numerical scales, all values are normalized by their mean for fair comparison. Original denotes the metric computed without Soft-DTW alignment. better reflecting perceptual realism in talking-head videos. In essence, temporally-aware trajectory alignment provides a principled foundation for evaluating dynamic generation. Fig. 2 shows the Spearman rank correlation matrix, computed from nor-malized metric scores averaged across the seven datasets. Each method is ranked per metric, and the correlation measures monotonic agreement, with higher values indi-cating more consistent rankings across methods. Sequence-level metrics show weaker correlations with frame-level metrics, highlighting their complementary evaluation of temporal dynamics. 
+
+3.5 Theoretical Properties of Sequence-Level Alignment 
+
+Building on the Soft-DTW formulation above, we formalize key theoretical properties of sequence-level alignment. Sequence-level similarity is computed via Soft-DTW over monotonic alignment paths Π in Eq. 2, where each path π satisfies ( i, j ) → (i′, j ′) = ⇒
+
+i′ ≥ i, j ′ ≥ j.
+
+Proposition 1 (Frame-wise metric as a special case) If Π is restricted to the identity path 
+
+πdiag = {(t, t )}Tt=1 , then Dist seq (X, Y) = 1
+
+T
+
+> T
+
+X
+
+> t=1
+
+d(Ft, Gt) = Dist frame (X, Y). (6) 
+
+14 119.010  
+
+> 59.207
+> -0.597 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild 
+
+> Avatar
+
+(a) FID ↓491.467 
+
+> 264.490
+> 37.513
+> HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(b) FVD ↓0.249  
+
+> 0.165
+> 0.080 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(c) LPIPS ↓0.456  
+
+> 0.650
+> 0.844 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(d) IQA ↑0.532  
+
+> 0.717
+> 0.902 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(e) VQA ↑0.132  
+
+> 0.308
+> 0.484 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(f) CPBD ↑19.622 
+
+> 24.910
+> 30.197
+> HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild 
+
+> Avatar
+
+(g) PSNR ↑0.651  
+
+> 0.765
+> 0.880 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(h) SSIM ↑0.626  
+
+> 0.755
+> 0.884 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(i) MS-SSIM ↑0.105  
+
+> 0.067
+> 0.029 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(j) L1 ↓Motion-space 
+
+disentangled 
+
+Lip-centric 
+
+Multi-condition 
+
+fusion 
+
+Holistic 
+
+full-motion 0.666  
+
+> 0.786
+> 0.906 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild 
+
+> Avatar
+
+(k) CSIM ↑0.871  
+
+> 2.941
+> 5.010 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(l) Sync-C ↑13.867  
+
+> 10.986
+> 8.106 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(m) Sync-D ↓0.993  
+
+> 0.995
+> 0.997 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(n) Smooth ↑-0.755 
+
+> 10.973
+> 22.700
+> HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(o) FPS ↑0.507  
+
+> 0.306
+> 0.105 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild 
+
+> Avatar
+
+(p) LPIPS seq ↓0.653  
+
+> 0.416
+> 0.179 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(q) CSIM seq ↓0.732  
+
+> 0.510
+> 0.288 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(r) Sync-D seq ↓0.056  
+
+> -0.002
+> -0.060 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(s) Smooth pose seq ↓0.377  
+
+> 0.228
+> 0.078 HDTF
+> VoxCeleb2
+
+RAVDESS 
+
+> MEAD
+> CelebV-HQ
+
+Wild  
+
+> Avatar
+
+(t) Smooth expr seq ↓
+
+Fig. 6 : Dataset-wise radar plots comparing four paradigm categories across 20 met-rics. All subfigures share a common legend. Metrics cover distributional fidelity (FID, FVD), perceptual quality (LPIPS, IQA, VQA, CPBD), pixel-level reconstruction (PSNR, SSIM, MS-SSIM, L1), identity preservation (CSIM), audio-visual synchroniza-tion (Sync-C, Sync-D), motion naturalness (Smooth), computational efficiency (FPS), and our new temporally-aware evaluation metrics. Lower-is-better metrics are plot-ted with inverted radial axes so that larger enclosed areas consistently indicate better performance. 
+
+Proof With only the identity path, the soft-min reduces to a single sum along the diagonal. Normalization by T recovers exactly the frame-wise distance. □
+
+Frame-wise evaluation corresponds to the special case where each frame is aligned strictly with its counterpart in the reference sequence; Soft-DTW generalizes this by allowing flexible, monotonic alignments across the entire sequence. 15 Proposition 2 (Monotonicity and temporal order preservation) All paths π ∈ Π satisfy 
+
+(i′, j ′) ≥ (i, j ).Proof By definition, admissible Soft-DTW paths cannot violate monotonicity. □
+
+Sequence-level alignment preserves the causal order of frames while accommodating minor temporal shifts. 
+
+Proposition 3 (Bounded sensitivity to temporal shifts) Suppose G is a temporally shifted version of F with shift δ, |δ| ≤ ∆, i.e ., Gs = Fs+δ (with boundary handling as needed). Then the optimal alignment path deviates from the identity diagonal by at most ∆, and 
+
+Dist seq (F, G) − Dist seq (F, F) = O(∆ · ¯d), (7) 
+
+where ¯d is the typical frame-level distance magnitude. Proof Each frame in G can align to a frame within ∆ indices of its corresponding F frame. The Soft-DTW sum along the optimal path thus accumulates a bounded deviation proportional to ∆ · ¯d. In contrast, frame-wise metrics accumulate misalignment over all T frames. □
+
+Soft-DTW tolerates small temporal variations without losing sensitivity to mean-ingful structural changes. These propositions show that Soft-DTW generalizes frame-wise metrics by pre-serving temporal order, allowing flexible alignment, and limiting sensitivity to local shifts, providing a principled foundation for temporally-aware evaluation of audio-driven talking-head generation. Fig. 3 compares method rankings between frame-and sequence-level metrics. Many points lie off the diagonal, showing that tempo-ral evaluation uncovers strengths, weaknesses, and paradigm-specific shifts overlooked by conventional frame-level metrics, highlighting the value of our Soft-DTW-based sequence-aware framework. Below, we present ablation studies and full results. 
+
+# 4 Results and Analysis 
+
+4.1 Sensitivity Analysis to the Soft-DTW Temperature 
+
+The Soft-DTW temperature γ controls the elasticity of temporal alignment, interpolat-ing between hard optimal alignment and smooth aggregation over multiple alignment paths (Eq. 2). As γ → 0, Soft-DTW converges to classical DTW, recovering rigid optimal alignment, whereas larger γ values produce increasingly smooth, trajectory-level matching. We evaluate γ on CSIM, LPIPS, Sync-D, Smooth seq pose , and Smooth seq expr 
+
+across both Wild and Avatar datasets, and compare against the original frame-wise baseline (Fig. 5). For fair comparison across metrics, all values are normalized by their mean. 
+
+Robustness across γ. As shown in the grouped violin plots, sequence-level eval-uation remains highly stable over a broad range of γ, particularly for γ ∈ [10 −4, 0.05]. The metric distributions largely overlap within this regime, indicating that the 16 temporally-aware formulation is not sensitive to precise temperature selection. This demonstrates that the alignment mechanism is well-conditioned. 
+
+Frame-wise vs . sequence-level. Across all metrics, the rigid frame-wise base-line consistently deviates from the aligned variants, with larger discrepancies observed on Avatar . This gap suggests that frame-wise evaluation is more sensitive to tempo-ral misalignment, especially under distribution shifts where phase offsets and motion variability are more pronounced. The stabilization effect is most evident for syn-chronization and motion-related metrics. Soft-DTW alignment mitigates sensitivity to local phase offsets while preserving temporal order, consistent with the bounded-shift property in Proposition 3. In contrast, appearance-based metrics such as LPIPS exhibit smaller variation across γ, reflecting their weaker dependence on tempo-ral alignment. Notably, the proposed pose- and expression-based trajectory metrics remain nearly invariant to γ, indicating that disentangled motion alignment is struc-turally robust. We now systematically evaluate 20 methods across seven benchmarks. For each dataset, methods are grouped by modeling paradigm (see Table 1, last col-umn), and each metric, including the proposed temporally-aware ones, is averaged across all methods within the same paradigm. These per-dataset, per-paradigm aver-ages are used to generate the radar plots in Fig. 6. For clarity, lower-is-better metrics are plotted with inverted radial axes, so larger enclosed areas consistently indicate better performance. Fig. 7 shows a unified comparison of methods under normalized evaluation metrics. 
+
+4.2 Paradigm-Level Performance 
+
+Paradigm-level performance is highly stable and closely aligned with design intent. No single paradigm dominates across all dimensions; instead, each exhibits consis-tent, specialized strengths. Lip-centric methods reliably excel in synchronization and pixel-level reconstruction, multi-condition fusion approaches lead in identity preser-vation, motion-space disentanglement improves short-term smoothness and efficiency, and holistic full-motion pipelines deliver superior perceptual realism and structured temporal coherence. This specialization-driven behavior persists across all canonical datasets, underscoring the importance of paradigm-aware evaluation rather than rely-ing on isolated metrics or single-method comparisons. In the following, we present a detailed analysis. 
+
+Perceptual quality. Holistic full-motion and multi-condition fusion paradigms achieve larger radar regions in FID and FVD ( ↓), indicating stronger global realism and temporal coherence. Their advantage stems from modeling long-range facial dynamics and integrating multiple conditioning signals. In contrast, lip-centric and motion-space disentangled approaches exhibit smaller yet stable regions, suggesting that optimizing localized articulation or explicit motion factors does not necessarily improve overall distributional alignment. A divergence appears between LPIPS and LPIPS seq (↓). At the frame level (LPIPS), lip-centric methods perform better, reflecting sharper and perceptually closer local reconstructions. However, at the sequence level (LPIPS seq ), multi-condition fusion becomes competitive or superior, indicating improved temporal perceptual consistency when multiple signals are jointly modeled. IQA and VQA ( ↑)consistently favor holistic full-motion methods, followed by multi-condition fusion. 17 These paradigms produce videos that appear more natural and temporally coherent to human observers. Lip-centric and motion-space disentangled models lag behind, reinforcing that global temporal modeling contributes more to perceived realism than localized optimization. 
+
+Pixel-level reconstruction. Pixel-based metrics (PSNR, SSIM, MS-SSIM ↑; L1 
+
+↓) consistently favor lip-centric methods. This indicates that focusing on the speaking region improves frame-wise reconstruction fidelity relative to ground truth. How-ever, these gains do not translate into superior perceptual or distributional quality, highlighting the known gap between pixel accuracy and human perception. 
+
+Identity preservation. Multi-condition fusion achieves the highest CSIM and CSIM seq (↑) across datasets, demonstrating that explicitly fusing identity-related cues is most effective for preserving speaker identity over time. Lip-centric and holistic full-motion paradigms are comparatively weaker. The similar behavior of CSIM and CSIM seq suggests that identity consistency is largely stable across temporal scales. 
+
+Audio-visual synchronization. Synchronization shows the clearest paradigm separation. Lip-centric methods dominate Sync-C ( ↑) and Sync-D ( ↓), confirming that explicit mouth-focused optimization directly benefits lip-audio alignment. Other paradigms show smaller yet consistent regions, indicating reasonable but less precise alignment. Interestingly, Sync-D seq shows reduced separation across paradigms, sug-gesting that sequence-level aggregation mitigates transient frame-level misalignment and narrows apparent performance gaps. 
+
+Motion naturalness. For the frame-level Smooth metric ( ↑), motion-space dis-entangled methods generally perform best, indicating reduced short-term jitter due to explicit motion factorization. On Avatar, lip-centric methods also achieve strong smoothness, likely because synthetic and non-human subjects reduce the need for glob-ally coherent biomechanical modeling, allowing localized articulation control to yield temporally stable trajectories. In contrast, Smooth pose seq and Smooth expr seq (↓) favor holis-tic full-motion methods, while motion-space disentanglement performs weaker. This discrepancy suggests that disentanglement improves local stability but may disrupt long-range temporal structure, whereas holistic modeling better preserves coherent pose and expression trajectories over time. 
+
+Computational efficiency. FPS ( ↑) reveals the expected complexity trade-off: motion-space disentangled methods are the most efficient, followed by lip-centric, holis-tic full-motion, and finally multi-condition fusion approaches, which incur additional computational overhead from multi-signal integration. 
+
+4.3 Robustness to Dataset Difficulty and Diversity 
+
+We next analyze paradigm behavior under distribution shift by comparing canonical benchmarks with Wild and Avatar. 
+
+Distribution shift. On Wild , which introduces real-world variability such as occlusion, motion blur, lighting inconsistency, and unconstrained head movement, absolute scores slightly fluctuate across metrics but paradigm hierarchies remain stable. No paradigm experiences disproportionate degradation in synchronization, identity preservation, or perceptual quality. The radar patterns show gradual con-traction rather than structural reshaping, indicating that real-world difficulty stresses 18 FID 
+
+> FVD
+> IQA
+> LPIPS
+> CSIM
+> CPBD
+> PSNR
+> SSIM
+> MS-SSIM
+> L1
+> Sync-C
+> Sync-D
+> VQA
+> Smooth
+> FPS
+> LPIPS seq
+> CSIM seq
+> Sync-D seq
+> Smooth pose seq
+> Smooth expr seq
+
+Ditto 
+
+AniTalker 
+
+JoyVASA 
+
+EDTalk 
+
+Audio2Head 
+
+SadTalker 
+
+DreamTalk 
+
+MuseTalk 
+
+TalkLip 
+
+Wav2Lip 
+
+V-Express 
+
+EchoMimic 
+
+IP-LAP 
+
+FLOAT 
+
+Hallo 
+
+Hallo2 
+
+Hallo3 
+
+MEMO 
+
+AniPortrait 
+
+Sonic 
+
+0.57 0.73 0.67 0.72 0.81 0.44 0.53 0.67 0.74 0.63 0.57 0.52 0.64 0.84 0.08 0.74 0.83 0.50 0.78 0.90 
+
+0.62 0.52 0.24 0.38 0.48 0.75 0.16 0.16 0.24 0.34 0.53 0.61 0.22 0.46 0.08 0.41 0.52 0.63 0.59 0.64 
+
+0.95 0.78 0.79 0.73 0.67 0.97 0.58 0.72 0.78 0.64 0.60 0.59 0.79 0.62 0.19 0.74 0.72 0.58 0.23 0.00 
+
+0.68 0.62 0.07 0.68 0.59 0.39 0.48 0.65 0.75 0.59 0.80 0.81 0.12 0.86 0.59 0.69 0.62 0.86 0.00 0.46 
+
+0.53 0.47 0.00 0.45 0.12 0.40 0.22 0.26 0.40 0.42 0.31 0.46 0.00 0.53 1.00 0.45 0.18 0.40 0.93 0.63 
+
+0.75 0.59 1.00 0.69 0.53 0.44 0.53 0.60 0.76 0.61 0.61 0.64 1.00 0.64 0.08 0.70 0.54 0.60 0.54 0.63 
+
+0.00 0.00 0.05 0.00 0.00 0.95 0.00 0.19 0.00 0.00 0.24 0.39 0.02 0.66 0.25 0.00 0.00 0.30 0.69 0.57 
+
+0.89 0.97 0.79 1.00 0.77 0.93 1.00 0.79 0.99 1.00 0.67 0.69 0.77 0.46 0.20 1.00 0.78 0.70 0.71 0.63 
+
+0.97 1.00 0.11 0.95 0.93 0.60 0.94 1.00 1.00 0.96 0.65 0.68 0.22 0.46 0.04 0.95 0.95 0.70 0.68 0.49 
+
+0.67 0.63 0.16 0.71 0.64 0.90 0.65 0.69 0.80 0.66 1.00 1.00 0.24 1.00 0.08 0.72 0.68 1.00 0.22 0.64 
+
+0.67 0.46 0.51 0.60 0.59 0.02 0.40 0.64 0.71 0.40 0.12 0.16 0.59 0.51 0.01 0.61 0.64 0.45 0.44 0.48 
+
+0.69 0.37 0.57 0.25 0.62 0.00 0.07 0.00 0.14 0.12 0.23 0.38 0.60 0.00 0.01 0.35 0.63 0.60 0.62 0.52 
+
+1.00 0.96 0.44 0.99 1.00 0.66 1.00 0.96 1.00 0.98 0.46 0.51 0.49 0.50 0.04 1.00 1.00 0.50 0.67 0.61 
+
+0.72 0.51 0.58 0.46 0.41 1.00 0.20 0.22 0.31 0.42 0.81 0.82 0.65 0.36 0.23 0.48 0.44 0.95 0.84 0.63 
+
+0.90 0.79 0.78 0.69 0.61 0.61 0.55 0.66 0.76 0.59 0.68 0.69 0.77 0.22 0.01 0.70 0.64 0.72 0.70 0.57 
+
+0.89 0.76 0.79 0.69 0.60 0.78 0.56 0.65 0.75 0.60 0.70 0.71 0.80 0.21 0.01 0.70 0.64 0.75 0.76 0.56 
+
+0.90 0.77 0.63 0.65 0.39 0.45 0.54 0.49 0.74 0.56 0.69 0.67 0.57 0.44 0.00 0.66 0.44 0.77 0.77 0.43 
+
+0.97 0.86 0.74 0.71 0.68 0.64 0.64 0.72 0.77 0.63 0.05 0.13 0.71 0.47 0.01 0.75 0.75 0.51 0.73 0.70 
+
+0.86 0.64 0.83 0.62 0.64 0.94 0.44 0.68 0.65 0.52 0.00 0.00 0.85 0.58 0.03 0.65 0.70 0.00 1.00 1.00 
+
+0.92 0.73 0.65 0.65 0.66 0.40 0.37 0.47 0.65 0.48 0.76 0.78 0.66 0.75 0.02 0.68 0.70 0.78 0.69 0.37 Fig. 7 : Normalized performance comparison. Each column corresponds to a quanti-tative metric and each row to a method. Methods are grouped by paradigm using color-coded labels. For each metric, scores are min-max normalized across methods to the range [0, 1], where higher values indicate better performance. Metrics in which lower values denote better quality ( e.g ., FID, LPIPS) are inverted to ensure consis-tent interpretation. The figure provides a unified view of cross-metric consistency and paradigm-level performance trends. Darker colors indicate better performance. robustness uniformly without altering the relative strengths established on canonical datasets. This suggests that existing paradigms encode stable inductive biases that generalize under realistic noise and motion variability. 
+
+Avatar produces a qualitatively different shift. By introducing stylized avatars, animated characters, sketches, sculptures, and non-human faces, it departs from pho-torealistic human statistics while not necessarily increasing noise. Under this stylistic 19 diversity, perceptual and expression-related metrics (IQA, VQA, CPBD, CSIM) tend to increase across paradigms, while distributional metrics such as FID and FVD show moderate decreases. This divergence reflects a decoupling between perceptual sharp-ness and distributional alignment: stylized or synthetic faces are often visually clean and expressionally exaggerated, improving perceptual measures, yet their appearance statistics deviate from real-video feature distributions, enlarging Fr´ echet distances. Importantly, synchronization metrics remain comparatively stable under both Wild and Avatar. The radar plots show minimal structural change along Sync-C and Sync-D axes across datasets, indicating that audio-visual alignment is largely independent of appearance realism or stylistic variation. This stability reinforces that synchronization is governed primarily by articulation modeling rather than by global visual statistics. 
+
+Difficulty vs . diversity. Across all seven datasets, paradigm ordering remains consistent. Performance shifts are gradual and axis-specific rather than disruptive. Real-world difficulty primarily affects robustness to noise and motion variance, lead-ing to uniform contraction across metrics. Stylistic diversity, in contrast, selectively amplifies perceptual expressiveness while stressing distributional alignment, without degrading synchronization. These distinct effects demonstrate that dataset difficulty and dataset diversity probe fundamentally different generalization mechanisms. 
+
+Cross-dataset robustness. Cross-dataset evaluation shows that robustness is structured rather than uniform. Each paradigm retains its characteristic strengths under both forms of distribution shift, and no catastrophic failure is observed. This consistency indicates that lip-focused optimization, motion disentanglement, multi-condition fusion, and holistic temporal modeling encode durable inductive biases rather than brittle dataset-specific heuristics. Evaluating audio-to-video systems under both difficulty-driven and diversity-driven shifts therefore provides a more faithful assessment of generalization than relying on a single notion of harder data. 
+
+4.4 Metric-Level Trade-Off Analysis and Interactions 
+
+The radar patterns indicate that evaluation metrics do not behave independently; instead, they form structured trade-offs that reflect fundamentally different notions of quality. Interpreting results therefore requires understanding how these metrics interact rather than considering them in isolation. 
+
+Pixel vs . perceptual. A primary divergence arises between pixel-level reconstruc-tion metrics (PSNR, SSIM, MS-SSIM, L1) and perceptual or distributional metrics (FID, FVD, IQA, VQA). Lip-centric methods consistently achieve superior recon-struction fidelity, yet they do not dominate perceptual realism. Conversely, holistic full-motion pipelines improve FID/FVD and human-perceived quality without max-imizing pixel alignment. This confirms that reconstruction metrics reward precise frame-wise similarity, whereas perceptual and distributional metrics evaluate plausi-bility, coherence, and realism at a higher semantic level. High pixel accuracy does not guarantee perceptual naturalness, and vice versa. 
+
+Frame vs . sequence. A second interaction emerges between frame-level and sequence-level metrics. Pairs such as LPIPS vs . LPIPS seq , Sync-D vs . Sync-D seq ,and Smooth vs . Smooth pose seq / Smooth expr seq reveal systematic scale effects. Frame-level metrics are sensitive to instantaneous artifacts, including blur, lip misalignment, or 20 short-term jitter. Sequence-level counterparts aggregate temporal information and emphasize trajectory consistency and long-range coherence. The reduced paradigm separation observed in Sync-D seq and LPIPS seq suggests that temporal aggregation mitigates transient deviations, but it may also obscure short-lived instability. These findings demonstrate that frame-level precision and sequence-level structure capture complementary aspects of motion quality. 
+
+Sync ̸=realism. Synchronization metrics further illustrate metric decoupling. Lip-centric approaches dominate Sync-C and Sync-D, confirming that explicit articulation modeling enhances audio-visual alignment. However, this advantage does not automat-ically translate to stronger perceptual realism or global motion naturalness. Accurate lip-audio correspondence can coexist with limited global coherence, indicating that synchronization alone is not a sufficient proxy for holistic video quality. Identity preser-vation metrics (CSIM/CSIM seq ) show yet another independent axis. Multi-condition fusion consistently achieves stronger identity consistency, while motion-space disentan-glement primarily improves short-term smoothness and efficiency. The limited overlap between these strengths indicates that identity stability, motion regularity, and per-ceptual realism are governed by different architectural mechanisms and cannot be inferred from one another. 
+
+Quality vs . speed. Higher perceptual realism and identity preservation are typi-cally achieved by paradigms that incorporate global temporal modeling or multi-signal fusion, at the cost of reduced FPS. Conversely, lighter disentangled models achieve higher efficiency while sacrificing holistic coherence. This quality-efficiency balance highlights that evaluation should remain application-aware. The metric landscape reflects multiple orthogonal quality dimensions: reconstruc-tion fidelity, perceptual realism, synchronization accuracy, identity stability, temporal coherence, and computational efficiency. No single metric subsumes the others, and improvements along one axis frequently coincide with compromises along another. Robust evaluation of talking head generation therefore requires a multi-dimensional perspective that explicitly acknowledges these interactions and trade-offs rather than relying on isolated indicators. 
+
+4.5 Guidelines, Limitations, and Future Benchmarks 
+
+Future method design. Beyond comparative ranking, our benchmark reveals struc-tural insights into how audio-driven talking-head systems should be evaluated and designed. A central finding is the consistent divergence between frame-level and sequence-level metrics. Several methods that achieve strong per-frame reconstruction or synchronization scores exhibit noticeable instability when assessed with temporally-aware measures. By explicitly quantifying long-range coherence and motion smooth-ness, the proposed sequence-level metrics expose trajectory inconsistencies that remain invisible under conventional frame-wise evaluation. This observation suggests a nec-essary shift in evaluation priority: temporal coherence should be treated as a primary objective rather than an emergent byproduct of frame optimization. Future architec-tures are therefore encouraged to incorporate explicit temporal modeling mechanisms such as memory-based designs, trajectory-level regularization, or coherence-aware loss formulations, and to optimize directly for sequence stability. 21 Our paradigm-level analysis further clarifies complementary strengths across mod-eling strategies. Lip-centric approaches consistently achieve superior synchronization accuracy, confirming the effectiveness of localized articulation modeling. However, strong lip alignment alone does not guarantee globally coherent facial dynamics or perceptual realism. In contrast, holistic full-motion pipelines demonstrate stronger perceptual quality and smoother dynamics, highlighting the importance of modeling global spatiotemporal structure. These findings indicate that hybrid designs integrat-ing localized articulation expertise with global temporal modeling may provide a principled path toward balanced performance. The behavior of multi-condition fusion methods across canonical datasets and our curated Wild and Avatar subsets reveals another important principle: structured conditioning improves robustness. Explicitly integrating complementary signals, e.g ., audio, identity, pose, and geometry, enhances identity preservation and mitigates performance degradation under distribution shifts. When viewed together with temporally-aware evaluation, this suggests that next-generation systems should be both temporally coherent and distributionally resilient. Importantly, our 15-metric analysis shows that reconstruction fidelity, perceptual realism, synchronization accuracy, motion smoothness, identity preservation, and com-putational efficiency form partially independent evaluation axes. Improvements along one dimension frequently coincide with degradation along others. The introduction of temporally-aware metrics makes these trade-offs more transparent, discouraging over-optimization of narrow frame-level objectives. Future development should there-fore adopt multi-objective or evaluation-aware optimization strategies that explicitly balance competing criteria. 
+
+Limitations and future benchmarks. While our benchmark establishes a unified and temporally-aware evaluation protocol, several limitations remain. First, all methods are evaluated using publicly available pretrained models without addi-tional fine-tuning, ensuring fairness and reproducibility but not reflecting adaptation capacity. Incorporating standardized fine-tuning protocols could enable assessment of both generalization and adaptability. Second, although we evaluate five canoni-cal datasets alongside two curated subsets capturing real-world difficulty and stylistic diversity, additional stress factors such as extreme head poses, heavy occlusions, conversational dynamics, multi-speaker interaction, and cross-lingual audio, remain underexplored. Extending benchmarks along these axes would further disentangle robustness to structural complexity versus distributional variation. Third, despite using 15 complementary metrics and introducing sequence-level temporally-aware measures, automated evaluation cannot fully capture subjective perceptual quality or communicative expressiveness. Large-scale human preference studies or downstream task-based evaluations would provide valuable complementary perspectives. Finally, our taxonomy reflects current 2D paradigm families. As diffusion-based, 3D-aware, and multimodal generative approaches mature, the benchmark should evolve accord-ingly. The proposed framework (metric standardization, temporally-aware sequence evaluation, paradigm grouping, and cross-dataset robustness analysis) provides a scal-able foundation for integrating emerging architectures. By formalizing paradigm-level comparison and elevating temporal coherence to a first-class evaluation principle, this benchmark moves beyond fragmented reporting toward principled, multi-dimensional 22 assessment. We hope it serves not only as a fair comparative resource, but also as a design compass for developing temporally coherent, identity-consistent, and robust talking-head generation systems. 
+
+# 5 Conclusion 
+
+We present a unified, evaluation-driven benchmark for audio-driven talking-head gen-eration, addressing inconsistent protocols, fragmented datasets, and heterogeneous reporting. We curate 20 representative methods, organize them by paradigm, and evaluate them across five canonical benchmarks plus new Wild and Avatar subsets for fair, structured comparison. Our framework integrates 15 complementary metrics covering fidelity, perceptual quality, identity, synchronization, motion, and efficiency, and introduces sequence-level metrics capturing long-range coherence and trajectory consistency. Empirically, we show that lip-centric methods tend to achieve stronger syn-chronization and pixel-level reconstruction, multi-condition fusion improves identity preservation and balanced robustness, motion-space disentanglement enhances short-term smoothness and efficiency, and holistic full-motion pipelines deliver superior perceptual realism and long-range temporal coherence. These paradigm character-istics remain largely stable under both real-world difficulty and stylistic diversity shifts, highlighting the presence of durable inductive biases rather than dataset-specific advantages. Beyond ranking methods, our study exposes fundamental interactions among metrics, such as reconstruction fidelity versus perceptual realism, and frame-level precision versus sequence-level structure, demonstrating that no single metric or paradigm fully captures video quality. By consolidating evaluation protocols, introducing temporally-aware measures, and analyzing cross-dataset robustness, this benchmark establishes a principled foundation for future research in audio-to-video generation. 
+
+Acknowledgments. Zhicheng Zhang is supported by the UNSW University Inter-national Postgraduate Award (UIPA). This work is supported in part by the Australian Research Council (ARC) under Industrial Transformation Research Hub Grant IH180100002. This work is also supported by the National Computational Merit Allocation Scheme (NCMAS 2026, NCMAS 2025), with computational resources pro-vided by NCI Australia, an NCRIS-enabled capability supported by the Australian Government. 
+
+# References 
+
+[1] Shen, S., Zhao, W., Meng, Z., Li, W., Zhu, Z., Zhou, J., Lu, J.: Difftalk: Crafting diffusion models for generalized talking head synthesis. arXiv preprint arXiv:2301.03786 2(4), 5 (2023) [2] Wei, H., Yang, Z., Wang, Z.: Aniportrait: Audio-driven synthesis of photorealistic portrait animation. arXiv preprint arXiv:2403.17694 (2024) 23 [3] Zhang, W., Cun, X., Wang, X., Zhang, Y., Shen, X., Guo, Y., Shan, Y., Wang, F.: Sadtalker: Learning realistic 3d motion coefficients for stylized audio-driven single image talking face animation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 8652–8661 (2023) [4] Croitoru, F.-A., Hondru, V., Ionescu, R.T., Shah, M.: Diffusion models in vision: A survey. IEEE transactions on pattern analysis and machine intelligence 45 (9), 10850–10869 (2023) [5] Xing, Z., Feng, Q., Chen, H., Dai, Q., Hu, H., Xu, H., Wu, Z., Jiang, Y.-G.: A survey on video diffusion models. ACM Computing Surveys 57 (2), 1–42 (2024) [6] Li, J., Zhang, J., Bai, X., Zheng, J., Zhou, J., Gu, L.: Instag: Learning personalized 3d talking head from few-second video. In: Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 10690–10700 (2025) [7] Fan, Y., Lin, Z., Saito, J., Wang, W., Komura, T.: Faceformer: Speech-driven 3d facial animation with transformers. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 18770–18780 (2022) [8] Wang, S., Li, L., Ding, Y., Fan, C., Yu, X.: Audio2head: Audio-driven one-shot talking-head generation with natural head motion. arXiv preprint arXiv:2107.09293 (2021) [9] Prajwal, K., Mukhopadhyay, R., Namboodiri, V.P., Jawahar, C.: A lip sync expert is all you need for speech to lip generation in the wild. In: Proceedings of the 28th ACM International Conference on Multimedia, pp. 484–492 (2020) [10] Zhou, H., Liu, Y., Liu, Z., Luo, P., Wang, X.: Talking face generation by adver-sarially disentangled audio-visual representation. In: Proceedings of the AAAI Conference on Artificial Intelligence, vol. 33, pp. 9299–9306 (2019) [11] Chung, J.S., Zisserman, A.: Out of time: automated lip sync in the wild. In: Asian Conference on Computer Vision, pp. 251–263 (2016). Springer [12] Thies, J., Elgharib, M., Tewari, A., Theobalt, C., Nießner, M.: Neural voice pup-petry: Audio-driven facial reenactment. In: European Conference on Computer Vision, pp. 716–731 (2020). Springer [13] Zhou, Y., Han, X., Shechtman, E., Echevarria, J., Kalogerakis, E., Li, D.: Makelttalk: speaker-aware talking-head animation. ACM Transactions On Graph-ics (TOG) 39 (6), 1–15 (2020) [14] Har, F., Javier, D.R.C.: Heygen’s ai video platform for english language teaching. The Asian Journal of Applied Linguistics 10 (1), 1313–1313 (2026) [15] Jin, A., Deng, Q., Deng, Z.: A live speech-driven avatar-mediated three-party 24 telepresence system: design and evaluation. PRESENCE: Virtual and Augmented Reality 29 , 113–139 (2020) [16] Christoff, N., Neshov, N.N., Tonchev, K., Manolova, A.: Application of a 3d talk-ing head as part of telecommunication ar, vr, mr system: Systematic review. Electronics 12 (23), 4788 (2023) [17] Zhu, Y., Zhang, L., Rong, Z., Hu, T., Liang, S., Ge, Z.: Infp: Audio-driven inter-active head generation in dyadic conversations. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 10667–10677 (2025) [18] Yan, Y., Zhou, Z., Wang, Z., Gao, J., Yang, X.: Dialoguenerf: Towards realis-tic avatar face-to-face conversation video generation. Visual Intelligence 2(1), 24 (2024) [19] Bai, X., He, X., Ma, M., Wang, X., Jiang, W., Du, T., Huang, Z.: A survey on audio-driven talking face generation. In: 2025 IEEE 6th International Seminar on Artificial Intelligence, Networking and Information Technology (AINIT), pp. 1–6 (2025). IEEE [20] Zhen, R., Song, W., He, Q., Cao, J., Shi, L., Luo, J.: Human-computer interaction system: A survey of talking-head generation. Electronics 12 (1), 218 (2023) [21] Gowda, S.N., Pandey, D., Gowda, S.N.: From pixels to portraits: A comprehensive survey of talking head generation techniques and applications. arXiv preprint arXiv:2308.16041 (2023) [22] Zhang, Z., Li, L., Ding, Y., Fan, C.: Flow-guided one-shot talking face generation with a high-resolution audio-visual dataset. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 3661–3670 (2021) [23] Chung, J.S., Nagrani, A., Zisserman, A.: Voxceleb2: Deep speaker recognition. arXiv preprint arXiv:1806.05622 (2018) [24] Wang, K., Wu, Q., Song, L., Yang, Z., Wu, W., Qian, C., He, R., Qiao, Y., Loy, C.C.: Mead: A large-scale audio-visual dataset for emotional talking-face generation. In: European Conference on Computer Vision, pp. 700–717 (2020). Springer [25] Zhang, R., Isola, P., Efros, A.A., Shechtman, E., Wang, O.: The unreasonable effectiveness of deep features as a perceptual metric. In: CVPR (2018) [26] Snell, J., Ridgeway, K., Liao, R., Roads, B.D., Mozer, M.C., Zemel, R.S.: Learning to generate images with perceptual similarity metrics. In: 2017 IEEE International Conference on Image Processing (ICIP), pp. 4277–4281 (2017). IEEE 25 [27] Deng, J., Guo, J., Xue, N., Zafeiriou, S.: Arcface: Additive angular margin loss for deep face recognition. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 4690–4699 (2019) [28] Chung, J.S., Zisserman, A.: Lip reading in the wild. In: BMVC (2016) [29] Huang, Z., He, Y., Yu, J., Zhang, F., Si, C., Jiang, Y., Zhang, Y., Wu, T., Jin, Q., Chanpaisit, N., et al. : Vbench: Comprehensive benchmark suite for video generative models. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 21807–21818 (2024) [30] Petitjean, F., Ketterlin, A., Gan¸ carski, P.: A global averaging method for dynamic time warping, with applications to clustering. Pattern recognition 44 (3), 678–693 (2011) [31] Cuturi, M., Blondel, M.: Soft-dtw: a differentiable loss function for time-series. In: International Conference on Machine Learning, pp. 894–903 (2017). PMLR [32] Ma, Y., Zhang, S., Wang, J., Wang, X., Zhang, Y., Deng, Z.: Dreamtalk: When expressive talking head generation meets diffusion probabilistic models. arXiv preprint arXiv:2312.09767 2(3) (2023) [33] Zhang, Y., Minhao, L., Chen, Z., Wu, B., Zhan, C., He, Y., HUANG, J., Zhou, W., et al.: Musetalk: Real-time high quality lip synchronization with latent space inpainting (2024) [34] Wang, J., Qian, X., Zhang, M., Tan, R.T., Li, H.: Seeing what you said: Talking face generation guided by a lip reading expert. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 14653–14662 (2023) [35] Li, T., Zheng, R., Yang, M., Chen, J., Yang, M.: Ditto: Motion-space diffusion for controllable realtime talking head synthesis. In: Proceedings of the 33rd ACM International Conference on Multimedia, pp. 9704–9713 (2025) [36] Liu, T., Chen, F., Fan, S., Du, C., Chen, Q., Chen, X., Yu, K.: Anitalker: animate vivid and diverse talking faces through identity-decoupled facial motion encoding. In: Proceedings of the 32nd ACM International Conference on Multimedia, pp. 6696–6705 (2024) [37] Cao, X., Wang, G., Shi, S., Zhao, J., Yao, Y., Fei, J., Gao, M.: Joyvasa: portrait and animal image animation with diffusion-based audio-driven facial dynamics and head motion generation. arXiv preprint arXiv:2411.09209 (2024) [38] Tan, S., Ji, B., Bi, M., Pan, Y.: Edtalk: Efficient disentanglement for emotional talking head synthesis. In: European Conference on Computer Vision, pp. 398–416 (2024). Springer 26 [39] Wang, C., Tian, K., Zhang, J., Guan, Y., Luo, F., Shen, F., Jiang, Z., Gu, Q., Han, X., Yang, W.: V-express: Conditional dropout for progressive training of portrait video generation. arXiv preprint arXiv:2406.02511 (2024) [40] Chen, Z., Cao, J., Chen, Z., Li, Y., Ma, C.: Echomimic: Lifelike audio-driven portrait animations through editable landmark conditions. In: Proceedings of the AAAI Conference on Artificial Intelligence, vol. 39, pp. 2403–2410 (2025) [41] Zhong, W., Fang, C., Cai, Y., Wei, P., Zhao, G., Lin, L., Li, G.: Identity-preserving talking face generation with landmark and appearance priors. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 9729–9738 (2023) [42] Ki, T., Min, D., Chae, G.: Float: Generative motion latent flow matching for audio-driven talking portrait. In: Proceedings of the IEEE/CVF International Conference on Computer Vision, pp. 14699–14710 (2025) [43] Xu, M., Li, H., Su, Q., Shang, H., Zhang, L., Liu, C., Wang, J., Yao, Y., Zhu, S.: Hallo: Hierarchical audio-driven visual synthesis for portrait image animation. arXiv preprint arXiv:2406.08801 (2024) [44] Cui, J., Li, H., Yao, Y., Zhu, H., Shang, H., Cheng, K., Zhou, H., Zhu, S., Wang, J.: Hallo2: Long-duration and high-resolution audio-driven portrait image animation. arXiv preprint arXiv:2410.07718 (2024) [45] Cui, J., Li, H., Zhan, Y., Shang, H., Cheng, K., Ma, Y., Mu, S., Zhou, H., Wang, J., Zhu, S.: Hallo3: Highly dynamic and realistic portrait image animation with video diffusion transformer. In: Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 21086–21095 (2025) [46] Zheng, L., Zhang, Y., Guo, H., Pan, J., Tan, Z., Lu, J., Tang, C., An, B., Yan, S.: Memo: Memory-guided diffusion for expressive talking video generation. arXiv preprint arXiv:2412.04448 (2024) [47] Ji, X., Hu, X., Xu, Z., Zhu, J., Lin, C., He, Q., Zhang, J., Luo, D., Chen, Y., Lin, Q., et al. : Sonic: Shifting focus to global audio perception in portrait animation. In: Proceedings of the Computer Vision and Pattern Recognition Conference, pp. 193–203 (2025) [48] Zhang, Z., Wang, L., Gao, Y., Zhang, Y.: Talking-head generation in practice. In: The Second International Workshop on Transformative Insights in Multifaceted Evaluation at The Web Conference 2026 (2026). 
+
+https://openreview.net/forum?id=ns3TgZYQTZ 
+
+[49] Zhu, H., Wu, W., Zhu, W., Jiang, L., Tang, S., Zhang, L., Liu, Z., Loy, C.C.: Celebv-hq: A large-scale video facial attributes dataset. In: European Conference on Computer Vision, pp. 650–667 (2022). Springer 27 [50] Livingstone, S.R., Russo, F.A.: The ryerson audio-visual database of emotional speech and song (ravdess): A dynamic, multimodal set of facial and vocal expressions in north american english. PloS one 13 (5), 0196391 (2018) [51] Hondru, V., Croitoru, F.A., Minaee, S., Ionescu, R.T., Sebe, N.: Masked image modeling: A survey. International Journal of Computer Vision 133 (10), 7154– 7200 (2025) [52] Zhou, H., Sun, Y., Wu, W., Loy, C.C., Wang, X., Liu, Z.: Pose-controllable talking face generation by implicitly modularized audio-visual representation. In: Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 4176–4186 (2021) [53] Zhang, R., Isola, P., Efros, A.A., Shechtman, E., Wang, O.: The unreasonable effectiveness of deep features as a perceptual metric. In: Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, pp. 586–595 (2018) [54] Guo, J., Zhang, D., Liu, X., Zhong, Z., Zhang, Y., Wan, P., Zhang, D.: Livepor-trait: Efficient portrait animation with stitching and retargeting control. arXiv preprint arXiv:2407.03168 (2024) 28

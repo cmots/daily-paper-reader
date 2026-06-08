@@ -1,0 +1,189 @@
+Title: TargetSEC: Plug-and-Play In-the-Wild Speech Emotion Conversion via Arousal-Conditioned Latent Style Diffusion
+
+URL Source: https://arxiv.org/pdf/2606.07293v1
+
+Published Time: Mon, 08 Jun 2026 00:56:40 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# TargetSEC: Plug-and-Play In-the-Wild Speech Emotion Conversion via Arousal-Conditioned Latent Style Diffusion 
+
+# Constantin Alexander Auga ID 1,∗∗ 
+
+1 Hasso Plattner Institute / University of Potsdam, Potsdam, Germany 
+
+{Constantin.Auga }@student.hpi.uni-potsdam.de 
+
+# Abstract 
+
+Speech Emotion Conversion (SEC) aims to transform the emo-tion of a source utterance into a target emotion while preserving content and speaker identity. SEC on in-the-wild data is chal-lenging due to the non-parallel nature of training data and com-plex real-world acoustics. Existing fixed-duration approaches either struggle to shift the emotion effectively (high quality, low conversion) or degrade speech naturalness (low quality, high conversion). We propose TargetSEC, an embedding-driven la-tent diffusion framework that generates emotion-focused style embeddings conditioned on speaker identity and continuous emotion. Unlike methods that diffuse over spectrograms, Tar-getSEC operates in a compact latent space. Experiments on the MSP-Podcast dataset show that TargetSEC outperforms current non-duration baselines in conversion accuracy while maintain-ing high speech quality, and achieves performance comparable to duration-prediction systems without explicit temporal mod-eling. 
+
+Index Terms : speech emotion conversion, voice conversion, diffusion probabilistic models, in-the-wild speech, arousal 
+
+# 1. Introduction 
+
+While state-of-the-art speech synthesis models [1–3] excel at producing natural speech, they still struggle to convey nu-anced emotions adequately [4], often resulting in robotic or monotonous speech that limits expressive capability [5, 6]. Speech Emotion Conversion (SEC) addresses this by explicitly modeling and controlling emotion during synthesis [7]. Recent Voice Conversion (VC) models employ text-prompt-driven Latent Diffusion Models (LDM) to enable stylis-tic adjustments in audio generation through natural language descriptions [8, 9]. While these models are capable of perform-ing style conversion and, to some extent, emotion conversion, their inherent capabilities do not allow granular control over the emotional state of the speaker. In contrast, models that are specifically designed for SEC represent emotion as categorical or continuous embeddings. While many SEC approaches favor categorical representation due to their simplicity, it is well established in the SEC commu-nity and psychology literature that emotions have fuzzy bound-aries and cannot be accurately modeled by a categorical repre-sentation [10, 11]. The circumplex model addresses this imped-iment by representing emotions in a continuous space, typically along arousal (activation) and valence (positivity) dimensions. However, as the audio modality captures arousal more ef-fectively than valence [12, 13], we follow prior work [11, 14] and focus on the continuous arousal dimension. 
+
+> **
+
+indicates the corresponding author. 
+
+Most existing SEC approaches primarily leverage high-quality acted-out datasets. However, acted-out speech requires professional actors and an extensive recording effort. More-over, such datasets often exhibit exaggerated emotional expres-sions and inherent biases. Finally, methods trained on acted-out datasets require parallel utterances, which are costly and diffi-cult to collect, and often unavailable in real-world scenarios. In contrast, in-the-wild data is easier to obtain and captures a more natural emotional expression. In this work, we address these challenges by proposing Tar-getSEC, a plug-and-play SEC model that employs an LDM to generate emotion-focused style embeddings for SEC in the arousal dimension. TargetSEC builds on prior attempts that ap-ply LDMs to VC tasks and integrates ideas from SEC’s archi-tectures designed for in-the-wild data [8, 9, 14, 15]. To the best of our knowledge, this is one of the few works to perform SEC on in-the-wild data and the first to integrate a la-tent diffusion model in this context using a continuous arousal representation [11, 14, 15]. We train TargetSEC on the MSP-Podcast V1.10 corpus [10] and compare it against recent in-the-wild baselines [11,14]. Evaluation is conducted using objective evaluation metrics assessing both speech quality and emotion conversion accuracy. Furthermore, we extend the previous eval-uation paradigm by including speaker identity preservation. To summarize, our paper offers three major contributions: 1. We introduce a latent diffusion framework that models emotion-conditioned style embeddings for SEC on in-the-wild data. 2. Unlike prior text-prompt-conditioned latent diffusion ap-proaches, our method is driven by speaker and continuous emotion embeddings. 3. We propose a plug-and-play architecture that enables emo-tion conversion without modifying the synthesis model back-bone. Notably, any continuous or discrete style conditioning (style, emotion, speaker) could seamlessly be integrated into the architecture without retraining the backbone. 
+
+# 2. Methodology 
+
+2.1. Model Architecture 
+
+The overall architecture of TargetSEC can be viewed as an encoder–decoder resynthesis framework, and is illustrated in Figure 1. The encoder block consists of three separate en-coders, each responsible for disentangling different aspects of the speech: linguistic content, speaker identity, and style. In addition, an emotion encoder provides conditioning for the LDM. The resulting embeddings are concatenated and passed to a HiFi-GAN V1 decoder [16], which reconstructs the target waveform.     
+
+> arXiv:2606.07293v1 [cs.SD] 5 Jun 2026 Unet
+> Speaker Encoder Style Encoder Content Encoder
+> Decoder LDM
+> Conditioning Embeddings
+> Training
+> Inference
+> Emotion Encoder Speaker Encoder
+> Source Waveform
+> Source Waveform Converted Audio
+> Cross Attention
+> Detach
+> Style Encoder
+> Unet
+> (a)(b)
+
+Figure 1: Overview of the proposed framework. Subfigure (a) illustrates the architecture of TargetSEC, and (b) shows the training of the LDM. Solid arrows denote training paths, while dashed arrows indicate inference-time operations. 
+
+The style encoder is used only during training. At inference time, the style encoder is replaced by the emotion and speaker-conditioned LDM, enabling plug-and-play speech emotion con-version. Our framework aligns with recent approaches that apply LDMs to speech generation tasks [8, 9, 17]. We adopt a similar encoder-decoder structure to [9] but adapt the methodology for in-the-wild emotion conversion. Specifically, we simplify the conditioning mechanism by replacing text prompts with contin-uous emotion and speaker embeddings, and we integrate a pre-trained style encoder [18] to better capture prosodic nuance. 
+
+2.2. Encoder and Representation Disentangling Content Encoder. We use a pretrained HuBERT encoder as the content encoder. Given a time-domain signal x, HuBERT extracts a sequence of downsampled representations Ec(x) = (c1, . . . , c L) [14]. These continuous embeddings are quan-tized using k-means clustering, producing a sequence of dis-crete tokens u ∈ {1, . . . , K } [19]. The tokens are subse-quently mapped into a 128-dimensional continuous embedding space [14]. Finally, we apply window slicing to extract fixed-length segments of S seconds. Since HuBERT operates at a 50 Hz frame rate, this yields a final content tensor zc ∈ RL×128 ,where the sequence length is L = S × 50 .
+
+Speaker Encoder. Speaker information is extracted using a pretrained WavLM-based speaker verification model [20] 
+
+Es(x), which outputs a global 512-dimensional d-vector zs
+
+for each utterance [14]. This vector is broadcast across the L
+
+frames and concatenated with the content embeddings, yielding a combined representation zT = ( zc, z s).
+
+Style Encoder. We employ the pretrained style encoder from [18]. This model was selected due to the architecture’s demon-strated effectiveness in similar style conversion tasks [9]. It produces a 128-dimensional global style vector zstyle . Simi-lar to the speaker embedding, zstyle is concatenated along the content sequence, resulting in the final encoder output zT =(zc, z s, z style ). During the training of the LDM, zstyle serves as the target style prior. Although trained on the reading-style Lib-riTTS corpus, this encoder has demonstrated strong zero-shot generalization to unseen speakers [18]. 
+
+Emotion Encoder. To encode emotional information, we use a pretrained emotion recognition model ESER that was fine-tuned on the MSP-Podcast (v1.7) dataset [10, 21]. The model outputs a 1024-dimensional emotion embedding ze along with continu-ous predictions for arousal, valence, and dominance. Following the procedure in [11, 14, 15], the embedding ze is used both as conditioning input to the LDM and as part of the evaluation pipeline for SEC performance. 
+
+2.3. Latent Diffusion Model 
+
+We model the conditional style prior with an LDM, approximat-ing p(zstyle | zs, z e) [17]. Following [17], we apply the standard forward process to transform zstyle ∈ R128 with Gaussian noise. 
+
+Velocity Parameterization. Unlike standard LDMs that pre-dict noise ϵ, we follow [8, 22, 23] and predict the velocity vn to improve generation stability. The training objective minimizes the velocity estimation loss: 
+
+Lv = En, z style , ϵ 
+
+∥vn − vθ (zstyle ,n , n, z s, z e)∥22
+
+ (1) where the target velocity is defined as: 
+
+vn = √¯αn ϵ − √1 − ¯αn zstyle . (2) 
+
+Rescaled Classifier-Free Guidance. During inference, we em-ploy Classifier-Free Guidance (CFG) to steer the generation to-ward the target emotion. 
+
+vcfg = vunc + w(vcond − vunc ) (3) where vcond and vunc are the conditional and unconditional pre-dictions, and w is the guidance scale. To reduce artifacts common in CFG, we use the guidance rescaling method of [8, 22] to obtain the final velocity ˜v.2.4. Loss 
+
+We optimize the generator using a multi-task objective combin-ing adversarial learning, reconstruction, and emotion alignment. The total generator loss LG is defined as: 
+
+LG = X
+
+> k
+
+(Ladv (Dk ) + λfm Lfm (Dk )) + λrec Lrec + λemo Lemo .
+
+(4) where Ladv and Lfm denote the adversarial and feature matching losses, respectively, following [16]. Lrec is the L1
+
+distance between the mel-spectrograms of the ground-truth and synthesized waveforms. Finally, to enforce emotion consis-tency, Lemo minimizes the Concordance Correlation Coefficient (CCC) error between the ground truth arousal e and the pre-dicted arousal ESER (ˆ y):
+
+Lemo = 1 − 2ρσ eσˆy
+
+σ2 
+
+> e
+
++ σ2ˆy + ( μe − μˆy )2 , (5) where μ and σ represent the mean and variance, and ρ is the Pearson’s correlation coefficient [24]. We set λfm = 2 and λrec = 45 , and fixed the emotion loss weight λemo to 1 across all experiments [14, 19]. 
+
+2.5. Inference 
+
+At inference time, the style encoder is replaced by the LDM. Following prior work [11, 14], we construct a target emotion embedding e by computing the average of the top 20% of train-ing samples associated with the target arousal level. This em-bedding e and the speaker embedding are then used to condition the LDM, generating a style vector aligned with the target emo-tion. 
+
+# 3. Experiments 
+
+3.1. Experimental Setup Dataset. We use the MSP-Podcast v1.10 corpus [10], a large in-the-wild emotional speech dataset containing over 150,000 labeled clips ( ≈ 230 hours). Following standard protocols, we partition the “Train” set into an 80/20 split and reserve the offi-cial “Test1” partition for evaluation. 
+
+Training. All feature extractors (lexical, speaker, emotion, and style) are pretrained and kept frozen. Training is conducted in two phases: (1) Backbone Training: The encoder-decoder framework is trained to reconstruct audio from ground-truth style embeddings. We employ window slicing on HuBERT embeddings to train on fixed-length 2.5 s segments. (2) LDM Training: The LDM is subsequently trained to predict these style embeddings conditioned on emotion and speaker represen-tations. We optimize using AdamW with task-specific learning rates. The diffusion process utilizes N = 1000 steps with a lin-ear noise schedule β ∈ [10 −4, 0.02] . For inference, we use 100 
+
+steps with a classifier-free guidance scale w = 4 and a rescaling factor ϕ = 0 .7.
+
+Metrics. Consistent with the evaluation framework established in [11, 14, 15], we rely solely on non-intrusive objective metrics due to the non-parallel nature of the in-the-wild training data. We report the Wav2Vec-MOS (WVMOS) [25] to proxy human-perceived naturalness, as it has been shown to serve as a robust approximation in the absence of ground-truth references [14]. For emotion conversion accuracy, we treat the emotion encoder as a Speech Emotion Recognition (SER) system and compute the error between the target arousal and the arousal predicted Table 1: Test1 performance on MSP-Podcast. DP indicates whether explicit duration prediction is used. WVMOS ↑ mea-sures naturalness. SER error ↓ is reported as Lmse and Labs .
+
+Model DP WVMOS ↑ SER Error ↓
+
+Lmse Labs 
+
+HiFiGAN [14] × 3.26 0.084 24% EmoConv-Diff [11] × 2.56 0.072 21% Uncert (HiFiGAN+DP) [15] ✓ 3.30 0.069 20% 
+
+TargetSEC (ours) × 3.25 0.068 21% from the synthesized speech. While we follow our baselines in reporting naturalness and emotion accuracy, we extend the eval-uation protocol by incorporating objective speaker verification. Confidence intervals are computed across source utterances, av-eraging performance over all target emotions for each source sample. 
+
+Model Comparison. We compare TargetSEC with the follow-ing in-the-wild SEC systems: 1. HiFiGAN [14]: The foundational architecture upon which TargetSEC is built. It shares a similar encoder-decoder back-bone but relies on direct emotion embedding injection, serv-ing as a direct baseline to assess the impact of our latent dif-fusion style modeling. 2. EmoConv-Diff [11]: A diffusion-based baseline operating on mel-spectrograms. 3. Uncert [15]: A duration-prediction extension of the HiFi-GAN baseline. 4. TargetSEC (Ours): Our proposed framework, which replaces the direct embedding injection of the HiFiGAN baseline with an embedding-driven Latent Diffusion Module. 
+
+3.2. Results Performance. TargetSEC achieves the lowest conversion error among non-duration baselines (MSE 0.0677, 95% CI [0.0674, 0.0679]) and is comparable to Uncert (MSE 0.069). In terms of speech quality, TargetSEC successfully bridges the gap between GAN-based and Diffusion-based approaches. While standard spectrogram diffusion (EmoConv-Diff) suffers a significant degradation in naturalness (WVMOS 2.56), Tar-getSEC maintains high quality (WVMOS 3.25), comparable to the HiFiGAN baseline (3.26). This suggests that applying dif-fusion in the latent style space preserves the phase and stability of the speech signal while enabling the rich emotional mapping using the style embeddings. 
+
+Influence of Target Arousal. Some emotional values are harder to model than others. Related work has shown that SEC models struggle, especially around extreme emotion values. In-the-wild datasets typically exhibit a bias toward mean arousal values (4), making extreme emotions (e.g., arousal 1 or 7) diffi-cult to model [11]. Arousal-wise analysis (Figure 2) reveals that TargetSEC outperforms or is on par with all baselines in the mid-to-high arousal range [2.0–6.0], which comprises the majority of in-the-wild speech. Notably, at moderately expressive levels (e.g., Arousal 2 and 6), our model surpasses even the duration-based 
+
+Uncert system. However, similar to the baselines, TargetSEC’s perfor-mance degrades at extreme boundaries (Arousal 1 and 7). As 1.0 2.0 3.0 4.0 5.0 6.0 7.0          
+
+> Arousal
+> 0.00
+> 0.05
+> 0.10
+> 0.15
+> 0.20
+> 0.25
+> mse
+> 1.0 2.0 3.0 4.0 5.0 6.0 7.0
+> Arousal
+> 1
+> 2
+> 3
+> 4
+> 5
+> WVMOS
+> HiFiGAN EmoConv-Diff Uncert TargetSEC
+
+Figure 2: Arousal-wise SER error ( Lmse ↓) and WVMOS ↑ for MSP-Podcast Test1. 
+
+noted in [15], extreme emotional states are strongly correlated with speech rate changes (e.g., slowness in boredom, rapidity in anger). Since TargetSEC creates a fixed-duration mapping, it cannot compress or expand the spectrogram to match these temporal shifts, leading to higher error in these edge cases. Crucially, TargetSEC exhibits superior emotional stability (Figure 2). Unlike HiFiGAN, which suffers quality degrada-tion as arousal increases, TargetSEC maintains consistent natu-ralness (WVMOS) across the entire emotional spectrum. This suggests that the latent diffusion prior is more robust to high-variance prosody than direct embedding injection. 
+
+Speaker Identity Preservation. To verify that TargetSEC pre-serves speaker identity, we computed the cosine similarity be-tween the embeddings of the source and converted speech using a pretrained ECAPA-TDNN speaker verification model. We es-tablish a lower bound by computing the similarity between ran-dom speaker pairs ( 0.05 ± 0.09 ) and an upper bound by com-puting the intra-speaker similarity of the ground truth samples (0.58 ± 0.17 ). The relatively low upper bound and high vari-ance of the ground truth reflect the acoustic complexity of the in-the-wild MSP-Podcast corpus. TargetSEC achieves a mean similarity of 0.29 ± 0.11 , significantly exceeding the random baseline. While this indicates some loss of identity features—an expected trade-off when heavily modifying prosody for emotion conversion—the model maintains a similarity score well above the noise floor, confirming that speaker character is largely pre-served. 
+
+3.3. Ablation Study 
+
+To evaluate and validate the impact of our design choices, we conducted an ablation study across four configurations, compar-ing the proposed LDM against deterministic MLP and assessing the role of speaker conditioning. As shown in Table 2, we observe a consistent improvement trend: each additional component—switching from regression to diffusion and adding speaker conditioning—progressively re-duces the conversion error. While the MLP baselines achieve high naturalness (WVMOS ≈ 3.45 ) by reverting to the dataset’s mean prosody, they fail to model emotional variety. In con-trast, the LDM variants significantly improve conversion accu-racy, with the full TargetSEC model achieving the lowest error (21% MAE). This validates that the probabilistic diffusion prior, combined with dual conditioning, is essential for modeling the Table 2: Ablation results comparing the influence of different components. 
+
+Model Configuration Diff. WVMOS ↑ SER Error ↓
+
+Lmse Labs 
+
+MLP (Emo Only) × 3.44 0.083 24% MLP (Speaker + Emo) × 3.45 0.080 24% LDM (Emo Only) ✓ 3.21 0.070 22% 
+
+TargetSEC (Full) ✓ 3.25 0.068 21% 
+
+highly distinctive prosody required for expressive emotion con-version. 
+
+# 4. Conclusion and Future Work 
+
+In this work, we proposed TargetSEC, a ”plug-and-play” Speech Emotion Conversion framework that resolves the trade-off between speech quality and conversion accuracy in SEC systems without explicit duration prediction. By shifting the generative process from high-dimensional spectrograms to the compact latent style space, we demonstrated that an Emotion-Embedding-Driven Latent Diffusion Model can generate rich prosodic modifications while preserving the phase stability and naturalness of the source speaker. Empirical results on the in-the-wild MSP-Podcast dataset show that TargetSEC outperforms current non-duration base-lines and achieves comparable performance with complex duration-prediction systems in the mid-to-high arousal range. Crucially, our analysis highlights a structural disparity: while latent style diffusion ensures enhanced signal quality and emotional stability, explicit duration modeling is required to capture speech-rate and timing variations associated with ex-treme emotional states (e.g., Arousal 1 or 7). Future work will directly address this limitation by integrat-ing a duration predictor into the TargetSEC framework. Furthermore, while this work focuses on arousal, the mod-ular nature of the LDM in principle allows for conditioning on any continuous or discrete style descriptor (e.g., dominance, va-lence, or speaker attributes) simply by retraining the lightweight diffusion prior, leaving the heavy backbone untouched. Finally, we aim to extend our evaluation to include sub-jective speaker similarity tests and broaden the scope to multi-dimensional emotion control, including valence and dominance. 
+
+# 5. References 
+
+[1] C. Wang, S. Chen, Y. Wu et al. , “Neural codec language models are zero-shot text to speech synthesizers,” IEEE/ACM Transac-tions on Audio, Speech, and Language Processing , vol. 33, pp. 705–718, 2025. [2] K. Shen, Z. Ju, X. Tan, Y. Liu et al. , “NaturalSpeech 2: Latent dif-fusion models are natural and zero-shot speech and singing syn-thesizers,” in Proc. ICLR , 2024. [3] Y. A. Li, C. Han, V. S. Raghavan, G. Mischler, and N. Mes-garani, “StyleTTS 2: Towards human-level text-to-speech through style diffusion and adversarial training with large speech language models,” in Advances in Neural Information Processing Systems ,vol. 36, 2023, pp. 19 594–19 621. [4] K. Inoue, S. Hara, M. Abe, N. Hojo, and Y. Ijima, “Model archi-tectures to extrapolate emotional expressions in DNN-based text-to-speech,” Speech Communication , vol. 126, pp. 35–43, 2021. [5] D. Schuller and B. Schuller, “The age of artificial emotional intel-ligence,” Computer , vol. 51, no. 9, pp. 38–46, 2018. [6] K. Zhou, B. Sisman, R. Rana, B. W. Schuller, and H. Li, “Speech synthesis with mixed emotions,” IEEE Transactions on Affective Computing , vol. 14, no. 4, pp. 3120–3134, 2023. [7] K. Tokuda, H. Zen, and A. W. Black, “An HMM-based speech synthesis system applied to English,” in Proc. IEEE Workshop on Speech Synthesis , 2002, pp. 227–230. [8] J. Hai, K. Thakkar, H. Wang, Z. Qin, and M. Elhilali, “DreamVoice: Text-guided voice conversion,” in Proc. INTER-SPEECH , 2024, pp. 4373–4377. [9] J. Yao, Y. Yang, Y. Lei, Z. Ning, Y. Hu, Y. Pan, J. Yin, H. Zhou, H. Lu, and L. Xie, “PromptVC: Flexible stylistic voice conver-sion in latent space driven by natural language prompts,” in Proc. ICASSP , 2024, pp. 10 571–10 575. [10] L. Martinez-Lucas, M. Abdelwahab, and C. Busso, “The MSP-conversation corpus,” in Proc. INTERSPEECH , 2020, pp. 1823– 1827. [11] N. R. Prabhu, B. Lay, S. Welker, N. Lehmann-Willenbrock, and T. Gerkmann, “EMOCONV-Diff: Diffusion-based speech emo-tion conversion for non-parallel and in-the-wild data,” in Proc. ICASSP , 2024, pp. 11 651–11 655. [12] N. R. Prabhu, G. Carbajal, N. Lehmann-Willenbrock, and T. Gerkmann, “End-to-end label uncertainty modeling for speech-based arousal recognition using Bayesian neural networks,” in 
+
+Proc. INTERSPEECH , 2022, pp. 151–155. [13] D. de Oliveira, N. R. Prabhu, and T. Gerkmann, “Leverag-ing semantic information for efficient self-supervised emotion recognition with audio-textual distilled models,” in Proc. INTER-SPEECH , 2023, pp. 3632–3636. [14] N. R. Prabhu, N. Lehmann-Willenbrock, and T. Gerkmann, “In-the-wild speech emotion conversion using disentangled self-supervised representations and neural vocoder-based resynthesis,” in Proc. 15th ITG Conf. on Speech Communication , 2023, pp. 176–180. [15] N. R. Prabhu, D. de Oliveira, N. Lehmann-Willenbrock, and T. Gerkmann, “Enhancing in-the-wild speech emotion conversion with resynthesis-based duration modeling,” in Proc. IEEE Auto-matic Speech Recognition and Understanding Workshop (ASRU) ,2025, accepted; arXiv:2508.11535. [16] J. Kong, J. Kim, and J. Bae, “HiFi-GAN: Generative adversarial networks for efficient and high fidelity speech synthesis,” in Ad-vances in Neural Information Processing Systems , vol. 33, 2020, pp. 17 022–17 033. [17] H. Liu, Z. Chen, Y. Yuan, X. Mei, X. Liu, D. Mandic, W. Wang, and M. D. Plumbley, “AudioLDM: Text-to-audio generation with latent diffusion models,” in Proc. ICML , vol. 202. PMLR, 2023, pp. 21 450–21 474. [18] D. Min, D. B. Lee, E. Yang, and S. J. Hwang, “Meta-StyleSpeech: Multi-speaker adaptive text-to-speech generation,” in Proc. ICML ,vol. 139. PMLR, 2021, pp. 7748–7759. [19] A. Polyak, Y. Adi, J. Copet, E. Kharitonov, K. Lakhotia, W.-N. Hsu, A. Mohamed, and E. Dupoux, “Speech resynthesis from dis-crete disentangled self-supervised representations,” in Proc. IN-TERSPEECH , 2021, pp. 3615–3619. [20] S. Chen, C. Wang, Z. Chen, Y. Wu, S. Liu et al. , “WavLM: Large-scale self-supervised pre-training for full stack speech pro-cessing,” IEEE Journal of Selected Topics in Signal Processing ,vol. 16, no. 6, pp. 1505–1518, Oct. 2022. [21] J. Wagner, A. Triantafyllopoulos et al. , “Dawn of the transformer era in speech emotion recognition: Closing the valence gap,” 
+
+IEEE Transactions on Pattern Analysis and Machine Intelligence ,vol. 45, no. 10, pp. 10 745–10 759, 2023. [22] S. Lin, B. Liu, J. Li, and X. Yang, “Common diffusion noise schedules and sample steps are flawed,” in Proc. WACV , 2024, pp. 5404–5411. [23] J. Hai, H. Wang, D. Yang, K. Thakkar, N. Dehak, and M. Elhi-lali, “DPM-TSE: A diffusion probabilistic model for target sound extraction,” in Proc. ICASSP , 2024, pp. 1196–1200. [24] P. Sedgwick, “Pearson’s correlation coefficient,” BMJ , vol. 345, p. e4483, 2012. [25] P. Andreev, A. Alanov, O. Ivanov, and D. Vetrov, “HIFI++: A unified framework for bandwidth extension and speech enhance-ment,” in Proc. ICASSP , 2023, pp. 1–5.
