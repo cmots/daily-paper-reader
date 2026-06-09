@@ -1,0 +1,228 @@
+Title: IRAF: Interference-Resilient Adaptive Fusion for Noise-Robust End-to-End Full-Duplex Spoken Dialogue Systems
+
+URL Source: https://arxiv.org/pdf/2606.06559v1
+
+Published Time: Mon, 08 Jun 2026 00:02:36 GMT
+
+Number of Pages: 5
+
+Markdown Content:
+# IRAF: Interference-Resilient Adaptive Fusion for Noise-Robust End-to-End Full-Duplex Spoken Dialogue Systems 
+
+# Tao Zhong 1,2, Jiajun Deng 2,∗∗ , Nikita Kuzmin 3, Yinke Zhu 2, Tianxiang Cao 2, Tristan Tsoi 2, Zhili Tan 2, Simon Lui 2, Xunying Liu 1,∗∗ 
+
+1 The Chinese University of Hong Kong, China 
+
+2 AudioLab Hong Kong, Huawei Leibniz Research Center, China 
+
+3 Nanyang Technological University, Singapore 
+
+tzhong@se.cuhk.edu.hk, jjdeng321@gmail.com, xyliu@se.cuhk.edu.hk 
+
+# Abstract 
+
+Full-duplex spoken dialogue models allow voice agents to lis-ten and speak concurrently, enabling natural interaction with real-time overlap. However, end-to-end dual-channel models that jointly encode user and agent streams may degrade in re-alistic acoustic environments: interfering speakers leaking into the user microphone can be encoded as part of the user query, corrupting the LLM’s conditioning and causing unstable turn-taking and reduced response quality. We propose Interference-Resilient Adaptive Fusion (IRAF), a lightweight, streaming-compatible module that modulates the contribution of user au-dio to the LLM frame by frame. IRAF predicts a scalar re-liability gate from target-speaker and user audio embeddings and rescales user representations before fusion with agent em-beddings. Experiments on MS-MARCO and InstructS2S-200K show consistent gains in response quality and full-duplex inter-action under interfering-speaker conditions. 
+
+Index Terms : Full-duplex spoken dialogue system, Noise ro-bustness, Human-computer interaction 
+
+# 1. Introduction 
+
+Recent advances in voice agents have shifted attention toward full-duplex spoken dialogue models that can listen and speak concurrently and manage conversational overlap in real time. Compared to conventional turn-based voice agents [1–8], full-duplex capability supports continuous, natural interaction that more closely resembles human conversation. Existing approaches to full-duplex spoken dialogue models can be broadly categorized into two lines of work. a) Modular, controller-style systems [9–17], for example, Neural FSM [9], FlexDuo [10], FireRedChat [11], and semantic VAD-based di-alogue managers [15], introduce explicit control signals to co-ordinate when the agent should listen, speak, or stop. In con-trast, b) End-to-end (E2E) native dual-channel speech lan-guage models [18–26], for example, Moshi [18], SALMONN-omni [19], NTPP [20], and F-Actor [21], learn to model user and agent streams jointly, often with additional mechanisms for synchronization such as external stop commands or time-chunking strategies that align audio and text over time. Recent work further simplifies duplex modeling by reducing reliance on speech pretraining (e.g., SALM-Duplex [22]) or by employ-ing transformer decoders [23] to directly generate response au-dio, highlighting a trend toward more unified, LLM-centric du-plex architectures. While native dual-channel multi-stream models benefit from end-to-end optimization and often perform well in clean 
+
+> **
+
+indicates the corresponding author. Target speaker Interfering speakers Turn taking   
+
+> User
+> Channel
+> Agent
+> Channel
+> False Barge -in
+> a) Clean condition b) Noisy condition
+
+Figure 1: Full-duplex dialogue in (a) clean and (b) noisy con-ditions. Interference leaking into the user channel can corrupt conditioning, causing unstable turn-taking and false barge-in. 
+
+conditions, their robustness can degrade substantially in real-world acoustic environments. For instance, when interfering speakers leak into the user microphone, their speech can be en-coded into the user stream and inadvertently treated as part of the user query, thereby contaminating the LLM’s conditioning context. This misconditioning can disrupt both interaction con-trol (e.g., unstable turn-taking and mistimed responses) and rea-soning performance, shown in Figure 1. Efforts on developing noise-robust end-to-end full-duplex modeling are confronted with several challenges. First, the model operates under strict causality: it must perceive user au-dio and generate responses incrementally, without lookahead or access to a complete utterance. Second, interference is highly non-stationary, and overlap is largely unconstrained [27]. For example, background speakers may appear abruptly and coin-cide with the target user, requiring the model to handle rapidly changing acoustic conditions. Third, duplex interaction im-poses tight latency constraints; the agent must respond imme-diately when the user yields the floor, leaving limited budget for computationally expensive separation or post-hoc filtering. To this end, we develop an end-to-end full-duplex spoken dialogue model that is robust to realistic acoustic conditions, especially the presence of interfering speakers. Specifically, we present a lightweight, streaming-compatible Interference-Resilient Adaptive Fusion (IRAF) module, which dynamically modulates the contribution of user audio to the LLM input on a frame-by-frame basis. IRAF combines a target-speaker em-bedding with the user audio embedding to predict a scalar re-liability gate at each time step and uses this gate to rescale the user audio representation before fusing it with the agent-side text embeddings. Experiments on the open-source single-turn MS MARCO conversational dataset [28] and the multi-turn InstructS2S-200K conversational dataset [29] show that the pro-posed end-to-end duplex model consistently outperforms strong baselines across a range of metrics, including response qual-ity (ASR-based lexical and semantic measures) and full-duplex 
+
+> arXiv:2606.06559v1 [cs.SD] 4 Jun 2026
+
+Streaming Speech Encoder 
+
+Modality Adapte r 
+
+> <silence> <turn2> <turn1>
+
+Input Projection 
+
+Causal Transformer 
+
+Linear Output 
+
+LLM Backbone Text Prediction Hea d
+
+Speech Transformer Decoder  
+
+> <turn1> <silence> <silence>
+
+IRA F     
+
+> <SIL> <A21> <A22> <A23> <A25> <A24> <SIL>
+
+Causal Codec Decode r
+
+Dual -stream Fusion                       
+
+> <SIL> <A11> <A12> <A13> <A15> <A14> <SIL>
+> <SIL> <A31> <A32> <A33> <A35> <A34> <SIL>
+> <SIL> <A41> <A42> <A43> <A45> <A44> <SIL>
+> <SIL> <T1> <T2> <T3> <PAD> <PAD> <SIL>
+> Agent Audio channels
+> Agent Text channel
+> Agent Audio
+> User Audio
+
+2xSigmoid 
+
+Concatenatio n
+
+IRAF        
+
+> Turn taking
+> Barge -in
+> User embed
+> (toke n-level )
+> Agent embed
+> (toke n-level )
+> Target speaker
+> features
+> Hadamard
+> product
+> 1st text token
+> A21
+> 1st audio token
+> in 2 nd layer
+> T1
+> SI L
+> PA D
+> Silence token
+> PAD token
+
+Figure 2: Overview of the proposed E2E full-duplex model with the Interference-Resilient Adaptive Fusion (IRAF) module. A streaming speech encoder produces frame-level user embeddings, which IRAF adaptively gates before fusion with agent text embeddings and processing by the LLM to generate text tokens; a speech decoder, conditioned on the LLM hidden states, generates audio tokens. 
+
+interaction (turn-taking and barge-in performance). The main contributions of this paper are as follows: 1) To the best of our knowledge, this is the first attempt to address noise- and interference-induced conditioning corrup-tion in end-to-end full-duplex spoken dialogue systems. In con-trast, prior E2E full-duplex models have largely focused on du-plex behavior under relatively clean conditions [20–24] or on mitigating agent echo [19] and have not systematically tackled complex acoustic environments. 2) This paper proposes a lightweight, streaming-compatible Interference-Resilient Adaptive Fusion (IRAF) module that pre-serves the end-to-end formulation without introducing addi-tional response latency. IRAF estimates a frame-level reliability gate from target-speaker embeddings as well as the user channel and uses it to modulate the user audio representation before fus-ing it with the agent channel. The effectiveness of the proposed method is demonstrated through extensive evaluations. 
+
+# 2. Interference-Resilient Duplex Modeling 
+
+This section presents an end-to-end full-duplex speech dialogue model equipped with an Interference-Resilient Adaptive Fusion (IRAF) mechanism that enables the model to process speech in-put and generate responses in parallel, thereby enabling natural, overlapping interaction under noisy conditions. 
+
+2.1. Multi-stream Duplex Modeling 
+
+The network architecture is depicted in Figure 2. It con-sists of two synchronized input streams: a user speech stream and an agent text stream. More specifically, the user’s au-dio signal is processed by a streaming speech encoder oper-ating at 12.5 Hz, along with a modality adapter that converts the acoustic waveform into a sequence of continuous embed-dings X ∈ RT ×D , where T and D denote the total number of frames and the dimension of the audio embedding, respec-tively. The resulting user audio embeddings are then combined with the agent’s text embeddings Y txt ∈ RT ×D before be-ing passed to the LLM backbone. Following the work [23], to reduce the computational complexity of the LLM backbone while preserving contextual coherence, a separate autoregres-sive speech transformer decoder is built on top of the LLM backbone to predict the agent’s speech tokens Y a ∈ RT condi-tioned on the last hidden states of LLM h. All the model parts (except the Causal Codec Decoder) are jointly fine-tuned under a multi-channel next-token prediction objective, enabling E2E optimization across both speech and text modalities, given as 
+
+L(Y txt , Y a|X, θ, ϕ ) = −
+
+> T
+
+X
+
+> t=1
+
+{λ1 log pθ (Y txt t | Y txt <t , X )+ λ2 log pϕ(Y at | Y a<t , h <t )},
+
+(1) where θ and ϕ denote the parameters of LLM backbone and the speech transformer decoder, respectively. λ1 and λ2 are the agent text and audio cross-entropy loss weights respectively, which are set to 1.0 and 5.0 in this paper. The agent speech to-kens are extracted from the Nanocodec with finite scalar quan-tization of 12.5 Hz. 
+
+2.2. Interference-Resilient Adaptive Fusion 
+
+In the duplex multi-stream modeling, the LLM is conditioned on a single fused representation obtained by directly summing the user audio embedding and the agent text embedding. This design is simple, but it treats the audio stream as uniformly trustworthy over time. In real-world acoustic scenes, that as-sumption is frequently violated: when background speakers or other interference are present, portions of the user audio em-bedding may primarily reflect non-target speech. Because the fusion is unconditional, these corrupted frames are injected into the LLM in the same way as clean target-user speech, contam-inating the conditioning signal and often leading to unstable or incorrect responses. To make the conditioning robust to such interference, we propose a simple yet effective Interference-Resilient Adaptive Fusion (IRAF) method. Instead of always mixing the user au-dio with a fixed weight, IRAF predicts a frame-level reliability gate indicating whether the current acoustic evidence is consis-tent with the target speaker and then uses this estimate to scale the audio contribution before being passed to the LLM. As a re-sult, interference-dominated frames contribute minimally to the LLM input, while frames containing target-user speech are pre-served, yielding more stable behavior in noisy, multi-speaker settings. Formally, at each time step t, we concatenate the target-speaker embedding s ∈ Rn with the user audio embed-ding Xt ∈ RD , and feed the resulting representation into a transformer-based fusion module f (· | ψ). The module com-prises (i) an input projection block that jointly maps speaker and audio features into a shared space, (ii) a causal Transformer layer that aggregates streaming context, and (iii) a linear output layer that produces the reliability estimate, given by 
+
+gt = 2 × Sigmoid (f (s, X ≤t|ψ)) ∈ [0 , 2] , (2) where the scalar gate gt is used to rescale the user audio embed-ding and sum with the agent text embedding before feeding the result to the text LLM, given as gt ∗ Xt + Y txt t .IRAF is trained jointly with the full speech dialogue model in an end-to-end manner. From clean training utterances, we de-rive frame-level targets by labeling frames as 1 when the target speaker is active and 0 otherwise, and add an auxiliary binary classification loss (weight 0.1) to the main objective in Eqn. (1). 
+
+# 3. Full-Duplex Dataset Generation 
+
+Two publicly available datasets are used to evaluate the pro-posed method: (a) Single-turn MS MARCO 1 [28] is a large-scale, single-turn text question answering (QA) benchmark con-sisting of real anonymized Bing queries paired with human-written answers. Following prior practice for spoken QA, we synthesize speech for these QA pairs using CosyVoice2 [30]. (b) Multi-turn InstructS2S-200K 2 [29] is a multi-turn speech-to-speech dialogue dataset comprising approximately 200,000 conversation sessions. It covers a broad range of interaction types, including common-sense or general world knowledge. 
+
+Multi-stream dataset simulation : To synthesize full-duplex training examples, we convert each conversation session into two time-synchronized streams: a user channel and an agent channel. When one party is speaking, we fill the other channel with silence, yielding non-overlapping duplex signals. In addi-tion, we insert a fixed 0.64s inter-turn pause between the end of the user’s utterance and the start of the agent’s response. 
+
+User interruption dataset simulation : To simulate user in-terruptions and the agent’s ability to stop speaking, we aug-ment the multi-turn InstructS2S-200K dataset to create barge-in events. Specifically, we shorten the inter-turn gap in the user stream so that the next user utterance temporally overlaps with the agent’s ongoing speech in the current turn, producing overlap in the duplex training examples. Once the interrup-tion begins, we further simulate an explicit stop behavior by truncating the agent speech and replacing the remaining portion with silence after a fixed latency of 0.64s. During training, we stochastically introduce barge-in events on-the-fly in the data preparation pipeline, which exposes the model to interrupted interactions and improves robustness. Specifically, each turn is modified to include an interruption with probability 0.5. 
+
+Real-world full-duplex dataset simulation : To approximate real-world operating conditions for full-duplex dialogue, we construct noise-augmented data under two acoustic settings: (a) multi-speaker interference only and (b) multi-speaker interfer-ence combined with background noise. We use the MUSAN corpus [31], which contains music, speech, and noise record-ings. Its speech portion comprises librivox and us-gov subsets. In our simulation, MUSAN speech serves as interfering speak-ers, and MUSAN noise serves as background noise. To prevent contamination between splits, we divide the MUSAN speech and noise data into three non-overlapping partitions and assign them exclusively to the training, validation, and test sets, re-spectively. For MS MARCO, we sample the signal-to-noise ra-tio (SNR) uniformly from 0 to 10dB; for InstructS2S-200K, we use a broader SNR range of 0 to 20dB. 
+
+> 1https://microsoft.github.io/msmarco/
+> 2https://huggingface.co/datasets/ICTNLP/Instr uctS2S-200K
+
+Table 1: Performance on MS MARCO under MUSAN speech in-terference. ‘LIBRI’ and ‘US-GOV’ use the corresponding MU-SAN speech subsets for test set augmentation, while ‘ALL’ uses all MUSAN speech categories. ‘RL’ and ‘RSR’ denote response latency and response success rate, respectively.                                                                
+
+> Method Noisy Source Response Performance BLEU( ↑)sBERT( ↑)RL(s)( ↓)RSR( ↑)
+> Interfering speakers only
+> CleanBase ALL 0.66 0.11 1.46 6.2% NoisyAug LIBRI 12.69 0.503 0.98 91.0% US-GOV 13.30 0.512 0.96 94.1% ALL 12.74 0.506 0.97 93.1% IRAF (Proposed )LIBRI 13.81 0.516 0.97 95.4% US-GOV 14.38 0.536 0.94 98.2% ALL 14.20 0.523 0.96 95.7%
+> Both interfering speakers and background noise
+> CleanBase ALL 0.00 0.03 1.49 2.8% NoisyAug LIBRI 11.12 0.445 0.98 87.1% US-GOV 11.53 0.465 0.96 91.3% ALL 11.33 0.454 0.98 88.2% IRAF (Proposed )LIBRI 11.64 0.472 0.94 91.2% US-GOV 12.34 0.486 0.93 92.8% ALL 12.01 0.476 0.94 92.5%
+
+# 4. Experiments 
+
+4.1. Experimental Setup 
+
+The model is implemented using the NeMo Toolkit [32]. The speech encoder is initialized from a 100M-parameter stream-ing pretrained encoder with an 80 ms right context [33], and the LLM is initialized from the 1.1B-parameter TinyLlama model [34]. For speech, we adopt NanoCodec [35] at 0.6 kbps by default. The resulting speech representation comprises four code channels, each with a vocabulary size of 4,037. The speech decoder is a 12-layer causal Transformer following T5 archi-tecture [36]. For text, we use a 32k SentencePiece tokenizer. In the IRAF module, the Causal Transformer has only 1 trans-former layer. We extract target-speaker embeddings using a pre-trained ECAPA-TDNN [37] and, for simplicity, treat speakers from different conversations as distinct identities. During train-ing, AdamW with a cosine-annealing learning rate scheduler is performed. The peak learning rate is 3 × 10 −4, with 2,500 warm-up steps. We apply gradient clipping with a maximum norm of 1.0 to stabilize training. Each dataset is partitioned into train, validate, and test splits with ratios of 0.945, 0.005, and 0.05, respectively. For MS MARCO, we use a per-GPU batch size of 1 and set accumulate grad batches as 8. For InstructS2S-200K, we employ duration-based bucketing with a batch dura-tion of 60 s and set accumulate grad batches to 4 per GPU. 
+
+4.2. Evaluation Metrics 
+
+We evaluate the proposed model from two complementary per-spectives: a) response quality to assess reasoning and answer correctness, and b) full-duplex interaction to assess turn-taking and barge-in behavior. 
+
+Response quality : We transcribe the generated agent speech using an ASR system [38], and then compute the BLEU score [39] and the Sentence-BERT (sBERT) semantic similar-ity [40] between the ASR transcript and the reference text. 
+
+Turn-taking performance : We report response latency (RL) and response success rate (RSR). Using Silero VAD [41], we estimate the user end-of-speech and the agent speech onset; re-sponse latency is the time between them. Latencies exceeding 1.5 s are treated as failures and clipped to 1.5 s when reporting. 
+
+User barge-in performance : For multi-turn conversations, we Table 2: Performance on InstructS2S-200K under MUSAN speech interference. ∆ (IRAF-NoisyAug) with blue boxes shows gains of the proposed IRAF over NoisyAug; values in parentheses denote relative improvements. 
+
+Method Response Quality Turn-taking Performance Barge-in Performance BLEU( ↑) sBERT( ↑) RL(s)( ↓) RSR( ↑) SL(s)( ↓) SSR( ↑)
+
+Interfering speakers only 
+
+CleanBase 1.13 0.22 1.39 13.9% 1.29 42.7% NoisyAug 9.64 0.47 0.97 69.2% 0.74 99.0% IRAF ( Proposed ) 13.76 0.58 0.82 91.0% 0.73 99.8% 
+
+∆ (IRAF-NoisyAug) +4.12 (+42.73%) +0.11 (+23.40%) -0.15 +21.8% -0.01 +0.8% 
+
+Both interfering speakers and background noise 
+
+CleanBase 0.91 0.21 1.41 9.8% 1.34 40.2% NoisyAug 8.32 0.44 1.05 56.0% 0.74 99.6% IRAF ( Proposed ) 9.83 0.47 0.98 69.2% 0.73 100.0% 
+
+∆ (IRAF-NoisyAug) +1.51 (+18.15%) +0.03 (+6.81%) -0.07 +13.2% -0.01 +0.4% 
+
+use Barge-in stop latency (SL) and stop success rate (SSR). We define stop latency as the time between the user’s interruption onset and the time when the agent ceases speaking (estimated via VAD). As above, cases with latency larger than 1.5s are treated as failures and are clipped to 1.5s for latency reporting. To increase the likelihood of interruptions at test time, we con-struct a barge-in evaluation set by shortening the gaps between consecutive user turns, thereby reducing the time available for the agent to complete its response. 
+
+4.3. Results Analysis 
+
+We report results under three configurations. CleanBase serves as the primary baseline, while NoisyAug reflects a commonly used robustness strategy; a) CleanBase : E2E full-duplex model without IRAF, trained on clean speech. b) NoisyAug : the same model without IRAF, trained with noise/interference augmenta-tion. c) IRAF : the proposed E2E full duplex model with IRAF. Table 1 highlights three consistent trends on the single-turn MS-MARCO conversation dataset. a) CleanBase, trained only on clean speech, shows clear degradation in reasoning-oriented response quality (BLEU and sBERT) under noisy/interfered test conditions. The low response success rate further indicates that the model often fails to respond promptly after the user fin-ishes speaking, suggesting that noise/interference disrupts the model’s turn-taking and response triggering. b) When we in-ject interfering speakers during training on-the-fly (Sec. 3), the model improves both response quality (e.g., BLEU reaching 12.74) and interaction reliability (success rate 93.1%). These gains are largely attributable to exposure to overlap and non-target speech during training, which reduces distribution mis-match and improves the model’s ability to detect user end-of-speech under interference. c) The proposed IRAF module yields further gains beyond augmentation, improving BLEU by +1.46 (+11.46% relative) and success rate by +2.6% abso-lute, consistent with IRAF’s goal of suppressing interference-induced conditioning corruption via frame-level reliability gat-ing. The same pattern holds in the more extreme setting that combines interfering speakers with background noise, where IRAF maintains similarly significant improvements. We further evaluate IRAF on a multi-turn InstructS2S-200K conversational benchmark to reflect more realistic, long-horizon interactions. The main trends from the single-turn setting persist, but the multi-turn scenario amplifies the interaction-control difficulty, as shown in Table 2. a) The pro-posed IRAF consistently improves response quality, achieving +4.12 BLEU (+42.7% relative) and +0.11 sBERT (+23.4% rel-ative), indicating better semantic faithfulness under sustained noise. b) In multi-turn dialogue, naive interference augmenta-tion yields a low response success rate (69.2%), indicating that simply mixing interfering speakers during training does not ad-equately address missed responses. With IRAF, response suc-cess increases to 91% and response latency drops to 820 ms, demonstrating improved reliability and faster responses under interference. c) IRAF also supports accurate interruption han-dling: it achieves a 730 ms stop latency and 99.8% stop success rate when the user barges in under the interfering-speaker-only scenario, and these strong results hold even for the more ex-treme interfering-speaker with background-noise conditions. d) 
+
+In addition, as shown in Figure 3, IRAF consistently improves both audio reasoning quality and response success rate across all SNR settings, with gains that remain stable under differ-ent interfering-speaker conditions. These results indicate that IRAF generalizes across a broad range of interference severi-ties, rather than being tuned to a particular SNR regime. Over-all, IRAF enables responses that are faster, more accurate in turn-taking, and higher in quality in multi-turn settings. 0 5 10 15 20 
+
+> SNR (dB)
+> 6
+> 8
+> 10
+> 12
+> 14
+> 16
+> BLEU
+> 50
+> 60
+> 70
+> 80
+> 90
+> RSR (%)
+> NoisyAug BLEU
+> IRAF BLEU
+> NoisyAug RSR
+> IRAF RSR
+
+Figure 3: BLEU and response success rate (RSR) on InstructS2S-200K with interfering speakers across SNRs. 
+
+# 5. Conclusions 
+
+To address the key challenge of interference-induced condi-tioning corruption in end-to-end full-duplex spoken dialogue systems, this paper presented IRAF, a lightweight, streaming-compatible adaptive fusion module that performs frame-level reliability gating using target-speaker and user-audio embed-dings before fusion with agent representations. Experiments on MS-MARCO and InstructS2S-200K confirmed consistent im-provements in both response quality and full-duplex interaction under interfering-speaker conditions, demonstrating IRAF’s ef-fectiveness across a range of interference levels. 6. References 
+
+[1] R. Sarikaya, Y. Gao, H. Erdogan, and M. Picheny, “Turn-based language modeling for spoken dialog systems,” in ICASSP , 2002. [2] D. Zhang, S. Li, X. Zhang, J. Zhan, P. Wang, Y. Zhou, and X. Qiu, “SpeechGPT: Empowering large language models with intrinsic cross-modal conversational abilities,” in EMNLP , 2023. [3] H. Kim et al. , “Paralinguistics-aware speech-empowered large language models for natural conversation,” in NeurIPS , 2024. [4] A. Zeng, Z. Du, M. Liu, K. Wang, S. Jiang, L. Zhao, Y. Dong, and J. Tang, “Glm-4-voice: Towards intelligent and human-like end-to-end spoken chatbot,” 2024. [Online]. Available: https://arxiv.org/abs/2412.02612 [5] R. Huang et al. , “Audiogpt: Understanding and generating speech, music, sound, and talking head,” AAAI , 2024. [6] Z. Du et al. , “Lauragpt: Listen, attend, understand, and regenerate audio with gpt,” 2024. [Online]. Available: https: //arxiv.org/abs/2310.04673 [7] T. Wang, L. Zhou, Z. Zhang, Y. Wu, S. Liu, Y. Gaur, Z. Chen, J. Li, and F. Wei, “Viola: Conditional language models for speech recognition, synthesis, and translation,” TASLP , 2024. [8] Q. Fang, S. Guo, Y. Zhou, Z. Ma, S. Zhang, and Y. Feng, “LLaMA-omni: Seamless speech interaction with large language models,” in ICLR , 2025. [9] P. Wang, S. Lu, Y. Tang, S. Yan, W. Xia, and Y. Xiong, “A full-duplex speech dialogue scheme based on large language model,” 
+
+NeurIPS , 2024. [10] B. Liao, Y. Xu, J. Ou, K. Yang, W. Jian, P. Wan, and D. Zhang, “Flexduo: A pluggable system for enabling full-duplex capabilities in speech dialogue systems,” 2025. [Online]. Available: https://arxiv.org/abs/2502.13472 [11] J. Chen et al. , “Fireredchat: A pluggable, full-duplex voice interaction system with cascaded and semi-cascaded implementations,” 2025. [Online]. Available: https://arxiv.org/ab s/2509.06502 [12] Q. Chen et al. , “Minmo: A multimodal large language model for seamless voice interaction,” 2025. [Online]. Available: https://arxiv.org/abs/2501.06282 [13] X. Wang, Y. Li, C. Fu, Y. Shen, L. Xie, K. Li, X. Sun, and L. Ma, “Freeze-omni: A smart and low latency speech-to-speech dialogue model with frozen llm,” 2024. [Online]. Available: https://arxiv.org/abs/2411.00774 [14] Z. Xie and C. Wu, “Mini-omni2: Towards open-source gpt-4o with vision, speech and duplex capabilities,” 2024. [Online]. Available: https://arxiv.org/abs/2410.11190 [15] H. Zhang, W. Li, R. Chen, V. Kothapally, M. Yu, and D. Yu, “Llm-enhanced dialogue management for full-duplex spoken dialogue systems,” 2025. [Online]. Available: https: //arxiv.org/abs/2502.14145 [16] Z. Ma, Y. Song, C. Du, J. Cong, Z. Chen, Y. Wang, Y. Wang, and X. Chen, “Language model can listen while speaking,” AAAI ,2025. [17] G. Li et al. , “Easy turn: Integrating acoustic and linguistic modalities for robust turn-taking in full-duplex spoken dialogue systems,” 2025. [Online]. Available: https://arxiv.org/abs/2509.2 3938 [18] A. D´ efossez, L. Mazar´ e, M. Orsini, A. Royer, P. P´ erez, H. J´ egou, E. Grave, and N. Zeghidour, “Moshi: a speech-text foundation model for real-time dialogue,” 2024. [Online]. Available: https://arxiv.org/abs/2410.00037 [19] W. Yu, S. Wang, X. Yang, X. Chen, X. Tian, J. Zhang, G. Sun, L. Lu, Y. Wang, and C. Zhang, “SALMONN-omni: A standalone speech LLM without codec injection for full-duplex conversa-tion,” in NeurIPS , 2025. [20] Q. Wang, Z. Meng, W. Cui, Y. Zhang, P. Wu, B. Wu, I. King, L. Chen, and P. Zhao, “NTPP: Generative speech language mod-eling for dual-channel spoken dialogue via next-token-pair pre-diction,” in ICML , 2025. [21] M. Z¨ ufle, O. Klejch, N. Sanders, J. Niehues, A. Birch, and T. K. Lam, “F-actor: Controllable conversational behaviour in full-duplex models,” 2026. [Online]. Available: https: //arxiv.org/abs/2601.11329 [22] K. Hu, K. C. Puvvada, E. Rastorgueva, Z. Chen, H. Huang, S. Ding, K. Dhawan, H. Xu, J. Balam, and B. Ginsburg, “Ef-ficient and Direct Duplex Modeling for Speech-to-Speech Lan-guage Model,” in INTERSPEECH , 2025. [23] D. Wu et al. , “Chronological thinking in full-duplex spoken dialogue language models,” 2025. [Online]. Available: https: //arxiv.org/abs/2510.05150 [24] A. Ohashi, S. Iizuka, J. Jiang, and R. Higashinaka, “Towards a Japanese Full-duplex Spoken Dialogue System,” in INTER-SPEECH , 2025. [25] C. Chen et al. , “Reinforcement learning enhanced full-duplex spo-ken dialogue language models for conversational interactions,” in 
+
+COLM , 2025. [26] R. Roy, J. Raiman, S. gil Lee, T.-D. Ene, R. Kirby, S. Kim, J. Kim, and B. Catanzaro, “Personaplex: Voice and role control for full duplex conversational speech models,” 2026. [Online]. Available: https://arxiv.org/abs/2602.06053 [27] K. Miles, A. Weisser, R. W. Kallen, M. Varlet, M. J. Richardson, and J. M. Buchholz, “Behavioral dynamics of conversation,(mis) communication and coordination in noisy environments,” Scien-tific reports , 2023. [28] P. Bajaj et al. , “Ms marco: A human generated machine reading comprehension dataset,” 2018. [Online]. Available: https://arxiv.org/abs/1611.09268 [29] Q. Fang, Y. Zhou, S. Guo, S. Zhang, and Y. Feng, “Llama-omni 2: Llm-based real-time spoken chatbot with autoregressive stream-ing speech synthesis,” in ACL , 2025. [30] Z. Du et al. , “Cosyvoice 2: Scalable streaming speech synthesis with large language models,” 2024. [Online]. Available: https://arxiv.org/abs/2412.10117 [31] D. Snyder, G. Chen, and D. Povey, “Musan: A music, speech, and noise corpus,” 2015. [Online]. Available: https: //arxiv.org/abs/1510.08484 [32] O. Kuchaiev et al. , “Nemo: a toolkit for building ai applications using neural modules,” 2019. [Online]. Available: https://arxiv.org/abs/1909.09577 [33] NVIDIA, “Stt en fastconformer hybrid transducer-ctc large streaming 80ms,” 2023. [34] P. Zhang, G. Zeng, T. Wang, and W. Lu, “Tinyllama: An open-source small language model,” 2024. [Online]. Available: https://arxiv.org/abs/2401.02385 [35] E. Casanova, P. Neekhara, R. Langman, S. Hussain, S. Ghosh, X. Yang, A. Juki´ c, J. Li, and B. Ginsburg, “Nanocodec: Towards high-quality ultra fast speech llm inference,” 2025. [Online]. Available: https://arxiv.org/abs/2508.05835 [36] C. Raffel, N. Shazeer, A. Roberts, K. Lee, S. Narang, M. Matena, Y. Zhou, W. Li, and P. J. Liu, “Exploring the limits of transfer learning with a unified text-to-text transformer,” JMLR , 2020. [37] B. Desplanques, J. Thienpondt, and K. Demuynck, “Ecapa-tdnn: Emphasized channel attention, propagation and aggregation in tdnn based speaker verification,” in INTERSPEECH , 2020. [38] NVIDIA, “Stt en fast conformer-transducer large.” [Online]. Available: https://catalog.ngc.nvidia.com/orgs/nvidia/teams/nem o/models/stt en fastconformer transducer large [39] K. Papineni, S. Roukos, T. Ward, and W.-J. Zhu, “Bleu: a method for automatic evaluation of machine translation.” ACL, 2002. [40] N. Reimers and I. Gurevych, “Sentence-BERT: Sentence embed-dings using Siamese BERT-networks.” ACL, 2019. [41] S. Team, “Silero vad: pre-trained enterprise-grade voice activity detector (vad), number detector and language classifier,” https: //github.com/snakers4/silero-vad, 2024.

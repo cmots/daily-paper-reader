@@ -6,83 +6,86 @@
 </div>
 
 ## 每次日报
-- 最新运行日期：2026-06-08
-- 运行时间：2026-06-08 22:10:27 UTC
+- 最新运行日期：2026-06-09
+- 运行时间：2026-06-09 22:17:25 UTC
 - 运行状态：成功
-- 本次总论文数：21
-- 精读区：11
-- 速读区：10
+- 本次总论文数：22
+- 精读区：10
+- 速读区：12
 
 ### 今日简报（AI）
-今日精读11篇、速读10篇，聚焦多模态推理与语音生成两大方向。最值得关注的是获得满分10分的《VoxCPM2 Technical Report》与《Dreaming when Necessary: Advancing World Action Models with Adaptive Multi-Modal Reasoning》，分别揭示了离散语音表示在编解码中的突破以及自适应多模态推理在动作模型中的新范式。建议普通读者优先从精读列表入手，先把握多模态推理与语音编码的核心结论，再延伸到速读中的多说话人单元声码器与歌曲生成。
-- 详情：[/202606/08/README](/202606/08/README)
+今日共处理22篇论文，其中精读10篇，速读12篇。最值得关注的是《TBD-VLA》与《PRISM》两篇高分论文，分别聚焦时序块扩散视觉语言动作模型和先验引导的世界模型想象采样。建议优先精读这两篇9.0分论文，深入理解视觉语言动作建模与规划机制的前沿进展。
+- 详情：[/202606/09/README](/202606/09/README)
 
 ### 精读区论文标签
-1. [VoxCPM2 Technical Report](/202606/08/2606.06928v1-voxcpm2-technical-report)  
-   标签：评分：10.0/10、query:speech-model
-   evidence：多语言可控语音生成基础模型，支持风格控制
-2. [Dreaming when Necessary: Advancing World Action Models with Adaptive Multi-Modal Reasoning](/202606/08/2606.07089v1-dreaming-when-necessary-advancing-world-action-models-with-adaptive-multi-modal-reasoning)  
-   标签：评分：10.0/10、query:wm-vla-sa
-   evidence：具有自适应多模态推理的世界动作模型，适用于长时域任务
-3. [Towards Interactive Video World Modeling: Frontiers, Challenges, Benchmarks, and Future Trends](/202606/08/2606.01164v1-towards-interactive-video-world-modeling-frontiers-challenges-benchmarks-and-future-trends)  
+1. [TBD-VLA: Temporal Block Diffusion Vision Language Action Model](/202606/09/2606.07895v1-tbd-vla-temporal-block-diffusion-vision-language-action-model)  
    标签：评分：9.0/10、query:wm-vla-sa
-   evidence：关于交互式视频世界建模的综述
-4. [BiEAR: A Human Auditory-Inspired Adaptive Binaural Front-end for Multi-Speaker Localisation and Distance Estimation](/202606/08/2606.06795v1-biear-a-human-auditory-inspired-adaptive-binaural-front-end-for-multi-speaker-localisation-and-distance-estimation)  
+   evidence：基于时间块扩散的离散VLA动作生成
+2. [PRISM: PRior-guided Imagination Sampling in world Models](/202606/09/2606.07974v1-prism-prior-guided-imagination-sampling-in-world-models)  
    标签：评分：9.0/10、query:wm-vla-sa
-   evidence：双耳前端用于空间音频处理
-5. [Leveraging Soft Distributions of SSL-Derived Discrete Speech Tokens for Downstream Inference](/202606/08/2606.06806v1-leveraging-soft-distributions-of-ssl-derived-discrete-speech-tokens-for-downstream-inference)  
+   evidence：基于先验引导行动采样的世界模型规划
+3. [MotionVLA: Injecting Geometric Motion into Vision-Language-Action Model](/202606/09/2606.08288v1-motionvla-injecting-geometric-motion-into-vision-language-action-model)  
+   标签：评分：9.0/10、query:wm-vla-sa
+   evidence：通过几何运动注入增强VLA模型
+4. [TRADE: Transducer-Augmented Decoder for Speech LLM](/202606/09/2606.08486v1-trade-transducer-augmented-decoder-for-speech-llm)  
    标签：评分：9.0/10、query:speech-model
-   evidence：软令牌分配提升语音合成和ASR的表现力
-6. [STRIPS-WM: Learning Grounded Propositional STRIPS-style World Models from Images](/202606/08/2606.06832v1-strips-wm-learning-grounded-propositional-strips-style-world-models-from-images)  
+   evidence：语音大语言模型流式解码，支持统一语音生成与理解
+5. [Two Bridges, One Pathway: From VLMs to Generalizable VLAs with Embodied Trajectory-Coupled Data](/202606/09/2606.08520v1-two-bridges-one-pathway-from-vlms-to-generalizable-vlas-with-embodied-trajectory-coupled-data)  
    标签：评分：9.0/10、query:wm-vla-sa
-   evidence：从图像学习有根基的STRIPS风格世界模型用于规划
-7. [ActionMap: Robot Policy Learning via Voxel Action Heatmap](/202606/08/2606.06904v1-actionmap-robot-policy-learning-via-voxel-action-heatmap)  
+   evidence：通过具身轨迹耦合数据将视觉语言模型转化为VLA模型
+6. [Unifying Object-Centric World Models and Diffusion Policy: A Hierarchical Framework for Multi-Stage Robotic Tasks](/202606/09/2606.08775v1-unifying-object-centric-world-models-and-diffusion-policy-a-hierarchical-framework-for-multi-stage-robotic-tasks)  
    标签：评分：9.0/10、query:wm-vla-sa
-   evidence：提出体素热图动作解码器的视觉-语言-动作模型
-8. [dots.tts Technical Report](/202606/08/2606.07080v1-dotstts-technical-report)  
+   evidence：世界模型作为高层转移函数用于多阶段机器人操作
+7. [Scaling by Diversified Experience for Vision-Language-Action Models](/202606/09/2606.09009v1-scaling-by-diversified-experience-for-vision-language-action-models)  
+   标签：评分：9.0/10、query:wm-vla-sa
+   evidence：多样化经验缩放的VLA模型
+8. [BareWave: Waveform-Native Flow-Matching Text-to-Speech](/202606/09/2606.09048v1-barewave-waveform-native-flow-matching-text-to-speech)  
    标签：评分：9.0/10、query:speech-model
-   evidence：连续自回归TTS，流匹配头实现表现力合成
-9. [LARA: Latent Action Representation Alignment for Vision-Language-Action Models](/202606/08/2606.07100v1-lara-latent-action-representation-alignment-for-vision-language-action-models)  
-   标签：评分：9.0/10、query:wm-vla-sa
-   evidence：面向VLA模型的潜在动作表示对齐
-10. [Coarse-to-Control: Action-Token Planning for Vision-Language-Action Models](/202606/08/2606.07107v1-coarse-to-control-action-token-planning-for-vision-language-action-models)  
-   标签：评分：9.0/10、query:wm-vla-sa
-   evidence：VLA规划与动作令牌
-11. [KIT's Submission to Cross-Lingual Voice Cloning in IWSLT 2026](/202606/08/2606.07240v1-kits-submission-to-cross-lingual-voice-cloning-in-iwslt-2026)  
+   evidence：使用流匹配的直接波形文本到语音合成
+9. [End-to-End Training for Discrete Token LLM based TTS System](/202606/09/2606.09234v1-end-to-end-training-for-discrete-token-llm-based-tts-system)  
    标签：评分：9.0/10、query:speech-model
-   evidence：跨语言语音克隆用于语音翻译
+   evidence：基于离散令牌LLM的TTS端到端训练
+10. [$ω$-EVA: Envision, Verify, and Act with Latent Interactive World Models](/202606/09/2606.09457v1--eva-envision-verify-and-act-with-latent-interactive-world-models)  
+   标签：评分：9.0/10、query:wm-vla-sa
+   evidence：用于具身动作生成的潜在交互世界模型
 
 ### 速读区论文标签
-1. [Multilingual Multi-Speaker Unit Vocoders: A Systematic Analysis of Discrete Speech Representations](/202606/08/2606.06740v1-multilingual-multi-speaker-unit-vocoders-a-systematic-analysis-of-discrete-speech-representations)  
+1. [HybridCodec: Fast Dual-Stream, Semantically Enhanced Neural Audio Codec](/202606/09/2606.06743v1-hybridcodec-fast-dual-stream-semantically-enhanced-neural-audio-codec)  
    标签：评分：8.0/10、query:speech-model
-   evidence：对语音到语音系统中单元声码器的分析
-2. [HybridCodec: Fast Dual-Stream, Semantically Enhanced Neural Audio Codec](/202606/08/2606.06743v1-hybridcodec-fast-dual-stream-semantically-enhanced-neural-audio-codec)  
+   evidence：神经音频编解码器实现语义与声学解耦，支持语音生成与理解
+2. [Audio-Oscar: A Multi-Agent System for Complex Audio Scene Generation, Orchestration, and Refinement](/202606/09/2606.07397v1-audio-oscar-a-multi-agent-system-for-complex-audio-scene-generation-orchestration-and-refinement)  
    标签：评分：8.0/10、query:speech-model
-   evidence：双流编解码器实现语义和声学解耦的语音令牌化，支持下游语音任务
-3. [Towards Unified Song Generation and Singing Voice Conversion with Accompaniment Co-Generation](/202606/08/2606.07015v1-towards-unified-song-generation-and-singing-voice-conversion-with-accompaniment-co-generation)  
+   evidence：多智能体音频场景生成中包含语音生成
+3. [vla.cpp: A Unified Inference Runtime for Vision-Language-Action Models](/202606/09/2606.08094v1-vlacpp-a-unified-inference-runtime-for-vision-language-action-models)  
+   标签：评分：8.0/10、query:wm-vla-sa
+   evidence：适用于VLA模型的可移植C++推理运行时
+4. [FlashTTS: Fast Streaming TTS with MTP Acceleration and X-pred Mean Flow Distillation](/202606/09/2606.09141v1-flashtts-fast-streaming-tts-with-mtp-acceleration-and-x-pred-mean-flow-distillation)  
    标签：评分：8.0/10、query:speech-model
-   evidence：统一语音生成与理解框架
-4. [TargetSEC: Plug-and-Play In-the-Wild Speech Emotion Conversion via Arousal-Conditioned Latent Style Diffusion](/202606/08/2606.07293v1-targetsec-plug-and-play-in-the-wild-speech-emotion-conversion-via-arousal-conditioned-latent-style-diffusion)  
+   evidence：用于低延迟表现力语音合成的快速流式TTS
+5. [OpenBibleTTS: Large-Scale Speech Resources and TTS Models for Low-Resource Languages](/202606/09/2606.09553v1-openbibletts-large-scale-speech-resources-and-tts-models-for-low-resource-languages)  
    标签：评分：8.0/10、query:speech-model
-   evidence：语音情感转换，实现表现力语音合成
-5. [Temporally-Aligned Evaluation for Audio-Driven Talking Head Generation](/202606/08/2606.01031v1-temporally-aligned-evaluation-for-audio-driven-talking-head-generation)  
+   evidence：面向低资源语言的TTS模型和基准
+6. [Cross-Modal Masking for Robust Silent Speech Synthesis Using sEMG and Lipreading](/202606/09/2606.09667v1-cross-modal-masking-for-robust-silent-speech-synthesis-using-semg-and-lipreading)  
+   标签：评分：8.0/10、query:speech-model
+   evidence：使用多模态掩蔽的静默语音合成
+7. [IRAF: Interference-Resilient Adaptive Fusion for Noise-Robust End-to-End Full-Duplex Spoken Dialogue Systems](/202606/09/2606.06559v1-iraf-interference-resilient-adaptive-fusion-for-noise-robust-end-to-end-full-duplex-spoken-dialogue-systems)  
    标签：评分：7.0/10、query:speech-model
-   evidence：音频驱动说话头的时序对齐评估
-6. [Mamba-Enhanced Implicit Motion Learning for Audio-Driven Portrait Animation](/202606/08/2606.03402v2-mamba-enhanced-implicit-motion-learning-for-audio-driven-portrait-animation)  
+   evidence：全双工口语对话的噪声鲁棒自适应融合
+8. [HydraQE: OSU's Submission for the IWSLT 2026 Speech Translation Metrics Shared Task](/202606/09/2606.08748v1-hydraqe-osus-submission-for-the-iwslt-2026-speech-translation-metrics-shared-task)  
    标签：评分：7.0/10、query:speech-model
-   evidence：音频驱动肖像动画，用于表现力生成
-7. [WavTTS: Towards High-Quality Zero-Shot TTS via Direct Raw Waveform Modeling](/202606/08/2606.03455v1-wavtts-towards-high-quality-zero-shot-tts-via-direct-raw-waveform-modeling)  
+   evidence：语音翻译质量估计
+9. [TLDR: Compressing Audio Tokens for Efficient Autoregressive Text-to-Speech](/202606/09/2606.09019v1-tldr-compressing-audio-tokens-for-efficient-autoregressive-text-to-speech)  
    标签：评分：7.0/10、query:speech-model
-   evidence：通过原始波形建模的零样本文本转语音
-8. [Imaginative Perception Tokens Enhance Spatial Reasoning in Multimodal Language Models](/202606/08/2606.03988v2-imaginative-perception-tokens-enhance-spatial-reasoning-in-multimodal-language-models)  
-   标签：评分：7.0/10、query:wm-vla-sa
-   evidence：通过想象感知令牌实现空间推理，类似世界模型推理
-9. [Bootstrap Theory of Representational Emergence: Explanatory Insufficiency as a Driver of Representation Learning and World Models](/202606/08/2606.07303v1-bootstrap-theory-of-representational-emergence-explanatory-insufficiency-as-a-driver-of-representation-learning-and-world-models)  
-   标签：评分：7.0/10、query:wm-vla-sa
-   evidence：表征涌现理论，为世界模型提供理论基础
-10. [Audio-Oscar: A Multi-Agent System for Complex Audio Scene Generation, Orchestration, and Refinement](/202606/08/2606.07397v1-audio-oscar-a-multi-agent-system-for-complex-audio-scene-generation-orchestration-and-refinement)  
+   evidence：高效自回归文本到语音
+10. [Is Text All You Need? Text as a Universal Information Bottleneck for Speech LLMs](/202606/09/2606.09366v1-is-text-all-you-need-text-as-a-universal-information-bottleneck-for-speech-llms)  
+   标签：评分：7.0/10、query:speech-model
+   evidence：语音到LLM桥梁，用于统一语音理解
+11. [M2S-AVSR: Modality-aware Multi-view Self-supervised Representation for Robust Audio-Visual Speech Recognition](/202606/09/2606.05763v1-m2s-avsr-modality-aware-multi-view-self-supervised-representation-for-robust-audio-visual-speech-recognition)  
    标签：评分：6.0/10、query:speech-model
-   evidence：包含语音生成的多智能体音频场景生成
+   evidence：鲁棒音频-视觉语音理解
+12. [Language as a Sensor: Calibrated Spatial Belief Estimation in 3D Scenes from Natural Language](/202606/09/2606.08666v1-language-as-a-sensor-calibrated-spatial-belief-estimation-in-3d-scenes-from-natural-language)  
+   标签：评分：6.0/10、query:wm-vla-sa
+   evidence：语言作为传感器用于3D场景空间信念估计
 
 
 <div class="dpr-home-promo-card">
