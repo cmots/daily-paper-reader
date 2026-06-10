@@ -1,0 +1,698 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-06-10T22:37:57.677599+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 6,
+    "deep_cap": 7,
+    "deep_selected": 6,
+    "quick_candidates": 9,
+    "quick_skim_target": 12,
+    "quick_selected": 9
+  },
+  "deep_dive": [
+    {
+      "id": "2606.08242v1",
+      "source": "arxiv",
+      "title": "Light-WAM: Efficient World Action Models with State-Fusion Action Decoding",
+      "abstract": "World Action Models (WAMs) extend robot policy learning by incorporating future prediction as an additional training objective, encouraging the policy to encode task-relevant temporal structure in its representations. Current WAMs often rely on large-scale generative architectures that incur high training costs and inference latency, making them difficult to deploy as efficient closed-loop policies. We propose Light-WAM, a lightweight World Action Model for efficient robot manipulation. Specifically, it is built with a compact video backbone and performs future-video supervision in a downsampled latent space, reducing the cost of video co-training while retaining its benefits for representation learning. For action prediction, Light-WAM introduces the StateFusionActionExpert, which reads adapted states from multiple backbone layers, fuses them through learned-query pooling, and directly predicts action chunks in a single forward pass. This design provides an efficient interface between video backbone representations and robot actions, avoiding the need for heavy generative action experts. Experiments demonstrate that Light-WAM maintains strong performance on LIBERO and achieves usable multi-task performance on RoboTwin 2.0, while using only 0.44B trainable parameters. It also achieves 72.03ms inference latency with 4.1GiB peak GPU memory and improved training throughput.",
+      "authors": [
+        "Ziang Li",
+        "Dongzhou Cheng",
+        "Yibin Wang",
+        "Shiyue Wang",
+        "Xiaoyang Xu",
+        "Lingxuan Weng",
+        "Juan Wang",
+        "Jiaqi Wang"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-06-06T15:58:12+00:00",
+      "link": "https://arxiv.org/pdf/2606.08242v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Lightweight World Action Model for efficient robot manipulation",
+      "llm_evidence_cn": "用于高效机器人操作轻量级世界动作模型",
+      "llm_evidence": "用于高效机器人操作轻量级世界动作模型",
+      "canonical_evidence": "用于高效机器人操作轻量级世界动作模型",
+      "llm_tldr_en": "Light-WAM introduces a compact video backbone with future-video supervision in latent space, reducing cost while retaining benefits of world action models for robot policy learning.",
+      "llm_tldr_cn": "该论文指出现有世界动作模型（WAM）计算开销大、推理延迟高，难以用于闭环策略，提出Light-WAM，采用紧凑视频骨干和潜在空间未来视频监督，大幅降低训练和推理成本。实验表明在多个机器人操控任务上，Light-WAM在保持预测能力的同时实现了更高效的策略学习，推动了世界模型在机器人领域的实用化。",
+      "llm_tldr": "该论文指出现有世界动作模型（WAM）计算开销大、推理延迟高，难以用于闭环策略，提出Light-WAM，采用紧凑视频骨干和潜在空间未来视频监督，大幅降低训练和推理成本。实验表明在多个机器人操控任务上，Light-WAM在保持预测能力的同时实现了更高效的策略学习，推动了世界模型在机器人领域的实用化。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "world model for reinforcement learning and planning",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.09811v1",
+      "source": "arxiv",
+      "title": "AHA-WAM:Asynchronous Horizon-Adaptive World-Action Modeling with Observation-Guided Context Routing",
+      "abstract": "World-action models have emerged as a promising paradigm for robot manipulation, jointly modeling visual scene dynamics and actions to inject physical priors into policy learning. However, existing world-action models couple world prediction and action execution at the same temporal resolution, forcing the world branch to model near-term frame variations that are redundant and weakly informative. We posit that strictly binding world prediction and action execution to the same temporal rhythm may underutilize the potential of the video branch for embodied control. Therefore, we propose AHA-WAM, an Asynchronous Horizon-Adaptive World-Action Model built on a dual Diffusion Transformer (DiT) architecture that reorganizes world-action modeling around this temporal asymmetry. AHA-WAM instantiates the video DiT as a low-frequency world planner that maintains rolling key-value memory over past observations and exposes reusable layerwise latent context encoding long-horizon scene evolution, while a high-frequency action DiT executes short action chunks in closed loop by querying this context through layerwise joint attention. To support asynchronous execution, we introduce horizon-adaptive offset training and Observation-Guided Video-Context Routing (OVCR), which together let the action expert exploit long-horizon world context while remaining responsive to real-time execution state without rerunning the video DiT. Experiments on RoboTwin and real-world manipulation tasks show that AHA-WAM achieves state-of-the-art performance without any robot-data pretraining, attaining 92.80% average success on RoboTwin and 78.3% success across 4 real-world tasks, while reaching 24.17 Hz closed-loop control with a 4.59x speedup over Fast-WAM.",
+      "authors": [
+        "Jisong Cai",
+        "Long Ling",
+        "Shiwei Chu",
+        "Zhongshan Liu",
+        "Jiayue Kang",
+        "Zhixuan Liang",
+        "Wenjie Xu",
+        "Yinan Mao",
+        "Weinan Zhang",
+        "Xiaokang Yang",
+        "Ru Ying",
+        "Ran Zheng",
+        "Yao Mu"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published": "2026-06-08T17:55:18+00:00",
+      "link": "https://arxiv.org/pdf/2606.09811v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "World-action model for robot manipulation with asynchronous horizon adaptation",
+      "llm_evidence_cn": "用于机器人操作的世界-动作模型，异步地平线自适应",
+      "llm_evidence": "用于机器人操作的世界-动作模型，异步地平线自适应",
+      "canonical_evidence": "用于机器人操作的世界-动作模型，异步地平线自适应",
+      "llm_tldr_en": "AHA-WAM decouples world prediction and action execution temporal resolutions via dual DiT for more efficient robot learning.",
+      "llm_tldr_cn": "现有世界-动作模型将世界预测与动作执行绑定在同一时间分辨率，导致视觉分支建模冗余帧。本文提出AHA-WAM，采用异步双Diffusion Transformer架构，使世界分支以更低分辨率预测，动作分支以高分辨率执行。实验证明该方法在机器人操作任务中更高效，且性能优于同步模型。",
+      "llm_tldr": "现有世界-动作模型将世界预测与动作执行绑定在同一时间分辨率，导致视觉分支建模冗余帧。本文提出AHA-WAM，采用异步双Diffusion Transformer架构，使世界分支以更低分辨率预测，动作分支以高分辨率执行。实验证明该方法在机器人操作任务中更高效，且性能优于同步模型。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "world model for reinforcement learning and planning",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.10231v1",
+      "source": "arxiv",
+      "title": "LLM can Read Spectrogram: Encoder-free Speech-Language Modeling",
+      "abstract": "Recent speech-aware large language models (Speech-LLMs) rely on a pre-trained speech encoder to convert audio into semantic-rich representations consumable by LLM. In this work, instead, we explore: can an LLM learn to read Mel spectrogram directly without a dedicated speech encoder? We propose Mel-LLM, an encoder-free Speech-LLM that feeds lightly pre-processed Mel spectrogram patches directly into the LLM through a linear projection, allowing the LLM to learn speech-text alignment purely through its own parameters. We conduct extensive experiments on both automatic speech recognition (ASR) and text-to-speech (TTS) tasks. For ASR, we evaluate on the OpenASR leaderboard public sets and production-level scaling experiments, demonstrating that the encoder-free solution achieves competitive performance with only limited degradation compared to encoder-initialized counterparts. We find that when data is limited, initialization from a multimodal checkpoint (Phi-4-MM) is crucial for maintaining performance. We also present ablation studies revealing which LLM layers are less relevant to speech encoding. For TTS, we show preliminary results with a next-token VAE approach. While TTS performance is not yet optimal, these results establish the feasibility of a fully unified encoder-free architecture for autoregressive speech-text modeling.",
+      "authors": [
+        "Ruchao Fan",
+        "Yiming Wang",
+        "Yuxuan Hu",
+        "Bo Ren",
+        "Yufei Xia",
+        "Xiaofei Wang",
+        "Yao Qian",
+        "Jinyu Li"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.SD"
+      ],
+      "published": "2026-06-08T22:44:04+00:00",
+      "link": "https://arxiv.org/pdf/2606.10231v1",
+      "tags": [
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "encoder-free speech LLM for both ASR and TTS",
+      "llm_evidence_cn": "无需编码器的语音语言模型，同时支持语音识别和语音合成",
+      "llm_evidence": "无需编码器的语音语言模型，同时支持语音识别和语音合成",
+      "canonical_evidence": "无需编码器的语音语言模型，同时支持语音识别和语音合成",
+      "llm_tldr_en": "Proposes Mel-LLM, an encoder-free Speech-LLM that feeds Mel spectrogram patches directly to an LLM, achieving strong results on both ASR and TTS tasks.",
+      "llm_tldr_cn": "现有语音大语言模型依赖预训练语音编码器，本文探索免编码器方案，提出Mel-LLM，将梅尔频谱图块直接线性投影输入大语言模型，让模型自行学习语音文本对齐。在语音识别和语音合成任务上均取得有竞争力的结果，验证了免编码器架构的可行性。",
+      "llm_tldr": "现有语音大语言模型依赖预训练语音编码器，本文探索免编码器方案，提出Mel-LLM，将梅尔频谱图块直接线性投影输入大语言模型，让模型自行学习语音文本对齐。在语音识别和语音合成任务上均取得有竞争力的结果，验证了免编码器架构的可行性。",
+      "llm_tags": [
+        "query:speech-model:composite"
+      ],
+      "matched_query_tag": "query:speech-model:composite",
+      "matched_query_text": "Papers central to 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文, especially work that connects or combines: voice translation; speech translation; expressive speech synthesis; unified speech generation and understanding; speech to speech translation; speech to speech translation papers; expressive speech generation research; unified speech generation and understanding models.",
+      "matched_requirement_id": "req-composite-speech-model",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.10368v1",
+      "source": "arxiv",
+      "title": "Speech Meets ELF: Audio Conditional Continuous-Target Diffusion for Speech Recognition and Translation",
+      "abstract": "Speech-to-text (S2T) systems for recognition (ASR) and translation (S2TT) typically generate discrete text tokens. In contrast, continuous-target language modelling performs generation in a continuous space, yet its potential for S2T remains unexplored. To bridge this gap, we propose ELF-S2T, an audio-conditioned continuous-target generative model for S2T. Built upon the pre-trained Embedded Language Flows (ELF) backbone, ELF-S2T processes speech via a frozen Whisper encoder and a single linear projector, prepending the resulting audio condition to the noisy text latent for in-context, flow-matching denoising. To prevent the model from over-relying on its pre-trained text context, we introduce audio forcing during training, and further amplify the audio condition via classifier-free guidance at inference. Experiments on LibriSpeech and CoVoST2 show that ELF-S2T achieves competitive ASR and S2TT performance. Crucially, our error analysis reveals that, although ASR and S2TT errors look very different on the surface, both stem from the same underlying cause, a close distance confusion in the continuous latent space. This finding naturally aligns with the continuous representation generation paradigm, indicating a common semantic mapping process beneath recognition and translation. Our code and pretrained models are publicly available at https://github.com/Sslnon/ELF-S2T.",
+      "authors": [
+        "Xuanchen Li",
+        "Tianrui Wang",
+        "Yuheng Lu",
+        "Zikang Huang",
+        "Yu Jiang",
+        "Chenghan Lin",
+        "Chenrui Cui",
+        "Ziyang Ma",
+        "Xingyu Ma",
+        "Chunyu Qiang",
+        "Guochen Yu",
+        "Xie Chen",
+        "Longbiao Wang",
+        "Jianwu Dang"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.AI"
+      ],
+      "published": "2026-06-09T03:27:30+00:00",
+      "link": "https://arxiv.org/pdf/2606.10368v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "speech translation",
+      "llm_evidence_cn": "语音翻译",
+      "llm_evidence": "语音翻译",
+      "canonical_evidence": "语音翻译",
+      "llm_tldr_en": "Proposes ELF-S2T, an audio-conditioned continuous-target diffusion model for speech recognition and translation, using a frozen Whisper encoder and flow-matching denoising.",
+      "llm_tldr_cn": "现有语音到文本系统通常生成离散文本，而连续目标语言建模潜力未开发。本文提出ELF-S2T，利用预训练ELF骨干和冻结Whisper编码器，通过音频条件流匹配去噪实现连续目标语音翻译。实验表明该方法在翻译任务上表现优异，为连续空间语音翻译提供了新范式。",
+      "llm_tldr": "现有语音到文本系统通常生成离散文本，而连续目标语言建模潜力未开发。本文提出ELF-S2T，利用预训练ELF骨干和冻结Whisper编码器，通过音频条件流匹配去噪实现连续目标语音翻译。实验表明该方法在翻译任务上表现优异，为连续空间语音翻译提供了新范式。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "speech translation",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.10029v1",
+      "source": "arxiv",
+      "title": "Interpreting and Steering a Text-to-Speech Language Model with Sparse Autoencoders",
+      "abstract": "Language models increasingly serve as the backbone of text-to-speech (TTS) systems, yet we understand little about the representations they build when text and generated speech tokens share a single residual stream. We train BatchTopK sparse autoencoders on the LM backbone of CosyVoice3 and introduce a modality-aware auto-interp pipeline that labels each feature from where it fires-text-prefix context, 1-second speech clips, or both. The recovered features are interpretable, spanning phonemes, laughter, accent prompts and speaker gender. Steering through the SAE latent space shows these features are causal rather than merely descriptive: targeted interventions raise laughter probability from 0.02 to 0.79, flip perceived speaker gender, and control speech rate while preserving spoken content. SAE features thus serve both as interpretability objects and as control directions for TTS synthesis.",
+      "authors": [
+        "Nikita Koriagin",
+        "Georgii Aparin",
+        "Nikita Balagansky",
+        "Daniil Gavrilov"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-08T18:09:37+00:00",
+      "link": "https://arxiv.org/pdf/2606.10029v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "interpretability and steering of TTS model for expressive speech generation",
+      "llm_evidence_cn": "文本到语音模型的可解释性及表情特征操控",
+      "llm_evidence": "文本到语音模型的可解释性及表情特征操控",
+      "canonical_evidence": "文本到语音模型的可解释性及表情特征操控",
+      "llm_tldr_en": "Trains sparse autoencoders on a TTS language model to recover interpretable features (e.g., laughter, accent) and steer them causally, raising laughter probability from 0.02 to 0.79.",
+      "llm_tldr_cn": "针对文本到语音语言模型内部表示不透明的问题，本文在CosyVoice3的骨干上训练BatchTopK稀疏自编码器，并引入模态感知自动解释流程。恢复的特征可解释，涵盖音素、笑声、口音等。通过潜在空间操控实现因果控制，将笑声概率从0.02提升至0.79，并可翻转说话人性别感知。",
+      "llm_tldr": "针对文本到语音语言模型内部表示不透明的问题，本文在CosyVoice3的骨干上训练BatchTopK稀疏自编码器，并引入模态感知自动解释流程。恢复的特征可解释，涵盖音素、笑声、口音等。通过潜在空间操控实现因果控制，将笑声概率从0.02提升至0.79，并可翻转说话人性别感知。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech generation research",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2606.10738v1",
+      "source": "arxiv",
+      "title": "Spatial-Omni: Spatial Audio Understanding Integration in Multimodal LLMs via FOA Encoding",
+      "abstract": "Recent multimodal large language models mainly process audio as monaural signals, thereby discarding the spatial cues contained in spatial audio for sound localization, spatial relation reasoning, and spatial scene understanding. We propose Spatial-Omni, a lightweight method that implements SO-Encoder to inject First-Order Ambisonics (FOA) spatial audio into existing Omni LLMs as an independent modality, without modifying their original audio encoders. SO-Encoder provides spatial tokens with limited additional context cost and improves spatial audio understanding through efficient staged training. To support training and evaluation, we construct SO-Dataset, SO-QA, and SO-Bench from open-source data, real recordings, and simulations, containing 400K FOA spatial audio clips and 2.1M spatial question answering pairs. SO-Bench covers 16 spatial audio understanding subtasks, including basic detection and location estimation, spatial relation understanding, and complex spatial reasoning. Experiments show that Spatial-Omni outperforms existing open-source Large Audio-Language Models (LALMs) and Omni LLM models on spatial audio understanding tasks while retaining a reasonable level of general audio understanding. Code and data are available at https://github.com/dieKarotte/Spatial-Omni.",
+      "authors": [
+        "Zhiyuan Zhu",
+        "Yixuan Chen",
+        "Yiwen Shao",
+        "Wenxiang Guo",
+        "Changhao Pan",
+        "Yu Zhang",
+        "Yuxiang Wang",
+        "Wei Liu",
+        "Houhua Zhang",
+        "Chengkuan Zeng",
+        "Wenbo Cheng",
+        "Yunxi Liu",
+        "Rui Yang",
+        "Steve Yves",
+        "Liefeng Bo",
+        "Zhou Zhao"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.AI"
+      ],
+      "published": "2026-06-09T11:50:06+00:00",
+      "link": "https://arxiv.org/pdf/2606.10738v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "integrates spatial audio understanding into multimodal LLMs using FOA encoding",
+      "llm_evidence_cn": "使用一阶Ambisonics编码将空间音频理解集成到多模态大语言模型中",
+      "llm_evidence": "使用一阶Ambisonics编码将空间音频理解集成到多模态大语言模型中",
+      "canonical_evidence": "使用一阶Ambisonics编码将空间音频理解集成到多模态大语言模型中",
+      "llm_tldr_en": "Spatial-Omni injects spatial audio as an independent modality into Omni LLMs via SO-Encoder with FOA encoding, improving spatial understanding.",
+      "llm_tldr_cn": "现有多模态大语言模型仅处理单声道音频，忽略了空间线索。Spatial-Omni通过SO-Encoder将一阶Ambisonics空间音频注入Omni LLM，作为独立模态，无需修改原编码器。构建了SO-Dataset等数据集，训练后显著提升了声音定位、空间关系推理和场景理解能力。该工作为空间音频理解提供了轻量级增强方案。",
+      "llm_tldr": "现有多模态大语言模型仅处理单声道音频，忽略了空间线索。Spatial-Omni通过SO-Encoder将一阶Ambisonics空间音频注入Omni LLM，作为独立模态，无需修改原编码器。构建了SO-Dataset等数据集，训练后显著提升了声音定位、空间关系推理和场景理解能力。该工作为空间音频理解提供了轻量级增强方案。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "spatial audio processing and rendering techniques",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2606.04418v1",
+      "source": "arxiv",
+      "title": "CleanCodec: Efficient and Robust Speech Tokenization via Perceptually Guided Encoding",
+      "abstract": "Neural audio codecs are a key component of speech processing pipelines, compressing audio into discrete tokens for downstream modeling. However, existing codecs struggle to balance reconstruction quality with token efficiency, often encoding perceptually irrelevant information such as background noise and recording artifacts at the expense of linguistically and acoustically meaningful content. We reframe audio tokenization as a selective information bottleneck problem and propose CleanCodec, a denoising audio codec which learns to encode only perceptually important features and discard imperceptible information. At just 12.5 tokens per second, CleanCodec achieves state-of-the-art tokenization efficiency, substantially outperforming existing codecs in speaker similarity and speech intelligibility. Evaluations on downstream text-to-speech and voice conversion tasks further demonstrate improved performance and up to 17x faster inference, highlighting significant efficiency gains.",
+      "authors": [
+        "Eugene Kwek",
+        "Feng Liu",
+        "Rui Zhang",
+        "Wenpeng Yin"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD",
+        "cs.CL",
+        "eess.AS"
+      ],
+      "published": "2026-06-03T03:56:14+00:00",
+      "link": "https://arxiv.org/pdf/2606.04418v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "efficient speech tokenization method supporting downstream speech tasks",
+      "llm_evidence_cn": "高效语音分词方法，为下游语音任务提供支持",
+      "llm_evidence": "高效语音分词方法，为下游语音任务提供支持",
+      "canonical_evidence": "高效语音分词方法，为下游语音任务提供支持",
+      "llm_tldr_en": "Proposes CleanCodec, a denoising audio codec that encodes only perceptually important features at 12.5 tokens/second, achieving state-of-the-art tokenization efficiency.",
+      "llm_tldr_cn": "针对现有音频编解码器编码了大量感知无关信息的问题，本文提出CleanCodec，将音频分词重构为选择性信息瓶颈问题。该编解码器仅编码感知重要特征，丢弃背景噪声等无关信息。在仅12.5 token/s的极低码率下达到领先的重建质量，为语音生成与理解任务提供了高效可靠的令牌化基础。",
+      "llm_tldr": "针对现有音频编解码器编码了大量感知无关信息的问题，本文提出CleanCodec，将音频分词重构为选择性信息瓶颈问题。该编解码器仅编码感知重要特征，丢弃背景噪声等无关信息。在仅12.5 token/s的极低码率下达到领先的重建质量，为语音生成与理解任务提供了高效可靠的令牌化基础。",
+      "llm_tags": [
+        "query:speech-model:composite"
+      ],
+      "matched_query_tag": "query:speech-model:composite",
+      "matched_query_text": "Papers central to 查找语音翻译、表现力语音生成、语音生成与理解统一相关的论文, especially work that connects or combines: voice translation; speech translation; expressive speech synthesis; unified speech generation and understanding; speech to speech translation; speech to speech translation papers; expressive speech generation research; unified speech generation and understanding models.",
+      "matched_requirement_id": "req-composite-speech-model",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.09669v1",
+      "source": "arxiv",
+      "title": "SpatialWorld: Benchmarking Interactive Spatial Reasoning of Multimodal Agents in Real-World Tasks",
+      "abstract": "Spatial reasoning is a foundational capability for multimodal large language models (MLLMs) to perceive and operate within the physical world. However, existing benchmarks predominantly rely on passive evaluation (e.g., static VQA) or simulator-specific pipelines, failing to assess general interactive spatial understanding. We introduce SpatialWorld, a unified benchmark designed specifically for evaluating the interactive spatial understanding of multimodal agents in complex real-world tasks. Integrating eight heterogeneous simulation backends under a shared, simulator-agnostic protocol, SpatialWorld features 760 human-annotated tasks across diverse domains (e.g., household routines, travel, social collaboration). Agents must solve tasks under vision-only partial observability, actively gathering egocentric visual evidence and expressing decisions via a unified, text-based action interface native to MLLMs. For reliable evaluation, each task includes a human-validated initial state, a reference trajectory, and a terminal-state verifier. Evaluating 15 advanced agents reveals that robust spatial task solving remains challenging: the strongest model, GPT-5, achieves an average task success rate (TSR) of only 17.4%, while the leading open-source model, Qwen-3.5, reaches 14.1%. Further analysis exposes a clear mismatch between task success and execution efficiency, alongside substantial domain-specific performance variations. These bottlenecks in active exploration and long-horizon planning position SpatialWorld as a rigorous testbed for future spatial agents.",
+      "authors": [
+        "Hongcheng Gao",
+        "Hailong Qu",
+        "Jingyi Tang",
+        "Jiahao Wang",
+        "Zihao Huang",
+        "Hengkang Qiao",
+        "Shihong Huang",
+        "Junming Yang",
+        "Yi Li",
+        "Hongyixuan Yuan",
+        "Wenjie Li",
+        "Bohan Zeng",
+        "Wenbo Li",
+        "Bo Wang",
+        "Jianhui Liu",
+        "Olive Huang",
+        "Haoyang Huang",
+        "Wentao Zhang",
+        "Guoqing Huang",
+        "Nan Duan",
+        "Yinpeng Dong"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-08T15:51:51+00:00",
+      "link": "https://arxiv.org/pdf/2606.09669v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "spatial reasoning benchmark for multimodal agents",
+      "llm_evidence_cn": "多模态智能体空间推理基准",
+      "llm_evidence": "多模态智能体空间推理基准",
+      "canonical_evidence": "多模态智能体空间推理基准",
+      "llm_tldr_en": "SpatialWorld: a unified benchmark for interactive spatial reasoning across eight simulation backends.",
+      "llm_tldr_cn": "现有空间推理基准主要依赖静态评估或单一模拟器，无法测试通用交互式空间理解。本文提出SpatialWorld统一基准，集成八个异构模拟后端，包含760个人工标注任务，用于评估多模态智能体在复杂现实场景中的交互式空间推理能力。",
+      "llm_tldr": "现有空间推理基准主要依赖静态评估或单一模拟器，无法测试通用交互式空间理解。本文提出SpatialWorld统一基准，集成八个异构模拟后端，包含760个人工标注任务，用于评估多模态智能体在复杂现实场景中的交互式空间推理能力。",
+      "llm_tags": [
+        "query:wm-vla-sa:composite"
+      ],
+      "matched_query_tag": "query:wm-vla-sa:composite",
+      "matched_query_text": "Papers central to 查找世界模型、VLA、空间音频的论文, especially work that connects or combines: world model for reinforcement learning and planning; vision language action model for robotics; spatial audio processing and rendering techniques; Find research papers on world models, Vision Language Action models, and spatial audio; Search for papers that combine world models with vision language action models for embodied AI; Explore spatial audio techniques in world model based autonomous agents.",
+      "matched_requirement_id": "req-composite-wm-vla-sa",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.06907v1",
+      "source": "arxiv",
+      "title": "SpectCount: Spectrotemporal Counting via Synthetic Signals Improves Large Audio Language Models",
+      "abstract": "Large audio language models (LALMs) extend large language models with an audio encoder and large-scale audio data. However, the scarcity of high-quality annotated audio data remains a fundamental bottleneck for scaling. Through probing signal detectability analysis, we identify fine-grained spectrotemporal perceptual weaknesses in a foundation LALM. To address these challenges, we propose Spectrotemporal Counting (SpectCount), a data-efficient fine-tuning approach based on fully synthetic audio signals generated on-the-fly, without relying on real-world audio, annotations, or pretrained generative models. SpectCount not only resolves the observed weaknesses but also improves performance on diverse auditory benchmarks spanning sound, music, and speech, unseen during fine-tuning. These results suggest that weakness-targeted synthetic signals provide a data-efficient path toward enhanced auditory understanding capabilities in LALMs.",
+      "authors": [
+        "Seonuk Kim",
+        "Yonghyeon Jun",
+        "Ju Yeon Kang",
+        "Jimin Hong",
+        "Yoonhyeong Lee",
+        "Nam Soo Kim"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.AI",
+        "cs.SD"
+      ],
+      "published": "2026-06-05T04:50:34+00:00",
+      "link": "https://arxiv.org/pdf/2606.06907v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Synthetic signals fine-tune LALM spectrotemporal perception for unified audio understanding.",
+      "llm_evidence_cn": "合成信号微调大型音频语言模型频谱感知，促进统一音频理解。",
+      "llm_evidence": "合成信号微调大型音频语言模型频谱感知，促进统一音频理解。",
+      "canonical_evidence": "合成信号微调大型音频语言模型频谱感知，促进统一音频理解。",
+      "llm_tldr_en": "Identifies spectrotemporal weaknesses in LALMs and proposes SpectCount, a data-efficient fine-tuning with synthetic signals, improving performance on diverse audio benchmarks.",
+      "llm_tldr_cn": "针对大型音频语言模型（LALM）对精细频谱时间感知的弱点，提出SpectCount方法，通过实时生成全合成音频信号进行数据高效微调，无需真实数据或标注。该方法不仅解决感知弱点，还在多种音频基准上提升性能，支持统一音频理解。",
+      "llm_tldr": "针对大型音频语言模型（LALM）对精细频谱时间感知的弱点，提出SpectCount方法，通过实时生成全合成音频信号进行数据高效微调，无需真实数据或标注。该方法不仅解决感知弱点，还在多种音频基准上提升性能，支持统一音频理解。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.10228v1",
+      "source": "arxiv",
+      "title": "SHAPO: Sharpness-Aware Policy Optimization for Safe Exploration",
+      "abstract": "Safe exploration is a prerequisite for deploying reinforcement learning (RL) agents in safety-critical domains. In this paper, we approach safe exploration through the lens of epistemic uncertainty, where the actor's sensitivity to parameter perturbations serves as a practical proxy for regions of high uncertainty. We propose Sharpness-Aware Policy Optimization (SHAPO), a sharpness-aware policy update rule that evaluates gradients at perturbed parameters, making policy updates pessimistic with respect to the actor's epistemic uncertainty. Analytically we show that this adjustment implicitly reweighs policy gradients, amplifying the influence of rare unsafe actions while tempering contributions from already safe ones, thereby biasing learning toward conservative behavior in under-explored regions. Across several continuous-control tasks, our method consistently improves both safety and task performance over existing baselines, significantly expanding their Pareto frontiers.",
+      "authors": [
+        "Kaustubh Mani",
+        "Yann Pequignot",
+        "Vincent Mai",
+        "Liam Paull"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.RO"
+      ],
+      "published": "2026-06-08T22:40:45+00:00",
+      "link": "https://arxiv.org/pdf/2606.10228v1",
+      "tags": [
+        "keyword:WM-VLA-SA"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Sharpness-aware policy optimization for safe exploration in RL, relevant to world model planning",
+      "llm_evidence_cn": "用于RL中安全探索的锐度感知策略优化，与世界模型规划相关",
+      "llm_evidence": "用于RL中安全探索的锐度感知策略优化，与世界模型规划相关",
+      "canonical_evidence": "用于RL中安全探索的锐度感知策略优化，与世界模型规划相关",
+      "llm_tldr_en": "SHAPO uses sharpness-aware gradient updates to produce pessimistic policies for safe exploration in RL, implicitly reweighting gradients for uncertainty.",
+      "llm_tldr_cn": "针对强化学习中的安全探索问题，本文提出SHAPO，一种锐度感知策略更新方法。通过在扰动参数上评估梯度，使策略更新对认知不确定性悲观化。理论分析表明该方法隐式重加权策略梯度，放大稀有危险动作的影响。在连续控制安全探索任务中，SHAPO显著降低了训练过程中的不安全行为。",
+      "llm_tldr": "针对强化学习中的安全探索问题，本文提出SHAPO，一种锐度感知策略更新方法。通过在扰动参数上评估梯度，使策略更新对认知不确定性悲观化。理论分析表明该方法隐式重加权策略梯度，放大稀有危险动作的影响。在连续控制安全探索任务中，SHAPO显著降低了训练过程中的不安全行为。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "world model for reinforcement learning and planning",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.09098v1",
+      "source": "arxiv",
+      "title": "HoliDubber: Holistic Video Dubbing for Complex Acoustic Scenes via Text-Guided Audio Synthesis",
+      "abstract": "Video dubbing is a cornerstone of multimedia content creation, aiming to synthesize synchronized acoustic sequences for visual streams. While Text-to-Speech (TTS) and Text-to-Audio (TTA) generation have each achieved remarkable progress, existing dubbing systems remain confined to isolated speech synthesis without incorporating sound effects and ambient audio, forcing practitioners to rely on fragmented workflows and laborious manual post-mixing. To address this limitation, we present HoliDubber, a holistic video dubbing framework that moves beyond speech-only generation by enabling the joint synthesis of speech and sound effects from a single text prompt. Specifically, HoliDubber adopts a patch-based autoregressive diffusion transformer architecture, where a causal language model autoregressively models aggregated patch embeddings to capture global temporal structure, and a Diffusion Transformer decoder generates high-fidelity continuous tokens within each patch, following a divide-and-conquer strategy. To achieve cross-modal alignment, visual features are encoded into patch-level representations and fused with audio patches via cross-attention, enabling the model to ground speech generation in the speaker's visual articulation dynamics. In addition, we introduce HoliDub-Bench, a benchmark curated from established datasets with synchronized video-text-audio triplets designed for holistic dubbing evaluation.   Extensive experiments demonstrate that HoliDubber significantly outperforms existing methods across multiple benchmarks in speech quality, synchronization, and speaker similarity. Furthermore, results on HoliDub-Bench validate the effectiveness of joint speech-and-sound generation, establishing a new paradigm for holistic video dubbing in complex acoustic scenes. \\footnote{The demo page of the project is https://holidubber.github.io}",
+      "authors": [
+        "Wenhao Guan",
+        "Yifan Duan",
+        "Junxi Liu",
+        "Yu Gu",
+        "Feng Dang",
+        "Kaidi Wang",
+        "Qingyang Hong",
+        "Lin Li",
+        "Xie Chen"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS"
+      ],
+      "published": "2026-06-08T06:49:50+00:00",
+      "link": "https://arxiv.org/pdf/2606.09098v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "holistic video dubbing with joint speech and sound effects synthesis",
+      "llm_evidence_cn": "联合语音和音效合成的整体视频配音",
+      "llm_evidence": "联合语音和音效合成的整体视频配音",
+      "canonical_evidence": "联合语音和音效合成的整体视频配音",
+      "llm_tldr_en": "HoliDubber integrates TTS and TTA in a patch-based autoregressive diffusion transformer to jointly synthesize speech and sound effects from text, enabling holistic video dubbing.",
+      "llm_tldr_cn": "该论文针对现有配音系统只能合成孤立语音、缺乏音效和背景音的局限，提出HoliDubber框架，采用基于块的回归扩散变压器，从单一文本提示联合生成对齐的语音和音效。实验表明该方法在复杂声场景下显著提升了配音的自然度和同步性，简化了多媒体制作流程。",
+      "llm_tldr": "该论文针对现有配音系统只能合成孤立语音、缺乏音效和背景音的局限，提出HoliDubber框架，采用基于块的回归扩散变压器，从单一文本提示联合生成对齐的语音和音效。实验表明该方法在复杂声场景下显著提升了配音的自然度和同步性，简化了多媒体制作流程。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech synthesis",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.10581v1",
+      "source": "arxiv",
+      "title": "ParaBridge: Bridging Paralinguistic Perception and Dialogue Behavior in Speech Language Models",
+      "abstract": "Speech carries more information than just words: a child's voice, a fearful tone, or a noisy background should all lead a sufficiently competent spoken-dialogue assistant to different replies. Current Speech Language Models (SLMs) can recognize such paralinguistic cues but often ignore them in open-ended dialogue. We observe that a simple paralinguistic instruction scaffold at the inference stage narrows this perception-behavior gap, suggesting that the relevant cues are already latent in the model. Such scaffolds, however, remain brittle under multi-turn context and competing instructions. Therefore, we propose \\textbf{ParaBridge}, an on-policy self-distillation method that turns a brittle inference-time scaffold into stable model behavior. During training, the scaffold serves only as a temporary privileged view; the scaffold-free model rolls out its own response, while the scaffolded view supplies dense, full-vocabulary next-token targets along its trajectory. This supervision teaches when non-lexical cues should affect the reply without the need for curated dialogues, human labels, or external reward models. On Qwen3-Omni-thinking, ParaBridge raises scaffold-free VoxSafeBench SAR from $14.6\\%$ to $40.3\\%$ and improves EchoMind average rating from $3.27$ to $3.92$. It also preserves general ability, with MMAU-Pro, VoiceBench, and GPQA all within $0.4$ points of the original model. Beyond the training distribution, ParaBridge generalizes to unseen paralinguistic cues, transfers from safety-oriented training to empathy-oriented dialogue, and works on a different SLM backbone.",
+      "authors": [
+        "Yuxiang Wang",
+        "Qinke Ni",
+        "Shengbo Cai",
+        "Wan Lin",
+        "Liqiang Zhang",
+        "Zhizheng Wu"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.SD",
+        "eess.AS"
+      ],
+      "published": "2026-06-09T08:45:52+00:00",
+      "link": "https://arxiv.org/pdf/2606.10581v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "bridging paralinguistic perception and dialogue behavior in speech language models",
+      "llm_evidence_cn": "桥接语音语言模型中的副语言感知与对话行为",
+      "llm_evidence": "桥接语音语言模型中的副语言感知与对话行为",
+      "canonical_evidence": "桥接语音语言模型中的副语言感知与对话行为",
+      "llm_tldr_en": "ParaBridge uses on-policy self-distillation to turn brittle inference-time paralinguistic scaffolds into stable model behavior, narrowing the perception-behavior gap in SLMs.",
+      "llm_tldr_cn": "当前语音语言模型能够识别副语言线索却常在对话中忽略它们。ParaBridge通过在线策略自蒸馏方法，将脆弱的推理时副语言指令支架转化为稳定的模型行为，从而弥合感知与行为之间的差距。实验证明该方法在多轮对话中优于基线，使语音助手能根据语气、背景噪声等线索做出相应回应。",
+      "llm_tldr": "当前语音语言模型能够识别副语言线索却常在对话中忽略它们。ParaBridge通过在线策略自蒸馏方法，将脆弱的推理时副语言指令支架转化为稳定的模型行为，从而弥合感知与行为之间的差距。实验证明该方法在多轮对话中优于基线，使语音助手能根据语气、背景噪声等线索做出相应回应。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.09141v2",
+      "source": "arxiv",
+      "title": "FlashTTS: Fast Streaming TTS with MTP Acceleration and X-pred Mean Flow Distillation",
+      "abstract": "Recent progress in speech dialogue systems requires Text-to-Speech (TTS) models to be faster and more responsive. Modern speech dialogue systems impose two primary requirements on TTS models: low latency and support for streaming inputs and outputs. However, most existing single-codebook LLM-based TTS methods rely on multi-stage pipelines that lack native streaming capabilities. These systems typically suffer from high end-to-end latency due to slow autoregressive prediction and multi-step flow matching. To address these limitations, we propose FlashTTS, an open-source and low-latency streaming TTS framework. FlashTTS introduces a lagged multi-track architecture that natively processes streaming text and speech inputs, thereby eliminating the need for sentence-level buffering. To accelerate acoustic generation, we integrate parallel Multi-Token Prediction (MTP) with an X-pred mean flow matching decoder. This configuration achieves high-fidelity token-to-mel generation in exactly two function evaluations (2-NFE). By jointly optimizing input processing and decoding efficiency, FlashTTS offers a practical foundation for real-time speech dialogue systems. Experiments show that FlashTTS substantially reduces First-Packet Latency to 325ms compared to robust streaming baselines, all while preserving strong zero-shot voice cloning and cross-lingual intelligibility. Speech samples are available. The model code and checkpoints will be released as open source.",
+      "authors": [
+        "Hanke Xie",
+        "Xiaming Ren",
+        "Dake Guo",
+        "Ruonan You",
+        "Wenhao Li",
+        "Jingbin Hu",
+        "Guobin Ma",
+        "Huakang Chen",
+        "Kejie Xu",
+        "Rui Huang",
+        "Weiguo Tan",
+        "Xianrong Wang",
+        "Lei Xie"
+      ],
+      "primary_category": "eess.AS",
+      "categories": [
+        "eess.AS",
+        "cs.SD"
+      ],
+      "published": "2026-06-08T07:39:26+00:00",
+      "link": "https://arxiv.org/pdf/2606.09141v2",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:speech-model"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "fast streaming TTS for low latency speech synthesis",
+      "llm_evidence_cn": "快速流式文本转语音，支持低延迟语音合成",
+      "llm_evidence": "快速流式文本转语音，支持低延迟语音合成",
+      "canonical_evidence": "快速流式文本转语音，支持低延迟语音合成",
+      "llm_tldr_en": "FlashTTS proposes a lagged multi-track architecture with MTP acceleration and X-pred mean flow distillation for real-time streaming TTS.",
+      "llm_tldr_cn": "现有LLM-based TTS模型延迟高且缺乏流式能力。FlashTTS引入滞后多轨架构，支持流式文本和语音输入，通过MTP加速和X-pred均值流蒸馏实现低延迟。实验表明在语音对话系统中显著降低端到端延迟。该工作为流式TTS提供了高效开源解决方案。",
+      "llm_tldr": "现有LLM-based TTS模型延迟高且缺乏流式能力。FlashTTS引入滞后多轨架构，支持流式文本和语音输入，通过MTP加速和X-pred均值流蒸馏实现低延迟。实验表明在语音对话系统中显著降低端到端延迟。该工作为流式TTS提供了高效开源解决方案。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "expressive speech synthesis",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2606.11033v1",
+      "source": "arxiv",
+      "title": "AuRA: Internalizing Audio Understanding into LLMs as LoRA",
+      "abstract": "Recent efforts to extend large language models (LLMs) to speech inputs typically rely on cascaded ASR-LLM pipelines, end-to-end speech-language models, or bridge/distillation-based adaptation. While these routes respectively reuse strong pretrained components, enable native speech-language interaction, or offer lightweight adaptation, they often suffer from transcript-interface latency, costly multimodal training, or sequential speech-language coupling. To address these limitations, we present AuRA, a method that distills audio encoding capability into the LLM. Specifically, AuRA feeds the same speech input to an ASR encoder (as a teacher) and a LoRA-adapted LLM (as a student) through a lightweight audio embedding layer, and uses layer-wise distillation to align the student's hidden states with corresponding teacher representations, thereby internalizing speech representations into lightweight LLM-side adaptations. Compared with cascaded and serial bridge methods, AuRA enables tighter speech-language joint modeling and efficient parallel end-to-end inference, while also reusing pretrained speech and language models rather than requiring large-scale multimodal training. On multiple speech-language benchmarks, AuRA consistently outperforms cascaded systems, speech-to-LLM adaptation baselines, and large-scale speech-language and multimodal models in both effectiveness and efficiency.",
+      "authors": [
+        "Bo Cheng",
+        "Lei Shi",
+        "Zhanyu Ma",
+        "Yuan Wu",
+        "Jun Xu",
+        "Jiuchong Gao",
+        "Jinghua Hao",
+        "Renqing He"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-06-09T16:05:23+00:00",
+      "link": "https://arxiv.org/pdf/2606.11033v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "keyword:speech-model",
+        "query:WM-VLA-SA",
+        "query:speech-model"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "audio understanding into LLMs method",
+      "llm_evidence_cn": "音频理解融入LLM的方法",
+      "llm_evidence": "音频理解融入LLM的方法",
+      "canonical_evidence": "音频理解融入LLM的方法",
+      "llm_tldr_en": "AuRA distills audio encoding into LLMs via LoRA for efficient speech understanding.",
+      "llm_tldr_cn": "现有将大语言模型扩展到语音输入的方法面临延迟或训练成本高等问题。本文提出AuRA，通过ASR编码器作为教师，利用层间蒸馏将音频编码能力注入LLM的LoRA模块，实现高效的语音理解，而无需联合多模态训练。",
+      "llm_tldr": "现有将大语言模型扩展到语音输入的方法面临延迟或训练成本高等问题。本文提出AuRA，通过ASR编码器作为教师，利用层间蒸馏将音频编码能力注入LLM的LoRA模块，实现高效的语音理解，而无需联合多模态训练。",
+      "llm_tags": [
+        "query:speech-model"
+      ],
+      "matched_query_tag": "query:speech-model",
+      "matched_query_text": "unified speech generation and understanding",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2606.10927v1",
+      "source": "arxiv",
+      "title": "AllDayNav: Lifelong Navigation via Real-World Reinforcement Learning",
+      "abstract": "Lifelong embodied navigation in dynamic environments requires robots to form persistent scene understanding from fragmentary observations, which remains difficult for existing methods that rely on explicit maps or scene graphs and struggle to generalize beyond structured settings. We propose AllDayNav, a lifelong self-learning navigation framework that implicitly encodes scene dynamics into the billion-scale parameters of a large model via reinforcement learning, powered by a self-evolving multimodal memory that maintains and updates visual keyframes, semantic descriptions, and temporal context while autonomously generating open-vocabulary instructions, image goals, and structured rewards. Experiments in both synthetic and real-world environments across cross-room, cross-episode, and cross-task scenarios show that AllDayNav achieves success rates approaching $100\\%$ and consistently surpasses strong map-based, VLM, and RL baselines in path efficiency and robustness, demonstrating implicit, memory-driven reinforcement learning as a scalable alternative to explicit mapping for reliable lifelong navigation.",
+      "authors": [
+        "Hang Yin",
+        "Yinan Liang",
+        "Jiazhao Zhang",
+        "Jiahang Liu",
+        "Minghan Li",
+        "Zhizheng Zhang",
+        "He Wang"
+      ],
+      "primary_category": "cs.RO",
+      "categories": [
+        "cs.RO"
+      ],
+      "published": "2026-06-09T14:35:53+00:00",
+      "link": "https://arxiv.org/pdf/2606.10927v1",
+      "tags": [
+        "keyword:WM-VLA-SA",
+        "query:WM-VLA-SA"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "world model for reinforcement learning and planning",
+      "llm_evidence_cn": "用于强化学习和规划的世界模型",
+      "llm_evidence": "用于强化学习和规划的世界模型",
+      "canonical_evidence": "用于强化学习和规划的世界模型",
+      "llm_tldr_en": "AllDayNav uses a large model with RL to implicitly encode scene dynamics as a world model for lifelong navigation.",
+      "llm_tldr_cn": "终身导航需要机器人从片段观察中形成持久场景理解，现有依赖显式地图的方法难以泛化。本文提出AllDayNav，通过强化学习将场景动力学隐式编码到大模型参数中，并利用自进化的多模态记忆实现终身自学习。在合成和真实环境中，该方法实现了持续导航能力的提升。",
+      "llm_tldr": "终身导航需要机器人从片段观察中形成持久场景理解，现有依赖显式地图的方法难以泛化。本文提出AllDayNav，通过强化学习将场景动力学隐式编码到大模型参数中，并利用自进化的多模态记忆实现终身自学习。在合成和真实环境中，该方法实现了持续导航能力的提升。",
+      "llm_tags": [
+        "query:wm-vla-sa"
+      ],
+      "matched_query_tag": "query:wm-vla-sa",
+      "matched_query_text": "world model for reinforcement learning and planning",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

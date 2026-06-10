@@ -1,0 +1,717 @@
+Title: Spatial-Omni: Spatial Audio Understanding Integration in Multimodal LLMs via FOA Encoding
+
+URL Source: https://arxiv.org/pdf/2606.10738v1
+
+Published Time: Wed, 10 Jun 2026 01:06:22 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+# Spatial-Omni: Spatial Audio Understanding Integration in Multimodal LLMs via FOA Encoding 
+
+Zhiyuan Zhu 1,2 Yixuan Chen 1 Yiwen Shao 2 Wenxiang Guo 1
+
+Changhao Pan 1 Yu Zhang Yuxiang Wang 2 Wei Liu 2
+
+Houhua Zhang 1 Chengkuan Zeng 1 Wenbo Cheng 1 Yunxi Liu 1
+
+Rui Yang 1 Steve Yves 2 Liefeng Bo 2 Zhou Zhao 1, †
+
+> 1
+
+Zhejiang University 2Tencent Hunyuan 
+
+schmittzhu@zju.edu.cn 
+
+Abstract 
+
+Recent multimodal large language models mainly process audio as monaural signals, thereby discarding the spatial cues contained in spatial audio for sound localization, spatial re-lation reasoning, and spatial scene understand-ing. We propose Spatial-Omni , a lightweight method that implements SO-Encoder to in-ject First-Order Ambisonics (FOA) spatial au-dio into existing Omni LLMs as an indepen-dent modality, without modifying their orig-inal audio encoders. SO-Encoder provides spatial tokens with limited additional context cost and improves spatial audio understand-ing through efficient staged training. To sup-port training and evaluation, we construct SO-Dataset , SO-QA , and SO-Bench from open-source data, real recordings, and simulations, containing 400K FOA spatial audio clips and 2.1M spatial question answering pairs. SO-Bench covers 16 spatial audio understanding subtasks, including basic detection and loca-tion estimation, spatial relation understanding, and complex spatial reasoning. Experiments show that Spatial-Omni outperforms existing open-source Large Audio-Language Models (LALMs) and Omni LLM models on spatial audio understanding tasks while retaining a reasonable level of general audio understand-ing. Code and data are available at https: //github.com/dieKarotte/Spatial-Omni .
+
+1 Introduction 
+
+Spatial audio preserves directional, distance, mo-tion, and environmental cues beyond sound content, providing the basis for 3D auditory scene under-standing (Zhu et al., 2025; Lu et al., 2025). These cues have been studied in tasks such as sound event localization and detection, source motion analy-sis, and spatial scene reasoning (Adavanne et al., 2018; Aparicio et al., 2024). However, most current   
+
+> Work done during internship at Tencent Hunyuan with project leader Yiwen Shao. †Corresponding author to Zhou Zhao <zhaozhou@zju.edu.cn>
+
+LALMs and Omni LLMs process audio as monau-ral signals, so their audio inputs largely collapse spatial cues before language-model reasoning. Representative audio and Omni models (Ghosh et al., 2024; Tang et al., 2024b; Ghosh et al., 2026; Xu et al., 2025a; Chu et al., 2024; Team, 2026; Ding et al., 2025) commonly rely on pretrained audio encoders, such as Whisper (Radford et al., 2023) or Audio Spectrogram Transformers (Gong et al., 2021), to extract acoustic features for language-model reasoning. This design provides strong se-mantic audio understanding, but the audio pathway is usually optimized for monaural content and does not explicitly preserve spatial structure. Recent spa-tial audio LLM (Mishra et al., 2025; Dementyev et al., 2026; Jiang et al., 2026; Sridhar et al., 2026; Sakshi et al., 2025a; Tang et al., 2024a) show that spatial cues can benefit LLM-based audio reason-ing; yet, many methods bind spatial modeling to substantial modifications or retraining of the origi-nal audio encoder. Such a strategy may disturb the base encoder’s semantic ability and make unified support for monaural and spatial audio less flexible. Meanwhile, large-scale FOA spatial audio QA data and systematic benchmarks remain limited, making it difficult to train and evaluate spatial reasoning capabilities in LALMs and Omni LLMs. To address these limitations, we propose Spatial-Omni , a framework for injecting spatial audio un-derstanding into Omni LLMs through an indepen-dent spatial modality. Its core component is SO-Encoder , a lightweight spatial encoder added in parallel to the original audio encoder. Given FOA input (W, Y, Z, X ), the original Omni audio en-coder continues to receive the W channel and pre-serves the base model’s audio semantic pathway. In parallel, SO-Encoder extracts spatial cues from FOA mel features and Intensity Vector (IV) fea-tures, including direction, distance, motion, and multi-source spatial relations. A Temporal Pixel Shuffle Projector then compresses the frame-level 1
+
+> arXiv:2606.10738v1 [eess.AS] 9 Jun 2026
+
+spatial latents and maps them into compact spatial tokens, allowing the LLM to jointly attend to audio, spatial, visual, and text tokens. This design treats spatial audio as an independent modality, rather than replacing the original audio pathway, so it can upgrade spatial understanding while maintaining compatibility with existing Omni LLM abilities. We further construct the data and evaluation pipeline needed for this setting. SO-Dataset con-tains about 400K FOA spatial audio clips collected from public sound event detection and localiza-tion (SELD) datasets, real-world recordings, and simulation. Based on their metadata, we build SO-QA , a large-scale spatial audio question-answering dataset with 2.1M QA pairs covering source detec-tion, time localization, direction and distance esti-mation, spatial relation understanding, motion anal-ysis, multi-source reasoning, and spatial speech recognition. For evaluation, we introduce SO-Bench , a benchmark with 16 spatial audio sub-tasks grouped into basic detection and estimation, spatial relation understanding, and complex rea-soning with semantics. We train SO-Encoder on SO-Dataset using SELD metrics supervision, and further fine-tune Spatial-Omni upgraded Omni LLMs using SO-QA. Experiments compare general LALMs, Omni LLMs, spatial audio baselines, and Spatial-Omni. Benchmark results on SO-Bench show that Spatial-Omni achieves strong improve-ments on most spatial tasks, while ablations con-firm that the gains mainly come from real spatial tokens rather than the token interface alone. Our contributions are as follows: • We propose Spatial-Omni and SO-Encoder, a lightweight spatial encoding branch that injects FOA spatial audio into existing LALMs and Omni LLMs as an independent modality. • We construct SO-Dataset & SO-QA from public data, real recordings, and simulations, containing 400K FOA clips and 2.1M spatial QA pairs. • We establish SO-Bench, a 16-task benchmark for evaluating spatial audio understanding from basic localization to spatial relation reasoning and complex semantic tasks. 
+
+2 Related Work 
+
+2.1 Spatial Audio 
+
+Spatial audio represents 3D auditory scenes by pre-serving direction, distance, motion, and environ-mental cues beyond sound content. Common for-mats include binaural audio, multichannel audio, and Ambisonics. Recent spatial audio research can be viewed from two connected directions: un-derstanding and generation (Zhu et al., 2025; Lu et al., 2025). For understanding, earlier SELD tasks (Aparicio et al., 2024; Hu et al., 2025a) focus on event classification and direction estimation. Re-cent work expands this scope to motion tracking, source separation, audio-visual scene analysis, and spatial acoustic consistency modeling. It also stud-ies spatial representation learning and language alignment, which connect low-level spatial cues with semantic decoding and text-based retrieval (Hu et al., 2025b; Wilkinghoff and Tan, 2026; Paik and Lee, 2026; Seki et al., 2026; Sudarsanam and Politis, 2025). For generation, recent methods have moved from upmixing and visually guided spatial-ization to neural generative models (Yoshida et al., 2023; Pedro Morgado and Wang, 2018; Sun et al., 2024; Zhang et al., 2025; Leng et al., 2022; Kush-waha et al., 2025; Liu et al., 2025a). Spatial cues are becoming a central variable in audio and multi-modal modeling. This motivates LALMs and Omni LLMs to reason and understand spatial audio rather than only recognize sound events. 
+
+2.2 LALMs, Omni LLMs and Spatial Audio LLMs 
+
+LALMs connect audio encoders with language models for natural-language interaction over acous-tic content, covering audio-text alignment, au-dio question answering, and acoustic reasoning (Elizalde et al., 2023; Tang et al., 2024b; Ghosh et al., 2024; Deshmukh et al., 2023; Chu et al., 2024; Kong et al., 2024; Ding et al., 2025). Recent Omni models further integrate audio, vision, and language, providing a stronger foundation for gen-eral multimodal understanding (Ghosh et al., 2026; Abouelenin et al., 2025; Xu et al., 2025a; Comanici et al., 2025; Achiam et al., 2023). However, these models do not explicitly use spatial audio to model direction, distance, motion, or inter-source spatial relations needed for spatial reasoning. Existing Spatial Audio LLMs extend spatial au-dio understanding into the LLM framework by adding spatial encoders or spatial features to LLMs. Binaural audio methods build explicit spatial en-coders (Zheng et al., 2024), add visual context (Ryu et al., 2025), condition on Direction of Arrival (DoA), or model room impulse responses (RIRs) (Mishra et al., 2025; Biswas et al., 2025) to sup-port spatial question answering and acoustic scene reasoning, showing that explicit spatial cues help 2Spatial Projector 
+
+SO-
+
+Encoder  
+
+> <|user|> <|spatial|> <|audio|> <|video|> {question}
+> Audio Projector
+
+Audio 
+
+Encoder 
+
+> Visual Projector
+
+Visual 
+
+Encoder 
+
+> Question: Listen to the audio and answer based on what you hear.
+> During 0.0s to 6.2s, what sounds are heard, and where are they
+> located in terms of azimuth, elevation, and distance?
+> W Channel
+> Y Channel
+> Z Channel
+> X Channel
+
+Spatial Preprocessor     
+
+> Conv2d
+> BEATs
+> Transformer Trunk
+> Freq Pool &
+> Time Resampler
+> ShallowTemporal
+> Self Attn
+> Time Resampler
+> Patch
+> Embed
+> Pre -trunk Projector
+> Cross Attn
+> SpatialDelta
+> Patch Adaptor
+> QKV
+
+Omni LLM LoRA 
+
+Text 
+
+Tokenizer    
+
+> high resolution spatial token
+> Answer: The audio contains a guitar at an azimuth of about 137.4 degrees, an elevation of -12.1 degrees, and a distance of
+> around 2.3 meters, and a telephone alarm at an azimuth of about -19.8 degrees, an elevation of 39.0 degrees, and a distance
+> of around 1.2 meters.
+> Spatial Token
+> FOA Spatial Audio
+> Self Attn
+> Spatial Branch Audio Branch Fused Branch
+> Trainable Frozen
+
+Figure 1: The overall architecture of the proposed Spatial-Omni. Details of SO-Encoder are shown in the left box. The original audio encoder is kept unchanged to preserve the base model’s semantic ability, while the parallel SO-Encoder extracts spatial cues from FOA features. A lightweight projector maps the spatial latents into the LLM token space for joint learning with audio, visual, and text tokens. 
+
+LLMs understand acoustic scenes. Studies on FOA or multichannel input inject IV features into the base audio encoder or modify the original encoder to extract stronger spectral-spatial representations (Tang et al., 2024a; Sakshi et al., 2025a). Others train a parallel spatial encoder (Jiang et al., 2026), learn neural IV features (Liu et al., 2026), adapt to different microphone geometries (Dementyev et al., 2026), or fuse semantic and spatial experts to reduce mono bias (You et al., 2026). These studies broaden Spatial Audio LLMs from binaural percep-tion to sound-field input and format generalization. However, binding spatial modeling to substantial modification or retraining of the original audio en-coder may affect the semantic ability of the original encoder and complicate joint support for monaural audio and spatial audio in a single audio encoder. A gap remains in the evaluation of spatial audio understanding. General Multimodal LLM bench-marks and visual spatial benchmarks focus on spa-tial cognition from visual inputs rather than spatial audio (Yu et al., 2023, 2024; Yue et al., 2024; Liu et al., 2024; Azuma et al., 2022). Recent audio benchmarks begin to test binaural motion, audio-visual viewpoint reasoning, and spatial tasks (Sun et al., 2025; Sridhar et al., 2026; Chen et al., 2026; Liu et al., 2025b; Kumar et al., 2026). However, they still provide limited coverage of FOA audio, multi-source spatial relations, motion analysis, and comprehensive spatial question answering. Addi-tional details on Spatial Audio LLMs and bench-marks are provided in Appendix A. 
+
+3 Method 
+
+Model Overview Figure 1 shows the overall ar-chitecture. We use Qwen-2.5-Omni 7B as the base Omni LLM and add a parallel SO-Encoder beside the original audio and visual encoders. For FOA input (W, Y, Z, X ), the W channel is sent to the original audio encoder to preserve the semantic ability of the base model. SO-Encoder receives 4 FOA mel features and 3 Intensity Vector (IV) fea-tures and outputs frame-level spatial latents at 10 Hz. A lightweight projector compresses and maps these latents into the LLM token space. The LLM then jointly attends to audio, spatial, visual, and text tokens. This design treats spatial audio as an independent modality while keeping the model flex-ible for both single-channel audio and spatial audio without modifying the original audio encoder. 
+
+SO-Encoder It extracts a residual spatial delta from the seven-channel input with three-stage con-volution, maps it to the patch embedding dimen-3sion, and adds it to the pretrained BEATs W chan-nel patch embedding with a learnable weight α.This injects spatial information while minimizing damage to the original BEATs semantic representa-tion. The latent then passes through ShallowTem-poral module, using a one-layer Transformer with LayerNorm to produce the semantic tokens for fu-sion. The spatial branch uses a CNN and Transformer structure with three 2D CNN layers and two Trans-former layers. It extracts high-resolution features for DoA, distance, motion, and overlapping sources before resampled to lower frame level spatial to-kens. LocalSpatialCrossFuser then fuses the two branches with two layers of gated cross attention. Semantic tokens are queries, and spatial tokens are keys and values. A sigmoid gate controls the fusion ratio and outputs the final spatial token. For supervision, we add an event head to support event F-score. We use a two-stage SourceQuery-Decoder with K track queries. The heads predict activity, class, direction vector, and distance with softplus. During inference, Hungarian matching assigns predictions to stable tracks across frames. 
+
+Projector After the SO-Encoder outputs 10 Hz features, a lightweight projector maps them to the LLM space and compresses time. Tempo-ral Pixel Shuffle Projector downsamples the one-dimensional token sequence. Given encoder output Z ∈ RB×T ×ds , we di-vide time into non-overlapping groups of k frames and concatenate them along the feature dimension: 
+
+ˆZ = Shuffle k(Z) ∈ RB×⌊ T /k ⌋× kd s This reduces the temporal length from T to ⌊T /k ⌋ while pre-serving local frame information through feature concatenation. We then use a two-layer MLP with LayerNorm to project ˆZ into the LLM hidden di-mension dℓ, producing S ∈ RB×⌊ T /k ⌋× dℓ . This provides compact spatial tokens with limited LLM context cost. 
+
+4 Dataset and Benchmark 
+
+There are only limited open-source QA datasets for spatial audio. We construct SO-Dataset and SO-QA for spatial audio training, and SO-Bench for evaluation. The data covers open-source anno-tations, real recordings, and simulation, which im-proves generalization across scenes, sources, and dynamic spatial reasoning. SO-Dataset, SO-QA and SO-Bench statistics are shown in Figure 2. 
+
+SO-Dataset and SO-QA SO-Dataset contains FOA spatial audio from open-source datasets, real recordings, and simulations, covering indoor and outdoor scenes, diverse spatial distributions, and overlapping sound sources. The overall dataset con-tains 63 event classes and about 400K FOA clips, where each clip contains one or more overlapping sound events. The open-source data includes public SELD datasets L3DAS22, 23 (Guizzo et al., 2022; Marinoni et al., 2023), TAU Spatial Sound Events 2019, 2020, 2021 (Adavanne et al., 2019c,b; Politis et al., 2020, 2021), and STARSS22, STARSS23 (Politis et al., 2022; Shimada et al., 2023). We unify their annotation formats and class labels, re-sulting in 27.8k clips. The recorded data covers indoor events and outdoor events, with 3.5k clips from 23 scenes paired with 360-degree visual data. The simulated data is generated with SoundSpace 2.0 (Chen et al., 2022) using HM3D, MP3D (Ra-makrishnan et al., 2021), and Replica (Straub et al., 2019) rooms with semantic annotations. We ran-domly sample listener position, listener orienta-tion, and source position, and generate static & dynamic RIRs. Dry audio events from FSD50K (Fonseca et al., 2021) and speech from LibriSpeech (Panayotov et al., 2015) are convolved with the simulated RIRs, and then mixed to create overlap-ping sound event audio clips. The simulated part contains 370k FOA clips. The test rooms do not overlap with training rooms, enabling evaluation on unseen rooms. Metadata of SO-Dataset includes event class, active interval, frame-level azimuth, el-evation, distance for each sound source, as well as motion information for dynamic sources. Based on metadata of SO-Dataset, we construct SO-QA for Spatial Audio LLM training and evalu-ation. For each sub-task, we first manually design 20-25 question templates and answer templates, then instantiate QA pairs with metadata and au-dio using Gemini-3, and use GPT-4o to paraphrase them for language diversity. SO-QA contains about 2.1M spatial question answering pairs. 
+
+SO-Bench Design We design SO-Bench to eval-uate basic detection and estimation, spatial relation understanding, and complex reasoning with seman-tics. It uses an independent spatial QA test set for fair evaluation and contains 7k QA pairs. Basic detection and estimation tasks include De-tect Source (DS), Detect Time (DT), Estimation of Azimuth (EAzi), Estimation of Elevation (EEle), and Estimation of Distance (EDis). They evalu-4(a) SO-Bench & Dataset Tasks (c) Data Collection        
+
+> Format Conversion
+> Recorded
+> Annotation
+> Inspection Convolution & Mix
+> SO-Dataset
+> Coordinate Conversion
+> Simulated
+> Place Listener and Source
+> 360 °video + FOA
+> Generate RIRs
+> Dry audio
+> DCASE Challenge
+> Collected
+> L3DAS Challenge
+> TAU Spatial Sound Events
+> Align Axis
+> Filter Data
+> Split Clips
+> GPT-4 o
+
+(d) Data Statistics 
+
+> Azimuth Distribution
+> Elevation Distribution
+> Distance Distribution
+> Detect
+> Source
+> Detect
+> Time
+> Estimate
+> Azimuth
+> Estimate
+> Elevation
+> Estimate
+> Distance
+> Identify by
+> DoA
+> Identify by
+> Location
+> Relative
+> Left/Right
+> Compare
+> Elevation
+> Compare
+> Distance
+> Onset from
+> Location
+> Classify
+> Motion
+> Count
+> Source
+> Multi-Hop
+> Spatial
+> Temporal
+> Speech
+> Content
+
+Spatial-Omni 
+
+(b) Data Sources    
+
+> Recorded Simulated
+> Collected
+> SO-Dataset Meeting Public
+> Kitchen
+> Chat
+> Animals
+> Machine
+> Life Tool
+> Music
+> Gemini 3
+> Generate QA
+> via LLMs
+> Paraphrase
+> QA Pairs
+> Manually
+> Check
+> SO-QA
+
+Figure 2: (a) The sub-tasks of our SO-Bench, (b) The data sources in our SO-Dataset, (c) The data collection pipeline of SO-Dataset & SO-QA, and (d) The statistical distribution of our SO-Dataset. 
+
+ate source detection, event timing, and the estima-tion of source direction and distance. Spatial rela-tion understanding tasks include Identify Source by DoA (IS-DoA), Identify Source by Location (IS-Loc), Relative Left-Right (RLR), Comparison between Elevation (CEle), Comparison between Distance (CDis), and Onset from Location (OL). They evaluate whether a model can identify the cor-rect source from direction or location descriptions and compare spatial relations between sources. Al-though OL outputs temporal information, it first requires the model to associate a given spatial lo-cation with the correct source. Complex reasoning and semantics tasks include Classify Motion (CM), Count Sources (CS), Multi Hop (MH), Spatial Tem-poral Caption (ST), and Speech Content (SC). They test dynamic event understanding, source count-ing, multi-hop spatial reasoning, global spatial-temporal scene understanding, and speech recog-nition under spatial conditions. Additional details are provided in Appendix D. 
+
+5 Experiment 
+
+5.1 Training Details SO-Encoder The SO-Encoder is trained on SELD metrics including active, class, DoA, and distance supervision. During spatial audio en-coder training, semantic class learning and spatial feature learning may compete in the early stage. When class and spatial losses are backpropagated together, the spatial branch can disturb the event classification ability of the BEATs semantic branch. Following the training experience of BAT, we adopt a two-stage strategy that first stabilizes class learn-ing and then introduces spatial learning. 
+
+Spatial-Omni Models Spatial LLM training fol-lows a three-stage strategy. In the first stage, we connect the SO-Encoder but freeze the base LLM and the main body of SO-Encoder. Only the pro-jector and necessary adapters are trained, so that projected spatial tokens align with the LLM hid-den space. In the second stage, we enable LLM LoRA (Hu et al., 2022) and jointly train it with the projector. This teaches the LLM to use spatial tokens to answer spatial questions in SO-QA. In the third stage, we unfreeze the trainable parts of the SO-Encoder. The SO-Encoder, projector, and LLM LoRA are then jointly adapted with the QA loss. This gradual unfreezing strategy reduces the interference of spatial features with the original model’s ability at the beginning of training. 
+
+Training and Hyperparameters All training uses the AdamW optimizer with cosine decay learn-ing rate scheduling. FOA audio is sampled at 16 kHz. Both SO-Encoder and SO-7B training are conducted on 8 ×NVIDIA A100 GPUs, while SO-530B, the version based on Qwen-3-Omni, is trained on 8 ×H20 GPUs. More details on training and hy-perparameters are provided in Appendix C. 
+
+5.2 Evaluation Metrics 
+
+For SO-Encoder, we report F20 (correct sound event classification and DoA error less than 20 degree) for correctness of both sound event detec-tion and localization, DOA error for azimuth and elevation localization, and relative distance error for distance estimation. For SO-Bench, metrics are chosen according to task type. DS uses event F1, and DT uses median time-span IoU. EAzi, EEle, and EDis use accu-racy within an angular or distance tolerance, to-gether with angle error or absolute distance error for auxiliary analysis. IS-DoA and IS-Loc evaluate whether the model can identify the correct source from direction or location descriptions. Classifica-tion tasks, including RLR, CEle, CDis, CM, CS, and MH, use accuracy in percentage. Open-ended tasks such as OL and ST are first parsed with rules. We use Word Error Rate (WER) to evaluate spatial speech content recognition in the SC task. All mod-els use greedy decoding in the main experiments for fair comparison with open-source baselines. 
+
+5.3 Baselines 
+
+We use the open-source DCASE 2024 baseline as the main encoder baseline. We also include the best and second-place systems reported in the DCASE 2024 challenge, although their methods are not open-source. We use binauralized SO-Dataset to evaluate Spatial-AST. To analyze the effect of data scale, we train and evaluate DCASE baseline en-coders on collected open-source data of SO-Dataset (29 classes), and the full SO-Dataset. For Spatial Audio LLM evaluation, we first com-pare general LALMs and Omni LLMs. Since few open-source Spatial Audio LLMs exist and almost none directly support FOA input, we further design controlled baselines and ablations. BAT is used as a representative binaural Spatial Audio LLM. We convert FOA audio to binaural input through an FOA to binaural interface from SoundSpace before evaluation. SO-7B is the Spatial-Omni upgrade of Qwen-2.5-Omni, and SO-30B is the Spatial-Omni upgrade of Qwen-3-Omni. SO-7B-iv directly feeds basic down-sampled IV features as spatial tokens to evaluate signal-level spatial features. SO-7B-neuiv follows JAEGER (Liu et al., 2026) and uses a lightweight CNN and MLP to extract neural IV features. SO-7B-zs uses zero spatial tokens to ver-ify whether the improvement comes from real spa-tial token information. SO-7B-so is a spatial-only variant, which only feeds spatial tokens without original audio tokens to verify the contribution of spatial tokens alone. We are not able to directly train SO-7B with the original Qwen-Omni train-ing data. We supplement it with part of the open-source monaural QA data from Audio-Flamingo3’s training data. There are around 130K mono au-dio QA pairs in total. We mix them with 20% of SO-QA data balanced across tasks at a 1:3 ratio and train for 1 epoch based on SO-7B, resulting in SO-7B(MIX). 
+
+6 Results 
+
+We first evaluate SO-Encoder separately, as shown in Table 1. The DCASE 2024 best (Wang et al., 2024) and second-place (Yu, 2024) systems in the table are public challenge reports mainly trained and evaluated on STARSS23 with augmented data, and their code is not publicly available. Therefore, these two rows serve as reference upper bounds rather than direct comparisons under the same set-ting. Among reproducible open-source baselines, the DCASE 2024 baseline shows a clear F20 drop when the number of event classes increases to 63. This suggests that the multi-ACCDOA representa-tion is limited under a large number of sound event classes. Spatial-AST has basic spatial modeling ability on the binauralized SO-Dataset, but it is still weaker than SO-Encoder under the 63-class setting.                                    
+
+> Model Sound Event Classes F20(%) ↑DOA error( ◦)↓Rel Dis ↓
+> DCASE(2024) baseline 13 13.1 36.9 0.33 DCASE(2024) best 13 54.4 13.6 0.21
+> DCASE(2024) second 13 29.8 19.8 0.28 DCASE(2024) baseline 29 36.1 24.4 0.53 DCASE(2024) baseline 63 11.2 28.1 0.33 Spatial-AST 63 29.2 36.0 0.36 SO-Encoder (Ours) 63 40.2 17.2 0.22
+
+Table 1: Comparison between spatial audio encoders and existing SELD baselines. Shaded rows indicate closed source results. 
+
+SO-Encoder obtains F20=40.2%, 17.2 degrees DOA error, and 0.22 relative distance error. Al-though the DCASE 2024 best system remains strongest on the 13-class STARSS23 setting, SO-Encoder outperforms reproducible open-source baselines and Spatial-AST in the more complex 63-class setting. These results show that SO-Encoder can preserve spatial localization and distance esti-mation ability under a more complex event space 6Model Basic Detection and Estimation Spatial Relation Understanding Complex Reasoning and Semantics DS DT EAzi EEle EDis IS-DoA IS-Loc RLR CEle CDis OL CM CS MH ST SC ↓                                                                                                                                                                                                                                                                
+
+> Open-source Models
+> Qwen-2.5-Omni 6.75 55.91 10.36 32.83 56.17 34.63 24.77 49.55 50.45 59.76 37.78 22.58 29.41 10.51 11.41 85.69 Qwen-3-Omni 13.94 54.87 11.92 28.21 43.06 21.77 39.58 49.21 51.61 46.03 35.11 17.74 26.47 0.00 9.52 89.16 Phi-4-MM 9.75 53.33 12.31 30.39 59.05 22.34 22.22 44.74 55.86 64.56 49.49 20.97 23.53 1.50 7.66 84.38 Kimi-Audio 23.84 16.07 10.81 17.99 50.00 41.08 28.53 42.64 50.75 58.56 54.21 17.74 26.47 9.01 7.17 74.48 Audio Flamingo 3 13.04 42.92 32.38 30.88 52.56 32.83 16.37 52.55 51.35 62.42 51.33 16.13 23.53 5.41 12.31 77.85
+> Closed-source Models
+> Gemini-2.5-flash 12.14 63.15 12.16 28.04 53.91 29.39 13.21 42.34 49.25 55.56 43.33 22.58 38.24 3.30 8.31 88.85 Gemini-2.5-pro 14.24 72.72 11.71 31.18 36.42 34.33 21.47 50.75 49.25 58.86 33.06 24.19 38.24 4.50 4.71 81.19 Gemini-3-pro 16.34 58.90 12.76 30.13 58.97 36.28 28.98 38.64 53.49 68.18 45.00 35.90 35.29 18.60 9.21 73.46 GPT-audio 3.03 36.15 4.48 24.24 28.21 26.87 11.94 64.52 45.16 46.88 5.00 17.95 23.53 0.00 4.64 96.10
+> Spatial Baseline
+> SO-7B-iv 45.28 82.67 17.27 30.73 63.79 56.37 54.35 49.85 47.75 60.06 82.55 43.55 50.00 22.52 25.38 76.03 SO-7B-neuiv 44.68 84.53 31.83 48.73 70.58 55.77 54.05 62.16 52.25 61.86 81.25 41.94 23.53 24.32 33.60 76.98 SO-7B-zs 21.10 71.21 13.06 31.18 48.56 51.72 40.69 47.15 49.55 50.15 53.58 38.24 20.59 22.52 10.21 77.11 SO-7B-so 35.23 53.18 62.31 72.41 82.51 41.83 39.49 51.65 45.05 48.65 40.25 14.52 20.59 15.62 6.61 98.73 BAT 30.97 58.19 52.10 47.67 53.91 62.67 58.56 52.85 52.25 52.85 72.90 43.55 32.35 25.53 16.87 98.40
+> Spatial-Omni Models
+> SO-30B 51.12 70.31 64.91 71.06 72.83 64.26 53.60 53.15 65.46 64.86 88.09 41.94 32.35 27.02 32.71 71.77 SO-7B(MIX) 53.97 83.45 71.79 77.73 83.54 64.17 59.91 51.05 61.26 64.26 82.96 45.16 29.41 28.23 33.02 77.09
+
+Table 2: Main results of existing LALM, Omni LLM, and Spatial-Omni model variants. Metric abbreviations are listed in Section 4, and metric details are provided in Section 5.2. 
+
+using FOA and IV input. It provides a reliable basis for downstream LLM spatial tokens. General LALMs and Omni LLMs show limited but non-negligible ability on basic audio and coarse reasoning tasks. For example, some Gemini models perform reasonably on DT, CDis, and CS, and GPT-audio obtains the best RLR score. These results suggest that strong general models can sometimes exploit semantic priors, loudness differences, or answer-format biases in simple comparison tasks. However, they remain weak on explicit spatial estimation and grounded spatial reasoning, such as EAzi, EEle, IS-Loc, MH, and ST. This indi-cates that monaural audio inputs and general audio-language training are insufficient for reliable spatial audio understanding tasks. BAT is an existing binaural Spatial Audio LLM. It performs well on IS-DoA, IS-Loc, and CM, and achieves competitive results on some localization-related tasks. This indicates that explicit spatial training helps models understand source location and motion. However, BAT is mainly trained with binaural input and simulated data with at most two sources. It is also more biased toward clip-level spatial prediction. Therefore, it remains limited in precise angle estimation, complex multi-source relations and speech content recognition. The Spatial-Omni model family achieves the strongest overall performance across the bench-mark. SO-7B(MIX) obtains the best results on DS, EAzi, EEle, IS-Loc, and CM, and remains competi-tive on DT, EDis, IS-DoA, CDis, MH, and ST. This shows that mixing monaural QA data with spatial QA data can improve the model’s general audio-semantic grounding and instruction-following abil-ity while retaining strong spatial representations. The original SO-7B still performs best on EDis, MH, and SC, and is second-best on DS, CEle, OL, and CM. This suggests that the full SO-Encoder provides reliable frame-level spatial tokens for pre-cise distance estimation, multi-hop spatial reason-ing, and direction-conditioned speech recognition. SO-30B performs best on IS-DoA, CEle, and OL, showing that the same spatial encoding branch can transfer to a stronger Omni backbone and improve relation-oriented spatial reasoning. Some tasks remain challenging for our models. SO-7B-iv achieves the best CS score, while SO-7B and SO-7B(MIX) do not improve source counting ability. This may be related to the fixed track-query setting in SO-Encoder training, which can limit counting when many sources overlap. SO-7B is also not the best on CDis and RLR. One possi-ble reason is that these binary comparison tasks can sometimes be solved from coarse loudness or response priors, while SO-7B relies more on ex-plicit reverberation, geometry, and spatial-token evidence. SO-7B has achieve best on EDis task which proves the basic distance estimation ability is ensured using spatial evidence rather than simply 7using loudness comparison. This reliance is more beneficial for precise estimation and multi-hop rea-soning, but it is not always dominant in simple two-choice comparisons. The controlled baselines further show the role of different spatial features. SO-7B-iv performs well on DS, DT, OL, CM, and CS, indicating that raw IV features encode useful spatial energy and directional-motion cues. However, it remains much weaker than SO-7B or SO-7B(MIX) on pre-cise angle estimation, multi-hop reasoning, and spatial-temporal description, showing the limited expressiveness of handcrafted spatial features. SO-7B-neuiv improves over direct IV input and ob-tains the best DT and ST scores, suggesting that a lightweight neural extractor can better organize IV features for temporal localization and caption-style spatial descriptions. SO-7B-so, which uses spatial tokens without the original audio seman-tic tokens, achieves strong EAzi and EEle perfor-mance but drops clearly on DS, IS-DoA, IS-Loc, CM, ST, and SC. This indicates that SO-Encoder alone provides accurate geometric cues, but spatial reasoning in LLMs still requires semantic audio tokens to identify sound events, associate locations with sources, and recognize direction-conditioned speech. SO-7B-zs retains part of the time localiza-tion and coarse spatial ability, which shows that the spatial-token interface itself does not severely dam-age the original Omni LLM. Nevertheless, SO-7B-zs is much weaker than models using real spatial features on direction estimation, location ground-ing, relation understanding, and complex reasoning. This confirms that the main improvement comes from informative spatial tokens rather than the to-ken interface alone. Additional analysis is provided in Appendix F.                                    
+
+> Model avg sound music speech spatial_audio MMAU
+> Qwen-2.5-Omni 76.60 84.38 71.26 74.17 -SO-7B 60.40 70.27 55.69 55.26 -SO-7B(MIX) 67.80 78.08 59.88 66.37 -
+> MMAU-Pro
+> Qwen-2.5-Omni 57.78 62.94 61.42 56.34 26.15 SO-7B 41.70 35.23 51.20 36.36 44.92 SO-7B(MIX) 45.11 37.61 52.40 46.24 37.54
+
+Table 3: Evaluation results of SO-7B and base model on MMAU and MMAU-Pro benchmarks. 
+
+We provide evaluation results on MMAU (Sak-shi et al., 2025b) and MMAU-Pro (Kumar et al., 2026) benchmarks, as shown in Table 3. Our design retains the original audio encoder input, and with-out original training data, SO-7B does not show catastrophic forgetting. There is a drop compared to the base model on the baseline tasks but still maintains reasonable capability. This demonstrates that our spatial token addition does not cause catas-trophic forgetting, while some degradation remains. We further find that SO-7B performs better on spa-tial audio task of MMAU-Pro. This shows that although the introduction of SO-Encoder and spa-tial tokens is based on FOA format, and it cannot directly learn the spatial sense of binaural audio evaluation, it allows the model to learn reverbera-tion and spectral changes in monaural audio and these cues can still be helpful for spatial audio un-derstanding and reasoning. The results of SO-7B(MIX) show that the mixed data can partially restore the original audio capabil-ity, ensuring that the performance of the base tasks is not substantially affected. Also, the addition of monaural QA data helps the model learn to distin-guish between audio tokens and spatial tokens and to use them together effectively, further improving the performance on spatial tasks. Details can be found in Appendix F.3. 
+
+7 Conclusion and Discussion 
+
+In this paper, we propose Spatial-Omni to improve spatial audio understanding in LALMs and Omni LLMs. We design SO-Encoder as a lightweight parallel spatial encoding branch. Without affecting the original audio encoder, SO-Encoder extracts direction, distance, motion, and multi-source rela-tion cues from FOA spatial audio, and maps them into spatial tokens that can be used by the LLM. To support training and evaluation, we construct SO-Dataset, SO-QA, and SO-Bench. They cover open-source data, real recordings, and simulated scenes, and provide large-scale spatial audio question an-swering data and systematic spatial understanding evaluation. Experiments show that SO-Encoder provides reliable spatial representations under com-plex event categories. Spatial-Omni models outper-form general LALMs, Omni LLMs, and existing spatial audio baselines on most SO-Bench tasks. We hope this work can provide a method, data foundation, and open-source baseline for future re-search on spatial audio LLMs and further promote the development of spatial audio LLM understand-ing from low-level localization toward higher-level spatial understanding and reasoning. 8Limitations 
+
+In this work, we propose Spatial-Omni, a method to upgrade Omni LLM using spatial audio encoder SO-Encoder. While Spatial-Omni demonstrates ex-cellent performance in spatial audio understanding, there are still some limitations: First, our current study focuses on FOA input under a unified coor-dinate convention. Although FOA is widely used in spatial audio research, the model has not been systematically evaluated on other spatial represen-tations or microphone geometries, such as SALSA and SALSA-Lite. Second, SO-Encoder relies on track-level su-pervision, matching, and activation thresholds in-herited from SELD-style training. These design choices may limit source counting and relation rea-soning in scenes with many simultaneous sources, short events, or ambiguous spatial overlaps. Third, Spatial-Omni is designed to preserve the base Omni LLM’s semantic audio pathway, but our results show that some degradation on general audio benchmarks remains. This suggests that spa-tial adaptation and general audio capability still need better balancing, for example through broader monaural-spatial mixed instruction tuning. 
+
+Ethical Considerations 
+
+Risks and Ethical Issues 
+
+The use of spatial audio also brings more risks, in-cluding privacy breaches and security issues. Spa-tial audio data may contain sensitive information, such as personal conversations or environmental sounds, and unauthorized access could lead to pri-vacy breaches. Additionally, the misuse of location information could raise security concerns, such as tracking or surveillance. Therefore, appropriate security measures and privacy protection strategies must be taken when using spatial audio data to ensure the security and privacy of user data. Spatial audio understanding may be combined with other data modalities, such as visual data, to provide a more comprehensive environmental perception. This multimodal understanding may raise privacy and ethical issues, especially when it involves personal data or sensitive environments. Therefore, when developing and deploying spatial audio understanding systems, these ethical issues must be considered, and measures should be taken to protect user privacy and data security. 
+
+Data Provenance, Licensing, and Privacy 
+
+We rely on publicly available speech/spatial-audio corpora and simulation pipelines. We do not claim ownership of any third-party audio content and rec-ommend that any release avoid redistributing raw audio unless explicitly permitted by original licens-es/terms. Derived artifacts such as file lists, splits, and evaluation scripts should be shared in a way that enables reproducibility while reducing privacy exposure. Speech datasets may contain personally identifying information or sensitive attributes. We will release the code, evaluation scripts, metadata schema, benchmark question files, model check-points, and derived annotations under appropriate research licenses. For third-party datasets, we will provide preprocessing scripts, file lists, splits, and instructions for reconstructing the benchmark from legally obtained original sources. For real record-ings, only anonymized and consent-cleared data will be released. The real-recorded dataset proposed in this work was obtained with appropriate consent and adheres to privacy protection principles in its use. We will anonymize and process the visual data of the dataset to avoid infringing on individual privacy. We recommend that when using the dataset, rele-vant privacy regulations and ethical guidelines be followed to ensure the legal use of data and the protection of user privacy. 
+
+Potential Harmful Applications 
+
+Spatial audio understanding technology could be misused for surveillance, tracking, or invading per-sonal privacy. For example, malicious actors could use spatial audio data to monitor individual activi-ties, track locations, or steal sensitive information. Therefore, when developing and deploying spa-tial audio understanding systems, these potentially harmful applications must be considered, and mea-sures should be taken to prevent misuse. 
+
+Bias and Environmental Impact 
+
+Training data and simulators may under-represent languages, accents, acoustic environments, and accessibility-related speech characteristics, leading to uneven performance. 
+
+References  
+
+> Abdelrahman Abouelenin, Atabak Ashfaq, Adam Atkin-son, and 1 others. 2025. Phi-4-mini technical
+
+9report: Compact yet powerful multimodal lan-guage models via mixture-of-loras. arXiv preprint arXiv:2503.01743 .Josh Achiam, Steven Adler, Sandhini Agarwal, Lama Ahmad, Ilge Akkaya, Florencia Leoni Aleman, Diogo Almeida, Janko Altenschmidt, Sam Altman, Shyamal Anadkat, and 1 others. 2023. Gpt-4 techni-cal report. arXiv preprint arXiv:2303.08774 .Sharath Adavanne, Archontis Politis, Joonas Nikunen, and Tuomas Virtanen. 2018. Sound event localiza-tion and detection of overlapping sources using con-volutional recurrent neural networks. IEEE Journal of Selected Topics in Signal Processing , 13(1):34–48. Sharath Adavanne, Archontis Politis, and Tuomas Vir-tanen. 2019a. A multi-room reverberant dataset for sound event localization and detection. Proc. DCASE2019 .Sharath Adavanne, Archontis Politis, and Tuomas Vir-tanen. 2019b. Tau moving sound events 2019: Am-bisonic, anechoic, synthetic ir and moving source dataset. Sharath Adavanne, Archontis Politis, and Tuomas Virta-nen. 2019c. Tau spatial audio events 2019. David Diaz-Guerra Aparicio, Archontis Politis, Parthasaarathy Ariyakulam Sudarsanam, Kazuki Shimada, Daniel Krause, Kengo Uchida, Yuichiro Koyama, Naoya Takahashi, Shusuke Takahashi, Takashi Shibuya, and 1 others. 2024. Baseline mod-els and evaluation of sound event localization and detection with distance estimation in dcase 2024 challenge. In Workshop on Detection and Classi-fication of Acoustic Scenes and Events , pages 41–45. DCASE. Daichi Azuma, Taiki Miyanishi, Shuhei Kurita, and Mo-toaki Kawanabe. 2022. Scanqa: 3d question answer-ing for spatial scene understanding. In proceedings of the IEEE/CVF conference on computer vision and pattern recognition , pages 19129–19139. Subrata Biswas, Mohammad Nur Hossain Khan, and Bashima Islam. 2025. Owl: Geometry-aware spatial reasoning for audio large language models. arXiv preprint arXiv:2509.26140 .Changan Chen, Carl Schissler, Sanchit Garg, Philip Kobernik, Alexander Clegg, Paul Calamia, Dhruv Batra, Philip Robinson, and Kristen Grauman. 2022. Soundspaces 2.0: A simulation platform for visual-acoustic learning. Advances in Neural Information Processing Systems , 35:8896–8911. Mingfei Chen, Zijun Cui, Xiulong Liu, Jinlin Xi-ang, Yang Zheng, Jingyuan Li, and Eli Shlizerman. 2026. Savvy: Spatial awareness via audio-visual llms through seeing and hearing. Advances in Neural Information Processing Systems , 38:118999–119038. Yunfei Chu, Jin Xu, Qian Yang, Haojie Wei, Xipin Wei, Zhifang Guo, Yichong Leng, Yuanjun Lv, Jinzheng He, Junyang Lin, and 1 others. 2024. Qwen2-audio technical report. arXiv preprint arXiv:2407.10759 .Gheorghe Comanici, Eric Bieber, Mike Schaekermann, Ice Pasupat, Noveen Sachdeva, Inderjit Dhillon, Mar-cel Blistein, Ori Ram, Dan Zhang, Evan Rosen, and 1 others. 2025. Gemini 2.5: Pushing the frontier with advanced reasoning, multimodality, long context, and next generation agentic capabilities. arXiv preprint arXiv:2507.06261 .Artem Dementyev, Wazeer Zulfikar, Sinan Hersek, Pas-cal Getreuer, Anurag Kumar, and Vivek Kumar. 2026. Phasecoder: Microphone geometry-agnostic spatial audio understanding for multimodal llms. arXiv preprint arXiv:2601.21124 .Soham Deshmukh, Benjamin Elizalde, Rita Singh, and Huaming Wang. 2023. Pengi: An audio language model for audio tasks. Advances in Neural Informa-tion Processing Systems , 36:18090–18108. Ding Ding, Zeqian Ju, Yichong Leng, Songxiang Liu, Tong Liu, Zeyu Shang, Kai Shen, Wei Song, Xu Tan, Heyi Tang, and 1 others. 2025. Kimi-audio technical report. arXiv preprint arXiv:2504.18425 .Benjamin Elizalde, Soham Deshmukh, Mahmoud Al Is-mail, and Huaming Wang. 2023. Clap learning audio concepts from natural language supervision. In ICASSP 2023-2023 IEEE International Confer-ence on Acoustics, Speech and Signal Processing (ICASSP) , pages 1–5. IEEE. Eduardo Fonseca, Xavier Favory, Jordi Pons, Frederic Font, and Xavier Serra. 2021. Fsd50k: an open dataset of human-labeled sound events. IEEE/ACM Transactions on Audio, Speech, and Language Pro-cessing , 30:829–852. Sreyan Ghosh, Arushi Goel, Jaehyeon Kim, Sonal Ku-mar, Zhifeng Kong, Sang-gil Lee, Chao-Han Yang, Ramani Duraiswami, Dinesh Manocha, Rafael Valle, and 1 others. 2026. Audio flamingo 3: Advancing au-dio intelligence with fully open large audio language models. Advances in Neural Information Processing Systems , 38:41819–41886. Sreyan Ghosh, Sonal Kumar, Ashish Seth, Chandra Ki-ran Reddy Evuru, Utkarsh Tyagi, S Sakshi, Oriol Nieto, Ramani Duraiswami, and Dinesh Manocha. 2024. Gama: A large audio-language model with ad-vanced audio understanding and complex reasoning abilities. In Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing ,pages 6288–6313. Yuan Gong, Yu-An Chung, and James Glass. 2021. Ast: Audio spectrogram transformer. arXiv preprint arXiv:2104.01778 .Eric Guizzo, Christian Marinoni, Marco Pennese, Xinlei Ren, Xiguang Zheng, Chen Zhang, Bruno Masiero, Aurelio Uncini, and Danilo Comminiello. 2022. 
+
+10 L3das22 challenge: Learning 3d audio sources in a real office environment. In ICASSP 2022-2022 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pages 9186–9190. IEEE. Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Liang Wang, Weizhu Chen, and 1 others. 2022. Lora: Low-rank adaptation of large language models. Iclr , 1(2):3. Jinbo Hu, Yin Cao, Ming Wu, Fang Kang, Feiran Yang, Wenwu Wang, Mark D Plumbley, and Jun Yang. 2025a. Pseldnets: Pre-trained neural networks on a large-scale synthetic dataset for sound event local-ization and detection. IEEE Transactions on Audio, Speech and Language Processing .Jinbo Hu, Yin Cao, Ming Wu, Zhenbo Luo, and Jun Yang. 2025b. Salm: Spatial audio language model with structured embeddings for understanding and editing. arXiv preprint arXiv:2507.16724 .Xilin Jiang, Hannes Gamper, and Sebastian Braun. 2026. Sci-phi: A large language model spatial audio de-scriptor. IEEE Open Journal of Signal Processing .Zhifeng Kong, Arushi Goel, Rohan Badlani, Wei Ping, Rafael Valle, and Bryan Catanzaro. 2024. Audio flamingo: A novel audio language model with few-shot learning and dialogue abilities. arXiv preprint arXiv:2402.01831 .Sonal Kumar, Šimon Sedláˇ cek, Vaibhavi Lokegaonkar, Fernando López, Wenyi Yu, Nishit Anand, Hyeong-gon Ryu, Lichang Chen, Maxim Pliˇ cka, Miroslav Hlaváˇ cek, and 1 others. 2026. Mmau-pro: A chal-lenging and comprehensive benchmark for holistic evaluation of audio general intelligence. In Proceed-ings of the AAAI Conference on Artificial Intelligence ,volume 40, pages 22688–22697. Saksham Singh Kushwaha, Jianbo Ma, Mark RP Thomas, Yapeng Tian, and Avery Bruni. 2025. Diff-sage: End-to-end spatial audio generation using dif-fusion models. In ICASSP 2025-2025 IEEE Interna-tional Conference on Acoustics, Speech and Signal Processing (ICASSP) , pages 1–5. IEEE. Yichong Leng, Zehua Chen, Junliang Guo, Haohe Liu, Jiawei Chen, Xu Tan, Danilo Mandic, Lei He, Xi-angyang Li, Tao Qin, and 1 others. 2022. Binaural-grad: A two-stage conditional diffusion probabilistic model for binaural audio synthesis. Advances in Neural Information Processing Systems , 35:23689– 23700. Huadai Liu, Tianyi Luo, Qikai Jiang, Kaicheng Luo, Peiwen Sun, Jialei Wan, Rongjie Huang, Qian Chen, Wen Wang, Xiangtai Li, Shiliang Zhang, Zhijie Yan, Zhou Zhao, and Wei Xue. 2025a. Omniaudio: Gener-ating spatial audio from 360-degree video. Preprint ,arXiv:2504.14906. Yuan Liu, Haodong Duan, Yuanhan Zhang, Bo Li, Songyang Zhang, Wangbo Zhao, Yike Yuan, Jiaqi Wang, Conghui He, Ziwei Liu, and 1 others. 2024. Mmbench: Is your multi-modal model an all-around player? In European conference on computer vision ,pages 216–233. Springer. Zhan Liu, Changli Tang, Yuxin Wang, Zhiyuan Zhu, Youjun Chen, Yiwen Shao, Tianzi Wang, Lei Ke, Zengrui Jin, and Chao Zhang. 2026. Jaeger: Joint 3d audio-visual grounding and reasoning in simulated physical environments. arXiv preprint arXiv:2602.18527 .Zihan Liu, Zhikang Niu, Qiuyang Xiao, Zhisheng Zheng, Ruoqi Yuan, Yuhang Zang, Yuhang Cao, Xi-aoyi Dong, Jianze Liang, Xie Chen, and 1 others. 2025b. Star-bench: Probing deep spatio-temporal reasoning as audio 4d intelligence. arXiv preprint arXiv:2510.24693 .Xikun Lu, Yunda Chen, Zehua Chen, Jie Wang, Mingx-ing Liu, Hongmei Hu, Chengshi Zheng, Stefan Bleeck, and Jinqiu Sang. 2025. Deep learning for personalized binaural audio reproduction. arXiv preprint arXiv:2509.00400 .Christian Marinoni, Riccardo F Gramaccioni, Changan Chen, Aurelio Uncini, and Danilo Comminiello. 2023. Overview of the l3das23 challenge on audio-visual extended reality. In ICASSP 2023-2023 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , pages 1–2. IEEE. Ayushi Mishra, Yang Bai, Priyadarshan Narayanasamy, Nakul Garg, and Nirupam Roy. 2025. Spatial audio processing with large language model on wearable devices. arXiv preprint arXiv:2504.08907 .Seungryeol Paik and Kyogu Lee. 2026. Natural lan-guage to spatial audio parameters: Lightweight deter-ministic rendering for creative authoring. In ICASSP 2026-2026 IEEE International Conference on Acous-tics, Speech and Signal Processing (ICASSP) , pages 15317–15321. IEEE. Vassil Panayotov, Guoguo Chen, Daniel Povey, and Sanjeev Khudanpur. 2015. Librispeech: an asr cor-pus based on public domain audio books. In 2015 IEEE international conference on acoustics, speech and signal processing (ICASSP) , pages 5206–5210. IEEE. Timothy Langlois Pedro Morgado, Nuno Vasconcelos and Oliver Wang. 2018. Self-supervised generation of spatial audio for 360 deg video. In Neural Infor-mation Processing Systems (NIPS) .Archontis Politis, Sharath Adavanne, and Tuomas Virta-nen. 2020. Tau-nigens spatial sound events 2020. Archontis Politis, Sharath Adavanne, and Tuomas Virta-nen. 2021. Tau-nigens spatial sound events 2021. Archontis Politis, Kazuki Shimada, Parthasaarathy Sudarsanam, Sharath Adavanne, Daniel Krause, Yuichiro Koyama, Naoya Takahashi, Shusuke Taka-hashi, Yuki Mitsufuji, and Tuomas Virtanen. 2022. 
+
+11 Starss22: A dataset of spatial recordings of real scenes with spatiotemporal annotations of sound events. arXiv preprint arXiv:2206.01948 .Alec Radford, Jong Wook Kim, Tao Xu, Greg Brock-man, Christine McLeavey, and Ilya Sutskever. 2023. Robust speech recognition via large-scale weak su-pervision. In International conference on machine learning , pages 28492–28518. PMLR. Santhosh K Ramakrishnan, Aaron Gokaslan, Erik Wi-jmans, Oleksandr Maksymets, Alex Clegg, John Turner, Eric Undersander, Wojciech Galuba, An-drew Westbury, Angel X Chang, and 1 others. 2021. Habitat-matterport 3d dataset (hm3d): 1000 large-scale 3d environments for embodied ai. arXiv preprint arXiv:2109.08238 .Hyeonggon Ryu, Joon Son Chung, and David Harwath. 2025. Hear you are: Teaching llms spatial reasoning with vision and spatial sound. OpenReview preprint, submitted to NeurIPS 2025. S Sakshi, Vaibhavi Lokegaonkar, Neil Zhang, Ramani Duraiswami, Sreyan Ghosh, Dinesh Manocha, and Lie Lu. 2025a. Spur: A plug-and-play framework for integrating spatial audio understanding and reasoning into large audio-language models. arXiv preprint arXiv:2511.06606 .Sakshi Sakshi, Utkarsh Tyagi, Sonal Kumar, Ashish Seth, Ramaneswaran Selvakumar, Oriol Nieto, Ra-mani Duraiswami, Sreyan Ghosh, and Dinesh Manocha. 2025b. Mmau: A massive multi-task audio understanding and reasoning benchmark. In Inter-national Conference on Learning Representations ,volume 2025, pages 84929–84964. Kentaro Seki, Yuki Okamoto, Kouei Yamaoka, Yuki Saito, Shinnosuke Takamichi, and Hiroshi Saruwatari. 2026. Spatial-clap: Learning spatially-aware audio–text embeddings for multi-source con-ditions. In ICASSP 2026-2026 IEEE International Conference on Acoustics, Speech and Signal Process-ing (ICASSP) , pages 14742–14746. IEEE. Kazuki Shimada, Archontis Politis, Parthasaarathy Su-darsanam, Daniel A Krause, Kengo Uchida, Sharath Adavanne, Aapo Hakala, Yuichiro Koyama, Naoya Takahashi, Shusuke Takahashi, and 1 others. 2023. Starss23: An audio-visual dataset of spatial record-ings of real scenes with spatiotemporal annotations of sound events. Advances in neural information processing systems , 36:72931–72957. Arvind Krishna Sridhar, Yinyi Guo, and Erik Visser. 2026. Spatial audio question answering and reason-ing on dynamic source movements. arXiv preprint arXiv:2602.16334 .Julian Straub, Thomas Whelan, Lingni Ma, Yufan Chen, Erik Wijmans, Simon Green, Jakob J Engel, Raul Mur-Artal, Carl Ren, Shobhit Verma, and 1 others. 2019. The replica dataset: A digital replica of indoor spaces. arXiv preprint arXiv:1906.05797 .Parthasaarathy Sudarsanam and Archontis Politis. 2025. Towards spatial audio understanding via question answering. arXiv preprint arXiv:2507.09195 .Peiwen Sun, Sitong Cheng, Xiangtai Li, Zhen Ye, Huadai Liu, Honggang Zhang, Wei Xue, and Yike Guo. 2024. Both ears wide open: Towards language-driven spatial audio generation. arXiv preprint arXiv:2410.10676 .Zhe Sun, Yujun Cai, Jiayu Yao, and Yiwei Wang. 2025. Spatial blind spot: Auditory motion per-ception deficits in audio llms. arXiv preprint arXiv:2511.13273 .Changli Tang, Wenyi Yu, Guangzhi Sun, Xianzhao Chen, Tian Tan, Wei Li, Jun Zhang, Lu Lu, Zejun Ma, Yuxuan Wang, and 1 others. 2024a. Can large language models understand spatial audio? arXiv preprint arXiv:2406.07914 .Changli Tang, Wenyi Yu, Guangzhi Sun, Xianzhao Chen, Tian Tan, and 1 others. 2024b. SALMONN: Towards generic hearing abilities for large language models. Proc. ICLR .Qwen Team. 2026. Qwen3.5-omni technical report. 
+
+arXiv preprint arXiv:2604.15804 .Qing Wang, Yuxuan Dong, Hengyi Hong, Ruoyu Wei, Maocheng Hu, Shi Cheng, Ya Jiang, Mingqi Cai, Xin Fang, and Jun Du. 2024. The nerc-slip system for sound event localization and detection with source distance estimation of dcase 2024 challenge. Techni-cal report, DCASE2024 Challenge. Kevin Wilkinghoff and Zheng-Hua Tan. 2026. Dspast: Disentangled representations for spatial audio rea-soning with large language models. In ICASSP 2026-2026 IEEE International Conference on Acous-tics, Speech and Signal Processing (ICASSP) , pages 14747–14751. IEEE. Jin Xu, Zhifang Guo, Jinzheng He, Hangrui Hu, Ting He, Shuai Bai, Keqin Chen, Jialin Wang, Yang Fan, Kai Dang, Bin Zhang, Xiong Wang, Yunfei Chu, and Junyang Lin. 2025a. Qwen2.5-omni technical report. 
+
+Preprint , arXiv:2503.20215. Peiran Xu, Sudong Wang, Yao Zhu, Jianing Li, Gege Qi, and Yunjian Zhang. 2025b. Spatialbench: Bench-marking multimodal large language models for spa-tial cognition. arXiv preprint arXiv:2511.21471 .Masaki Yoshida, Ren Togo, Takahiro Ogawa, and Miki Haseyama. 2023. Binaural audio generation with data augmentation from 360° videos. In Interna-tional Conference on Consumer Electronics - Taiwan, ICCE-Taiwan 2023, PingTung, Taiwan, July 17-19, 2023 , pages 795–796. IEEE. Yuhuan You, Lai Wei, Xihong Wu, and Tianshu Qu. 2026. The world is not mono: Enabling spatial un-derstanding in large audio-language models. arXiv preprint arXiv:2601.02954 .
+
+12 Hogeon Yu. 2024. Doa and event guidance system for sound event localization and detection with source distance estimation. Technical report, DCASE2024 Challenge. Weihao Yu, Zhengyuan Yang, Linjie Li, Jianfeng Wang, Kevin Lin, Zicheng Liu, Xinchao Wang, and Lijuan Wang. 2023. Mm-vet: Evaluating large multimodal models for integrated capabilities. arXiv preprint arXiv:2308.02490 .Weihao Yu, Zhengyuan Yang, Lingfeng Ren, Linjie Li, Jianfeng Wang, Kevin Lin, Chung-Ching Lin, Zicheng Liu, Lijuan Wang, and Xinchao Wang. 2024. Mm-vet v2: A challenging benchmark to evaluate large multimodal models for integrated capabilities.     
+
+> arXiv preprint arXiv:2408.00765 .Xiang Yue, Yuansheng Ni, Kai Zhang, Tianyu Zheng, Ruoqi Liu, Ge Zhang, Samuel Stevens, Dongfu Jiang, Weiming Ren, Yuxuan Sun, and 1 others. 2024. Mmmu: A massive multi-discipline multimodal un-derstanding and reasoning benchmark for expert agi. In Proceedings of the IEEE/CVF conference on com-puter vision and pattern recognition , pages 9556– 9567. Yu Zhang, Wenxiang Guo, Changhao Pan, Zhiyuan Zhu, Tao Jin, and Zhou Zhao. 2025. Isdrama: Immersive spatial drama generation through multimodal prompt-ing. arXiv preprint arXiv:2504.20630 .Zhisheng Zheng, Puyuan Peng, Ziyang Ma, Xie Chen, Eunsol Choi, and David Harwath. 2024. Bat: Learn-ing to reason about spatial sounds with large language models. arXiv preprint arXiv:2402.01591 .Zhiyuan Zhu, Yu Zhang, Wenxiang Guo, Changhao Pan, and Zhou Zhao. 2025. Asaudio: A survey of advanced spatial audio research. In Proceedings of the 14th International Joint Conference on Natural Language Processing and the 4th Conference of the Asia-Pacific Chapter of the Association for Computa-tional Linguistics , pages 417–442.
+
+A Related Work Details 
+
+A.1 Spatial Audio LLMs 
+
+Existing Spatial Audio LLMs extend spatial audio understanding into the LLM framework, usually by designing encoders that can accept spatial audio inputs and answer spatial questions. One line of work focuses on binaural spatial audio. BAT(Zheng et al., 2024) designs Spatial AST, an audioMAE-based spatial audio encoder. It accepts binaural input and learns spatial representations from sim-ulated data. Hear You Are(Ryu et al., 2025) adds visual input on top of the BAT spatial audio en-coder and evaluates spatial audio understanding in 360 degrees video tasks. SING(Mishra et al., 2025) adds a DoA encoder so that a large model can recognize speaker content from a specified direc-tion. OWL(Biswas et al., 2025) supports binaural spatial audio and explicitly models RIRs to learn spatial information for occluded scene reasoning. These methods show that explicit spatial cues are useful for LLM-based acoustic scene understand-ing. However, they mainly rely on binaural formats. Much of their training and evaluation data comes from simulation. Another line of work focuses on FOA or multi-channel input. (Tang et al., 2024a) introduces LLM understanding for FOA spatial audio and injects FOA IV vectors into the base audio encoder so that the model can learn spatial information from spa-tial audio. SPUR(Sakshi et al., 2025a) modifies the original audio encoder into a Spatial Encoder for FOA input. It uses 3D convolution to extract spectral-spatial covariance features for stronger rep-resentation in multi-source scenes. Sci Phi(Jiang et al., 2026) trains a Spatial Encoder on a large simulated dataset and uses it in parallel with an Audio Encoder to improve spatial understanding. JAEGER(Liu et al., 2026) uses neural IV features to help models learn speaker direction in 3D un-derstanding. PhaseCoder(Dementyev et al., 2026) treats different microphone arrangements as an in-put modality, allowing LLMs to learn directional representations across spatial audio formats and better adapt to microphone geometry changes. The World is Not Mono(You et al., 2026) introduces an expert system that fuses semantic encoder and spa-tial encoder outputs before feeding them into the LLM, reducing the mono bias of pretrained models. These studies show that spatial audio can enhance LLM spatial understanding, but many methods still bind spatial modeling to modification or retraining 13 of the original audio encoder. 
+
+A.2 Spatial Audio Benchmarks 
+
+Existing benchmarks leave gaps for evaluating FOA spatial audio reasoning. General MLLM benchmarks mainly evaluate semantic understand-ing (Yu et al., 2023, 2024; Yue et al., 2024; Liu et al., 2024), while visual spatial benchmarks lack systematic spatial audio evaluation (Azuma et al., 2022; Xu et al., 2025b). Recent audio benchmarks cover binaural motion, audio-visual viewpoint rea-soning, or partial spatial tasks (Sun et al., 2025; Sridhar et al., 2026; Chen et al., 2026; Liu et al., 2025b; Kumar et al., 2026). They remain limited for FOA audio, multiple-source relations, motion analysis, and comprehensive spatial reasoning. SO-Bench is designed for FOA spatial audio and cov-ers localization, relative position understanding, motion analysis, and complex spatial question an-swering. Table 4 summarizes representative spatial audio datasets and benchmarks. 
+
+B Details of Dataset 
+
+B.1 Collected Open-Source Datasets 
+
+We use the following open-source datasets for training: L3DAS22 and L3DAS23(Guizzo et al., 2022; Marinoni et al., 2023), TAU Spatial Sound Events 2019, 2020, 2021(Adavanne et al., 2019c,b; Politis et al., 2020, 2021), and STARSS22, STARSS23(Politis et al., 2022; Shimada et al., 2023). The STARSS datasets include additional visual information. For real data with missing dis-tance and elevation information, we filter out the corresponding losses during encoder training to avoid affecting azimuth and sound event recogni-tion training. The distribution of these datasets is summarized in Table 5. 
+
+B.2 Recorded Real World Dataset 
+
+The recorded subset complements open-source SELD data and simulated data with real acoustic conditions and synchronized visual context, follow-ing the practice of real-scene audiovisual SELD datasets such as STARSS22 and STARSS23 (Poli-tis et al., 2022; Shimada et al., 2023). It contains 3.5k FOA clips from 15 scene types, 23 record-ing scenes, covering both indoor and outdoor en-vironments. The scenes include offices, kitchens, seminar rooms, corridors, campus roads, public ac-tivity areas, gates, and sports fields. These record-ings introduce natural reverberation, background noise, occlusion, moving sources, and visually ob-servable sound events that are difficult to fully reproduce with simulation. Table 6 summarizes the raw recording sessions before annotation-based segmentation. 
+
+Scene We plan the recorded subset around two types of real environments: indoor spaces and pub-lic open spaces. Indoor recordings focus on offices, kitchens, seminar rooms, and corridors, where local spatial relations, near-field reflections, speech, door movement, object impacts, typing, appliances, and kitchen activities can be observed clearly. Public open-space recordings focus on campus roads, ac-tivity areas, gates, and sports fields, where moving sources, far-field propagation, traffic-like sounds, and less constrained background noise are more common. When selecting a recording position, we prefer open viewpoints with clear entering and leaving paths for sound sources, and avoid loca-tions with severe crowd occlusion when possible. We also intentionally include scenes where target events occur frequently, so that the recorded data contains enough useful event activity rather than long silent or irrelevant background segments. 
+
+Recording We use an Insta360 Pro camera to record the 360-degree panoramic visual scene and a ZOOM H3-VR Ambisonic microphone to cap-ture FOA spatial audio. The microphone is fixed close to the panoramic camera, with the acoustic center placed near the visual center to reduce spa-tial offset between modalities. The recordings are collected in two modes. For controlled events that require explicit event triggering or performer co-operation, participants are recruited to take part in data collection, and all participants sign informed consent forms before recording. To protect privacy, we avoid close-up facial capture when possible by keeping the panoramic camera away from partici-pants’ faces and conservatively screening record-ings that may contain identifiable personal informa-tion. For public scenes, we obtain permission from the relevant venue managers before recording natu-ral sound events. During each session, we record scene layout, important sound events, approximate source positions, source movement patterns, and recording context. These field notes provide refer-ence information for later synchronization, annota-tion, and quality checking. 
+
+Synchronization The raw recordings are first coarsely synchronized using the start-time offset 14 Benchmark Modality Format Size (QA/Audio) Source Task Support Loc Reason Motion                                                                                     
+
+> BAT Dataset ABinaural 872K QA Simulated ✓✓×
+> AudioMotionBench ABinaural 224 clips / 1K QA Simulated ×✓✓
+> STAR Bench ABinaural 2K QA Simulated ✓✓✓
+> Hear You Are QA A+V Binaural 1M QA Simulated ✓✓×
+> SAVVY Bench A+V 7 ch 1.5K QA Recorded ✓✓✓
+> SPUR Set AFOA 18k QA Mixed ✓✓Partial
+> BiDepth (OWL) A+V Binaural 28k clips / 1.1M QA Simulated ✓✓×
+> The World is Not Mono ABinaural unknown Simulated ✓✓✓
+> Sci Phi AFOA 1.6 M clips Simulated ✓Partial Partial
+> MMAU-Pro ABinaural 325 QA Recorded ✓✓✓
+> SO-Dataset (Ours) A+V FOA 400K clips / 2.1M QA Mixed ✓✓✓
+> SO-Bench (Ours) A+V FOA 7K clips / 7K QA Mixed ✓✓✓
+
+Table 4: Comprehensive comparison of spatial audio datasets and benchmarks.          
+
+> Dataset Clips
+> TAU 2019 Moving 10.6k TAU 2019 1.3k TAU 2020 1.8k TAU 2021 1.8k L3DAS 22 2.3k L3DAS 23 7.7k STARSS 22 0.9k STARSS 23 1.4k
+
+Table 5: Distribution of open-source datasets. 
+
+between the video and external FOA audio. We then refine the alignment by comparing the audio track embedded in the panoramic video with the external FOA recording. Transient events, clear onsets, and rhythmic sound boundaries are used as references for frame-level manual correction. This step produces aligned long recordings, where the panoramic video and the external FOA audio share the same timeline before annotation and segmenta-tion. 
+
+Annotation After audio-video synchronization, annotators use the video stream and the binaural au-dio embedded in the panoramic video as the main reference for annotation. This embedded audio is easier to audition together with the visual scene and is tightly bound to the video timeline, which reduces boundary errors caused by small offsets between the external FOA signal and the video. All event-level annotations are completed on the aligned long recordings before clip segmentation. For each event, we annotate event category, active time interval, track ID, azimuth, elevation, and dis-tance in the DCASE-style coordinate system used in recent SELD-with-distance benchmarks (Apari-cio et al., 2024) when reliable spatial evidence is available. When a source can be visually and acous-tically localized, we record its relative position and convert it into direction and distance annotations. When precise 3D localization is unreliable because of occlusion, distance, weak visual evidence, or strong reverberation, we keep coarser direction in-formation instead of forcing an uncertain position label. For dynamic sources, we record motion-related metadata and generate frame-level spatial labels by interpolating between annotated source states. This annotation procedure keeps temporal, semantic, and spatial labels in a unified event-level format. We hire annotators with prior experience in au-dio annotation and provide them with training on spatial audio concepts, annotation tools, and quality standards. They are paid at an hourly rate of $40, yielding a total experimental cost of approximately $2500. Prior to participation, subjects are informed that their assessments will be utilized exclusively for academic research purposes only. 
+
+Quality control We check the consistency be-tween video, FOA audio, event boundaries, and spatial annotations during post-processing. Seg-ments with failed synchronization, unclear event identity, corrupted audio, or unreliable spatial evi-dence are removed or downgraded to weaker super-vision. The final recorded subset provides realis-tic spatial examples paired with 360-degree visual data, and is used to improve robustness on real scenes and to support multimodal spatial under-standing tasks. 
+
+B.3 Simulated Dataset 
+
+We use SoundSpace 2.0(Chen et al., 2022) to sim-ulate FOA data. The room data is sourced from 15 Scene Type Representative Content Duration Indoor                               
+
+> Kitchen Cooking, tableware sounds, object impacts, and speech. 120 min Supermarket Checkout, announcements, carts, and customer speech. 70 min Laboratory/office Conversations, typing, coffee machines, and printer events. 60 min Dormitory common area Walking, conversations, key sounds, and door access events. 30 min Study corridor Quiet ambience, footsteps, passing vehicles, and coffee machines. 30 min Parcel station Package packing, barcode scanning, checkout sounds, and speech. 20 min Print shop Multiple visible and off-screen printer events. 15 min Seminar room Discussion, chair movement, and whiteboard interaction. 15 min Tennis court Tennis hits and ball-bounce events. 15 min Table tennis court Table-tennis hits and ball-bounce events. 8 min
+> Outdoor
+> Entrance gate Turnstiles, passing pedestrians, vehicles, and machine prompts. 70 min Escalator/metro entrance Escalators, warning prompts, broadcasts, footsteps, and speech. 40 min Subway platform Train arrivals/departures, broadcasts, and warning tones. 30 min Campus road Pedestrians, conversations, rolling luggage, vehicles, and whistles. 20 min Public square Outdoor ambience, speech, vehicles, unpacking, and music. 10 min
+
+Table 6: Statistics of raw real-world recording sessions used to construct the recorded subset. Durations are measured before event-level annotation and clip segmentation. 
+
+the HM3D, MP3D(Ramakrishnan et al., 2021), and Replica(Straub et al., 2019) datasets, totaling 207 rooms. The specific train/valid/test distribution is shown in Table 7. 
+
+Dataset Train Valid Test 
+
+HM3D 80 10 10 MP3D 79 4 6Replica 14 2 2
+
+Table 7: Distribution of rooms in the simulated dataset. 
+
+We also measure the RT60 data of the rooms, as shown in Table 8. 
+
+Dataset Mean P25 P50 P75 
+
+HM3D 0.248 0.230 0.246 0.260 MP3D 0.251 0.153 0.194 0.268 Replica 0.210 0.169 0.197 0.262 
+
+Table 8: RT60 distribution of rooms in the simulated dataset. 
+
+B.4 Dataset Annotation 
+
+All data is annotated using the DCASE format co-ordinate system, with CSV files recording time frames at a 10 Hz sampling rate, track, sound event, azimuth, elevation, and distance. The DCASE co-ordinate system is used, where +x is forward, +y is left, and +z is up. Azimuth increases counter-clockwise and ranges from [-180, 180], elevation increases upward and ranges from [-90, 90], and distance is measured in centimeters. For sound label, we aggregate semantically sim-ilar labels from FSD50K to form our final sound event label system. The distribution of the 63 dry sound events is shown in Figure 3. FOA channels are processed in the AmbiX/ACN order: [W, Y, Z, X ].An example annotation JSON file is shown in Figure 4. JSON files record the listener’s position and orientation, while CSV files record the sound source’s relative position to the listener. They also include basic sound event labels, active time of sound events, whether they are dynamic or static, and other information. 
+
+B.5 QA Annotation 
+
+For QA annotation, we use a template-guided gen-eration and verification process. For each spatial audio subtask, we manually design 20–25 ques-tion templates and answer templates. We then use Gemini-3 to instantiate questions with different phrasings from the audio and metadata, including sound events, directions, distances, and motion in-formation in the annotation JSON. To improve lan-guage diversity and reduce template bias, we use GPT-4o to paraphrase all QA pairs. After annota-tion, human annotators randomly check a portion of the QA pairs for quality control. All QA anno-16 speech 
+
+> singing
+> vehicle
+> wind instrument
+> water
+> bird
+> train
+> machine
+> tool
+> ocean
+> musical instrument
+> thunderstorm
+> rain
+> alarm
+> insect
+> frog
+> typing
+> aircraft
+> footsteps
+> cooking
+> human vocalization
+> home sound
+> telephone alarm
+> clock
+> dog
+> appliance
+> metal clink
+> writing
+> paper
+> keyboard instrument
+> guitar
+> animal
+> car
+> cat
+> fire
+> body sound
+> laughter
+> string instrument
+> printer
+> bell
+> crackle
+> breathing
+> zipper
+> war sound
+> camera
+> door
+> drawer cabinet
+> male speech
+> wind
+> tape
+> knock
+> female speech
+> drum
+> tearing
+> glass
+> gong
+> percussion
+> wood
+> scratch
+> crack
+> crushing
+> kitchenware
+> finger snapping
+> Sound event class
+> 10 0
+> 10 1
+> 10 2
+> 10 3
+> Active duration (h, log scale)
+> Class-wise Active Duration
+
+Figure 3: Distribution of sound events in the dataset. 
+
+tation in SO-Bench is checked manually to ensure the quality of the QA pairs. Examples of QA pairs and prompts are shown in Table 9. 
+
+B.6 Data Split 
+
+We strictly ensure the unseen nature of the test set in our data split. For dry sound data, we separately extract unseen sound event mono audio from the eval set of FSD50k. The RIRs in the test set are all from unseen rooms and convolved with dry audio from the eval set. For collected datasets, we fol-low the split of open-source datasets and construct QA pairs from the test set. For recorded data, we split by recording scenes to ensure that the test set includes unseen scenes and spatial relationships. We split the training and test sets as follows: for audio clips, the training set contains about 363k clips and the validation set contains 35k clips. The train/valid ratio is kept across different data sources to ensure a balanced representation of real and sim-ulated data in both sets. For the QA set, the training set contains around 2.0M QA pairs and the valida-tion set contains around 100k QA pairs. The test set consists of the 7k QA pairs in the benchmark. 
+
+C Training Details 
+
+C.1 Audio Preprocess 
+
+For audio preprocessing, we input 16 kHz FOA au-dio with a maximum clip length of 20 s . We use the same STFT parameters as the original Qwen training, allowing us to directly input the mel fea-tures extracted from the W channel into the original audio encoder for feature extraction without addi-tional adapter layers. The details of the parameter configuration are shown in Table 10. 
+
+C.2 SO-Encoder Training 
+
+We use a two-stage training strategy for the SO-Encoder. In the first stage, we perform isolated class learning. We freeze spatial losses and only optimize the backbone trunk, adapter, and class head, so that the event semantic branch becomes stable before spatial gradients are introduced. In the second stage, we linearly warm up spatial losses and jointly optimize class, active, DOA, and dis-tance supervision. We use cosine decay learning rate scheduling to reduce early interference from spatial fusion. We also balance the ratio of real and simulated data during training by oversampling the real data, with a real-to-simulated ratio of 1 : 2 . We perform random cropping of at most 10 s during training, and use the full clip during validation and testing. The details of the training configuration are summarized in Table 11. The Top-K rank activity loss is 
+
+Lrank = 1
+
+|P |
+
+X
+
+(i,j )∈P
+
+max(0 , m + ℓj − ℓi) ,
+
+Lact = Lrank + 0 .1 · L BCE .
+
+where P is the set of (active slot i, inactive slot j)pairs within each frame. 
+
+C.3 Spatial-Omni Model Training 
+
+The training of Spatial-Omni models follows a three-stage strategy, allowing the spatial tokens to gradually adapt to the LLM without disrupting the original audio and language capabilities. We train the projector in the first stage, the projector and LLM LoRA parameters in the second stage, and the SO-Encoder, projector, and LLM LoRA 17 Figure 4: Example of annotation JSON file. 
+
+Tasks QA Pair 
+
+Detect Source Q: "Listen to the audio clip and answer based only on what you hear. Which sound source is located to the back-right and below?", A: "The sound source located to the back-right and below is breathing." Estimate Azimuth Q: "Listen to the audio clip and answer based only on what you hear. Use the DCASE FOA coordinate system: +x front, +y left, +z up; azimuth is in [-180, 180] degrees with positive values to the left, and elevation is in [-90, 90] degrees with positive values upward. From which azimuth is the footstep coming? Report the final angle in degrees. ", A: "99.7 degrees" Compare Distance Q: "Listen to the audio clip and answer based only on what you hear. Between the sound of frog and the guitar, which sound source is positioned closer to the listener?", A: "The guitar is closer to the listener than the frog." Multi-Hop Q: "Listen to the audio clip and answer based only on what you hear. Among all detected sound sources, which one is farthest to the left?" A:"The sound source farthest to the left is the voice of singing." Spatial Temporal Q: "Listen to the audio clip and answer based only on what you hear. At what time does the speech sound originating from behind the listener begin?" A: "The sound coming from the back becomes active at 0.2s." Speech Content Q: "Listen to the audio clip and answer based only on what you hear. What is the speech content originating from the back-right position? Answer in one sentence by transcribing the spoken content as accurately as possible." A: "The voice coming from the back-right says, ’A voice inquired. Who’s there.’" 
+
+Table 9: Example of prompts and QA pairs for different tasks. 
+
+18 Parameter Value Notes                                                       
+
+> Sample rate 16 kHz 4-channel FOA, order [W, Y, Z, X ]
+> Clip duration 10 s Waveform shape [B, 4,160000]
+> STFT nfft 400 Aligned with Qwen-2.5-Omni STFT hop length 160 10 ms hop STFT window length 400 25 ms window Window function Hann –Mel filterbank size 128 fmin = 0 ,fmax = 8000 Hz
+> Time frames Tf1000 100 frames /s×10 s
+> Input channels 7mel channels (W, Y, Z, X )+ IV channels (IV x, IV y, IV z)
+> IV formula IV d= Re( W X d)/(|W|2+ε)ε= 10 −8, clamp to ±10 after mel extraction W-channel mean 15 .41663 BEATs pretrain statistic W-channel std 6.55582 BEATs pretrain statistic SpecAugment (W only) 2×time mask, 2×freq mask Training only
+
+Table 10: FOA input and feature extraction parameters. 
+
+parameters in the third stage. The specific param-eter counts and learning rate settings are shown in Table 12. Maximum audio length is set to 20 s 
+
+during training. Each stage continues training from the best checkpoint of the previous stage. Table 13 summarizes the hyperparameters shared across all three stages of training. 
+
+D Benchmark Details 
+
+SO-Bench uses an independent spatial QA test set to avoid overlap with training data. The benchmark covers three groups of tasks. Basic detection and lo-calization include Detect Source, Detect Time, Es-timation of Azimuth, Estimation of Elevation, Esti-mation of Distance. Spatial understanding includes Identify Source by DoA, and Identify Source by Lo-cation, Relative Left Right, Comparison Elevation, Comparison Distance, and Onset from Location. Complex spatial reasoning includes Classify Mo-tion, Count Sources, Multi Hop, Spatial Temporal caption, and Speech Content Recognition. For evaluation, we use task-specific metrics. De-tect Source is evaluated with event F1: 
+
+F1 = 2 · Precision · Recall Precision + Recall .
+
+Detect Time is evaluated with time-span IoU: 
+
+IoU time = |[tps , t pe ] ∩ [tgs , t ge ]||[tps , t pe ] ∪ [tgs , t ge ]| ,
+
+where [tps , t pe ] and [tgs , t ge ] denote the predicted and ground-truth time spans. For tolerance-based esti-mation and classification tasks, we report accuracy: 
+
+Acc = Ncorrect 
+
+Ntotal 
+
+.
+
+For azimuth, elevation, and distance estimation, 
+
+Ncorrect counts predictions within tolerances of 
+
+20 ◦, 10 ◦, and 0.5 m, respectively. For Onset from Location, a prediction is correct when the onset er-ror is within 0.4 seconds. Identify Source by DoA, Identify Source by Location, Relative Left-Right, Comparison between Elevation, Comparison be-tween Distance, Classify Motion, Count Sources, and Multi Hop use exact-match or choice accuracy according to their answer format. For Spatial Tem-poral caption, we compute F1 over the required spatial attributes and event classes. For Speech Content Recognition, we compute WER between the predicted transcript and the ground-truth tran-script for the specified direction: 
+
+WER = S + D + IN ,
+
+where S, D, and I are the numbers of substitutions, deletions, and insertions, and N is the number of words in the reference transcript. 
+
+E Details of Baselines 
+
+E.1 Encoder Baselines 
+
+Publicly available spatial audio understanding mod-els include SELDNet (Adavanne et al., 2018), the DCASE baseline series (Adavanne et al., 2019a), and models like Spatial-AST (Zheng et al., 2024). SELDNet is based on CNN and GRU modules to extract simple spatial audio features, supporting multi-source event detection and localization, but its performance is limited in complex scenarios. The DCASE challenge series provides baseline models for spatial audio understanding, consist-ing of CNN and Transformer modules, and intro-duces the Multi-ACCDOA output format, support-ing multi-source event detection and localization. However, its performance is also limited in com-plex scenarios, especially in tasks with increased 19 Group Parameter Value 
+
+Loss weights 
+
+λframe_class 1.0 (63 -way cross-entropy) 
+
+λframe_activity 1.0 (Top-K rank, replaces BCE) 
+
+λframe_direction 1.0 (1 − cos( ˆd, d))
+
+λframe_distance 1.0 (smooth-ℓ1)
+
+λframe_hemisphere 1.0 (hemisphere BCE) Top-K rank loss 
+
+K 4
+
+frame_activity_loss_type topk_rank 
+
+Margin m 2.0
+
+BCE anchor weight 0.1
+
+Two-phase schedule LR warmup, epochs 0–2 Spatial weight 0, LR 0 → 1.5×10 −5
+
+Class-only warmup, epochs 3–7 Spatial weight 0, cosine decay Spatial ramp, epochs 8–9 Spatial weight 0 → 1, cosine decay Full joint training, epochs 10 –24 Spatial weight 1, cosine decay to 7.5×10 −7
+
+Optimizer Optimizer AdamW 
+
+(β1, β 2) (0 .9, 0.999) 
+
+ε 10 −8
+
+Weight decay 0.01 
+
+Gradient clipping (global ℓ2) 1.0
+
+LR schedule LR schedule Linear warmup and cosine decay Peak LR 1.5 × 10 −5
+
+LR warmup epochs 3
+
+Cosine decay epochs 22 
+
+Min LR ratio 0.05 
+
+Training scale Total epochs 25 
+
+GPUs 8× A100 Batch size (per GPU / total) 8/64 
+
+Numerical precision FP32 
+
+Data loader workers / GPU 8
+
+Distributed framework torchrun + DDP 
+
+EMA 
+
+use_ema true 
+
+EMA decay 0.9995 
+
+EMA start epoch 3
+
+Table 11: SO-Encoder training configuration.                              
+
+> Stage Trainable Modules Base LR Projector LR LoRA LR Encoder LR Epochs
+> 1Projector ( ∼17 M )5×10 −51×10 −4––2
+> 2Projector + LoRA on q_proj,k_proj,v_proj,o_proj (∼60 M )5×10 −53×10 −55×10 −5–3
+> 3Projector + LoRA + SO-Encoder ( ∼162 M )3×10 −51×10 −63×10 −51×10 −63
+
+Table 12: Spatial-Omni three-stage training schedule. 
+
+sound event categories and class imbalance, where it performs poorly even with the addition of a Sound Event Detect head. In the DCASE 2024 challenge, except for the best team which achieved an F20 score of 54.4%, the rest of the teams did not exceed an F1 score of 30%. Moreover, it was lim-ited to the STARSS23 dataset. We reproduced the best team’s model, but due to the lack of pretrained checkpoints and augmented datasets, we did not achieve the performance level published in their pa-per. Spatial-AST is designed based on AudioMAE, using a Vision Transformer architecture and con-catenating class tokens, making it a representative model in the field of binaural audio understand-ing. The spatial tokens extracted by Spatial-AST can provide a certain level of spatial understanding when integrated into the later LLaMA model. 
+
+E.2 Spatial Audio LLM Baselines 
+
+We design multiple baselines to compare and val-idate the effectiveness of our framework. BAT is currently the only open-source binaural audio LLM model, supporting detection and localization of one to two sound sources. We integrate Spatial-AST into the LLaMA framework to achieve spatial audio understanding. The IV baseline directly extracts three sets of IV features between the W channel and X/Y/Z channels, and performs simple dimension-ality reduction through pooling in the frequency and time domains before inputting them into the 20 Hyperparameter Value                     
+
+> Batching Per-GPU batch size 2
+> Gradient accumulation steps 3
+> GPUs (single node) 8
+> Effective global batch size 48
+> Optimization Optimizer AdamW
+> LR schedule Linear warmup, cosine decay Warmup ratio 0.03
+> Weight decay 0.01
+> Gradient clipping 1.0
+> Precision Compute dtype bf16 Spatial modules dtype fp32 LoRA (Stages 2 and 3) Rank 16
+> α32
+> Dropout 0.05
+> Target modules q,k,v,o_proj
+> Data Audio 4-ch FOA, 16 kHz ,≤20 s
+> Spatial-token rate 2.5 Hz
+> Table 13: Hyperparameters shared by all three stages of Spatial-Omni model training.
+
+LLM as spatial tokens. This is similar to the way IV features are concatenated into the audio encoder in (Tang et al., 2024a). The Neural IV baseline is based on the learnable IV features implemented in (Liu et al., 2026). The 3-channel IV features are processed through two layers of Conv2D, down-sampled in the time dimension using pooling, and then projected to the LLM’s spatial token dimen-sion through LayerNorm and MLP layers. Given a 4-channel FOA waveform sampled at 16 kHz , we run the preprocessing and feed the three IV chan-nels into a two-layer 2-D CNN ( 3 → 32 → 64 ,
+
+3×3 kernels, GELU, T and M unchanged), av-erage over the mel axis, downsample the 50 Hz time axis to 2.5 Hz with adaptive average pool-ing, and pass the result through LayerNorm and a two-layer MLP ( 64 → 256 → 256 ) scaled by 0.02 
+
+and clipped to [−1, 1] . A second MLP projector (256 → 512 → 3584 ) lifts each spatial token to the Qwen-2.5-Omni-7B hidden size and the result-ing 50 tokens are masked-scattered into the LLM’s input sequence at the <|spatial|> placeholder po-sitions. The CNN, token head, and MLP layers together contain ∼5 M trainable parameters. The Zero-Spatial baseline simulates the case of monau-ral audio without spatial information by feeding a null spatial token into the LLM, to verify the contribution of spatial tokens to spatial relationship understanding and reasoning. Besides the baselines mentioned in the main text, we also attempted to in-tegrate the DCASE baseline model trained on real data into the Qwen-2.5-Omni model. The trained model achieved a level close to Neural IV in basic sound event detection and localization tasks, but performed weaker in more complex spatial relation-ship understanding and reasoning tasks, showing no significant improvement. This demonstrates the limited spatial performance capability of the DCASE baseline encoder. 
+
+F Supplementary Ablations and Results 
+
+F.1 Per-Task Analysis 
+
+For basic sound event detection and time detection tasks, the base model has some capability, and our SO-Encoder outputs frame-level spatial represen-tations, which can enhance temporal localization ability. For angle estimation tasks, the median er-ror for random guessing is about 90 degrees for azimuth and about 45 degrees for elevation; if we calculate accuracy using an angle tolerance, the ran-dom baseline is about 11.11%. Our model has sig-nificant improvements in both tasks, while LALMs that only accept monaural input and the base Omni LLM perform close to random levels. For distance detection tasks, our model has significant improve-ments, and there is also a significant improvement in absolute distance error. In the two localization event detection tasks, our model and BAT achieve similar levels. BAT’s QA design is specifically trained for this type of problem, without training for more complex spatial relationship understand-ing and reasoning problems, while our model has a more balanced performance in these types of prob-lems. In comparison tasks, our model has improve-ments, indicating that in multi-source scenarios, our model has stronger discriminative ability. This limited improvement also indicates that the current event detection and track assignment capabilities of the SO-Encoder still limit downstream multi-source spatial relationship reasoning. The good performance of the neural IV baseline on compari-son problems is consistent with the conclusions in JAEGER (Liu et al., 2026), where in comparison scenarios with only two sound sources, learnable IV features have good effects on spatial relation-ship understanding. The improvement in the onset from location task indicates that our model can better utilize spatial information for temporal local-ization, effectively outputting frame-level spatial 21 Model Basic Detection and Estimation Spatial Relation Understanding Complex Reasoning and Semantics DS DT EAzi EEle EDis IS-DoA IS-Loc RLR CEle CDis OL CM CS MH ST SC ↓                                                                                
+
+> Easy stage1 10.50 59.51 19.67 34.04 50.48 -----------Easy stage2 36.89 73.74 35.14 47.23 58.59 -----------Easy stage3 38.19 74.29 44.14 59.37 60.84 -----------Easy + Medium 47.14 77.02 55.10 66.21 76.19 59.41 53.57 55.85 61.26 60.36 77.97 -----Full 52.17 83.20 65.47 74.66 84.36 62.97 58.11 54.05 63.66 63.36 83.78 43.55 29.41 30.63 30.49 71.15
+
+Table 14: Per-stage results for Spatial-Omni training. 
+
+information. In the more difficult motion judgment relationship problem, our model can better utilize frame-level spatial information to determine the motion state of sound events. The count source task requires a high level of spatial audio understanding. In the work of (You et al., 2026), counting the num-ber of sources is also difficult. Our method still does not achieve good performance, while BAT’s model only supports detection of at most 2 sound sources, so it can perform well on counting source tasks with fewer than 2 sources, but cannot handle higher numbers of sources. The multi-hop task re-quires the model to understand the spatial relation-ships between multiple sound events and perform complex reasoning. Our method has significant improvements in this type of problem, indicating that our model can better utilize spatial informa-tion for complex spatial relationship understanding and reasoning. The improvement in Spatial Tempo-ral captioning indicates that our model can better utilize spatial information for spatial event descrip-tion and understanding, extracting the relationship between space and semantics compared to the base-line. The Speech content task is evaluated using WER, where a lower value indicates more accurate recognition of speech content in the specified di-rection. In this task, our model can recognize the specified directional speech content in overlapping speech, with improvement compared to the base model.                   
+
+> Stage Median Azi Err Median Ele Err Median Dis Err
+> Easy stage1 55.6 15.1 0.54 Easy stage2 34.8 10.3 0.48 Easy stage3 26.6 8.3 0.45 Easy + Medium 16.9 6.7 0.41 Full 7.6 4.0 0.40
+
+Table 15: Per-stage results for basic estimation tasks in Spatial-Omni training. Degree error use degree as unit and distance err use meter as unit. 
+
+F.2 Per-Stage Results for Spatial-LLM Training 
+
+We employ a staged training strategy. We first train the model on easy QA data to learn basic spatial understanding capabilities, and then gradually add medium and hard stage data to further enhance the model’s abilities. In the easy stage, we first train the projector, and then unfreeze the LoRA parame-ters of the LLM for training with a stable projector initialization. In the final stage, we jointly train the full SO-Encoder, projector, and LLM. The results for each stage are shown in Table 14. We can see that training in the easy stage already enables the model to learn basic spatial understanding capabili-ties, while training in the medium and hard stages further enhances the model’s abilities, especially in complex scenarios. We further measure median degree error for azimuth and elevation estimation, and absolute distance error for distance estimation for each stage, shown in Table 15. Although harder-stage questions do not directly supervise angle or distance estimation, the staged training still im-proves the learned spatial representations. 
+
+F.3 Ablation on Mix Data Training 
+
+As the training data for the Qwen series has not been open-sourced, we supplemented it with a por-tion of the open-source single-channel QA data from Audio-Flamingo3. The data sources include the QA subsets of CochlScene, Audio_SL, Music-Caps, FSD50k, and UrbanSound8K, totaling 130 kQA pairs. During training, we randomly sampled 20% of the spatial training sets and mixed them with the aforementioned single-channel dataset, re-sulting in an overall data ratio of 1 : 3 for 1 epoch. The single-channel audio is input into SO-Encoder in the form of [W, 0, 0, 0] for feature extraction, allowing the SO-Encoder to learn the distribution of non-spatial features and output a null spatial to-ken feature representation to distinguish between single-channel and spatial audio inputs. The result-ing model, SO-7B(MIX), shows improvements in 22 Model Total Parameters Peak Inference GPU Memory ( GB ) End-to-End Inference Speed ( s)                                                              
+
+> Qwen-2.5-Omni 8.93 B 16 .99 1.85
+> SO-7B-neuiv 8.93 B 16 .99 1.88
+> SO-7B 9.09 B 17 .63 1.94
+> Table 16: Total parameters, peak inference GPU memory, and end-to-end inference speed of Qwen-2.5-Omni, SO-7B-neuiv, and SO-7B.
+> Stage Det F1 (%) Time IoU (%) Az Acc (%) Az Err ( ◦)El Acc (%) El Err ( ◦)B1 B4 B1 B4 B1 B4 B1 B4 B1 B4 B1 B4
+> Easy Stage 1 10.50 10.61 59.51 62.23 19.67 20.87 55.6 62.0 34.04 32.98 15.1 15.9 Easy Stage 2 36.89 35.70 73.74 73.54 35.14 33.78 34.8 37.5 47.23 49.93 10.3 10.0 Easy Stage 3 38.19 37.52 74.29 73.76 44.14 41.59 26.6 30.0 59.37 62.52 8.3 7.5
+> Table 17: Beam ablation study comparing Beam=1 (greedy) and Beam=4 decoding across Spatial-Omni training stages. B1 denotes Beam=1, B4 denotes Beam=4, and Err denotes median degree error.
+
+Sound, Music, and Speech capabilities on MMAU and MMAU-Pro, while still enhancing spatial au-dio capabilities on MMAU-Pro. Although it did not reach the capabilities of the original base Omni model due to limited data, it demonstrates the feasi-bility of mixed training and the ability of the spatial model to learn from single-channel data. Further gains may be obtained if the original Qwen training data is available for joint training. The mixed data training did not unfreeze the original audio encoder, but by using single-channel input, it allows the model to learn when to utilize single-channel audio tokens and when to utilize spatial tokens, as well as learning the feature rep-resentation of a null spatial token when there is no spatial audio. This is helpful for improving the model’s capabilities, as it learns to better combine single-channel and spatial features for understand-ing and reasoning. The model also learns to adapt to the distribution of the added spatial modality, resulting in improve-ments in metrics for single-channel tasks. 
+
+F.4 Inference Speed, Token Rate, and Memory Usage 
+
+We compared the original Qwen-2.5-Omni and SO-7B with the SO-Encoder in terms of infer-ence speed, GPU memory usage, and parameter count. Qwen-2.5-Omni has 8.93 B parameters, SO-7B-neuiv adds only about 5 M parameters through the CNN modules, resulting in negligible param-eter overhead. SO-7B has 9.09 B parameters due to the addition of the SO-Encoder and projector. Qwen-2.5-Omni has a peak GPU memory usage of 16 .99 GB during inference, and SO-7B has an increased peak GPU memory usage due to the addi-tion of the SO-Encoder and projector, but it is still within an acceptable range. For inference speed, we tested the inference time with 64 new tokens. The addition of new spatial tokens does not sig-nificantly increase inference time. The results are shown in Table 16. We train SO-7B on 8× A100 NVIDIA GPUs for 
+
+576 GPU hours and SO-30B on 8× H20 GPUs for 
+
+768 GPU hours. 
+
+F.5 Ablation on Decoding 
+
+When answering questions related to angles, since the LLM outputs token by token, there may be an issue that the model simply memorizes templated angle responses. To verify this, we design an abla-tion experiment focusing on detect and angle ques-tions for the 3 easy QA stages with beam ablation. The ablation experiment is set up with beam=4, while the rest of the settings are the same as the de-fault experiment. The results are shown in Table 17. In the greedy setting, we obtained 42.9% integer angle answers, while in the beam=4 setting, we only had 10.5%, which is consistent with the real distribution. Beam=4 does not substantially change detection or time-localization performance, while azimuth errors become slightly larger and eleva-tion errors remain comparable or slightly better in later stages. Our model does not fall into templated angle answering. The elevation results are better because we simulate a realistic data distribution where most elevation values are within ±30 ◦, so the model’s predictions are biased toward around 23 0◦ and still achieve good accuracy within a 10-degree tolerance. In contrast, azimuth is uniformly distributed within a 360-degree range, which can better reflect the learning ability. Our model indeed learns spatial information from the spatial token. Current open-source model evaluations typically use greedy decoding. To align with these imple-mentations, we report greedy decoding in the main results and provide beam-search results as a decod-ing ablation. 
+
+G LLM Prompts 
+
+We use LLMs for QA generation and paraphras-ing. We present the prompts used for LLM QA generation and paraphrasing below. 
+
+Prompt used for QA generation 
+
+> You are given the metadata of a spatial audio clip, including sound events, active time intervals, azimuth, elevation, distance, and motion information. Your task is to generate diverse spatial audio question-answering pairs. Requirements: 1. The question must be answerable from the provided metadata. 2. The question should focus on spatial audio understanding, such as source detection, direction estimation, distance estimation, motion analysis, spatial relation reasoning, or speech content under spatial conditions. 3. Do not mention metadata fields explicitly in the question. 4. The answer should be concise and factual. 5. If multiple sound sources are present, ensure that the question clearly specifies the target source, time interval, or spatial condition. Metadata: {metadata} Please generate {num_questions} question-answer pairs in JSON format.
+
+Prompt used for QA paraphrasing 
+
+> You are given a spatial audio question-answer pair. Your task is to rewrite the question into a natural and diverse form while preserving its original meaning. Requirements: 1. Do not change the answer. 2. Do not introduce new spatial information. 3. Keep the rewritten question answerable from the same audio clip. 4. Avoid overly formal or repetitive wording. 5. Preserve the target source, time interval, and spatial relation if they are mentioned in the original question. Original question: {question} Answer: {answer} Return only the rewritten question.
+
+H Licenses and Availability 
+
+We respect the original licenses of all referenced ar-tifacts and do not redistribute them. This work uses publicly available datasets. We do not redistribute any third-party audio content. Users must obtain the original datasets from their respective providers and comply with the original licenses/terms of use. We will release data under CC BY 4.0, subject to the original dataset terms. Our codebase may depend on third-party libraries; these components remain under their respective licenses. Any exter-nal assets (e.g., pretrained backbones or evaluation tools) are used in accordance with their original licensing terms. 
+
+I Use of AI Assistants 
+
+We used AI-based writing assistant during manuscript preparation solely for language polish-ing, including grammar checking, spelling correc-tion, and improving clarity and readability of the text. All technical claims, experimental procedures, and interpretations were produced and verified by the authors. 24
