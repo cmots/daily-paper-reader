@@ -1,0 +1,626 @@
+Title: Real-Time Language Model Jamming: A Case Study for Live Music Accompaniment Generation
+
+URL Source: https://arxiv.org/pdf/2606.11886v1
+
+Published Time: Thu, 11 Jun 2026 00:51:48 GMT
+
+Number of Pages: 14
+
+Markdown Content:
+# Real-Time Language Model Jamming: A Case Study for Live Music Accompaniment Generation 
+
+Bowen Zheng 1,2,∗,‡, Andrew H. Yang 3,2,∗,‡, Jiaqi Ruan 4,2, Jia He 4,2, Xinyue Li 2,Yuan-Hsin Chen 5,2,‡, Ziyu Wang 6,2,†, Xiaosong Ma 2,†
+
+> 1
+
+University of Wisconsin–Madison, USA, bzheng68@wisc.edu 
+
+> 2
+
+Mohamed bin Zayed University of Artificial Intelligence, UAE, 
+
+{Jiaqi.Ruan, Xinyue.Li, Ziyu.Wang, Xiaosong.Ma }@mbzuai.ac.ae 
+
+> 3
+
+University of California, San Diego, USA, any012@ucsd.edu 
+
+> 4
+
+University of Science and Technology of China, China, hej148@mail.ustc.edu.cn 
+
+> 5
+
+Wuhan University, China, yuanhsin@whu.edu.cn 
+
+> 6
+
+New York University, USA 
+
+Abstract —Language models (LMs) have become one of the most prominent paradigms in modern generative modeling. While making them faster has been the main focus of real-time deployment, speed alone is not enough. Many real-world appli-cations, such as synchronized translation and voice synthesis, also require precise alignment between generation and external signals, both in terms of generation content and timing. We refer to this problem as frame-synchronous streaming inference .To address it, we present StreamMUSE, an inference system that performs LM generation in response to an external signal stream within a client-server architecture. The client continuously sends high-frequency inference requests based on the most recent inputs and receives outputs synchronized to the external clock, while the server executes model inference. We demonstrate the framework through a live music accompaniment task, showing how real-time synchronization can be achieved across different deployment environments with varying round-trip latencies. We further model the relationship between system hyperparameters and round-trip latency, and evaluate how different environments affect optimal configurations to achieve real-time performance. Experimental results show a consistent correspondence between system real-time performance and music quality, demonstrating the effectiveness of the proposed framework. The project is open source. Relevant code and the latest updates are available at https://stream-muse-webpage.vercel.app/#audio-library. 
+
+I. I NTRODUCTION 
+
+Language models (LMs) have become the foundation of modern generative systems across modalities, from text to speech and music. As their applications expand into interactive and real-time domains, such as live conversation, synchronized translation, and music editing, the primary goal has often been to make inference faster [1], [2], [3]. Yet speed alone does not tell the full story. Consider the problem of improvising music with other musicians: the system must not only generate notes quickly, but also update its context frequently to ensure high-quality predictions and stay aligned with the shared musical clock. This highlights a broader challenge in real-time 
+
+> ∗
+
+Equal contribution. †Corresponding authors. 
+
+‡ This project was supported by the MBZUAI UnderGraduate Research Internship Program (UGRIP) 2025, during which a substantial portion of the research was conducted. 
+
+generative modeling—producing outputs that are synchronized in time and coherent in content with continuously evolving external signals. In this work, we frame this challenge as frame-synchronous streaming inference , where a language model Pθ (y|x) must generate an output sequence y that evolves in real time with an external signal stream x. The generation proceeds at a fixed frame rate, synchronized to physical time, so that at each frame 
+
+t, the model produces yt ∼ Pθ (yt | x<t , y <t ) conditioned on the most recent external information x<t and its own gen-eration history y<t . Existing approaches, however, typically operate at much coarser or irregular temporal resolutions. They either assume long frames to predict low-resolution signals (e.g., 2-second chunks [4]) or use dynamically triggered updates tied to user interactions (e.g., chatbots that respond after full sentences [5], [6]). In contrast, frame-synchronous streaming inference targets short frame intervals (e.g., within 200 ms), comparable to the smallest perceptual or structural unit in music or speech (such as a tatum or syllable), where precise timing and synchronization are essential. In our music setting, this temporal unit is instantiated as a tick, while the corresponding symbolic representation at each tick is encoded as a frame. In this paper, we present StreamMUSE, a system for frame-synchronous streaming inference. We take real-time music accompaniment generation as a case study, where the model generates accompaniment conditioned on a user-input melody that serves as the external signal. StreamMUSE operates in a client–server architecture: the client continuously sends high-frequency inference requests based on the latest user input, and the server performs language model inference and returns generation results aligned to the music stream. The system is characterized by two key parameters: the inference interval (I), which determines how frequently requests are sent, and the generation length (GL ), which specifies how long each request generates output. These hyperparameters jointly balance responsiveness and reliability under stochastic round-trip latency, which depends on model inference time 
+
+> arXiv:2606.11886v1 [cs.SD] 10 Jun 2026
+
+and network conditions between client and server. To analyze this trade-off, we develop a latency-aware for-mulation that quantifies the feasible configurations of these parameters under varying latency conditions. A straightfor-ward intuition is that real-time inference can be achieved by minimizing the inference interval and setting the generation length just long enough to cover each frame. In practice, however, random latency fluctuations make hyperparameter configuration non-trivial. For instance, an overly short I can cause overlapping requests that stall the system, whereas a slightly longer GL provides necessary temporal redundancy as a backup against delayed requests. We further examine how an increment of music tempo—the innate music concept that defines the frame rate—tightens these constraints, sometimes even making real-time scheduling infeasible. We train a real-time accompaniment generation model as the backbone LM and evaluate StreamMUSE across three environments—local, local-server, and remote-server—with varying network latencies and inference speeds. Experimental results show that system behavior aligns well with our model for hyperparameter selection, and that the system respon-siveness is strongly correlated with music-quality metrics. The experiments further confirm that, when feasible under given latency conditions, more frequent inference requests and suitable generation length yield performance closest to the offline baseline, demonstrating the importance and necessity of high-resolution streaming inference. II. B ACKGROUND AND RELATED WORK 
+
+This section reviews prior work on LLM inference, music generation, and real-time systems, with a focus on their appli-cability to the frame-synchronous streaming setting considered in this work. 
+
+A. Language Model Inference 
+
+Significant research efforts have been dedicated to opti-mizing and accelerating large language model (LLM) in-ference, primarily following two complementary technical pathways. The first focuses on architectural innovations, such as transforming dense models into sparse Mixture-of-Experts (MoE [7]) structures, which preserve total parameter count while substantially reducing computational load per input token. The second approach retains the algorithmic founda-tion while optimizing resource utilization at the framework level—exemplified by systems like vLLM [8] and SGLang [9], which introduce advanced techniques such as continuous batching, paged KV cache management, and adaptive schedul-ing. In hard real-time task scenarios such as automotive intelligent software [10], systems must further incorporate task prioritization and resource management on top of model-level optimizations, ensuring critical functions (e.g., braking decisions) receive prioritized inference resources. In summary, existing optimizations are primarily designed for general-purpose language models, whose token-sequential generation process and heavy reliance on statistical dependencies make them difficult to directly apply in edge scenarios with strict requirements for real-time performance, determinism, and task criticality. 
+
+B. Machine Learning for Music Generation 
+
+Music has long been intertwined with real-time interaction, dating back to early research on score following [11], [12], timbre recognition [13], [14], and other interactive music sys-tems that require instantaneous computational responses [15], [16], [17]. Accompaniment generation, a representative task in music AI, is particularly well suited for real-time musical interaction due to its inherently responsive and continuous nature. Deep learning has significantly advanced symbolic music generation, with models such as Music Transformer [18] and Multitrack Music Transformer [19] excelling at model-ing long-term structure and multi-instrument arrangements. Several studies have further explored controllable symbolic generation, such as melody-conditioned accompaniment. Ac-coMontage [20] retrieves and adapts stylistic phrase represen-tations from a precompiled corpus; Whole-Song Hierarchical Generation [21] generates accompaniment hierarchically from global structure to detailed parts; and the Anticipatory Mu-sic Transformer [22] improves quality through a look-ahead design that explicitly violates real-time assumptions. These methods produce musically coherent and controllable results, yet real-time generation remains challenging because they rely on offline processing and full-sequence context. 
+
+C. Real-Time Accompaniment Generation System 
+
+Despite major advances in deep learning for symbolic music modeling, its integration into real-time interactive systems has been relatively limited. Only a few recent studies have ex-plored this direction, yet their focus largely lies on algorithmic design—particularly in reinforcement learning—rather than on the system-level challenges of achieving stable, low-latency interaction. For instance, the RL-Duet framework [23] formulates real-time accompaniment as a sequential decision-making process using reinforcement learning, enabling the agent to respond instantaneously to a performer’s input; however, its discrete action formulation leads to coarse timing and limited ex-pressiveness. Similarly, Bach-Duet [24] uses an RNN for real-time counterpoint improvisation, but its strict 16th-note quantization and monophonic constraints lack the expres-siveness required for rich, polyphonic accompaniment. More recently, ReaLJam [25] introduces a reinforcement-learning-tuned Transformer for interactive jamming with predictive scheduling, yet its design remains centered on chord- or measure-level anticipation. Meanwhile, the Jam Bot [26] en-ables human–AI free improvisation by adapting symbolic mu-sic language models; however, its architecture is highly artist-specific. It relies on fine-tuned stylistic data and handcrafted interaction strategies, which limits its generalization to broader real-time or multi-user scenarios. Even in recent industry-scale developments, such as Google Magenta’s real-time live music models [27], the focus remains distinct. Their system targets a distinct set of objectives, focusing on adaptive music generation steered by high-level text or audio prompts, rather than the tight, frame-synchronous melody conditioning explored in this work. Furthermore, their models operate on two-second chunks, meaning user inputs take two or more seconds to influence the musical output. While such a design is effective for its intended use case, the resulting multi-second latency presents a hurdle for highly in-teractive scenarios that necessitate sub-200ms responsiveness. Overall, these works represent valuable early steps but re-main coarse-grained in temporal resolution and system integra-tion. In contrast, our work focuses on the tackling the system problem—building a responsive, low-latency, and robust real-time generation framework—addressing the fundamental gap between algorithmic sophistication and deployable real-time musical interaction. III. M ODEL OVERVIEW 
+
+A. Statistical Model for Real-Time Accompaniment Genera-tion 
+
+In this study, we formulate the real-time interactive accom-paniment task as a conditional sequence modeling problem .The core design principle, crucial for low-latency collabora-tion, is the online constraint: upon each generation request, the model must only generate new accompaniment tokens conditioned on the observed melody history and all previously generated accompaniment. This process is strictly causal and permits no lookahead into the user-fed future melody. In the generic streaming notation introduced earlier, x corresponds to the melody sequence M and y to the accompaniment sequence A; correspondingly, x<t and y<t map to the histories 
+
+M[0 : t − 1] and A[0 : t − 1] in Equation 1. Considering the incremental and rhythmic nature of real-time music generation, in this work we discretize time into uniform temporal steps called ticks , as the finest resolution considered. Its size is configurable, though in our experiments a tick is fixed at 1/4 beat (1/16 note), its wall clock time du-ration τtick depends on the music speed (commonly measured in BPM, or Beats Per Minute). E.g., for a song of 120 BPM, 
+
+τtick would be 125ms. Formally, let M[i : j] denote the melody token sequence and 
+
+A[i : j] denote the accompaniment token sequence starting at tick i and ending at tick j, the model estimates the conditional distribution 
+
+p(A | M) =  
+
+> T−1
+
+Y
+
+> t=0
+
+p A[t] | A[0 : t − 1] , M[0 : t − 1] . (1) In other words, for tick t, the model should predict A[t]
+
+prior to observing this segment melody M[t], so that A[t] can be produced in time to accompany it. A tokenization method that supports the real-time setting and model architecture is introduced later in this section. 
+
+B. Data Representation 
+
+The data representation described above is a conceptual abstraction, to support real-time generation, we employ a more Mel. Acc.            
+
+> B2 G3 A3 E3
+> C3 G4
+> ∅∅∅∅
+> ∅∅∅∅∅
+> 𝑀[0: 7]
+> 𝐴[0: 7]
+> …………
+> Music Score Data Representation
+> F4 E4 D3
+
+Fig. 1: Sample MIDI tokenization detailed and realistic music data encoding scheme. Based on the tick-based granularity introduced earlier, we represent the melody and accompaniment as two aligned sequences of 
+
+frames . Here, a frame denotes the tokenized representation at a single tick; throughout the rest of the paper, we use tick to refer to the temporal/scheduling unit and frame to refer to its symbolic encoding: 
+
+M = ( M[0] , . . . , M[t − 1]) ,
+
+A = ( A[0] , . . . , A[t − 1]) .
+
+To enable efficient autoregressive prediction, these two sequences are combined using an interleaving technique into a single input sequence 
+
+InterL( M, A) = ( A[0] , M[0] , . . . , A[t − 1] , M[t − 1]) .
+
+Given the polyphonic nature of music, both a melody frame ( M[t]) and an accompaniment frame ( A[t]) denote the symbolic encoding of all note events occurring at tick t. This allows a single frame to summarize multiple simultaneous notes (or silence). For example, an accompaniment frame can represent three simultaneous notes forming a chord. Fig. 1 illustrates such tokenization. Here, the 2 beats of sheet music shown on the left side translate into 8 ticks on the right, where internal representations like “B2” define the pitch of notes. Each blue/yellow block in the figure represents a melody/accompaniment frame. Note that based on the polyphony encountered in our training and testing music datasets, we empirically set the maximum number of note events per frame to 4, which is easy to extend if necessary. 
+
+C. Model Architecture and Training 
+
+Our model itself is a Transformer-based, autoregressive decoder conditioned on the interleaved melody and accompa-niment sequence. Its backbone architecture is adapted from the three-module design introduced in [28], consisting of a local encoder, a global predictor, and a local decoder for efficiently processing structured symbolic music representations. The lo-cal encoder encodes notes starting at the same tick into a single token. The global predictor then processes these aggregated vectors across the entire history to capture global musical and rhythmic context and predict high level representation (a) Request timeline (b) Server workflow 
+
+Fig. 2: StreamMUSE architecture. The left panel shows a sample timeline with three requests: Request-1 (Req[2]), Request-2 (Req[4]), and Request-3 (Req[6]), issued at the onset of ticks 2, 4, and 6, respectively. The right panel gives a zoomed-in view of the server-side workflow corresponding to one request. of the next token. Finally, the local decoder generates the new frame’s subsequence autoregressively, conditioned on the global predictor’s output for the current time step. The loss function used for training this model is the standard cross-entropy loss based on Equation 1. During training, the training data sequences start with the accompaniment token 
+
+A[0] . Since our model is trained with teacher forcing, the resulting discrepancy between training and inference—known as exposure bias—is an inherent challenge in this streaming setting. 
+
+D. StreamMUSE Architecture Overview 
+
+Finally, we assemble the above building blocks and give a sketch of the architecture of our proposed StreamMUSE system. While the above model allows incremental accompa-niment generation, achieving real-time accompaniment is far from straightforward. Live accompaniment is highly sensitive to latency and BPM (A higher BPM accelerates the musical rhythm, leading to more rhythmically discordant beats under identical latency conditions.) Only when the accompaniment closely follows the performer’s melody does the overall per-formance sound natural. Yet, the round trip time ( RT T ) of fulfilling each request due to network latency and server side inference is significant, making it difficult for the system to produce perfectly synchronized accompaniment in real time. To enable StreamMUSE’s working with diverse hardware and service settings, we adopt the common client-server design, as illustrated by Fig. 2. Such a distributed archi-tecture also decouples latency-sensitive user interaction from computation-intensive model inference. The client, which takes user input MIDI melody, sends accompaniment generation requests at a certain frequency, again defined by tick intervals ( I ticks). The server processes a request, generating an interleaved sequence (using the InterL 
+
+function), whose size is specified by the generation length parameter GL . It is desirable to have a GL long enough to produce accompaniment sequences overlapping in time, so that there are backup segments in case of network or inference latency jitters. The accompaniment component of the generated sequence, GA, is then returned to the client, which coordinates the responses from multiple outstanding requests and schedules the accompaniment playback. Both the ground-truth (user-fed) melody and the GA results are maintained by the server side for subsequent inferences. Table I summarizes the key definitions introduced, to be used throughout the paper. In Section IV, we revisit Fig. 2 and give detailed description of the design of our client and server. In particular, how they work together to automatically search for optimized I and GL parameter values under a given hardware/service setup. IV. S TREAM MUSE D ESIGN AND SYSTEM MODELING 
+
+A. Client Design 
+
+The client employs a multi-threaded design and an asyn-chronous scheduling mechanism that decouples real-time play-back from network communication. The Main Thread co-ordinates timing and playback scheduling, the Input Thread captures user melody input in real time, and the Inference Thread manages communication with the server. At each time interval (typically consisting of several ticks), the client TABLE I: Key Definitions for StreamMUSE                  
+
+> Symbol Description
+> M,ASequences of melody and accompaniment frames, one per tick
+> BPM Beats per minute
+> tick Minimum work unit in StreamMUSE’s pro-cessing, set as a fraction of a beat
+> τtick Tick duration in milliseconds
+> InterL( M,A)Interleaved melody–accompaniment token sequence
+> LCross-entropy loss function
+> IInference interval
+> GL Generation length
+> GA Generated accompaniment
+> Req Request
+> RT tick Round-trip time in tick unit
+> RT T Round-trip time in milliseconds
+
+packages the latest melody segment and sends it to the server for inference. It then receives a generated accompaniment of length GL from the server for playback scheduling. In practical network modeling, we have observed that network latency follows a long tail distribution, meaning a small fraction of requests exhibit round-trip times ( RT T )significantly higher than the average. To address this, we implemented a tick-aligned data structure and introduced a backup mechanism as a safety buffer. The generated accom-paniment (GA) returned by each server is stored in this data structure for real-time scheduling. By setting the generation length ( GL ) to be longer than the inference interval ( I), an overlap is created between consecutive GAs. This overlapping portion serves as a backup left by the previous request and will be overwritten by data from a new, on time request. If a new request is delayed, the backup is scheduled in real-time to maintain musical continuity. A missing accompaniment event occurs only when a request is delayed and no backup accompaniment is available in the system. In the sample scenario shown in Fig. 2(a), I is set to 2 ticks and GL is set to 5 ticks (corresponding to 9 interleaved frames). With an experienced RT T of 1.5 ticks, the Scheduler receives the return value of Request-1 and writes it to GA[2:7]. Due to the upward rounding of ticks (where a tick is the smallest scheduling unit of the accompaniment), the shaded portion of GA in Fig. 2(a) is already too late to be scheduled. GA ① can be directly scheduled in real-time, while GA ②
+
+serves as a backup for subsequent accompaniment. Since Request-2 returns as expected, the generated accompaniment is overwritten, and the newly returned GA ③ will be scheduled, with GA ④ acting as the backup. If Request-3 is delayed, the backup from the last request GA ④ will be scheduled. However, if the delay exceeds its coverage, no available GA remains for scheduling, resulting in a miss until Request-3 returns. The backup mechanism effectively mitigates the impact of network tail latency. However, having excessively long backup generation is clearly not advantageous. Although it can reduce the risk of missing accompaniment, it also increases the inference latency for all requests, potentially compromising the system’s real-time constraints. Hence, the goal of our real-time system is twofold: (1) to ensure musical continuity by minimizing the number of missing events (the white “hole” at tick 9 in Fig.2), and (2) to satisfy the real-time constraint by reducing reliance on backup accompaniment. Later in this section, we further formalize the real-time behavior of StreamMUSE. 
+
+B. Server Design 
+
+The core of the server is an inference engine built on the generative model described in Section III. As shown in Fig. 2 (b), during online generation, the server maintains a tick-aligned data structure to store the user’s historical generated accompaniment and real melodic context infor-mation. Upon receiving the real-time melody segment from the client, the server appends it to the existing historical melody data. For instance, as shown in Fig. 2, Request-2 only transmits the incremental segment M[2:4], which the server then integrates into its melody history for subsequent inference. The accompaniment and melody at the same tick are then interleaved to form a new sliding window, which is fed into the model as a unified melody–accompaniment sequence prompt. The model infers and generates the next segment of the melody–accompaniment (9 frames in this example), where the 5 frames/ticks of accompaniment result are returned to the client, as well as saved as accompaniment history. After inference, the server separates the generated melody and accompaniment, discards the generated melody, retains the generated accompaniment, and transmits it to the client. This mechanism minimizes data transmission between client and server while maintaining real-time updates of the user’s melody, ensuring both real-time performance and the accuracy and contextual relevance of the generated results. 
+
+C. Round-Trip Time Modeling 
+
+As previously discussed, RT T is an inherent system la-tency that fundamentally determines the theoretical upper bound of real-time performance in online music generation. To model RT T , our analysis decomposes it into two core components: (i) inference latency ( IL ), which refers to the computational time required on the server side to complete the music generation; and (ii) network latency ( N L ), which encompasses the communication overhead incurred during end to end transmission of the request and response data. To model IL , the key relevant factor is the model’s autore-gressive generation length ( GL ), as a request’s RT T can be formally expressed as 
+
+RT T (GL ) = IL (GL ) + N L. 
+
+Across multiple hardware and inference service setups, we sweep the typical values GL and record IL to analyze their relationship. Through our detailed breakdown, we find that in the current three module structure, IL is dominated by the local decoder that autoregressively generates frames. Within the computational complexity of the local decoder, the leading term is determined by the attention mechanism, whose cost scales quadratically with GL . Accordingly, we model IL as a quadratic function of GL with an additive Gaussian noise term: 
+
+IL = f (GL ) + ϵ, ϵ ∼ N (0 , σ 2),
+
+where f (GL ) = αGL 2 + βGL + γ is a quadratic function of GL , with γ denoting the constant term, and ϵ represents stochastic fluctuations in inference latency caused by system load and other runtime uncertainties. To model N L , in a local setup where the client and server run on the same host, there is no network communication, so we set N L to 0; with the other network setups, N L 
+
+fluctuates around a constant value due to fixed communication overhead and unstable wireless links. To capture the heavy tailed behavior of network latency, we replace the Gaussian noise with a shifted power law (Pareto) noise term: 
+
+N L = ν + ( ξ − xmin ), ξ ∼ Pareto( xmin , α ),
+
+where ν is a constant representing the fixed communication delay, xmin > 0 is the scale (minimum) parameter, and α > 
+
+1 is the tail index controlling the heaviness of the tail. The probability density function (PDF) of ξ is given by 
+
+gξ (x) = α x α
+
+> min
+
+xα+1 , x ≥ xmin .
+
+This formulation ensures that the noise term (ξ − xmin ) has a minimum value of zero, allowing N L to fluctuate around ν
+
+while exhibiting occasional extreme latency spikes consistent with heavy tailed network behavior. We emphasize that the Pareto assumption is used as a practical approximation of upper-tail latency behavior rather than a claim of exactness under all network conditions. Empirically, the tail regime of our measured RT T traces is well approximated by a linear fit on log-log plots, with an average coefficient of determination 
+
+R2 = 0 .949 across the evaluated settings. We therefore adopt Pareto as a conservative engineering choice, since it implies larger buffer requirements than lighter-tailed alternatives and thus provides a safety margin for real-time parameter selection. Putting the above together, we write RT T in explicit form as 
+
+RT T = f (GL ) + ν + ( ξ − xmin ) + ϵ. 
+
+D. Model-Based StreamMUSE Parameter Configuration 
+
+Finally, we come to the key problem of a real-time interac-tive music accompaniment system, to balance generative qual-ity, interactive responsiveness, and the physical constraints of computation and networking. To this end, our request response time modeling given above allows us to move beyond ad-hoc parameter tuning, adopting instead a formal methodology that derives the feasible solution space of real-time safe configura-tions. In this manner, under different hardware, network, and inference service configurations, StreamMUSE automatically identifies the optimal operating point to maximize interactivity and reliability. The derivation depends on relating the system’s temporal latency (in milliseconds) to the musical “tick” (our discrete time unit). We first introduce a key parameter:  
+
+> •
+
+τtick (Time per Tick): The duration of a single tick in seconds. A 16th note resolution (4 ticks per beat), the time per tick is derived from BPM: 
+
+τtick = 60 × 1000 4 · BP M (ms/tick ).
+
+For this constraint analysis, we simplify the RTT model from Section 4.2 by absorbing the constant term γ in f (GL )
+
+together with ν, (ξ − xmin ), and ϵ into a single constant term 
+
+c for tractability. This yields the following approximation for the 95th-percentile tick-level response time: 
+
+Q0.95 ({γ, ν, ξ − xmin , ϵ }) ≤ c, RT 95  
+
+> tick
+
+≈ f (GL ) + cτtick 
+
+. (2) With these variables defined, we establish two fundamental constraints for real-time operation: 1) Real-Time Safety Constraint: The client should ideally receive the server generated accompaniment before the next interval begins: 
+
+⌈RT 95 
+
+> tick
+
+⌉ ≤ I. (3) 2) Playback Continuity Constraint: The duration of the generated accompaniment must be designed to accom-modate outlier RT T instances present in the long tail segment of the latency distribution: 
+
+GL ≥ I + ⌈RT 95 
+
+> tick
+
+⌉. (4) Rearranging this inequality to solve for I, we get the form used in our final derivation: 
+
+I ≤ GL − ⌈ RT 95 
+
+> tick
+
+⌉. (5) By combining our two constraints, we derive a single, two-sided inequality that defines the valid range for the Inference Interval ( I) and substituting our RTT model f (GL ) into it gives the fully expanded constraint: 
+
+f (GL ) + cτtick 
+
+≤ I ≤ τtick GL − f (GL ) − cτtick 
+
+. (6) In our experimental environment, the behavior of f (GL )
+
+can be accurately modeled using a quadratic function. For any given network condition, we first determine the simulated RTT function through benchmarking. Then, for a specified BPM (which defines the value of τtick ), we iterate over a range of possible Generation Lengths ( GL ) and compute the lower and upper bounds from Equation 6. If the lower bound is less than or equal to the upper bound, the resulting integer range of I defines valid ( I, GL ) configuration pairs. Repeating this process over candidate GL values delineates the feasible solution space, which can then be evaluated under additional criteria such as choosing the smallest I for responsiveness or selecting specific configurations to reduce server load. TABLE II: Specifications of three target settings          
+
+> Setting Client Server Network Local Hyperstack server (RTX A4000) Hyperstack server (RTX A4000) IPC Local-server Macbook (M1 Pro) PC (RTX 3090) 6Gbps WLAN Remote-server Macbook (M1 Pro) Hyperstack server (A100) 1Gbps WAN
+
+As shown later in Fig. 4, the feasible solution space can vary substantially across deployment environments. In our setting, however, feasibility alone is not enough: although larger I and 
+
+GL values can make the system easier to schedule, they also reduce interaction frequency and degrade response freshness, which is musically undesirable in live accompaniment. There-fore, valid configuration pairs must be evaluated together with the music-quality results in Table III. In practice, our goal is to keep I and GL as small as the system allows while preserving responsiveness, freshness, and musical coherence. A related but simpler question is whether real-time inference is possible at all for a given model and deployment environ-ment. From (3) and (5), a feasible integer I can exist only if the lower bound does not exceed the upper bound. In other words, the minimum admissible I from the Real-Time Safety Constraint must not exceed the maximum admissible I from the Playback Continuity Constraint. This yields the following necessary condition for real-time feasibility. 
+
+Corollary (Feasibility Condition). A necessary condition for system feasibility is 
+
+GL ≥ 2 RT 95 
+
+> tick
+
+ .
+
+Using the approximation in (2), this condition can be written approximately in milliseconds as 
+
+RT T (GL ) ≲ τtick 
+
+2 GL. 
+
+This means that real-time feasibility requires the RT T (GL )
+
+curve to remain below a linear upper bound with slope τtick  
+
+> 2
+
+;since τtick decreases as BPM increases, this bound becomes tighter at faster musical tempos. V. E VALUATION 
+
+A. Experimental Setup and Model Preparation 
+
+Implementation We build our sample real-time music ac-companiment system via Python with more than 5000 lines of codes, containing the full implementation of client-server architecture. For client side, we use multi-threaded mechanism to implement its different component; for server side, we select Transformers [29] library from HuggingFace as the inference engine, and enable KVCache optimization [30] to avoid redundant computation of the autoregressive generation of local decoder. Client and server use TCP protocol to communicate with each other when network is needed. 
+
+Testbed We analyze the performance of our system under three different settings:  
+
+> •
+
+Local Client and server reside on the same device, directly communicating with each other via inter-process communication (IPC).  
+
+> •
+
+Local-server Client and server are hosted on separate devices within the same wireless local area network (WLAN).  
+
+> •
+
+Remote-server Client resides in a home network, while the server is deployed on a public cloud platform (e.g., Hyperstack). Communication between them is established via a wireless wide area network (WAN). For the listed three settings, we summarize the hardware and network specifications in Table II. 
+
+Baselines For the real-time performance, since we are the first to rigorously model real-time interactive transformer system, we mainly compare the performance of different StreamMUSE’s configs within the search space to demonstrate the effectiveness of our parameter selection. We also compare the music quality of StreamMUSE with generated music from the offline version of our accompaniment generation model, which is used as the theoretical upper bound for interactive music quality. 
+
+Training Details We use the POP909 dataset [31] for training, consisting of 909 pop music pieces. The model is trained using the standard cross-entropy loss on the interleaved token sequence. We also apply pitch shifting for data augmentation, where the shift amount is uniformly sampled from the allowed range (clipped to [−5, 6] semitones) for both melody and accompaniment tracks, and use gradient clipping to stabilize training. For evaluation, we primarily utilize the Small model (0.12B parameters). Its three-module architecture consists of a 12-layer main module alongside a 3-layer local encoder and a 3-layer local decoder. 
+
+Evaluation Song Selection Our conditional sequence modeling task inherently requires music data where melody (mel) and accompaniment (acc) are cleanly separated into distinct tracks. However, most publicly available MIDI datasets do not provide this essential separation. To address this common challenge, we adopt the standard industry practice of skyline extraction. This method heuristically extracts the most prominent melodic line from a polyphonic music track, ensuring the necessary separation for our model’s conditioning. For our experiments, we constructed a dedicated test set with 64 music pieces by sampling 30 from AccoMontage and 34 from the POP1K7 dataset [32]. 
+
+B. RT T Latency Characteristics 
+
+To understand the RT T patterns of the Local , Local-server ,and Remote-server environments, we profiled them by varying the generation length ( GL ) and collecting 1,000 RT T samples for each. The resulting distributions are shown in Fig. 3. Rather than simply validating our model, we use our quadratic RTT model as a tool to characterize and quantify each environment’s performance. As shown in Fig. 3, we fit parameters ( α, β, γ ) to both 100% (solid lines) and 95th percentile (dashed lines) of the data. Here, α, β, and γ denote 1 3 5 7 9 11 13 15 
+
+> Generation Length (Frames)
+> 100
+> 200
+> 300
+> 400
+> 500
+> Round Trip Time (ms)
+> Local (A4000-A4000)
+> Local-server (PC-Mac)
+> Remote-server (Hyperstack-PC)
+> 95% Data Fit (Outliers Removed)
+
+Fig. 3: Comparison between RTT model and real RT T latency the quadratic, linear, and constant coefficients of the fitted RTT function, respectively. We use the 95th-percentile fit for our analysis, as it avoids skew from rare outliers and provides the robust RT 95  
+
+> tick
+
+boundary essential for our safety constraints (Section IV-D). This analysis reveals three distinct profiles:  
+
+> •
+
+Local (Green) serves as our computational baseline, iso-lating performance from network variability. It exhibits a near-zero base latency ( γ) and minimal variance, with 
+
+RT T dominated by predictable computational cost.  
+
+> •
+
+Local-server (Blue) has a lower base latency ( γ ≈ 100 ms) than Remote, but its RT T scales more rapidly, overtaking the Remote Server at GL ≈ 13 . This environment is also highly unstable, with RT T variance increasing dramatically with GL . 
+
+> •
+
+Remote-server (Red) has the highest base latency ( γ ≈
+
+150 ms) due to network distance, but its RT T scales slowly, confirming its powerful GPU. This environment is high-latency but predictable, with stable variance (barring 
+
+GL = 7 ). 
+
+C. Visualization of Solution Space 
+
+After validating the fitting of our RTT model, we use RTT model with the constraints described in section IV-D to search for all possible ( I, GL ) configuration pairs that fulfill real-time requirements under three settings, which is defined as the solution space of StreamMUSE. After getting the solution space, we plot all the feasible real-time configuration pairs ex-plored by our system under Local, Local-server, and Remote-server settings across different BPMs, as illustrated in Fig. 4. The search space is defined by generation length ( GL ) and inference interval ( I). StreamMUSE constructs the feasible solution space bounded by a solid line (representing the Real-Time Safety Constraint) and a dashed line (representing the Playback Continuity Constraint). In different settings, variation in hardware and network conditions for interactive system may lead to situations where real-time requirements are violated. For instance, when the 
+
+RT T exceeds the interval I, the client may issue requests at a faster rate than the server’s response capacity, resulting in a mismatch between the returned accompaniment and the user’s current playing melody—referred to as C1 violation. Alternatively, if GL is shorter than the sum of RT T and 
+
+I, user may experience missing intervals of accompaniment during playing—referred to as C2 violation. It is clear from Fig. 4 that StreamMUSE can consistently find solution space in different settings, and the solution space varies across set-tings. In local setting, since the network latency is completely avoided, solution space can occupy no less than 44% of the total search space. On the contrary, in remote-server setting, over 60% of configurations within the search space exhibit violations of real-time conditions, making it challenging to manually construct a configuration that satisfies real-time re-quirements. Moreover, the increasing of the BPM exacerbates the violation, shrinking the solution space to 71%, 33%, and 30% of its basic size at 90 BPM in local, local-server, and remote-server respectively. However, by virtue of accurate modeling and rigorous constraints applied to real-time interac-tive transformer tasks, the StreamMUSE is capable of stably identifying configurations that fulfill real-time requirements under complex and dynamic conditions. 
+
+D. Key Metrics 
+
+We list various metrics here to evaluate the performance of our system in terms of real-time performance and music quality. 
+
+Real-time Performance We evaluate the system perfor-mance by three metrics: Interaction Success Rate (ISR), Stal-eness and Weighted Interaction Success Rate (ISR w). ISR measures the proportion of time steps where Stream-MUSE successfully find a piece of accompaniment to sched-ule and avoid event missing. First, we define an indicator function I(t) for each time tick t:
+
+I(t) = 
+
+(1, if any notes can be scheduled at time t
+
+0, otherwise .I(t) = 1 means that the system is able to respond to the melody timely, no matter using backup notes or not. Then, the ISR can be defined as the average of this indicator function over the total sequence duration N :
+
+ISR = 1
+
+N 
+
+> N−1
+
+X
+
+> t=0
+
+I(t).
+
+A higher ISR indicates a more consistently available and responsive system, implying fewer interruptions or missing in the accompaniment generation and scheduling pipeline. The Staleness metric quantifies the freshness of the scheduled note events. In a low-latency system, a scheduled note should ideally be one of the first tokens produced in the current generation step. We define S(t) as the Staleness Level at time 
+
+t when a note is scheduled: 
+
+S(t) = scheduled note’s index in its generation sequence .1 3 5 7 9 11 13 15 
+
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> Local (A4000-A4000)
+
+BPM 90        
+
+> 1357911 13 15
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+
+BPM 120        
+
+> 1357911 13 15
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+
+BPM 150        
+
+> 1357911 13 15
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+
+BPM 200                                                         
+
+> 1357911 13 15
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> Local-server (PC-Mac)
+> 1357911 13 15
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> 1357911 13 15
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> 1357911 13 15
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> 1357911 13 15
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> Remote-server (Hyperstack-PC)
+> 1357911 13 15
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> 1357911 13 15
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+> 1357911 13 15
+> 1
+> 2
+> 3
+> 4
+> 5
+> 6
+> 7
+> 8
+
+Generation Length (Frames)      
+
+> Inference Interval (Ticks)
+> Valid C1 Violated C2 Violated Both Violated C1 Boundary C2 Boundary
+
+Fig. 4: Visualization of possible configuration pairs in solution space across three settings and four BPMs (Green: valid pair; Yellow: pairs violate C1 constraint; Red: pairs violate C2 constraint; Dark Red: pairs violate both constraint) The overall Staleness is the average of S(t) over all successful interaction time steps: 
+
+Staleness = 1
+
+|{ t : I(t) = 1 }| 
+
+X
+
+> t∈{ t:I(t)=1 }
+
+S(t).
+
+A lower Staleness means the system is quickly identifying and responding accompaniment request, resulting in fresher audi-tory feedback and better rhythmic alignment. Higher Staleness implies the system is slowly responding to the requests, forcing itself to play stale notes for each request. The Weighted Interaction Success Rate (ISR w) is a compre-hensive metric that integrates both the frequency of successful interactions and response freshness. It is formally defined as: 
+
+ISR w = 1
+
+N
+
+X  C − S(t)
+
+C × I(t)
+
+
+
+.
+
+where the term C−S(t) 
+
+> C
+
+acts as a staleness penalty for a successful interaction I(t). A higher ISR w indicates the system is not only good at responding timely, but also delivering fresher responses. ISR w is crucial for comparing different scheduling strategies in a real-time environment. We set the constant C = 32 , corresponding to the maximum expected length of a generation sequence or frame. 
+
+Music Quality We evaluate the accompaniment generated by our models from two main aspects: the authenticity of the generated music and the harmonic alignment between the accompaniment and the conditioning melody. For the first aspect, we use four metrics: The Fr´ echet Music Distance (FMD) [33], Negative Log-Likelihood (NLL), and Jensen-Shannon Divergence (JSD) for both Pitch (JSD(P)) and Onset (JSD(O)). FMD measures the statistical distance between distributions of features extracted from real and generated symbolic music, lower values indicate that the generated sam-ples are closer in distribution to real performances. NLL wavg 
+
+quantifies the internal fluency and statistical coherence of the accompaniment generated by our real-time system. Lower NLL wavg suggests that the generated music is statistically more consistent and fluent according to the model’s learned distribution. Furthermore, we use the JSD to compare the statistical distributions of generated and real accompaniment: TABLE III: Experiment Results: Comparative Performance across Real-Time Settings at BPM = 120. Results are presented for three settings: (a) Local, (b) Local-server, and (c) Remote-server. Each row represents a configuration defined by the inference interval ( I) and generation length ( GL ). Metrics are divided into Music Quality (JSD, FMD, CR, UR, NLL wavg ) and System Performance (ISR, Staleness, ISR w). The Offline baseline serves as the upper bound for music quality. For generated samples, the best and second-best scores in each column are shown in boldface and underlined, respectively. ↓ indicates lower is better, and ↑ indicates higher is better. 
+
+> (a) Local
+
+Music Metrics System Metrics 
+
+(I, GL ) JSD(Pitch) ↓ JSD(Onset) ↓ FMD ↓ CR ↑ UR ↓ NLL wavg ↓ ISR ↑ Staleness ↓ ISR w ↑
+
+(1, 3) 0.2941 0.1682 279.2 0.8207 0.0418 1.498 0.9952 0.001 0.9951 
+
+(2, 5) 0.3206 0.1904 269.5 0.7323 0.1012 1.690 0.9781 0.997 0.9477 (2, 9) 0.3354 0.3321 329.3 0.4693 0.4409 1.578 0.5795 1.944 0.5443 (4, 5) 0.3831 0.2343 289.3 0.4758 0.3159 1.576 0.6855 1.230 0.6592 (4, 9) 0.3075 0.1834 259.4 0.7247 0.1038 1.688 0.9511 2.419 0.8792 (4, 15) 0.3000 0.1800 290.8 0.7759 0.0932 1.780 0.9495 3.783 0.8373 (7, 9) 0.3618 0.3492 373.4 0.3413 0.5037 1.315 0.6160 2.455 0.5687 (7, 15) 0.3234 0.1976 262.5 0.6595 0.1411 1.806 0.8628 4.425 0.7436 Offline 0.1960 0.1111 84.0 0.8257 0.0507 1.586 - - -
+
+> (b) Local-server
+
+Music Metrics System Metrics 
+
+(I, GL ) JSD(Pitch) ↓ JSD(Onset) ↓ FMD ↓ CR ↑ UR ↓ NLL wavg ↓ ISR ↑ Staleness ↓ ISR w ↑
+
+(1, 3) 0.3456 0.4132 425.7 0.3292 0.5985 1.418 0.3813 0.544 0.3749 (2, 5) 0.3172 0.1880 263.4 0.7403 0.1082 1.273 0.9536 1.451 0.9104 
+
+(2, 9) 0.4876 0.5396 733.1 0.0188 0.9733 1.079 0.0373 3.450 0.0333 (4, 5) 0.4096 0.2680 325.3 0.4393 0.3633 1.485 0.5666 1.529 0.5395 (4, 9) 0.3111 0.2000 262.9 0.6145 0.1680 1.679 0.7776 2.977 0.7052 (4, 15) 0.3571 0.4665 439.8 0.2218 0.7190 1.401 0.2827 5.281 0.2360 (7, 9) 0.3798 0.3856 389.3 0.2562 0.6166 1.530 0.5131 2.805 0.4681 (7, 15) 0.3167 0.2169 354.7 0.4700 0.3516 1.979 0.6384 5.355 0.5316 Offline 0.1960 0.1111 84.0 0.8257 0.0507 1.586 - - -
+
+> (c) Remote-server
+
+Music Metrics System Metrics 
+
+(I, GL ) JSD(Pitch) ↓ JSD(Onset) ↓ FMD ↓ CR ↑ UR ↓ NLL wavg ↓ ISR ↑ Staleness ↓ ISR w ↑
+
+(1, 3) 0.3741 0.4041 832.7 0.0167 0.9747 1.068 0.0115 1.000 0.0111 (2, 5) 0.3093 0.2139 271.1 0.6568 0.1720 1.670 0.8679 1.471 0.8280 (2, 9) 0.3222 0.3978 356.4 0.3171 0.6020 1.510 0.4397 2.410 0.4066 (4, 5) 0.4139 0.2876 326.2 0.3792 0.4410 1.480 0.5460 1.573 0.5191 (4, 9) 0.3160 0.1880 257.7 0.7010 0.1136 1.306 0.9376 2.518 0.8638 (4, 15) 0.3044 0.1639 285.4 0.7939 0.0572 1.351 0.9894 3.589 0.8785 
+
+(7, 9) 0.3935 0.3805 391.1 0.2591 0.6103 1.527 0.5721 2.586 0.5259 (7, 15) 0.3078 0.2071 262.0 0.6781 0.1408 1.764 0.8709 4.364 0.7522 Offline 0.1960 0.1111 84.0 0.8257 0.0507 1.586 - - -
+
+JSD (P) (Pitch) quantifies the fidelity of the note vocabulary used, and JSD (O) (Onset) evaluates the accuracy of the rhythmic and temporal patterns; lower values for both indicate better fidelity. For the second aspect, the harmonicity metric evaluates how well the generated accompaniment supports the melody over time. For each melody note, we check all simul-taneous accompaniment notes: if none overlap, that duration is counted as “unsupported”. When overlap exists, we com-pute pitch-class intervals relative to the melody and compare them against a designated consonant set (unison, minor/major thirds, perfect fifth, and minor/major sixth). Durations with at least one consonant interval are labeled “consonant”, while others are “dissonant”. Normalizing these by the total melodic duration yields three distinct ratios: Consonant Rate (CR), Unsupported Rate (UR), and the Dissonant Rate. These ratios reflect how often the accompaniment harmonically supports, fails to reinforce, or conflicts with the melody, respectively. For the purpose of our study, we choose to present CR and UR in our results, as the Dissonant Rate can be trivially calculated from the other two ( 1 − CR − UR). 
+
+E. Results 
+
+Our evaluation focuses on three key areas: establishing the correctness of our system’s performance metrics relative to generative coherence, analyzing the correlation between system success and music quality, and demonstrating the general feasibility of real-time accompaniment across various constraints. 
+
+Correctness of The Proposed Model Through extensive experimentation, we conclusively validate the correctness of the solution space derived from our mathematical model, which predicts feasible real-time configurations. To demon-strate this accuracy, we utilize the Interaction Success Rate (ISR), which quantifies the system’s reliability and successful delivery rate, as the core experimental measure of system viability. The experimental data provides robust confirmation for our theoretical predictions. For example (see Fig. 4), under the local setting and BPM = 120, multiple configurations that fall within our mathematically defined solution space—such as (I = 2 , GL = 5) , (I = 4 , GL = 9) , (I = 4 , GL = 15) , and 
+
+(I = 7 , GL = 15) —all achieve universally high ISR values of 0.9781, 0.9511, 0.9495, and 0.8628 respectively. This strong consistency, where configurations predicted as feasible by our model exhibit high real-time success (ISR), provides direct and empirical evidence supporting the fundamental correctness of our mathematical solution space. This outcome confirms that our theoretical framework effectively and accurately identifies the optimal settings for real-time system deployment. 
+
+Relations between System Performance and Music Qual-ity The experimental results establish a crucial synergistic relationship: successful system performance (ISR w) acts as a strong, reliable proxy for high music quality. This is first evidenced by the validating relationship between ISR w
+
+and generative coherence (NLL wavg ). High ISR w correlates strongly with low NLL wavg , confirming that reliable system delivery maintains the model’s intrinsic statistical fluency. Conversely, the data reveals that NLL wavg is shown to be invalidated when ISR w is low. For example, in Table IIIb, a scenario with the lowest NLL wavg (1.079 ) registers a low ISR w (0.0373 ). We believe the primary cause of this confus-ing phenomenon is that a system failure state yields sparse sequences containing a high proportion of “empty” tokens. When these sparse sequences are measured, the NLL wavg is artificially low, failing to reliably indicate the quality of the few generated notes. Therefore, the invalidation of NLL wavg when ISR w is low further underscores that system success is the prerequisite for generative metrics to accurately reflect quality. NLL wavg is a reliable indicator of generative coherence only above a high ISR w threshold. Beyond generative coherence, the data confirms a strong positive correlation between system success (ISR w) and most objective musical quality metrics. As ISR w improves (increases), the music quality significantly improves across multiple domains: the JSD(Onset) (rhythmic timing) decreases, the Consonance Ratio (CR) increases, and the Undergeneration Rate (UR) decreases. This strong, multi-metric correlation validates ISR w as a robust proxy for real-time music performance, confirming that successful, low-latency delivery of notes inherently leads to superior musical results. For instance, the best local setting (Table IIIa, Row (1, 3)) achieves an ISR w of 0.9951 alongside high CR (0.8207 ), excellent timing metrics, and an acceptable FMD, clearly demonstrating this synergy. The exception, JSD(Pitch), shows minimal correlation as it reflects the model’s static harmonic vocabulary rather than the dynamic success or timing measured by ISR w.
+
+Feasibility in General The experiments across the three tables (Local, Local-server, Remote-server) confirm the gen-eral feasibility of establishing various successful real-time accompaniment systems. While server and remote latencies significantly reduce the system’s success rate, the system con-sistently provides a comprehensive solution space of feasible 
+
+(I, GL ) configurations. For instance, even under challenging remote conditions (Table IIIc), we identified solutions that maintain a functional ISR w of 0.8785 , proving the robustness of our architecture against diverse network constraints. Crucially, the experimental results also clarify the optimal 
+
+(I, GL ) selection strategy. First, maximizing interaction fre-quency requires the smallest possible Inference Interval ( I). Second, a critical trade-off exists for Generation Length ( GL ). While a larger GL safely buffers against network tail latency, it increases server inference latency and forces the model to predict too far ahead. This ignores recent user inputs, degrading freshness and coherence. Therefore, GL should not be arbitrarily large; it should be kept just long enough to cover network jitter. This directly supports our core conclusion: keeping both I and GL as small as the system allows is important for balancing safety and real-time responsiveness. For example, in the local-server setting (Table IIIb), the smaller-I configuration (2 , 5) achieves the strongest overall system performance (ISR = 0 .9536 , ISR w = 0 .9104 ), illus-trating the first principle in a concrete case. For GL , comparing 
+
+(4 , 9) with (4 , 15) shows why larger is not always better: although both use the same I, increasing GL sharply worsens freshness and coherence, with staleness rising from 2.977 to 
+
+5.281 and ISR w dropping from 0.7052 to 0.2360 , while music quality also deteriorates (e.g., FMD from 262 .9 to 439 .8 and CR from 0.6145 to 0.2218 ). VI. D ISCUSSION 
+
+A. Environmental Robustness and Adaptivity 
+
+The RTT models fitted for the network-dependent envi-ronments (see section V-B) represent a temporal “snapshot” of specific conditions during our benchmarking. Real-world network latency is highly influenced by external factors, such as time of day, concurrent traffic from other users, and hardware variability. Consequently, re-benchmarking these environments under different network conditions would likely yield a different set of model parameters. As we have seen in the previous visualization of the solution space (see Fig. 4), this means the precise boundaries of the solution space are reflective of these specific benchmark conditions and may not be universally robust. At present, StreamMUSE adopts a profile-then-execute strategy: we first benchmark the deployment environment, estimate its latency profile, and then select fixed runtime parameters accordingly. This design is appropriate for the settings considered in this paper, where device placement and network conditions are relatively stable. For short-term latency fluctuations, the backup mechanism already provides robustness without requiring parameter reconfiguration. We agree, however, that more volatile environments may benefit from dynamic runtime adaptation, which we leave as an important direction for future work. 
+
+B. Practical Relaxation of Theoretical Constraints 
+
+Our current system model employs two strict constraints (see section IV-B) to delineate the feasible solution space. These constraints are inherently conservative as they are based on the 95th percentile of RT T . In our evaluation, any configu-ration pair (I, GL ) that violates these bounds is excluded from the “valid” space. However, in real-world musical interaction, these constraints may be “soft” ones. A marginal violation of the Real-Time Safety Constraint (e.g., I being slightly smaller than RT 95 
+
+> tick
+
+) does not necessarily lead to a systemic collapse; rather, it increases the probability of occasional request staling. Given our backup mechanism and the perceptual resilience of human listeners to millisecond-level jitters, such rare delays might be virtually unnoticeable. This suggests that the solution space is not a binary ter-ritory but a trade-off between reliability and responsiveness. A developer might intentionally select a “near-boundary” configuration to prioritize ultra-low latency (minimal I) over absolute continuity, accepting a non-zero but managed miss rate in exchange for a more responsive jamming experience. Future work could explore a probabilistic formulation of these constraints to better quantify this trade-off. 
+
+C. The Generation Gap in Real-Time Inference 
+
+Despite the success of StreamMUSE, significant challenges remain for real-time deployment. The strict nature of the task imposes severe constraints on both context availability and model robustness. Unlike offline generation, real-time systems cannot rely on pre-injected structural prompts. This forces the model to “blindly guess” the accompaniment during cold starts. Furthermore, physical constraints inevitably pollute the streaming context. Unpredictable network delays force the client to play backup frames. This creates an inconsistency between the music the user hears and the history saved on the server. Additionally, human timing variations and hardware jitter often result in “off-tick” or incorrect note inputs. Our model struggles with these noisy inputs because it was trained only on perfect data via Maximum Likelihood Estimation (MLE), leading to the exposure bias discussed in Section III-C. Consequently, the model cannot easily recover from distorted contexts. A single timing error or misplaced note can trigger a chain reaction that causes the music quality to deteriorate quickly. Meanwhile, the model also lacks stylistic flexibility. It cannot adapt on the fly if a user’s playing style differs from the training data, which limits its usability in open-ended environments. Addressing these limitations represents a key direction for future work. Promising approaches include reinforcement learning-based training to mitigate exposure bias [34], [25], and inference-time robustness techniques such as scheduled sampling or token dropout to improve resilience under noisy streaming contexts. 
+
+D. Limitations in Evaluation 
+
+Our study exposes the limitations of relying solely on exist-ing objective metrics to assess real-time generation. Crucially, current music quality metrics are fundamentally designed for offline evaluation, assuming a complete and flawlessly gen-erated sequence. As a result, they fail to adequately penalize artifacts unique to real-time streaming, such as the system fail-ing to keep up with the performer or generating sparse, empty accompaniment. For instance, as discussed in Section V-E, metrics like the weighted negative log-likelihood (NLL wavg )can be highly misleading if evaluated in isolation. When physical perturbations force the system into low-reliability states, the model may degenerate into sparse patterns (es-sentially missing accompaniment events) that yield artificially low, falsely “good” NLL scores, despite a complete loss of actual musicality. Therefore, traditional offline metrics are insufficient on their own; they must be strictly conditioned on high system reliability (e.g., a high ISR w threshold) to meaningfully reflect actual generative coherence in a streaming context. VII. C ONCLUSION 
+
+This work presents a case study that establishes useful principles for building responsive, time-critical interactive transformer systems. By exploring the use case in accompa-niment generation, systematically analyzing latency, synchro-nization, and inference behavior under real-time constraints, we provide a practical rule book for developers and researchers seeking to bridge the gap between algorithmic capability and interactive responsiveness. Our proposed StreamMUSE, to our best knowledge, is the first real-time accompaniment system that poses no musical constraints to user-input melodies. By focusing on real-time and cross-hardware adaptivity, our findings highlight key trade-offs between model complexity, system design, and perceptual thresholds, offering concrete guidance for future work on AI systems that must think, react, and create in real time. ACKNOWLEDGMENT 
+
+The authors thank Lekai Qian and Jiadong Zhang for their valuable contributions during the post-submission deployment and optimization phase of the live demonstration system. In particular, their efforts in improving the deployment pipeline and tuning the execution environment helped strengthen the real-time responsiveness and stability of the system presented in this paper. REFERENCES [1] B. Fu, D. Yu, M. Liao, C. Li, X. Chen, Y. Chen, K. Fan, and X. Shi, “Efficient and adaptive simultaneous speech translation with fully unidirectional architecture,” in Proceedings of the AAAI Conference on Artificial Intelligence , vol. 40, no. 36, 2026, pp. 30 735–30 743. [2] J. Kasai, N. Pappas, H. Peng, J. Cross, and N. A. Smith, “Deep encoder, shallow decoder: Reevaluating non-autoregressive machine translation,” in International Conference on Learning Representations (ICLR) , 2021. [3] Y. Ren, C. Hu, X. Tan, T. Qin, S. Zhao, Z. Zhao, and T.-Y. Liu, “Fastspeech 2: Fast and high-quality end-to-end text to speech,” in 
+
+International Conference on Learning Representations (ICLR) , 2021. [4] P. Dhariwal, H. Jun, C. Payne, J. W. Kim, A. Radford, and I. Sutskever, “Jukebox: A generative model for music,” 2020. [Online]. Available: https://arxiv.org/abs/2005.00341 [5] R. Thoppilan, D. D. Freitas, J. Hall, N. Shazeer, A. Kulshreshtha, H.-T. Cheng, A. Jin, T. Bos, L. Baker, Y. Du, Y. Li, H. Lee, H. S. Zheng, A. Ghafouri, M. Menegali, Y. Huang, M. Krikun, D. Lepikhin, J. Qin, D. Chen, Y. Xu, Z. Chen, A. Roberts, M. Bosma, V. Zhao, Y. Zhou, C.-C. Chang, I. Krivokon, W. Rusch, M. Pickett, P. Srinivasan, L. Man, K. Meier-Hellstern, M. R. Morris, T. Doshi, R. D. Santos, T. Duke, J. Soraker, B. Zevenbergen, V. Prabhakaran, M. Diaz, B. Hutchinson, K. Olson, A. Molina, E. Hoffman-John, J. Lee, L. Aroyo, R. Rajakumar, A. Butryna, M. Lamm, V. Kuzmina, J. Fenton, A. Cohen, R. Bernstein, R. Kurzweil, B. Aguera-Arcas, C. Cui, M. Croak, E. Chi, and Q. Le, “Lamda: Language models for dialog applications,” 2022. [Online]. Available: https://arxiv.org/abs/2201.08239 [6] K. Shuster, J. Xu, M. Komeili, D. Ju, E. M. Smith, S. Roller, M. Ung, M. Chen, K. Arora, J. Lane, M. Behrooz, W. Ngan, S. Poff, N. Goyal, A. Szlam, Y.-L. Boureau, M. Kambadur, and J. Weston, “Blenderbot 3: a deployed conversational agent that continually learns to responsibly engage,” 2022. [Online]. Available: https://arxiv.org/abs/2208.03188 [7] N. Shazeer, A. Mirhoseini, K. Maziarz, A. Davis, Q. V. Le, G. E. Hinton, and J. Dean, “Outrageously large neural networks: The sparsely-gated mixture-of-experts layer,” in International Conference on Learning Representations (ICLR) , 2017. [Online]. Available: https://openreview.net/forum?id=B1ckMDqlg [8] W. Kwon, Z. Li, S. Zhuang, Y. Sheng, L. Zheng, C. H. Yu, J. Gonzalez, H. Zhang, and I. Stoica, “Efficient memory management for large language model serving with pagedattention,” in Proceedings of the 29th Symposium on Operating Systems Principles , ser. SOSP ’23. New York, NY, USA: Association for Computing Machinery, 2023, pp. 611–626. [Online]. Available: https://doi.org/10.1145/3600006.3613165 [9] L. Zheng, L. Yin, Z. Xie, C. Sun, J. Huang, C. H. Yu, S. Cao, C. Kozyrakis, I. Stoica, J. E. Gonzalez, C. Barrett, and Y. Sheng, “Sglang: Efficient execution of structured language model programs,” in Advances in Neural Information Processing Systems , A. Globerson, L. Mackey, D. Belgrave, A. Fan, U. Paquet, J. Tomczak, and C. Zhang, Eds., vol. 37. Curran Associates, Inc., 2024, pp. 62 557–62 583. [Online]. Available: https://proceedings.neurips.cc/paper files/paper/2 024/file/724be4472168f31ba1c9ac630f15dec8-Paper-Conference.pdf [10] Sumaiya, R. Jafarpourmarzouni, S. Lu, and Z. Dong, “Enhancing real-time inference performance for time-critical software-defined vehicles,” in 2024 IEEE International Conference on Mobility, Operations, Ser-vices and Technologies (MOST) , 2024, pp. 101–113. [11] R. B. Dannenberg, “An on-line algorithm for real-time accompani-ment,” in Proceedings of the International Computer Music Conference (ICMC) , 1984, pp. 193–198. [12] N. Orio, S. Lemouton, and D. Schwarz, “Score following: State of the art and new developments,” in Proceedings of the International Conference on New Interfaces for Musical Expression (NIME) , 2003, pp. 36–41. [13] Y.-N. Hung and Y.-H. Yang, “Frame-level instrument recognition by timbre and pitch,” in Proceedings of the 19th International Society for Music Information Retrieval Conference (ISMIR) , 2018, pp. 135–142. [Online]. Available: https://arxiv.org/abs/1806.09587 [14] P. Esling, A. Chemla-Romeu-Santos, and A. Bitton, “Generative timbre spaces: Regularizing variational auto-encoders with perceptual metrics,” in Proceedings of the 19th International Society for Music Information Retrieval Conference (ISMIR) , 2018, pp. 150–157. [Online]. Available: https://arxiv.org/abs/1805.08501 [15] R. Rowe, Interactive Music Systems: Machine Listening and Composing .Cambridge, MA: MIT Press, 1993. [16] F. Pachet, “The continuator: Musical interaction with style,” Journal of New Music Research , vol. 32, no. 3, pp. 333–341, 2003. [17] A. Cont, “A coupled duration-focused architecture for real-time music to score alignment,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 32, no. 6, pp. 974–987, 2010. [18] C.-Z. A. Huang, A. Vaswani, J. Uszkoreit, N. Shazeer, I. Simon, C. Hawthorne, A. M. Dai, M. D. Hoffman, M. Dinculescu, and D. Eck, “Music transformer: Generating music with long-term structure,” in 
+
+International Conference on Learning Representations (ICLR) , 2019, arXiv:1809.04281. [Online]. Available: https://arxiv.org/abs/1809.04281 [19] H.-W. Dong, K. Chen, S. Dubnov, J. McAuley, and T. Berg-Kirkpatrick, “Multitrack music transformer,” in IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP) , 2023. [20] J. Zhao and G. Xia, “Accomontage: Accompaniment arrangement via phrase selection and style transfer,” 2021. [Online]. Available: https://archives.ismir.net/ismir2021/paper/000104.pdf [21] Z. Wang, L. Min, and G. Xia, “Whole-song hierarchical generation of symbolic music using cascaded diffusion models,” in International Conference on Learning Representations (ICLR) , 2024. [Online]. Available: https://openreview.net/forum?id=sn7CYWyavh [22] J. Thickstun, D. Hall, C. Donahue, and P. Liang, “Anticipatory music transformer,” arXiv preprint arXiv:2306.08620 , 2023. [23] N. Jiang, S. Jin, Z. Duan, and C. Zhang, “Rl-duet: Online music accompaniment generation using deep reinforcement learning,” 
+
+Proceedings of the AAAI Conference on Artificial Intelligence ,vol. 34, no. 01, pp. 710–718, Apr. 2020. [Online]. Available: https://ojs.aaai.org/index.php/AAAI/article/view/5413 [24] C. Benetatos, J. VanderStel, and Z. Duan, “Bachduet: A deep learning system for human-machine counterpoint improvisation,” in 
+
+New Interfaces for Musical Expression , 2020. [Online]. Available: https://api.semanticscholar.org/CorpusID:221668784 [25] A. Scarlatos, Y. Wu, I. Simon, A. Roberts, T. Cooijmans, N. Jaques, C. Tarakajian, and A. Huang, “Realjam: Real-time human-ai music jamming with reinforcement learning-tuned transformers,” in Proceedings of the Extended Abstracts of the CHI Conference on Human Factors in Computing Systems , ser. CHI EA ’25. New York, NY, USA: Association for Computing Machinery, 2025. [Online]. Available: https://doi.org/10.1145/3706599.3720227 [26] L. Blanchard, P. Naseck, S. Brade, K. Lecamwasam, J. Rudess, C.-Z. A. Huang, and J. Paradiso, “The jam bot: A real-time system for collaborative free improvisation with music language models,” in Proceedings of the 26th International Society for Music Information Retrieval Conference (ISMIR) , Daejeon, South Korea, 2025, mIT Media Lab and MIT Music Technology. [Online]. Available: https://arxiv.org/abs/2503.02165 [27] A. Caillon, B. McWilliams, C. Tarakajian, I. Simon, I. Manco, J. Engel, N. Constant, Y. Li, T. I. Denk, A. Lalama, A. Agostinelli, C.-Z. A. Huang, E. Manilow, G. Brower, H. Erdogan, H. Lei, I. Rolnick, I. Grishchenko, M. Orsini, M. Kastelic, M. Zuluaga, M. Verzetti, M. Dooley, O. Skopek, R. Ferrer, Z. Borsos, A. van den Oord, D. Eck, E. Collins, J. M. Baldridge, T. Hume, C. Donahue, K. Han, and A. Roberts, “Live music models,” in The Thirty-ninth Annual Conference on Neural Information Processing Systems Creative AI Track: Humanity , 2025. [Online]. Available: https: //openreview.net/forum?id=SB3XbPgvpl [28] J. Jiang, D. Chin, L. Lin, X. Liu, and G. Xia, “Versatile symbolic music-for-music modeling via function alignment,” in Proceedings of the 26th International Society for Music Information Retrieval Conference (ISMIR) , 2025. [Online]. Available: https://arxiv.org/abs/2506.15548 [29] T. Wolf, L. Debut, V. Sanh, J. Chaumond, C. Delangue, A. Moi, P. Cistac, T. Rault, R. Louf, M. Funtowicz, J. Davison, S. Shleifer, P. von Platen, C. Ma, Y. Jernite, J. Plu, C. Xu, T. L. Scao, S. Gugger, M. Drame, Q. Lhoest, and A. M. Rush, “Transformers: State-of-the-art natural language processing,” in Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations . Online: Association for Computational Linguistics, Oct. 2020, pp. 38–45. [Online]. Available: https: //www.aclweb.org/anthology/2020.emnlp-demos.6 [30] R. Pope, S. Douglas, A. Chowdhery, J. Devlin, J. Bradbury, J. Heek, K. Xiao, S. Agrawal, and J. Dean, “Efficiently scaling transformer inference,” Proceedings of machine learning and systems , vol. 5, pp. 606–624, 2023. [31] Z. Wang*, K. Chen*, J. Jiang, Y. Zhang, M. Xu, S. Dai, G. Bin, and G. Xia, “Pop909: A pop-song dataset for music arrangement generation,” in Proceedings of 21st International Conference on Music Information Retrieval, ISMIR , 2020. [32] W.-Y. Hsiao, J.-Y. Liu, Y.-C. Yeh, and Y.-H. Yang, “Compound Word Transformer: Learning to compose full-song music over dynamic di-rected hypergraphs,” in Thirty-Fifth AAAI Conference on Artificial Intelligence, AAAI , 2021. [33] J. Retkowski, J. Stepniak, and M. Modrzejewski, “Frechet music distance: A metric for generative symbolic music evaluation,” 2024. [Online]. Available: https://arxiv.org/abs/2412.07948 [34] Y. Wu, T. Cooijmans, K. Kastner, A. Roberts, I. Simon, A. Scarlatos, C. Donahue, C. Tarakajian, S. Omidshafiei, A. Courville, P. S. Castro, N. Jaques, and C.-Z. A. Huang, “Adaptive accompaniment with ReaLchords,” in Proceedings of the 41st International Conference on Machine Learning , ser. Proceedings of Machine Learning Research, R. Salakhutdinov, Z. Kolter, K. Heller, A. Weller, N. Oliver, J. Scarlett, and F. Berkenkamp, Eds., vol. 235. PMLR, 21–27 Jul 2024, pp. 53 328–53 345. [Online]. Available: https: //proceedings.mlr.press/v235/wu24c.html
