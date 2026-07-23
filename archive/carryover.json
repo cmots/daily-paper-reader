@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-07-20T21:52:03.278067+00:00",
-  "updated_date": "20260720",
+  "generated_at": "2026-07-23T21:08:12.205773+00:00",
+  "updated_date": "20260723",
   "carryover_days": 9,
   "tag_states": {
     "speech-model": {
-      "updated_date": "20260720",
+      "updated_date": "20260723",
       "carryover_days": 9,
       "items": []
     },
     "WM-VLA-SA": {
-      "updated_date": "20260720",
+      "updated_date": "20260723",
       "carryover_days": 9,
       "items": []
     }
